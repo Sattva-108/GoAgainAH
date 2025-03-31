@@ -1,4 +1,4 @@
-## Interface: 11505
+## Interface: 30030
 ## Version: 1.1.6
 ## Title: OnlyFangs AH
 ## Notes: Guild Auction House for |cFFFF0000OnlyFangs|r

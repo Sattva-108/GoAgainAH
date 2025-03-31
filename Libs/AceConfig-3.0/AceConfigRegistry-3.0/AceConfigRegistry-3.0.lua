@@ -8,10 +8,10 @@
 -- :IterateOptionsTables() (and :GetOptionsTable() if only given one argument) return a function reference that the requesting config handling addon must call with valid "uiType", "uiName".
 -- @class file
 -- @name AceConfigRegistry-3.0
--- @release $Id: AceConfigRegistry-3.0.lua 1296 2022-11-04 18:50:10Z nevcairiel $
+-- @release $Id$
 local CallbackHandler = LibStub("CallbackHandler-1.0")
 
-local MAJOR, MINOR = "AceConfigRegistry-3.0", 21
+local MAJOR, MINOR = "AceConfigRegistry-3.0-ElvUI", 20
 local AceConfigRegistry = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConfigRegistry then return end
@@ -57,8 +57,8 @@ local istable={["table"]=true,   _="table"}
 local ismethodtable={["table"]=true,["string"]=true,["function"]=true,   _="methodname, funcref or table"}
 local optstring={["nil"]=true,["string"]=true, _="string"}
 local optstringfunc={["nil"]=true,["string"]=true,["function"]=true, _="string or funcref"}
-local optstringnumberfunc={["nil"]=true,["string"]=true,["number"]=true,["function"]=true, _="string, number or funcref"}
 local optnumber={["nil"]=true,["number"]=true, _="number"}
+local optnumberfunc={["nil"]=true,["number"]=true,["function"]=true,_="number"} -- added by ElvUI for range
 local optmethodfalse={["nil"]=true,["string"]=true,["function"]=true,["boolean"]={[false]=true},  _="methodname, funcref or false"}
 local optmethodnumber={["nil"]=true,["string"]=true,["function"]=true,["number"]=true,  _="methodname, funcref or number"}
 local optmethodtable={["nil"]=true,["string"]=true,["function"]=true,["table"]=true,  _="methodname, funcref or table"}
@@ -75,6 +75,7 @@ local basekeys={
 	descStyle=optstring,
 	order=optmethodnumber,
 	validate=optmethodfalse,
+	validatePopup=optbool, --ElvUI
 	confirm=optmethodbool,
 	confirmText=optstring,
 	disabled=optmethodbool,
@@ -83,8 +84,7 @@ local basekeys={
 		dialogHidden=optmethodbool,
 		dropdownHidden=optmethodbool,
 	cmdHidden=optmethodbool,
-	tooltipHyperlink=optstringfunc,
-	icon=optstringnumberfunc,
+	icon=optstringfunc,
 	iconCoords=optmethodtable,
 	handler=opttable,
 	get=optmethodfalse,
@@ -92,6 +92,18 @@ local basekeys={
 	func=optmethodfalse,
 	arg={["*"]=true},
 	width=optstringnumber,
+	-- below here were created by ElvUI --
+	customWidth=optnumber,
+	textWidth=optmethodbool,
+	sortByValue=optmethodbool,
+	dragdrop=optmethodbool,
+		dragOnEnter=optmethodfalse,
+		dragOnLeave=optmethodfalse,
+		dragOnClick=optmethodfalse,
+		dragOnMouseUp=optmethodfalse,
+		dragOnMouseDown=optmethodfalse,
+		stateSwitchOnClick=optmethodfalse,
+		stateSwitchGetText=optmethodfalse,
 }
 
 local typedkeys={
@@ -101,7 +113,7 @@ local typedkeys={
 		dropdownControl=optstring,
 	},
 	description={
-		image=optstringnumberfunc,
+		image=optstringfunc,
 		imageCoords=optmethodtable,
 		imageHeight=optnumber,
 		imageWidth=optnumber,
@@ -121,7 +133,7 @@ local typedkeys={
 		childGroups=optstring,
 	},
 	execute={
-		image=optstringnumberfunc,
+		image=optstringfunc,
 		imageCoords=optmethodtable,
 		imageHeight=optnumber,
 		imageWidth=optnumber,
@@ -139,7 +151,7 @@ local typedkeys={
 	},
 	toggle={
 		tristate=optbool,
-		image=optstringnumberfunc,
+		image=optstringfunc,
 		imageCoords=optmethodtable,
 		control=optstring,
 		dialogControl=optstring,
@@ -148,12 +160,12 @@ local typedkeys={
 	tristate={
 	},
 	range={
-		min=optnumber,
-		softMin=optnumber,
-		max=optnumber,
-		softMax=optnumber,
+		min=optnumberfunc, --ElvUI
+		softMin=optnumberfunc, --ElvUI
+		max=optnumberfunc, --ElvUI
+		softMax=optnumberfunc, --ElvUI
 		step=optnumber,
-		bigStep=optnumber,
+		bigStep=optnumberfunc, --ElvUI
 		isPercent=optbool,
 		control=optstring,
 		dialogControl=optstring,
