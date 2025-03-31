@@ -518,7 +518,7 @@ local function CreateActionContainer(parent, anchorPanel, card, isRight)
 end
 
 function CreateReviewCard(parent, index)
-    local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    local card = CreateFrame("Frame", nil, parent)
     card:SetHeight(REVIEW_HEIGHT)
     -- Position each card vertically, leaving 10px gap for each
     card:SetPoint("TOPLEFT", 0, -((index - 1) * (REVIEW_HEIGHT + 10)))

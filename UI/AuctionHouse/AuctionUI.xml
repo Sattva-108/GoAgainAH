@@ -2379,16 +2379,16 @@
                             <OnLoad>
                                 OFAllowLoansCheckButtonText:SetFontObject(GameFontHighlightSmall)
                                 OFAllowLoansCheckButtonText:SetText("Allow loan")
-                                OFAllowLoansCheckButtonText:SetScript("OnEnter", function ()
-                                    GameTooltip:SetOwner(OFAllowLoansCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
-                                    GameTooltip_SetTitle(GameTooltip, "Buyout with loan");
-                                    GameTooltip_AddNormalLine(GameTooltip, "Allow players to buy the item on a loan. They have 7 days to pay or declare bankruptcy.", true);
-                                    GameTooltip:Show();
-                                end)
-                                OFAllowLoansCheckButtonText:SetScript("OnLeave", function ()
-                                    GameTooltip:Hide();
-                                end)
                             </OnLoad>
+							<OnEnter>
+							    GameTooltip:SetOwner(OFAllowLoansCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
+                                GameTooltip_SetTitle(GameTooltip, "Buyout with loan");
+                                GameTooltip_AddNormalLine(GameTooltip, "Allow players to buy the item on a loan. They have 7 days to pay or declare bankruptcy.", true);
+                                GameTooltip:Show();
+							</OnEnter>
+							<OnLeave>
+							    GameTooltip:Hide();
+							</OnLeave>
                             <OnClick>
                                 OFAllowLoansCheckButton_OnClick(self)
                             </OnClick>
@@ -2409,16 +2409,16 @@
                             <OnLoad>
                                 OFRoleplayCheckButtonText:SetFontObject(GameFontHighlightSmall);
                                 OFRoleplayCheckButtonText:SetText("Roleplay");
-                                OFRoleplayCheckButtonText:SetScript("OnEnter", function ()
-                                    GameTooltip:SetOwner(OFRoleplayCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
-                                    GameTooltip_SetTitle(GameTooltip, "Roleplay");
-                                    GameTooltip_AddNormalLine(GameTooltip, OF_ROLEPLAY_TOOLTIP, true);
-                                    GameTooltip:Show();
-                                end)
-                                OFRoleplayCheckButtonText:SetScript("OnLeave", function ()
-                                    GameTooltip:Hide();
-                                end)
                             </OnLoad>
+							<OnEnter>
+                                GameTooltip:SetOwner(OFRoleplayCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
+                                GameTooltip_SetTitle(GameTooltip, "Roleplay");
+                                GameTooltip_AddNormalLine(GameTooltip, OF_ROLEPLAY_TOOLTIP, true);
+                                GameTooltip:Show();
+							</OnEnter>
+							<OnLeave>
+                                GameTooltip:Hide();
+							</OnLeave>
                             <OnClick>
                                 OFRoleplayCheckButton_OnClick(self)
                             </OnClick>
@@ -2439,16 +2439,16 @@
                             <OnLoad>
                                 OFDeathRollCheckButtonText:SetFontObject(GameFontHighlightSmall);
                                 OFDeathRollCheckButtonText:SetText("Death Roll");
-                                OFDeathRollCheckButtonText:SetScript("OnEnter", function ()
-                                    GameTooltip:SetOwner(OFDeathRollCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
-                                    GameTooltip_SetTitle(GameTooltip, "Death Roll");
-                                    GameTooltip_AddNormalLine(GameTooltip, OF_DEATH_ROLL_TOOLTIP, true);
-                                    GameTooltip:Show();
-                                end)
-                                OFDeathRollCheckButtonText:SetScript("OnLeave", function ()
-                                    GameTooltip:Hide();
-                                end)
                             </OnLoad>
+							<OnEnter>
+                                GameTooltip:SetOwner(OFDeathRollCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
+                                GameTooltip_SetTitle(GameTooltip, "Death Roll");
+                                GameTooltip_AddNormalLine(GameTooltip, OF_DEATH_ROLL_TOOLTIP, true);
+                                GameTooltip:Show();
+							</OnEnter>
+							<OnLeave>
+                                GameTooltip:Hide();
+							</OnLeave>
                             <OnClick>
                                 OFDeathRollCheckButton_OnClick(self)
                             </OnClick>
@@ -2469,16 +2469,16 @@
                             <OnLoad>
                                 OFDuelCheckButtonText:SetFontObject(GameFontHighlightSmall)
                                 OFDuelCheckButtonText:SetText("Duel (Normal)")
-                                OFDuelCheckButtonText:SetScript("OnEnter", function ()
-                                    GameTooltip:SetOwner(OFDuelCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15)
-                                    GameTooltip_SetTitle(GameTooltip, "Duel (Normal)")
-                                    GameTooltip_AddNormalLine(GameTooltip, OF_DUEL_TOOLTIP, true)
-                                    GameTooltip:Show()
-                                end)
-                                OFDuelCheckButtonText:SetScript("OnLeave", function ()
-                                    GameTooltip:Hide()
-                                end)
                             </OnLoad>
+							<OnEnter>
+                                GameTooltip:SetOwner(OFDuelCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15)
+                                GameTooltip_SetTitle(GameTooltip, "Duel (Normal)")
+                                GameTooltip_AddNormalLine(GameTooltip, OF_DUEL_TOOLTIP, true)
+                                GameTooltip:Show()
+							</OnEnter>
+							<OnLeave>
+                                GameTooltip:Hide();
+							</OnLeave>
                             <OnClick>
                                 OFDuelCheckButton_OnClick(self)
                             </OnClick>

@@ -174,7 +174,7 @@ local PaneBackdrop  = {
 
 local function Constructor()
     local name = "AceGUI30CustomFrame" .. AceGUI:GetNextWidgetNum(Type)
-	local frame = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
+	local frame = CreateFrame("Frame", name, UIParent)
 
     _G[name] = frame
     tinsert(UISpecialFrames, name)

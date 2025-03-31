@@ -19,7 +19,7 @@ local function CreateBorderedGroup(relativeWidth, height)
         group:SetHeight(height)
     end
 
-    local border = CreateFrame("Frame", nil, group.frame, "BackdropTemplate")
+    local border = CreateFrame("Frame", nil, group.frame)
     border:SetPoint("TOPLEFT", 0, 0)
     border:SetPoint("BOTTOMRIGHT", 0, 0)
     border:SetBackdrop(PaneBackdrop)
