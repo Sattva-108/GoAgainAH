@@ -262,6 +262,7 @@
             <Layer level="BACKGROUND">
             </Layer>
         </Layers>
+        <Frames>
             <Frame parentKey="content">
                 <Anchors>
                     <Anchor point="TOPLEFT" />

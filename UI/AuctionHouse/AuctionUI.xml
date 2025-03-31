@@ -2251,15 +2251,14 @@
 						</Scripts>
 						<FontString inherits="ChatFontNormal" />
 					</EditBox>
-                    <DropdownButton name="OFDeliveryDropdown" inherits="WowStyle1DropdownTemplate" id="1">
+                    <Frame name="OFDeliveryDropdown" inherits="UIDropDownMenuTemplate" id="1">
                         <Size x="110" y="22" />
                         <Anchors>
-                            <Anchor x="88" y="278" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT">
-                            </Anchor>
+                            <Anchor x="88" y="278" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
                         </Anchors>
                         <Layers>
                             <Layer level="OVERLAY">
-                                <FontString name="OFDeliveryDropdownName" inherits="GameFontHighlightSmall" text="Delivery">
+                                <FontString name="$parentName" inherits="GameFontHighlightSmall" text="Delivery">
                                     <Anchors>
                                         <Anchor point="LEFT" relativePoint="LEFT">
                                             <Offset>
@@ -2270,11 +2269,12 @@
                                 </FontString>
                             </Layer>
                         </Layers>
-                    </DropdownButton>
-                    <DropdownButton name="OFPriceTypeDropdown" inherits="WowStyle1DropdownTemplate" id="2">
+                    </Frame>
+                    <Frame name="OFPriceTypeDropdown" inherits="UIDropDownMenuTemplate" id="2">
                         <Size x="110" y="22" />
                         <Anchors>
-                            <Anchor x="" y="-8" point="TOPLEFT" relativeTo="OFDeliveryDropdown" relativePoint="BOTTOMLEFT">
+                            <Anchor point="TOPLEFT" relativeTo="OFDeliveryDropdown" relativePoint="BOTTOMLEFT">
+                                <Offset x="0" y="-8"/>
                             </Anchor>
                         </Anchors>
                         <Layers>
@@ -2290,7 +2290,7 @@
                                 </FontString>
                             </Layer>
                         </Layers>
-                    </DropdownButton>
+                    </Frame>
                     <Frame name="OFBuyoutPrice" inherits="MoneyInputFrameTemplate">
                         <Anchors>
                             <Anchor x="5" y="-15" point="TOPLEFT" relativeTo="OFPriceTypeDropdownName" relativePoint="BOTTOMLEFT">
