@@ -1,0 +1,217 @@
+<Ui xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\Blizzard_SharedXML\UI.xsd"
+    xmlns="http://www.blizzard.com/wow/ui/">
+
+    <Frame name="LfgDungeonRoleSelectionTemplate" virtual="true">
+        <Size x="148" y="36" />
+        <Frames>
+            <Button parentKey="healButton"
+                parentArray="roleButtons"
+                inherits="LfgDungeonRoleButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" x="0" y="0" />
+                </Anchors>
+                <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
+                    <TexCoords left="0.26171875" right="0.5234375" top="0" bottom="0.26171875" />
+                </NormalTexture>
+            </Button>
+            <Button parentKey="tankButton"
+                parentArray="roleButtons"
+                inherits="LfgDungeonRoleButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeKey="$parent.healButton" relativePoint="LEFT" x="-20" y="0" />
+                </Anchors>
+                <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
+                    <TexCoords left="0" right="0.26171875" top="0.26171875" bottom="0.5234375" />
+                </NormalTexture>
+            </Button>
+            <Button parentKey="dpsButton"
+                parentArray="roleButtons"
+                inherits="LfgDungeonRoleButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.healButton" relativePoint="RIGHT" x="20" y="0" />
+                </Anchors>
+                <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
+                    <TexCoords left="0.26171875" right="0.5234375" top="0.26171875" bottom="0.5234375" />
+                </NormalTexture>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <Button name="LfgDungeonRoleButtonTemplate" virtual="true" motionScriptsWhileDisabled="true">
+        <Size x="36" y="36" />
+        <Layers>
+            <Layer level="OVERLAY">
+                <Texture file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="true" parentKey="cover" alpha="0.5" hidden="true">
+                    <TexCoords left="0" right="0.2617" top="0.5234" bottom="0.7851" />
+                </Texture>
+            </Layer>
+        </Layers>
+        <Frames>
+            <CheckButton parentKey="checkButton">
+                <Size x="24" y="24" />
+                <Anchors>
+                    <Anchor point="BOTTOMLEFT" x="-5" y="-5" />
+                </Anchors>
+                <NormalTexture file="Interface\Buttons\UI-CheckBox-Up" />
+                <PushedTexture file="Interface\Buttons\UI-CheckBox-Down" />
+                <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD" />
+                <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check" />
+                <DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled" />
+                <Scripts>
+                    <OnClick>
+                        OFLFG_Apply()
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+        </Frames>
+        <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES" />
+    </Button>
+
+
+    <Frame name="LfgDungeonRoleSelectionMiniTemplate" virtual="true">
+        <Size x="90" y="22" />
+        <Frames>
+            <Button parentKey="healButton"
+                parentArray="roleButtons"
+                inherits="LfgDungeonRoleMiniButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" x="0" y="0" />
+                </Anchors>
+                <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
+                    <TexCoords left="0.26171875" right="0.5234375" top="0" bottom="0.26171875" />
+                </NormalTexture>
+            </Button>
+            <Button parentKey="tankButton"
+                parentArray="roleButtons"
+                inherits="LfgDungeonRoleMiniButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeKey="$parent.healButton" relativePoint="LEFT" x="2" y="0" />
+                </Anchors>
+                <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
+                    <TexCoords left="0" right="0.26171875" top="0.26171875" bottom="0.5234375" />
+                </NormalTexture>
+            </Button>
+            <Button parentKey="dpsButton"
+                parentArray="roleButtons"
+                inherits="LfgDungeonRoleMiniButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.healButton" relativePoint="RIGHT" x="-2" y="0" />
+                </Anchors>
+                <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
+                    <TexCoords left="0.26171875" right="0.5234375" top="0.26171875" bottom="0.5234375" />
+                </NormalTexture>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <Button name="LfgDungeonRoleMiniButtonTemplate" virtual="true" motionScriptsWhileDisabled="true">
+        <Size x="22" y="22" />
+        <Layers>
+            <Layer level="OVERLAY">
+                <Texture file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="true" parentKey="cover" alpha="0.5" hidden="true">
+                    <TexCoords left="0" right="0.2617" top="0.5234" bottom="0.7851" />
+                </Texture>
+            </Layer>
+        </Layers>
+        <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES" />
+    </Button>
+
+    <Frame name="LfgDungeonSpecificChoiceTemplate"
+        virtual="true">
+        <Size x="340" y="16" />
+        <HitRectInsets>
+            <AbsInset left="25" right="58" top="0" bottom="0" />
+        </HitRectInsets>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture name="$parentHeroicIcon"
+                    file="Interface/LFGFrame/UI-LFG-ICON-HEROIC"
+                    parentKey="heroicIcon">
+                    <Size x="16" y="20" />
+                    <Anchors>
+                        <Anchor point="LEFT" x="2" y="-1" />
+                    </Anchors>
+                    <TexCoords left="0.0" right="0.5" top="0"
+                        bottom="0.625" />
+                </Texture>
+                <FontString name="$parentInstanceLevel"
+                    inherits="GameFontNormal" justifyH="RIGHT"
+                    parentKey="level">
+                    <Anchors>
+                        <Anchor point="RIGHT" x="0" y="0" />
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentInstanceName"
+                    inherits="GameFontNormal" justifyH="LEFT"
+                    parentKey="instanceName">
+                    <Size x="0" y="16" />
+                    <Anchors>
+                        <Anchor point="LEFT" x="40" y="0" />
+                        <Anchor point="RIGHT"
+                            relativeTo="$parentInstanceLevel"
+                            relativePoint="LEFT" x="-10" y="0" />
+                    </Anchors>
+                </FontString>
+                <Texture name="$parentLockedIndicator"
+                    file="Interface/LFGFrame/UI-LFG-ICON-LOCK"
+                    parentKey="lockedIndicator">
+                    <Size x="12" y="14" />
+                    <Anchors>
+                        <Anchor point="LEFT" x="25" y="0" />
+                    </Anchors>
+                    <TexCoords left="0" right="0.71875"
+                        top="0" bottom="0.875" />
+                </Texture>
+            </Layer>
+        </Layers>
+        <Frames>
+            <CheckButton name="$parentEnableButton"
+                parentKey="enableButton">
+                <Size x="20" y="20" />
+                <Anchors>
+                    <Anchor point="LEFT" x="21" y="0" />
+                </Anchors>
+                <NormalTexture
+                    file="Interface\Buttons\UI-CheckBox-Up" />
+                <PushedTexture
+                    file="Interface\Buttons\UI-CheckBox-Down" />
+                <HighlightTexture
+                    file="Interface\Buttons\UI-CheckBox-Highlight"
+                    alphaMode="ADD" />
+                <CheckedTexture
+                    file="Interface\Buttons\UI-CheckBox-Check" />
+                <DisabledCheckedTexture
+                    file="Interface\Buttons\UI-CheckBox-Check-Disabled" />
+            </CheckButton>
+            <Button name="$parentExpandOrCollapseButton"
+                parentKey="expandOrCollapseButton">
+                <Size x="13" y="13" />
+                <Anchors>
+                    <Anchor point="LEFT" x="3" y="0" />
+                </Anchors>
+                <HitRectInsets>
+                    <AbsInset left="1" right="-4" top="-2"
+                        bottom="-2" />
+                </HitRectInsets>
+                <NormalTexture
+                    file="Interface\Buttons\UI-MinusButton-UP">
+                    <Size x="16" y="16" />
+                    <Anchors>
+                        <Anchor point="LEFT" x="3" y="0" />
+                    </Anchors>
+                </NormalTexture>
+                <HighlightTexture
+                    name="$parentHighlight"
+                    file="Interface\Buttons\UI-PlusButton-Hilight"
+                    alphaMode="ADD">
+                    <Size x="16" y="16" />
+                    <Anchors>
+                        <Anchor point="LEFT" x="3" y="0" />
+                    </Anchors>
+                </HighlightTexture>
+            </Button>
+        </Frames>
+    </Frame>
+</Ui>

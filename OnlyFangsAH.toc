@@ -1,0 +1,86 @@
+## Interface: 11505
+## Version: 1.1.6
+## Title: OnlyFangs AH
+## Notes: Guild Auction House for |cFFFF0000OnlyFangs|r
+## Author: Athene
+## SavedVariables: AuctionHouseDBSaved, AHConfigSaved, LiveDeathClips, PlayerPrefsSaved, DeathClipReviewsSaved
+
+dependencies.xml
+GameEventHandler.lua
+MagicLinks.lua
+Utils.lua
+ChangeLog.lua
+UI/CustomFrame.lua
+UI/CustomTabGroup.lua
+UI/CustomIcon.lua
+UI/MinimalFrame.lua
+UI/MultiLineEditBoxCustom.lua
+UI/MinimapIcon.lua
+UI/Widgets/PriceWidget.lua
+UI/Widgets/ItemWidget.lua
+UI/Widgets/StarRatingWidget.lua
+UI/Widgets/ScrollList.lua
+UI/Widgets/RoleWidget.lua
+ItemDB/ItemsVanilla.lua
+ItemDB/ItemDB.lua
+ItemDB/Enchants.lua
+ItemDB/SpecialItems.lua
+StreamerDB/StreamerDB.lua
+GuildRegister.lua
+Chat/ChatUtils.lua
+# Debug/DebugCommands.lua
+Config.lua
+OFCommandHandler.lua
+PlayerPrefs.lua
+VersionCheck.lua
+AuctionHouse/AuctionHouseUtils.lua
+AuctionHouse/AuctionHouseDB.lua
+AuctionHouse/AuctionHouseAPI.lua
+AuctionHouse/LfgAPI.lua
+AuctionHouse.lua
+# Debug/Tabs/AlertsTab.lua
+# Debug/Tabs/MainTab.lua
+# Debug/Tabs/RatingsTab.lua
+# Debug/Tabs/TradesTab.lua
+# Debug/Tabs/LfgTab.lua
+# Debug/Tabs/BlacklistTab.lua
+# Debug/Tabs/DeathClipsTab.lua
+# Debug/AuctionHouseDebugUI.lua
+AuctionHouse/AuctionAlertWidget.lua
+AuctionHouse/TradeAPI.lua
+AuctionHouse/BlacklistAPI.lua
+AuctionHouse/ItemTooltipHook.lua
+UI/Mailbox/Mailbox.lua
+
+UI/AuctionHouse/AuctionData.lua
+UI/AuctionHouse/ReviewUI.lua
+
+DeathClips/DeathClipReviews.lua
+DeathClips/DeathClipUtils.lua
+DeathClips/HardcodedDeathClips.lua
+DeathClips/LiveDeathClips.lua
+LFG/LFGUtils.lua
+UI/AuctionHouse/DeathClipReviewsPrompt.lua
+UI/AuctionHouse/DeathClipRatePrompt.lua
+LFG/Dungeons.lua
+UI/AuctionHouse/DeathClipsUI.lua
+UI/AuctionHouse/DeathClipsUITemplates.xml
+UI/LFG/DungeonScrollList.lua
+UI/AuctionHouse/LfgUI.lua
+UI/AuctionHouse/LfgUITemplates.xml
+UI/AuctionHouse/LfgDungeon.xml
+UI/AuctionHouse/SettingsUI.lua
+UI/AuctionHouse/SettingsUITemplates.xml
+UI/AuctionHouse/AtheneUI.lua
+UI/AuctionHouse/AtheneUITemplates.xml
+
+UI/AuctionHouse/AuctionUI.lua
+UI/AuctionHouse/AuctionUITemplates.xml
+UI/AuctionHouse/AuctionUI.xml
+UI/AuctionHouse/AuctionBuyConfirmPrompt.lua
+UI/AuctionHouse/AuctionWishlistConfirmPrompt.lua
+UI/AuctionHouse/AuctionSelectEnchantPrompt.lua
+UI/AuctionHouse/Localization.lua
+UI/AuctionHouse/ReviewPopup.lua
+
+# Tests/TestAuctionHouse.lua

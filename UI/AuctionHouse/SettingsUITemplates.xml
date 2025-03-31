@@ -1,0 +1,429 @@
+<Ui xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\Blizzard_SharedXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
+    <Frame name="OFSettings_Template" virtual="true">
+        <Size x="758" y="447" />
+        <Anchors>
+            <Anchor point="TOPLEFT" />
+        </Anchors>
+
+        <!-- title -->
+        <Layers>
+            <Layer level="BACKGROUND">
+                <FontString name="AHSettingsTitle" inherits="GameFontNormal" text="Settings">
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset>
+                                <AbsDimension x="55" y="-18" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <!-- Orders header -->
+                <FontString name="AHSettingsOrdersHeader" inherits="GameFontHighlight" text="Orders">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="23" y="-78" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <!-- Reviews header -->
+                <FontString name="AHSettingsReviewsHeader" inherits="GameFontHighlight" text="Reviews">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeTo="AHSettingsOrdersHeader" relativePoint="BOTTOMLEFT">
+                            <Offset>
+                                <AbsDimension x="0" y="-60" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <Frames>
+            <!-- left navbar -->
+
+            <Button name="AHSettings1" inherits="OFSettingsSidebarButtonTemplate" id="1">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="23" y="-98" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="AHSettings2" inherits="OFSettingsSidebarButtonTemplate" id="2">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="AHSettings1" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+
+            <Button name="AHSettings3" inherits="OFSettingsSidebarButtonTemplate" id="3">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="AHSettings2" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-33" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="AHSettings4" inherits="OFSettingsSidebarButtonTemplate" id="3">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="AHSettings3" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="0" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+
+
+            <!-- scroll with rows -->
+            <ScrollFrame name="OFSettingsScroll" inherits="FauxScrollFrameTemplate">
+                <Size x="575" y="339" />
+                <Anchors>
+                    <Anchor x="40" y="-72" point="TOPRIGHT" />
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                            <Size x="31" y="256" />
+                            <Anchors>
+                                <Anchor x="-2" y="5" point="TOPLEFT" relativePoint="TOPRIGHT" />
+                            </Anchors>
+                            <TexCoords left="0" right="0.484375" top="0" bottom="1" />
+                        </Texture>
+                        <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                            <Size x="31" y="106" />
+                            <Anchors>
+                                <Anchor x="-2" y="-2" point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" />
+                            </Anchors>
+                            <TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnVerticalScroll>
+                        FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameSettings_Update);
+                    </OnVerticalScroll>
+                </Scripts>
+            </ScrollFrame>
+
+            <!-- 1 'button' per row in the scroll -->
+            <Button name="OFSettingsButton1" inherits="OFSettingsButtonTemplate" id="1">
+                <Anchors>
+                    <Anchor x="192" y="-76" point="TOPLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton2" inherits="OFSettingsButtonTemplate" id="2">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton1" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton3" inherits="OFSettingsButtonTemplate" id="3">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton2" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton4" inherits="OFSettingsButtonTemplate" id="4">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton3" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton5" inherits="OFSettingsButtonTemplate" id="5">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton4" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton6" inherits="OFSettingsButtonTemplate" id="6">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton5" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton7" inherits="OFSettingsButtonTemplate" id="7">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton6" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton8" inherits="OFSettingsButtonTemplate" id="8">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton7" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFSettingsButton9" inherits="OFSettingsButtonTemplate" id="9">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFSettingsButton8" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+
+
+            <!-- bottom-right 'remove' / 'whisper' button -->
+            <Button name="OFSettingsBottomButton1" inherits="UIPanelButtonTemplate" text="Remove">
+                <Size>
+                    <AbsDimension x="90" y="22" />
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="66" y="14" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BORDER">
+                        <Texture file="Interface\FrameGeneral\UI-Frame">
+                            <Size x="13" y="25" />
+                            <Anchors>
+                                <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+                            </Anchors>
+                            <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick function="OFSettingsBottomButton1_OnClick" />
+                </Scripts>
+            </Button>
+
+            <!-- bottom-right 'blackllist player' button -->
+            <Button name="OFSettingsBottomButton2" inherits="UIPanelButtonTemplate" text="Blacklist player">
+                <Size>
+                    <AbsDimension x="135" y="22" />
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="OFSettingsBottomButton1" relativePoint="LEFT" />
+                </Anchors>
+                <Layers>
+                    <Layer level="BORDER">
+                        <Texture file="Interface\FrameGeneral\UI-Frame">
+                            <Size x="13" y="25" />
+                            <Anchors>
+                                <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+                            </Anchors>
+                            <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick function="OFSettingsBottomButton2_OnClick"/>
+                </Scripts>
+            </Button>
+        </Frames>
+        <Scripts>
+            <OnLoad function="OFAuctionFrameSettings_OnLoad">
+            </OnLoad>
+            <OnShow function="OFAuctionFrameSettings_Update">
+            </OnShow>
+        </Scripts>
+    </Frame>
+
+
+
+	<!-- OFSettingsButtonTemplate is a single row -->
+	<Button name="OFSettingsButtonTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="603" y="37" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+                <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="34" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.078125" top="0" bottom="1" />
+				</Texture>
+				<Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+				</Texture>
+				<Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+				</Texture>
+
+
+				<!-- row contents -->
+				<FontString parentKey="name" name="$parentName" inherits="GameFontNormalSmall" text="StreamerWithLongNameHere" justifyH="LEFT">
+					<Size>
+						<AbsDimension x="200" y="28" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="45" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button parentKey="item">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+                    <OnClick function="OFSettingsRow_OnClick" />
+					<OnEnter>
+						self:GetParent():LockHighlight();
+					</OnEnter>
+					<OnLeave>
+						OFSettings_CheckUnlockHighlight(self, "list", FauxScrollFrame_GetOffset(OFSettingsScroll));
+					</OnLeave>
+				</Scripts>
+				<NormalTexture parentKey="normalTexture" file="Interface\Buttons\UI-Quickslot2">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<NormalTexture parentKey="raceTexture" file="Interface\Icons\Achievement_Character_Dwarf_Male" alphaMode="BLEND">
+					<Size>
+						<AbsDimension x="32" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<!-- <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" /> -->
+			</Button>
+		</Frames>
+		<Scripts>
+            <OnClick function="OFSettingsRow_OnClick" />
+            <OnLoad>
+                -- Store reference to highlight texture
+                self.highlightTexture = _G[self:GetName().."Highlight"]
+                OFSettingsRow_OnLoad(self)
+            </OnLoad>
+		</Scripts>
+		<HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD" hidden="true">
+			<Size>
+				<AbsDimension x="570" y="32" />
+			</Size>
+			<Anchors>
+				<Anchor point="TOPLEFT">
+					<Offset>
+						<AbsDimension x="33" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<TexCoords left="0" right="1" top="0" bottom="0.578125" />
+		</HighlightTexture>
+	</Button>
+
+	<Button name="OFSettingsSidebarButtonTemplate" parentArray="OFFilterButtons" virtual="true">
+		<Size>
+			<AbsDimension x="155" y="20" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentLines" file="Interface\AuctionFrame\UI-AuctionFrame-FilterLines">
+					<Size>
+						<AbsDimension x="7" y="20" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="13" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.4375" top="0" bottom="0.625" />
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				self:SetPushedTextOffset(0, 0);
+			</OnLoad>
+			<OnClick>
+				OFAuctionFrameFilter_OnClick(self, button, down);
+                OFAuctionFrameBrowse_Search()
+			</OnClick>
+			<OnMouseDown>
+				self.Text:AdjustPointsOffset(1, -1);
+			</OnMouseDown>
+			<OnMouseUp>
+				self.Text:AdjustPointsOffset(-1, 1);
+			</OnMouseUp>
+		</Scripts>
+		<NormalTexture name="$parentNormalTexture" file="Interface\OFAuctionFrame\UI-OFAuctionFrame-FilterBg">
+			<TexCoords left="0" right="0.53125" top="0" bottom="0.625" />
+		</NormalTexture>
+		<HighlightTexture file="Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight" alphaMode="ADD" />
+		<ButtonText name="$parentNormalText" parentKey="Text">
+			<Size>
+				<AbsDimension x="145" y="8" />
+			</Size>
+			<Anchors>
+				<Anchor point="LEFT">
+					<Offset>
+						<AbsDimension x="4" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</ButtonText>
+		<NormalFont style="GameFontNormalSmallLeft" />
+		<HighlightFont style="GameFontHighlightSmallLeft" />
+	</Button>
+</Ui>

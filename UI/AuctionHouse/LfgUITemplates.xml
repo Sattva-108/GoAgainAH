@@ -1,0 +1,693 @@
+<Ui xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\Blizzard_SharedXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
+    <Frame name="OFLFG_FrameTemplate" virtual="true">
+        <Size x="758" y="447" />
+        <Anchors>
+            <Anchor point="TOPLEFT" />
+        </Anchors>
+        <Frames>
+
+            <!-- column headers -->
+            <Button name="OFLFGStreamerSort" inherits="OFAuctionSortButtonTemplate" text="Streamer">
+                <Size x="188" y="19" />
+                <Anchors>
+                    <Anchor x="216" y="-51" point="TOPLEFT" />
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFAuctionFrame_OnClickSortColumn("lfg", "name")
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="OFLFGLvlSort" inherits="OFAuctionSortButtonTemplate" text="Lvl">
+                <Size x="28" y="19" />
+                <Anchors>
+                    <Anchor x="0" point="LEFT" relativeTo="OFLFGStreamerSort" relativePoint="RIGHT" />
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFAuctionFrame_OnClickSortColumn("lfg", "level")
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="OFLFGColabSort" inherits="OFAuctionSortButtonTemplate" text="Colab">
+                <Size x="145" y="19" />
+                <Anchors>
+                    <Anchor x="0" point="LEFT" relativeTo="OFLFGLvlSort" relativePoint="RIGHT" />
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFAuctionFrame_OnClickSortColumn("lfg", "colab")
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="OFLFGAvgViewersSort" inherits="OFAuctionSortButtonTemplate" text="Viewers">
+                <Size x="56" y="19" />
+                <Anchors>
+                    <Anchor x="0" point="LEFT" relativeTo="OFLFGColabSort" relativePoint="RIGHT" />
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFAuctionFrame_OnClickSortColumn("lfg", "viewers")
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="OFLFGLivestreamSort" inherits="OFAuctionSortButtonTemplate" text="Livestream">
+                <Size x="84" y="19" />
+                <Anchors>
+                    <Anchor x="0" point="LEFT" relativeTo="OFLFGAvgViewersSort" relativePoint="RIGHT" />
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFAuctionFrame_OnClickSortColumn("lfg", "livestream");
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="OFLFGRaidSort" inherits="OFAuctionSortButtonTemplate" text="Raid">
+                <Size x="84" y="19" />
+                <Anchors>
+                    <Anchor x="0" point="LEFT" relativeTo="OFLFGLivestreamSort" relativePoint="RIGHT" />
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFAuctionFrame_OnClickSortColumn("lfg", "raid");
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- scroll with rows -->
+            <ScrollFrame name="OFLFGScroll" inherits="FauxScrollFrameTemplate">
+                <Size x="575" y="339" />
+                <Anchors>
+                    <Anchor x="40" y="-72" point="TOPRIGHT" />
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                            <Size x="31" y="256" />
+                            <Anchors>
+                                <Anchor x="-2" y="5" point="TOPLEFT" relativePoint="TOPRIGHT" />
+                            </Anchors>
+                            <TexCoords left="0" right="0.484375" top="0" bottom="1" />
+                        </Texture>
+                        <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+                            <Size x="31" y="106" />
+                            <Anchors>
+                                <Anchor x="-2" y="-2" point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" />
+                            </Anchors>
+                            <TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnVerticalScroll>
+                        FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFLFGScroll_Update);
+                    </OnVerticalScroll>
+                </Scripts>
+            </ScrollFrame>
+
+            <!-- 1 'button' per row in the scroll -->
+            <Button name="OFLFGButton1" inherits="OFLFGButtonTemplate" id="1">
+                <Anchors>
+                    <Anchor x="219" y="-76" point="TOPLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton2" inherits="OFLFGButtonTemplate" id="2">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton1" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton3" inherits="OFLFGButtonTemplate" id="3">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton2" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton4" inherits="OFLFGButtonTemplate" id="4">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton3" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton5" inherits="OFLFGButtonTemplate" id="5">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton4" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton6" inherits="OFLFGButtonTemplate" id="6">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton5" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton7" inherits="OFLFGButtonTemplate" id="7">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton6" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton8" inherits="OFLFGButtonTemplate" id="8">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton7" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+            <Button name="OFLFGButton9" inherits="OFLFGButtonTemplate" id="9">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFGButton8" relativePoint="BOTTOMLEFT" />
+                </Anchors>
+            </Button>
+
+
+            <!-- side panel buttons -->
+
+            <!-- Enable OnlyFangs Colab checkbox -->
+            <CheckButton name="OFLFG_CheckButton" inherits="UICheckButtonTemplate">
+                <Size x="24" y="24" />
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="25" y="-80" />
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        OFLFG_CheckButtonText:SetFontObject(GameFontNormal)
+                        OFLFG_CheckButtonText:SetText("Enable OnlyFangs Collab")
+                    </OnLoad>
+                </Scripts>
+            </CheckButton>
+
+            <!-- Additional Options -->
+            <CheckButton name="OFLFG_RPTogetherCheck" inherits="UICheckButtonTemplate">
+                <Size x="24" y="24" />
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="0" y="-55" />
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        OFLFG_RPTogetherCheckText:SetFontObject(GameFontHighlightSmall)
+                        OFLFG_RPTogetherCheckText:SetText("RP Together")
+                    </OnLoad>
+                </Scripts>
+            </CheckButton>
+
+            <!-- Dungeon Checkbox -->
+            <CheckButton name="OFLFG_DungeonCheck" inherits="UICheckButtonTemplate">
+                <Size x="24" y="24" />
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_RPTogetherCheck" relativePoint="BOTTOMLEFT" x="0" y="0" />
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        OFLFG_DungeonCheckText:SetFontObject(GameFontHighlightSmall)
+                        OFLFG_DungeonCheckText:SetText("Dungeon")
+                    </OnLoad>
+                    <OnClick function="OFLFG_DungeonCheck_OnClick"/>
+                </Scripts>
+            </CheckButton>
+
+            <!-- Role Selection -->
+            <Button name="OFLFG_DungeonTypeButton" inherits="UIPanelButtonTemplate" text="Select Dungeons">
+                <Size x="130" y="22"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonCheck" relativePoint="BOTTOMLEFT" x="10" y="-4"/>
+                </Anchors>
+                <Scripts>
+                    <OnClick function="OFLFG_DungeonTypeButton_OnClick"/>
+                </Scripts>
+            </Button>
+
+            <Frame name="OFLFG_RoleSelection" inherits="LfgDungeonRoleSelectionTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonTypeButton" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                </Anchors>
+            </Frame>
+
+            <!-- Viewer Requirements -->
+            <EditBox name="OFLFG_MinViewers" letters="6" numeric="true" autoFocus="false" inherits="InputBoxTemplate">
+                <Size x="50" y="18"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_RoleSelection" relativePoint="BOTTOMLEFT" x="0" y="-30" />
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="OFLFG_MinViewersText" inherits="GameFontHighlightSmall" text="Min Viewers">
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" relativeTo="OFLFG_MinViewers" relativePoint="TOPLEFT" x="-4" y="2"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </EditBox>
+
+            <EditBox name="OFLFG_MaxViewers" letters="6" numeric="true" autoFocus="false" inherits="InputBoxTemplate">
+                <Size x="50" y="18"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="OFLFG_MinViewers" relativePoint="RIGHT" x="44" y="0"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="OFLFG_MaxViewersText" inherits="GameFontHighlightSmall" text="Max Viewers">
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" relativeTo="OFLFG_MaxViewers" relativePoint="TOPLEFT" x="-4" y="2"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </EditBox>
+
+            <!-- No Viewers Checkboxes -->
+            <CheckButton name="OFLFG_NoMinViewersCheck" inherits="UICheckButtonTemplate">
+                <Size x="24" y="24" />
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_MinViewers" relativePoint="BOTTOMLEFT" x="-8" y="0" />
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        OFLFG_NoMinViewersCheckText:SetFontObject(GameFontHighlightSmall)
+                        OFLFG_NoMinViewersCheckText:SetText("No Min")
+                    </OnLoad>
+                    <OnClick>
+                        local minViewers = _G["OFLFG_MinViewers"]
+                        local minViewersLabel = _G["OFLFG_MinViewersText"]
+                        minViewers:SetEnabled(not self:GetChecked())
+                        LFG_UpdateViewerColor(minViewersLabel, not self:GetChecked())
+                        if self:GetChecked() then
+                            minViewers:SetText("")
+                        end
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+
+            <Button name="OFLFG_ApplyButton" inherits="UIPanelButtonTemplate" text="Apply Viewers Filter">
+                <Size>
+                    <AbsDimension x="191" y="20" />
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="18" y="39" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick function="OFLFG_ApplyButton_OnClick" />
+                </Scripts>
+            </Button>
+
+            <CheckButton name="OFLFG_NoMaxViewersCheck" inherits="UICheckButtonTemplate">
+                <Size x="24" y="24" />
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_MaxViewers" relativePoint="BOTTOMLEFT" x="-8" y="0" />
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        OFLFG_NoMaxViewersCheckText:SetFontObject(GameFontHighlightSmall)
+                        OFLFG_NoMaxViewersCheckText:SetText("No Max")
+                    </OnLoad>
+                    <OnClick>
+                        local maxViewers = _G["OFLFG_MaxViewers"]
+                        local maxViewersLabel = _G["OFLFG_MaxViewersText"]
+                        maxViewers:SetEnabled(not self:GetChecked())
+                        LFG_UpdateViewerColor(maxViewersLabel, not self:GetChecked())
+                        if self:GetChecked() then
+                            maxViewers:SetText("")
+                        end
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+
+            <!-- Block Users Button -->
+            <Button name="OFLFG_BlockUsersButton" inherits="UIPanelButtonTemplate" text="Block Users">
+                <Size x="100" y="18" />
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_NoMinViewersCheck" relativePoint="BOTTOMLEFT" x="0" y="-5" />
+                </Anchors>
+            </Button>
+
+            <!-- Bottom right buttons -->
+            <Button name="OFLFGInviteButton" inherits="UIPanelButtonTemplate" text="INVITE">
+                <Size>
+                    <AbsDimension x="80" y="22" />
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="65" y="14" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BORDER">
+                        <Texture file="Interface\FrameGeneral\UI-Frame">
+                            <Size x="13" y="25" />
+                            <Anchors>
+                                <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+                            </Anchors>
+                            <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick function="OFLFGInviteButton_OnClick" />
+                </Scripts>
+            </Button>
+
+            <Button name="OFLFGWhisperButton" inherits="UIPanelButtonTemplate" text="WHISPER">
+                <Size>
+                    <AbsDimension x="80" y="22" />
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="OFLFGInviteButton" relativePoint="LEFT" x="0"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="BORDER">
+                        <Texture file="Interface\FrameGeneral\UI-Frame">
+                            <Size x="13" y="25" />
+                            <Anchors>
+                                <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+                            </Anchors>
+                            <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick function="OFLFGWhisperButton_OnClick"/>
+                </Scripts>
+            </Button>
+        </Frames>
+
+        <Layers>
+            <Layer level="BACKGROUND">
+                <FontString name="OFLFGTitle" inherits="GameFontNormal" text="Stream Together">
+                    <Anchors>
+                        <Anchor x="52"  y="-18" point="TOP" />
+                    </Anchors>
+                </FontString>
+            </Layer>
+            <Layer>
+                <FontString name="OFLFGTabText" inherits="GameFontHighlightSmall" text="Settings">
+                    <Anchors>
+                        <Anchor x="121" y="-55" point="TOP" relativePoint="TOPLEFT" />
+                    </Anchors>
+                </FontString>
+            </Layer>
+            <Layer>
+                <FontString name="OFLFG_ColabDescription" inherits="GameFontHighlightSmall" wordwrap="true" justifyH="LEFT" text="Set your requirements for who can collab with you through Twitch's Stream Together feature">
+                    <Size x="170" y="0"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="6" y="-5" />
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnLoad function="OFAuctionFrameLFG_OnLoad" />
+            <OnShow function="OFAuctionFrameLFG_OnShow" />
+            <OnEvent function="OFAuctionFrameLFG_OnEvent" />
+            <OnHide function="OFAuctionFrameLFG_OnHide" />
+        </Scripts>
+    </Frame>
+
+	<!-- OFLFGButtonTemplate is a single row in the 'LFG' tab -->
+	<Button name="OFLFGButtonTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="576" y="37" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+                <Texture parentKey="disabledBg" hidden="true">
+                    <Color r="1" g="1" b="1" a="0.07"/>
+                    <Size>
+                        <AbsDimension x="540" y="32"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="34" y="1" />
+							</Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+                
+                <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="34" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.078125" top="0" bottom="1" />
+				</Texture>
+				<Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+				</Texture>
+				<Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+				</Texture>
+
+
+				<!-- row contents -->
+                <Texture parentKey="onlineIcon">
+                    <Size>
+                        <AbsDimension x="9" y="9"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT">
+                            <Offset>
+                                <AbsDimension x="40" y="4" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+				<FontString parentKey="name" name="$parentName" inherits="GameFontNormalSmall" text="StreamerWithLongNameHere" justifyH="LEFT">
+					<Size>
+						<AbsDimension x="112" y="28" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="53" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+
+				<!-- whisper button -->
+
+                <FontString parentKey="level" text="60" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="16" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.name" relativePoint="RIGHT" x="30" y="0" />
+                    </Anchors>
+                </FontString>
+				<FontString parentKey="colab" text="Ragefire Chasm" inherits="GameFontHighlightSmall" justifyH="LEFT">
+					<Size>
+						<AbsDimension x="135" y="32" />
+					</Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.level" relativePoint="RIGHT" x="4" y="0" />
+                    </Anchors>
+				</FontString>
+				<FontString parentKey="viewers" text="15 645" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+					<Size>
+						<AbsDimension x="35" y="32" />
+					</Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.colab" relativePoint="RIGHT" x="24" y="0" />
+                    </Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame parentKey="roleContainer" inherits="LfgDungeonRoleSelectionMiniTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeKey="$parent.colab" relativePoint="RIGHT" x="45" y="0" />
+                </Anchors>
+			</Frame>
+
+			<Frame parentKey="livestreamContainer">
+				<Size>
+					<AbsDimension x="74" y="32" />
+				</Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.viewers" relativePoint="RIGHT" x="12" y="0" />
+                </Anchors>
+				<Frames>
+					<EditBox parentKey="editBox" inherits="InputBoxTemplate" autoFocus="false">
+						<Size>
+							<AbsDimension x="74" y="20" />
+						</Size>
+						<Anchors>
+							<Anchor point="CENTER" />
+						</Anchors>
+						<FontString inherits="GameFontHighlightSmall" />
+					</EditBox>
+				</Frames>
+			</Frame>
+			<Frame parentKey="raidContainer">
+				<Size>
+					<AbsDimension x="74" y="32" />
+				</Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.livestreamContainer" relativePoint="RIGHT" x="5" y="0" />
+                </Anchors>
+				<Frames>
+					<EditBox parentKey="editBox" inherits="InputBoxTemplate" autoFocus="false">
+						<Size>
+							<AbsDimension x="74" y="20" />
+						</Size>
+						<Anchors>
+							<Anchor point="CENTER" />
+						</Anchors>
+						<FontString inherits="GameFontHighlightSmall" />
+					</EditBox>
+				</Frames>
+			</Frame>
+
+			<Button parentKey="item">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEnter>
+						self:GetParent():LockHighlight();
+						OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+					</OnEnter>
+					<OnLeave>
+						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "owner", GetEffectiveAuctionsScrollFrameOffset());
+						OFLFGSquare_OnLeave();
+					</OnLeave>
+					<OnUpdate>
+						if ( GameTooltip:IsOwned(self) ) then
+							OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+						end
+					</OnUpdate>
+				</Scripts>
+				<NormalTexture parentKey="normalTexture" file="Interface\Buttons\UI-Quickslot2">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<NormalTexture parentKey="raceTexture" alphaMode="BLEND">
+					<Size>
+						<AbsDimension x="32" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+			</Button>
+			
+			<!-- Whisper button -->
+			<Button parentKey="whisperButton" text="" inherits="UIPanelButtonTemplate">
+				<Size>
+					<AbsDimension x="24" y="24" />
+				</Size>
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="0" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<Texture parentKey="icon">
+							<Size>
+								<AbsDimension x="10" y="10"/>
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+                <Scripts>
+					<OnEnter>
+						self:GetParent():LockHighlight();
+						OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+					</OnEnter>
+					<OnLeave>
+						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "owner", GetEffectiveAuctionsScrollFrameOffset());
+						OFLFGSquare_OnLeave();
+					</OnLeave>
+
+                    <OnLoad>
+                        self.icon:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icons\\Icn_Chat.png")
+                    </OnLoad>
+                </Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+            <OnLoad>
+                OFLFG_Row_OnLoad(self)
+                -- Store reference to highlight texture
+                self.highlightTexture = _G[self:GetName().."Highlight"]
+            </OnLoad>
+            <OnClick function="OFLFG_Row_OnClick"/>
+		</Scripts>
+		<HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD" hidden="true">
+			<Size>
+				<AbsDimension x="540" y="32" />
+			</Size>
+			<Anchors>
+				<Anchor point="TOPLEFT">
+					<Offset>
+						<AbsDimension x="33" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<TexCoords left="0" right="1" top="0" bottom="0.578125" />
+		</HighlightTexture>
+	</Button>
+</Ui>

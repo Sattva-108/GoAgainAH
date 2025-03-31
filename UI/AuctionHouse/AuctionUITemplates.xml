@@ -1,0 +1,1279 @@
+<Ui xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\Blizzard_SharedXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
+	<CheckButton name="OFAuctionRadioButtonTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="16" y="16" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<FontString name="$parentText" inherits="GameFontNormalSmall">
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="5" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<NormalTexture file="Interface\Buttons\UI-RadioButton">
+			<TexCoords left="0" right="0.25" top="0" bottom="1" />
+		</NormalTexture>
+		<HighlightTexture file="Interface\Buttons\UI-RadioButton" alphaMode="ADD">
+			<TexCoords left="0.5" right="0.75" top="0" bottom="1" />
+		</HighlightTexture>
+		<CheckedTexture file="Interface\Buttons\UI-RadioButton">
+			<TexCoords left="0.25" right="0.5" top="0" bottom="1" />
+		</CheckedTexture>
+	</CheckButton>
+	<Button name="OFAuctionClassButtonTemplate" parentArray="OFFilterButtons" virtual="true">
+		<Size>
+			<AbsDimension x="136" y="20" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentLines" file="Interface\AuctionFrame\UI-AuctionFrame-FilterLines">
+					<Size>
+						<AbsDimension x="7" y="20" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="13" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.4375" top="0" bottom="0.625" />
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				self:SetPushedTextOffset(0, 0);
+			</OnLoad>
+			<OnClick>
+				OFAuctionFrameFilter_OnClick(self, button, down);
+                OFAuctionFrameBrowse_Search()
+			</OnClick>
+			<OnMouseDown>
+				self.Text:AdjustPointsOffset(1, -1);
+			</OnMouseDown>
+			<OnMouseUp>
+				self.Text:AdjustPointsOffset(-1, 1);
+			</OnMouseUp>
+		</Scripts>
+		<NormalTexture name="$parentNormalTexture" file="Interface\OFAuctionFrame\UI-OFAuctionFrame-FilterBg">
+			<TexCoords left="0" right="0.53125" top="0" bottom="0.625" />
+		</NormalTexture>
+		<HighlightTexture file="Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight" alphaMode="ADD" />
+		<ButtonText name="$parentNormalText" parentKey="Text">
+			<Size>
+				<AbsDimension x="125" y="8" />
+			</Size>
+			<Anchors>
+				<Anchor point="LEFT">
+					<Offset>
+						<AbsDimension x="4" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</ButtonText>
+		<NormalFont style="GameFontNormalSmallLeft" />
+		<HighlightFont style="GameFontHighlightSmallLeft" />
+	</Button>
+	<Button name="OFAuctionSortButtonTemplate" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentLeft" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+					<Size>
+						<AbsDimension x="5" y="19" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" />
+					</Anchors>
+					<TexCoords left="0" right="0.078125" top="0" bottom="0.59375" />
+				</Texture>
+				<Texture name="$parentRight" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+					<Size>
+						<AbsDimension x="4" y="19" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT" />
+					</Anchors>
+					<TexCoords left="0.90625" right="0.96875" top="0" bottom="0.59375" />
+				</Texture>
+				<Texture name="$parentMiddle" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+					<Size>
+						<AbsDimension x="10" y="19" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT" />
+						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT" />
+					</Anchors>
+					<TexCoords left="0.078125" right="0.90625" top="0" bottom="0.59375" />
+				</Texture>
+			</Layer>
+		</Layers>
+        <ButtonText name="$parentText">
+            <Anchors>
+                <Anchor point="LEFT">
+                    <Offset>
+                        <AbsDimension x="8" y="0" />
+                    </Offset>
+                </Anchor>
+            </Anchors>
+        </ButtonText>
+        <NormalFont style="GameFontHighlightSmall" />
+		<NormalTexture name="$parentArrow" parentKey="Arrow" file="Interface\Buttons\UI-SortArrow">
+			<Size>
+				<AbsDimension x="9" y="8" />
+			</Size>
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parentText" relativePoint="RIGHT">
+					<Offset>
+						<AbsDimension x="3" y="-2" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<TexCoords left="0" right="0.5625" top="0" bottom="1" />
+		</NormalTexture>
+		<HighlightTexture file="Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight" alphaMode="ADD">
+			<Size>
+				<AbsDimension x="5" y="24" />
+			</Size>
+			<Anchors>
+				<Anchor point="LEFT">
+					<Offset>
+						<AbsDimension x="0" y="0" />
+					</Offset>
+				</Anchor>
+				<Anchor point="RIGHT">
+					<Offset>
+						<AbsDimension x="4" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</HighlightTexture>
+
+	</Button>
+	<Button name="OFBrowseButtonTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="597" y="37" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
+					<Size>
+						<AbsDimension x="110" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="43" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentLevel" inherits="GameFontHighlightSmall">
+					<Size>
+						<AbsDimension x="42" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="145" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="Twitch Raid" justifyH="RIGHT">
+                    <Size>
+                        <AbsDimension x="100" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="-3" y="3" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="34" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.078125" top="0" bottom="1" />
+				</Texture>
+				<Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+				</Texture>
+				<Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+				</Texture>
+			</Layer>
+            <Layer>
+                <Texture name="$parentDeathRollIcon">
+                    <Size>
+                        <AbsDimension x="12" y="12" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="-60" y="10" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+
+		</Layers>
+		<Frames>
+			<Button name="$parentItem">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="0" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BORDER">
+						<Texture name="$parentIconTexture" />
+						<FontString name="$parentCount" inherits="NumberFontNormal" hidden="true" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-5" y="2" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+						<FontString name="$parentStock" inherits="NumberFontNormalYellow" hidden="true" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="TOPLEFT">
+									<Offset>
+										<AbsDimension x="0" y="-2" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY" textureSubLevel="1">
+						<Texture parentKey="IconOverlay" hidden="true">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEnter>
+						self:GetParent():LockHighlight();
+						OFAuctionFrameItem_OnEnter(self, "list")
+					</OnEnter>
+					<OnLeave>
+						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "list")
+						OFAuctionFrameItem_OnLeave(self)
+					</OnLeave>
+					<OnClick>
+						if ( IsModifiedClick() ) then
+                            OFAuctionFrameItem_OnClickModified(self, "list", self:GetParent():GetID() + FauxScrollFrame_GetOffset(OFBrowseScrollFrame));
+						else
+							OFBrowseButton_OnClick(self:GetParent());
+						end
+					</OnClick>
+					<OnUpdate>
+						if ( GameTooltip:IsOwned(self) ) then
+							OFAuctionFrameItem_OnEnter(self, "list", self:GetParent():GetID() + FauxScrollFrame_GetOffset(OFBrowseScrollFrame));
+						end
+					</OnUpdate>
+				</Scripts>
+				<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
+				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+			</Button>
+            <Frame name="$parentAuctionType">
+                <Size>
+                    <AbsDimension x="50" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor x="181" point="TOPLEFT" />
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <FontString name="$parentText" parentKey="Text" inherits="GameFontHighlightSmall" setAllPoints="true" />
+                    </Layer>
+                </Layers>
+            </Frame>
+            <Frame name="$parentDeliveryType">
+                <Size>
+                    <AbsDimension x="63" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="232" y="0" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                            <Size>
+                                <AbsDimension x="73" y="32" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT" />
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentNoteIcon" hidden="true">
+                            <Size>
+                                <AbsDimension x="14" y="14" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="RIGHT" relativeTo="$parentText" relativePoint="LEFT">
+                                    <Offset>
+                                        <AbsDimension x="-1" y="0" />
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        self:SetMouseClickEnabled(false)
+                        self:SetMouseMotionEnabled(true)
+                        _G[self:GetName().."NoteIcon"]:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icn_Note02")
+                    </OnLoad>
+                    <OnEnter>
+                        self:GetParent():LockHighlight();
+                        GameTooltip:SetOwner(self);
+                        GameTooltip:SetText(self.tooltip, nil, nil, nil, 1, true)
+                    </OnEnter>
+                    <OnLeave>
+                        OFAuctionBrowseFrame_CheckUnlockHighlight(self, "list", FauxScrollFrame_GetOffset(OFBrowseScrollFrame));
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+			<Frame name="$parentHighBidder">
+				<Size x="135" y="32" />
+				<Anchors>
+					<Anchor x="311" point="TOPLEFT" />
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentName" parentKey="Name" inherits="GameFontHighlightSmall" setAllPoints="true" justifyH="LEFT" />
+					</Layer>
+				</Layers>
+			</Frame>
+            <Frame name="$parentRatingFrame">
+                <Size>
+                    <AbsDimension x="60" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentHighBidder" relativePoint="TOPRIGHT">
+                        <Offset x="2" y="0"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad function="OFRatingFrame_OnLoad"/>
+                </Scripts>
+            </Frame>
+            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="Request Item">
+                <Size x="98" y="28" />
+                <Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-8" y="3" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFRequestItemButton_OnClick(self)
+                    </OnClick>
+                </Scripts>
+            </Button>
+			<Frame name="$parentMoneyFrame" inherits="SmallMoneyFrameTemplate">
+				<Anchors>
+					<Anchor point="RIGHT">
+						<Offset>
+							<AbsDimension x="10" y="3" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						SmallMoneyFrame_OnLoad(self);
+						MoneyFrame_SetType(self, "AUCTION");
+						MoneyFrame_SetMaxDisplayWidth(self, 100);
+					</OnLoad>
+				</Scripts>
+			</Frame>
+            <Frame parentKey="PriceTooltipFrame">
+                <Size>
+                    <AbsDimension x="100" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset>
+                            <AbsDimension x="10" y="3" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad function="OFAuctionPriceTooltipFrame_OnLoad">
+
+                    </OnLoad>
+                    <OnEnter function="OFAuctionPriceTooltipFrame_OnEnter">
+
+                    </OnEnter>
+                    <OnLeave function="OFAuctionPriceTooltipFrame_OnLeave">
+
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+		</Frames>
+		<Scripts>
+			<OnClick>
+				if ( IsModifiedClick() ) then
+                    OFAuctionFrameItem_OnClickModified(self, "list", self:GetID() + FauxScrollFrame_GetOffset(OFBrowseScrollFrame), self:GetID());
+				else
+					OFBrowseButton_OnClick(self);
+				end
+			</OnClick>
+		</Scripts>
+		<HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD">
+			<Size>
+				<AbsDimension x="523" y="32" />
+			</Size>
+			<Anchors>
+				<Anchor point="TOPLEFT">
+					<Offset>
+						<AbsDimension x="33" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<TexCoords left="0" right="1" top="0" bottom="0.578125" />
+		</HighlightTexture>
+	</Button>
+    <Button name="OFBidButtonTemplate" virtual="true" hidden="true">
+        <Size>
+            <AbsDimension x="793" y="37" />
+        </Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="187" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="41" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentBidBuyer" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="150" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="274" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentBidStatus" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="95" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="575" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="Twitch Raid" justifyH="RIGHT">
+                    <Size>
+                        <AbsDimension x="100" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="-3" y="3" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                    <Size>
+                        <AbsDimension x="10" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT">
+                            <Offset>
+                                <AbsDimension x="34" y="2" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <TexCoords left="0" right="0.078125" top="0" bottom="1" />
+                </Texture>
+                <Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                    <Size>
+                        <AbsDimension x="10" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT">
+                            <Offset>
+                                <AbsDimension x="0" y="2" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+                </Texture>
+                <Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                    <Size>
+                        <AbsDimension x="10" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="0" y="0" />
+                            </Offset>
+                        </Anchor>
+                        <Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
+                            <Offset>
+                                <AbsDimension x="0" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+                </Texture>
+            </Layer>
+            <Layer>
+                <Texture name="$parentDeathRollIcon" >
+                    <Size>
+                        <AbsDimension x="12" y="12" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="-60" y="10" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+		<Frames>
+			<Button name="$parentItem">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="0" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BORDER">
+						<Texture name="$parentIconTexture" />
+						<FontString name="$parentCount" inherits="NumberFontNormal" hidden="true" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-5" y="2" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+						<FontString name="$parentStock" inherits="NumberFontNormalYellow" hidden="true" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="TOPLEFT">
+									<Offset>
+										<AbsDimension x="0" y="-2" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY" textureSubLevel="1">
+						<Texture parentKey="IconOverlay" hidden="true">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEnter>
+						self:GetParent():LockHighlight();
+						OFAuctionFrameItem_OnEnter(self, "bidder", self:GetParent():GetID() + FauxScrollFrame_GetOffset(OFBidScrollFrame));
+					</OnEnter>
+					<OnLeave>
+						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "bidder", FauxScrollFrame_GetOffset(OFBidScrollFrame));
+						OFAuctionFrameItem_OnLeave();
+					</OnLeave>
+					<OnClick>
+						if ( IsModifiedClick() ) then
+                            OFAuctionFrameItem_OnClickModified(self, "bidder", self:GetParent():GetID() + FauxScrollFrame_GetOffset(OFBidScrollFrame));
+						else
+							OFBidButton_OnClick(self:GetParent());
+						end
+					</OnClick>
+					<OnUpdate>
+						if ( GameTooltip:IsOwned(self) ) then
+							OFAuctionFrameItem_OnEnter(self, "bidder", self:GetParent():GetID() + FauxScrollFrame_GetOffset(OFBidScrollFrame));
+						end
+					</OnUpdate>
+				</Scripts>
+				<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
+				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+			</Button>
+            <Frame name="$parentAuctionType">
+                <Size>
+                    <AbsDimension x="95" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="213" y="0" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                            <Size>
+                                <AbsDimension x="95" y="32" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT" />
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+			<Frame name="$parentDeliveryType">
+				<Size>
+					<AbsDimension x="80" y="32" />
+				</Size>
+				<Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="$parentBidStatus" relativePoint="TOPLEFT" x="0" y="0"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
+							<Size>
+								<AbsDimension x="140" y="32" />
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" />
+							</Anchors>
+						</FontString>
+					</Layer>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentNoteIcon" hidden="true">
+                            <Size>
+                                <AbsDimension x="14" y="14" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="RIGHT" relativeTo="$parentText" relativePoint="LEFT">
+                                    <Offset>
+                                        <AbsDimension x="-1" y="0" />
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+				</Layers>
+				<Scripts>
+                    <OnLoad>
+                        self:SetMouseClickEnabled(false)
+                        self:SetMouseMotionEnabled(true)
+                        _G[self:GetName().."NoteIcon"]:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icn_Note02")
+                    </OnLoad>
+					<OnEnter>
+						self:GetParent():LockHighlight()
+						GameTooltip:SetOwner(self)
+                        GameTooltip:SetText(self.tooltip, nil, nil, nil, 1, true)
+					</OnEnter>
+					<OnLeave>
+						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "bidder", FauxScrollFrame_GetOffset(OFBidScrollFrame))
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Frame>
+            <Frame name="$parentRatingFrame">
+                <Size>
+                    <AbsDimension x="60" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativeTo="$parentDeliveryType" relativePoint="TOPLEFT">
+                        <Offset x="0" y="0"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad function="OFRatingFrame_OnLoad"/>
+                </Scripts>
+            </Frame>
+            <Frame name="$parentMoneyFrame" inherits="SmallMoneyFrameTemplate">
+				<Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0" />
+                        </Offset>
+                    </Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						SmallMoneyFrame_OnLoad(self);
+						MoneyFrame_SetType(self, "AUCTION");
+					</OnLoad>
+				</Scripts>
+			</Frame>
+            <Frame name="$parentTipMoneyFrame">
+                <!-- width is meaningless here, see anchors -->
+                <Size x="1" y="13"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="OFBidBidSort">
+                        <Offset x="4" y="0"/>
+                    </Anchor>
+                    <Anchor point="TOPRIGHT" relativeTo="$parentMoneyFrame" relativePoint="BOTTOMRIGHT">
+                        <Offset x="0" y="-1"/>
+                    </Anchor>
+                </Anchors>
+                <Frames>
+                    <Frame name="$parentMoney" inherits="SmallMoneyFrameTemplate">
+                        <Anchors>
+                            <Anchor point="RIGHT"/>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                SmallMoneyFrame_OnLoad(self);
+                                MoneyFrame_SetType(self, "AUCTION");
+                                SetMoneyFrameColor(self:GetName(), "yellow")
+                                MoneyFrame_SetMaxDisplayWidth(self, 110);
+                            </OnLoad>
+                        </Scripts>
+                    </Frame>
+                    <Frame name="$parentText">
+                        <!-- NOTE: this size is here to get the FontString to show up -->
+                        <Size x="1" y="1"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT"/>
+                            <Anchor point="BOTTOMRIGHT" relativeTo="$parentMoney" relativePoint="BOTTOMLEFT">
+                                <Offset x="-2" y="0"/>
+                            </Anchor>
+                        </Anchors>
+                        <Layers>
+                            <Layer level="BACKGROUND">
+                                <FontString parentKey="Text" inherits="GameFontNormalSmall" justifyH="RIGHT" setAllPoints="true" text="Tip"/>
+                            </Layer>
+                        </Layers>
+                    </Frame>
+                </Frames>
+            </Frame>
+            <Frame name="$parentStatusTooltipFrame">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentBidStatus" />
+                    <Anchor point="BOTTOM" relativeTo="$parentBidStatus" />
+                    <Anchor point="LEFT" relativeTo="$parentBidStatus" />
+                    <Anchor point="TOP" relativeTo="$parentBidStatus" />
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetMouseClickEnabled(false)
+                        self:SetMouseMotionEnabled(true)
+                    </OnLoad>
+                    <OnEnter>
+                        self:GetParent():LockHighlight()
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(self.tooltip, nil, nil, nil, 1, true)
+                    </OnEnter>
+                    <OnLeave>
+                        OFAuctionBrowseFrame_CheckUnlockHighlight(self, "bidder", FauxScrollFrame_GetOffset(OFBidScrollFrame))
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+		</Frames>
+		<Scripts>
+            <OnClick>
+                if ( IsModifiedClick() ) then
+                    OFAuctionFrameItem_OnClickModified(self, "bidder", self:GetParent():GetID() + FauxScrollFrame_GetOffset(OFBidScrollFrame));
+				else
+					OFBidButton_OnClick(self);
+				end
+			</OnClick>
+		</Scripts>
+		<HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD">
+			<Size>
+				<AbsDimension x="670" y="32" />
+			</Size>
+			<Anchors>
+				<Anchor point="TOPLEFT">
+					<Offset>
+						<AbsDimension x="33" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<TexCoords left="0" right="1" top="0" bottom="0.578125" />
+		</HighlightTexture>
+	</Button>
+	<Button name="OFAuctionsButtonTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="576" y="37" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
+					<Size>
+						<AbsDimension x="167" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="43" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+                <FontString name="$parentLevel" inherits="GameFontHighlightSmall">
+                    <Size>
+                        <AbsDimension x="52" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="202" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="Twitch Raid" justifyH="RIGHT">
+                    <Size>
+                        <AbsDimension x="100" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="-3" y="3" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="34" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.078125" top="0" bottom="1" />
+				</Texture>
+				<Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="2" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+				</Texture>
+				<Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+					<Size>
+						<AbsDimension x="10" y="32" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+				</Texture>
+			</Layer>
+            <Layer>
+                <Texture name="$parentDeathRollIcon">
+                    <Size>
+                        <AbsDimension x="12" y="12" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="-60" y="10" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentItem">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="0" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BORDER">
+						<Texture name="$parentIconTexture" />
+						<FontString name="$parentCount" inherits="NumberFontNormal" hidden="true" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-5" y="2" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+						<FontString name="$parentStock" inherits="NumberFontNormalYellow" hidden="true" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="TOPLEFT">
+									<Offset>
+										<AbsDimension x="0" y="-2" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY" textureSubLevel="1">
+						<Texture parentKey="IconOverlay" hidden="true">
+							<Size x="32" y="32" />
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEnter>
+						self:GetParent():LockHighlight();
+						OFAuctionFrameItem_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+					</OnEnter>
+					<OnLeave>
+						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "owner", GetEffectiveAuctionsScrollFrameOffset());
+						OFAuctionFrameItem_OnLeave();
+					</OnLeave>
+					<OnClick>
+						if ( IsModifiedClick() ) then
+                            OFAuctionFrameItem_OnClickModified(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+						else
+							OFAuctionsButton_OnClick(self:GetParent());
+						end
+					</OnClick>
+					<OnUpdate>
+						if ( GameTooltip:IsOwned(self) ) then
+							OFAuctionFrameItem_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+						end
+					</OnUpdate>
+				</Scripts>
+				<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
+				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+			</Button>
+			<Frame name="$parentAuctionType">
+				<Size>
+					<AbsDimension x="95" y="28" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="234" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentText" inherits="GameFontHighlightSmall">
+							<Size>
+								<AbsDimension x="95" y="32" />
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT" />
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Frame name="$parentDeliveryType">
+				<Size x="124" y="28" />
+				<Anchors>
+					<Anchor x="315" point="TOPLEFT" />
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                            <Size>
+                                <AbsDimension x="124" y="32" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT" />
+                            </Anchors>
+                        </FontString>
+					</Layer>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentNoteIcon" hidden="true">
+                            <Size>
+                                <AbsDimension x="14" y="14" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="RIGHT" relativeTo="$parentText" relativePoint="LEFT">
+                                    <Offset>
+                                        <AbsDimension x="-1" y="0" />
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+				</Layers>
+				<Scripts>
+                    <OnLoad>
+                        self:SetMouseClickEnabled(false)
+                        self:SetMouseMotionEnabled(true)
+                        _G[self:GetName().."NoteIcon"]:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icn_Note02")
+                    </OnLoad>
+					<OnEnter>
+                        self:GetParent():LockHighlight()
+                        GameTooltip:SetOwner(self)
+                        GameTooltip:SetText(self.tooltip, nil, nil, nil, 1, true)
+					</OnEnter>
+                    <OnLeave>
+                        OFAuctionBrowseFrame_CheckUnlockHighlight(self, "owner", GetEffectiveAuctionsScrollFrameOffset());
+                        GameTooltip:Hide();
+                    </OnLeave>
+				</Scripts>
+			</Frame>
+            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="Select">
+                <Size x="98" y="28" />
+                <Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset>
+                            <AbsDimension x="-8" y="3" />
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        OFSelectSpecialItemButton_OnClick(self)
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <Frame name="$parentMoneyFrame" inherits="SmallMoneyFrameTemplate">
+				<Anchors>
+					<Anchor point="RIGHT">
+						<Offset>
+							<AbsDimension x="10" y="3" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						SmallMoneyFrame_OnLoad(self);
+						MoneyFrame_SetType(self, "AUCTION");
+					</OnLoad>
+				</Scripts>
+			</Frame>
+		</Frames>
+		<Scripts>
+            <OnClick>
+
+                if ( IsModifiedClick() ) then
+                    OFAuctionFrameItem_OnClickModified(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+				else
+					OFAuctionsButton_OnClick(self);
+				end
+			</OnClick>
+		</Scripts>
+		<HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD">
+			<Size>
+				<AbsDimension x="540" y="32" />
+			</Size>
+			<Anchors>
+				<Anchor point="TOPLEFT">
+					<Offset>
+						<AbsDimension x="33" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<TexCoords left="0" right="1" top="0" bottom="0.578125" />
+		</HighlightTexture>
+	</Button>
+	<Button name="OFAuctionTabTemplate" inherits="CharacterFrameTabButtonTemplate" virtual="true">
+		<Scripts>
+			<OnClick>
+				OFAuctionFrameTab_OnClick(self, button, down);
+			</OnClick>
+		</Scripts>
+	</Button>
+    <Frame name="OFAuctionFrameComingSoonTemplate" virtual="true">
+        <Size x="758" y="447" />
+        <Anchors>
+            <Anchor point="TOPLEFT" />
+        </Anchors>
+
+        <Layers>
+            <Layer level="BACKGROUND">
+                <FontString parentKey="title" inherits="GameFontNormal">
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset>
+                                <AbsDimension x="50" y="-18" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentComingSoonText" inherits="GameFontNormalLarge" justifyH="CENTER" text="Coming soon">
+                    <Anchors>
+                        <Anchor point="CENTER">
+                            <Offset>
+                                <AbsDimension x="0" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+    <EditBox name="OFReadOnlyEditBox" virtual="true">
+        <Scripts>
+            <OnLoad>
+                self:SetScript("OnValueChanged", function()
+                    self:SetText(self.content)
+                    self:HighlightText()
+                    self:SetCursorPosition(0)
+                end)
+            </OnLoad>
+        </Scripts>
+    </EditBox>
+</Ui>
