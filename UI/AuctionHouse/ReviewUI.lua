@@ -310,7 +310,7 @@ function OFAuctionFrameReviews_OnLoad_Impl(self)
     self.selectedTab = TAB_RECENT_REVIEWS
 
     -- update time remaining and time ago
-    self.updateTimer = C_Timer.NewTicker(59, function()
+    self.updateTimer = C_Timer:NewTicker(59, function()
         if self:IsShown() then
             OFReviewBrowse_Update()
         end

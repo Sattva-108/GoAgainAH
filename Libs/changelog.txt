@@ -118,7 +118,7 @@ Ace3 Release - Revision r1122 (October 14th, 2014)
 - AceGUI-3.0: ColorPicker: Frame Level is automatically increased to ensure the color picker frame is above the option panel
 - AceGUI-3.0: DropDown: Properly disable all clickable areas when the dropdown is disabled (Ticket #360)
 - AceHook-3.0: Always use HookScript when hooking scripts in a secure fashion (Ticket #338)
-- AceTimer-3.0: New timer implementation based on C_Timer.After
+- AceTimer-3.0: New timer implementation based on C_Timer:After
 
 Ace3 Release - Revision r1109 (February 19th, 2014)
 ---------------------------------------------------

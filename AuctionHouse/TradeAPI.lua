@@ -313,7 +313,7 @@ function TradeAPI:PrefillGold(relevantAuction, totalPrice, targetName)
             MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, totalPrice)
 
             -- success message
-            print(ChatPrefix() .. " Auto-filled trade with " .. GetCoinTextureString(totalPrice) ..
+            print("Onlyfangsah: Auto-filled trade with " .. GetCoinTextureString(totalPrice) ..
                     " for auction from " .. targetName)
         else
             print(ChatPrefixError() .. " You don't have enough gold to complete this trade. "
@@ -341,7 +341,7 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName)
             itemLink = itemLink or "item"
             itemDescription = quantity .. "x " .. itemLink
         end
-        print(ChatPrefix() .. " Auto-filled trade with " ..
+        print("Onlyfangsah: Auto-filled trade with " ..
                 itemDescription .. " for auction to " .. targetName)
     else
         -- error message when item not found or quantity doesn't match exactly
@@ -401,7 +401,7 @@ function TradeAPI:TryPrefillTradeWindow(targetName)
     local totalPrice = (relevantAuction.price or 0) + (relevantAuction.tip or 0)
 
     if ns.IsUnsupportedFakeItem(itemID) then
-        print(ChatPrefix() .. " Unknown Item when trading with " .. targetName .. ". Update to the latest version to trade this item")
+        print("Onlyfangsah: Unknown Item when trading with " .. targetName .. ". Update to the latest version to trade this item")
         return
     end
 

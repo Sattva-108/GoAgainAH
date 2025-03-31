@@ -44,7 +44,7 @@ function AuctionAlertWidget:ShowAlert(message)
     alertFrame:Show()
 
     -- Hide automatically after a few seconds
-    C_Timer.After(5, function()
+    C_Timer:After(5, function()
         if alertFrame then
             -- Decrement counter and only hide if it reaches 0
             alertFrame.hideCounter = alertFrame.hideCounter - 1

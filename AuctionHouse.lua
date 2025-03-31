@@ -164,6 +164,7 @@ local CHANNEL_WHITELIST = {
     [ns.T_BLACKLIST_DELETED]       = {[G] = 1},
 }
 
+
 local function getFullName(name)
     local shortName, realmName = string.split("-", name)
     return shortName .. "-" .. (realmName  or GetRealmName())
@@ -187,9 +188,14 @@ function AuctionHouse:OnInitialize()
     self.addonVersion = GetAddOnMetadata(addonName, "Version")
     knownAddonVersions[self.addonVersion] = true
 
-    ChatUtils_Initialize()
+    --ChatUtils_Initialize()
 
     -- Initialize API
+    C_Timer:After(1, function()
+        for key, value in pairs(ns) do
+            print("Ключ:", key, "Значение:", value)
+        end
+    end)
     ns.AuctionHouseAPI:Initialize({
         broadcastAuctionUpdate = function(dataType, payload)
             self:BroadcastAuctionUpdate(dataType, payload)
@@ -264,17 +270,17 @@ function AuctionHouse:OnInitialize()
     SlashCmdList["GAH"] = function(msg) self:OpenAuctionHouse() end
 
     -- Start auction expiration and trade trimming
-    C_Timer.NewTicker(10, function()
+    C_Timer:NewTicker(10, function()
         API:ExpireAuctions()
     end)
-    C_Timer.NewTicker(61, function()
+    C_Timer:NewTicker(61, function()
         API:TrimTrades()
     end)
 
     -- Add TEST_USERS to OnlyFangsStreamerMap for debugging. eg the mail don't get auto returned
     -- run periodically because these maps get rebuilt regularly when the guild roaster updates
     if TEST_USERS[UnitName("player")] then
-        C_Timer.NewTicker(1, function()
+        C_Timer:NewTicker(1, function()
             local realmName = GetRealmName()
             realmName = realmName:gsub("%s+", "")
 
@@ -308,7 +314,7 @@ function AuctionHouse:OnInitialize()
     end
     if self.db.openAHOnLoad then
         -- needs a delay to work properly, for whatever reason
-        C_Timer.NewTimer(0.5, function()
+        C_Timer:NewTimer(0.5, function()
             OFAuctionFrame_OverrideInitialTab(ns.AUCTION_TAB_BROWSE)
             OFAuctionFrame:Show()
         end)
@@ -1283,8 +1289,8 @@ end
 
 ns.GameEventHandler:On("PLAYER_GUILD_UPDATE", function()
     -- Check guild status after some time, to make sure IsInGuild is accurate
-    C_Timer.After(3, cleanupIfKicked)
+    C_Timer:After(3, cleanupIfKicked)
 end)
 ns.GameEventHandler:On("PLAYER_ENTERING_WORLD", function()
-    C_Timer.After(10, cleanupIfKicked)
+    C_Timer:After(10, cleanupIfKicked)
 end)

@@ -22,7 +22,7 @@ StaticPopupDialogs[POPUP_NAME] = {
         local seconds = 5
         self.button1:SetText("Open Guild AH ("..seconds..")")
         self.button1:Disable()
-        C_Timer.NewTicker(1, function(ticker)
+        C_Timer:NewTicker(1, function(ticker)
             seconds = max(0, seconds - 1)
             if seconds == 0 then
                 self.button1:SetText("Open Guild AH")
