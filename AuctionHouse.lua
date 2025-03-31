@@ -164,6 +164,24 @@ local CHANNEL_WHITELIST = {
     [ns.T_BLACKLIST_DELETED]       = {[G] = 1},
 }
 
+function ChatPrefix()
+    -- color = "ffffcc00"
+    return "|cffFF8000OnlyFangs AH|r"
+end
+
+function ChatPrefixError()
+    -- color = "FFFF0000"
+    return "|cFFFF0000OnlyFangs AH|r"
+end
+
+function CreatePlayerLink(playerName)
+    return string.format("|Hplayer:%s|h[%s]|h", playerName, playerName)
+end
+
+function CreateAddonLink(menuName, displayText)
+    return string.format("|Hathene:%s|h[%s]|h", menuName, menuName)
+    --   newMsg = newMsg.."|Hgarrmission:weakauras|h|h|r";
+end
 
 local function getFullName(name)
     local shortName, realmName = string.split("-", name)

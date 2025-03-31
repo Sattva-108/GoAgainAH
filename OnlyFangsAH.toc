@@ -10,6 +10,7 @@ GameEventHandler.lua
 MagicLinks.lua
 Utils.lua
 ChangeLog.lua
+--Chat/ChatUtils.lua
 UI/CustomFrame.lua
 UI/CustomTabGroup.lua
 UI/CustomIcon.lua
@@ -27,7 +28,6 @@ ItemDB/Enchants.lua
 ItemDB/SpecialItems.lua
 StreamerDB/StreamerDB.lua
 GuildRegister.lua
-Chat/ChatUtils.lua
 # Debug/DebugCommands.lua
 Config.lua
 OFCommandHandler.lua
