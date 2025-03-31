@@ -2453,8 +2453,7 @@ function OFAuctionBrowseFrame_CheckUnlockHighlight(self, selectedType, offset)
 end
 
 function OFAuctionPriceTooltipFrame_OnLoad(self)
-	self:SetMouseClickEnabled(false)
-	self:SetMouseMotionEnabled(true)
+    self:EnableMouse(true)
 end
 
 function OFAuctionPriceTooltipFrame_OnEnter(self)

@@ -163,7 +163,7 @@ function MailboxUI:CreateMailboxUI()
 
         local rowbg = orderGroup.frame:CreateTexture(nil, "BACKGROUND")
         rowbg:SetParent(orderGroup.content)
-        rowbg:SetColorTexture(1, 1, 1, 0.05)
+        rowbg:SetVertexColor(1, 1, 1, 0.05)
         rowbg:SetPoint("TOPLEFT", 0, 0)
         rowbg:SetPoint("BOTTOMRIGHT", 0, 0)
         orderGroup.rowBackground = rowbg  -- Store reference to background

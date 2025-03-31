@@ -416,7 +416,7 @@ local function CreateContentPanel(parent, height)
     -- Dark background texture
     local bg = panel:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
-    bg:SetColorTexture(0.051, 0.051, 0.051, 1)
+    bg:SetVertexColor(0.051, 0.051, 0.051, 1)
 
     return panel
 end

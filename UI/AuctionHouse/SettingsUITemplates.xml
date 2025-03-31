@@ -407,7 +407,7 @@
 				self.Text:AdjustPointsOffset(-1, 1);
 			</OnMouseUp>
 		</Scripts>
-		<NormalTexture name="$parentNormalTexture" file="Interface\OFAuctionFrame\UI-OFAuctionFrame-FilterBg">
+		<NormalTexture name="$parentNormalTexture" file="Interface\AuctionFrame\UI-AuctionFrame-FilterBg">
 			<TexCoords left="0" right="0.53125" top="0" bottom="0.625" />
 		</NormalTexture>
 		<HighlightTexture file="Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight" alphaMode="ADD" />

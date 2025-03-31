@@ -40,7 +40,7 @@ local function CreateStarRatingWidget(config)
         -- Add a transparent background to increase hit area
         local background = starButton:CreateTexture(nil, "BACKGROUND")
         background:SetAllPoints()
-        background:SetColorTexture(0, 0, 0, 0)  -- Completely transparent
+        background:SetVertexColor(0, 0, 0, 0)
 
         local starTexture = starButton:CreateTexture(nil, "OVERLAY")
         starTexture:SetSize(starSize, starSize)

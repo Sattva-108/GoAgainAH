@@ -17,7 +17,7 @@ function CreateAlertFrame()
 
     local bg = alertFrame:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(true)
-    bg:SetColorTexture(0, 0, 0, 0.4)
+    bg:SetVertexColor(0, 0, 0, 0.4)
 
     local text = alertFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     text:SetPoint("CENTER", alertFrame, "CENTER")

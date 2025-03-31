@@ -62,7 +62,7 @@
 				self.Text:AdjustPointsOffset(-1, 1);
 			</OnMouseUp>
 		</Scripts>
-		<NormalTexture name="$parentNormalTexture" file="Interface\OFAuctionFrame\UI-OFAuctionFrame-FilterBg">
+		<NormalTexture name="$parentNormalTexture" file="Interface\AuctionFrame\UI-AuctionFrame-FilterBg">
 			<TexCoords left="0" right="0.53125" top="0" bottom="0.625" />
 		</NormalTexture>
 		<HighlightTexture file="Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight" alphaMode="ADD" />
@@ -400,8 +400,7 @@
                 </Layers>
                 <Scripts>
                     <OnLoad>
-                        self:SetMouseClickEnabled(false)
-                        self:SetMouseMotionEnabled(true)
+                        self:EnableMouse(true)
                         _G[self:GetName().."NoteIcon"]:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icn_Note02")
                     </OnLoad>
                     <OnEnter>
@@ -482,15 +481,9 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
-                    <OnLoad function="OFAuctionPriceTooltipFrame_OnLoad">
-
-                    </OnLoad>
-                    <OnEnter function="OFAuctionPriceTooltipFrame_OnEnter">
-
-                    </OnEnter>
-                    <OnLeave function="OFAuctionPriceTooltipFrame_OnLeave">
-
-                    </OnLeave>
+                    <OnLoad function="OFAuctionPriceTooltipFrame_OnLoad"/>
+                    <OnEnter function="OFAuctionPriceTooltipFrame_OnEnter"/>
+                    <OnLeave function="OFAuctionPriceTooltipFrame_OnLeave"/>
                 </Scripts>
             </Frame>
 		</Frames>
@@ -778,8 +771,7 @@
 				</Layers>
 				<Scripts>
                     <OnLoad>
-                        self:SetMouseClickEnabled(false)
-                        self:SetMouseMotionEnabled(true)
+                        self:EnableMouse(true)
                         _G[self:GetName().."NoteIcon"]:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icn_Note02")
                     </OnLoad>
 					<OnEnter>
@@ -872,8 +864,7 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        self:SetMouseClickEnabled(false)
-                        self:SetMouseMotionEnabled(true)
+                        self:EnableMouse(true)
                     </OnLoad>
                     <OnEnter>
                         self:GetParent():LockHighlight()
@@ -1158,8 +1149,7 @@
 				</Layers>
 				<Scripts>
                     <OnLoad>
-                        self:SetMouseClickEnabled(false)
-                        self:SetMouseMotionEnabled(true)
+                        self:EnableMouse(true)
                         _G[self:GetName().."NoteIcon"]:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icn_Note02")
                     </OnLoad>
 					<OnEnter>
