@@ -1992,52 +1992,128 @@ function OFIsSpellItemSelected()
     return itemID and ns.IsSpellItem(itemID)
 end
 -- OFAuctions tab functions
+-- Delivery Dropdown
+function OFDeliveryDropdown_Initialize(self, level)
+    local info = UIDropDownMenu_CreateInfo()
+    local parent = self:GetParent() or self  -- Fallback to self if no parent
+    
+    -- Use the global function, not a method
+    local isSpellSelected = OFIsSpellItemSelected()
+    
+    -- "Any" option (if spell/item is NOT selected)
+    if not isSpellSelected then
+        info.text = "Any"
+        info.value = ns.DELIVERY_TYPE_ANY
+        info.func = function()
+            parent:SetDeliverySelected(ns.DELIVERY_TYPE_ANY)
+            UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_ANY)
+        end
+        info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_ANY)
+        UIDropDownMenu_AddButton(info)
+
+        -- "Mail" option
+        info.text = "Mail"
+        info.value = ns.DELIVERY_TYPE_MAIL
+        info.func = function()
+            parent:SetDeliverySelected(ns.DELIVERY_TYPE_MAIL)
+            UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_MAIL)
+        end
+        info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_MAIL)
+        UIDropDownMenu_AddButton(info)
+    end
+
+    -- "Trade" option (always available)
+    info.text = "Trade"
+    info.value = ns.DELIVERY_TYPE_TRADE
+    info.func = function()
+        parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+        UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
+    end
+    info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+    UIDropDownMenu_AddButton(info)
+end
+
+-- Price Type Dropdown
+function OFPriceTypeDropdown_Initialize(self, level)
+    local info = UIDropDownMenu_CreateInfo()
+    local parent = self:GetParent() or self  -- Fallback to self if no parent
+    
+    -- Use the global function, not a method
+    local isGoldSelected = OFIsGoldItemSelected()
+
+    -- Gold option (if enabled)
+    if not isGoldSelected then
+        info.text = "Gold"
+        info.value = ns.PRICE_TYPE_MONEY
+        info.func = function() 
+            parent:SetPriceSelected(ns.PRICE_TYPE_MONEY)
+            UIDropDownMenu_SetSelectedValue(OFPriceTypeDropdown, ns.PRICE_TYPE_MONEY)
+        end
+        info.checked = parent:IsPriceSelected(ns.PRICE_TYPE_MONEY)
+        UIDropDownMenu_AddButton(info)
+    end
+
+    -- Twitch Raid option
+    info.text = "Twitch Raid"
+    info.value = ns.PRICE_TYPE_TWITCH_RAID
+    info.func = function()
+        parent:SetPriceSelected(ns.PRICE_TYPE_TWITCH_RAID)
+        UIDropDownMenu_SetSelectedValue(OFPriceTypeDropdown, ns.PRICE_TYPE_TWITCH_RAID)
+    end
+    info.checked = parent:IsPriceSelected(ns.PRICE_TYPE_TWITCH_RAID)
+    UIDropDownMenu_AddButton(info)
+
+    -- Custom option
+    info.text = "Custom"
+    info.value = ns.PRICE_TYPE_CUSTOM
+    info.func = function()
+        parent:SetPriceSelected(ns.PRICE_TYPE_CUSTOM)
+        UIDropDownMenu_SetSelectedValue(OFPriceTypeDropdown, ns.PRICE_TYPE_CUSTOM)
+    end
+    info.checked = parent:IsPriceSelected(ns.PRICE_TYPE_CUSTOM)
+    UIDropDownMenu_AddButton(info)
+end
 
 function OFSetupPriceTypeDropdown(self)
-    local isGoldSelected = OFIsGoldItemSelected()
-    if isGoldSelected then
+    self.isGoldSelected = OFIsGoldItemSelected()
+    if self.isGoldSelected then
         self.priceTypeIndex = ns.PRICE_TYPE_CUSTOM
     else
         self.priceTypeIndex = ns.PRICE_TYPE_MONEY
     end
 
-    local function IsPriceSelected(index)
-        return self.priceTypeIndex == index
+    self.IsPriceSelected = function(frame, index)
+        return frame.priceTypeIndex == index
     end
 
-    local function SetPriceSelected(index)
+    self.SetPriceSelected = function(frame, index)
         if index == ns.PRICE_TYPE_TWITCH_RAID then
             deathRoll = false
             duel = false
         end
-        self.priceTypeIndex = index
+        frame.priceTypeIndex = index
         OFUpdateAuctionSellItem()
     end
 
-    OFPriceTypeDropdown:SetupMenu(function(dropdown, rootDescription)
-        if not isGoldSelected then
-            rootDescription:CreateRadio("Gold", IsPriceSelected, SetPriceSelected, ns.PRICE_TYPE_MONEY)
-        end
-        rootDescription:CreateRadio("Twitch Raid", IsPriceSelected, SetPriceSelected, ns.PRICE_TYPE_TWITCH_RAID)
-        rootDescription:CreateRadio("Custom", IsPriceSelected, SetPriceSelected, ns.PRICE_TYPE_CUSTOM)
-    end)
+    UIDropDownMenu_Initialize(OFPriceTypeDropdown, OFPriceTypeDropdown_Initialize)
+    local SelectedPriceType = self.isGoldSelected and ns.PRICE_TYPE_CUSTOM or ns.PRICE_TYPE_MONEY
+    UIDropDownMenu_SetSelectedValue(OFPriceTypeDropdown, SelectedPriceType)
 end
 
-
 function OFSetupDeliveryDropdown(self, overrideDeliveryType)
-    local isSpellSelected = OFIsSpellItemSelected()
-    if isSpellSelected then
+    self.isSpellSelected = OFIsSpellItemSelected()
+    if self.isSpellSelected then
         self.deliveryTypeIndex = ns.DELIVERY_TYPE_TRADE
     else
         self.deliveryTypeIndex = overrideDeliveryType or ns.DELIVERY_TYPE_ANY
     end
 
-    local function IsDeliverySelected(index)
-        return self.deliveryTypeIndex == index
+    self.IsDeliverySelected = function(frame, index)
+        return frame.deliveryTypeIndex == index
     end
 
-    local function SetDeliverySelected(index)
-        self.deliveryTypeIndex = index
+    self.SetDeliverySelected = function(frame, index)
+        frame.deliveryTypeIndex = index
         if index ~= ns.DELIVERY_TYPE_TRADE then
             deathRoll = false
             duel = false
@@ -2046,13 +2122,9 @@ function OFSetupDeliveryDropdown(self, overrideDeliveryType)
         end
     end
 
-    OFDeliveryDropdown:SetupMenu(function(dropdown, rootDescription)
-        if not OFIsSpellItemSelected() then
-            rootDescription:CreateRadio("Any", IsDeliverySelected, SetDeliverySelected, ns.DELIVERY_TYPE_ANY)
-            rootDescription:CreateRadio("Mail", IsDeliverySelected, SetDeliverySelected, ns.DELIVERY_TYPE_MAIL)
-        end
-        rootDescription:CreateRadio("Trade", IsDeliverySelected, SetDeliverySelected, ns.DELIVERY_TYPE_TRADE)
-    end)
+    UIDropDownMenu_Initialize(OFDeliveryDropdown, OFDeliveryDropdown_Initialize)
+    local SelectedDelivery = self.isSpellSelected and ns.DELIVERY_TYPE_TRADE or ns.DELIVERY_TYPE_ANY
+    UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, SelectedDelivery)
 end
 
 function OFAuctionFrameAuctions_OnLoad(self)
