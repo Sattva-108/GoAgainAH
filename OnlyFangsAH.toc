@@ -10,7 +10,7 @@ GameEventHandler.lua
 MagicLinks.lua
 Utils.lua
 ChangeLog.lua
---Chat/ChatUtils.lua
+Chat/ChatUtils.lua
 UI/CustomFrame.lua
 UI/CustomTabGroup.lua
 UI/CustomIcon.lua

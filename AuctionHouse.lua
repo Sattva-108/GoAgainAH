@@ -164,24 +164,6 @@ local CHANNEL_WHITELIST = {
     [ns.T_BLACKLIST_DELETED]       = {[G] = 1},
 }
 
-function ChatPrefix()
-    -- color = "ffffcc00"
-    return "|cffFF8000OnlyFangs AH|r"
-end
-
-function ChatPrefixError()
-    -- color = "FFFF0000"
-    return "|cFFFF0000OnlyFangs AH|r"
-end
-
-function CreatePlayerLink(playerName)
-    return string.format("|Hplayer:%s|h[%s]|h", playerName, playerName)
-end
-
-function CreateAddonLink(menuName, displayText)
-    return string.format("|Hathene:%s|h[%s]|h", menuName, menuName)
-    --   newMsg = newMsg.."|Hgarrmission:weakauras|h|h|r";
-end
 
 local function getFullName(name)
     local shortName, realmName = string.split("-", name)
@@ -209,11 +191,11 @@ function AuctionHouse:OnInitialize()
     --ChatUtils_Initialize()
 
     -- Initialize API
-    C_Timer:After(1, function()
-        for key, value in pairs(ns) do
-            print("Ключ:", key, "Значение:", value)
-        end
-    end)
+    --C_Timer:After(1, function()
+      --  for key, value in pairs(ns) do
+     --       print("Ключ:", key, "Значение:", value)
+     --   end
+   -- end)
     ns.AuctionHouseAPI:Initialize({
         broadcastAuctionUpdate = function(dataType, payload)
             self:BroadcastAuctionUpdate(dataType, payload)

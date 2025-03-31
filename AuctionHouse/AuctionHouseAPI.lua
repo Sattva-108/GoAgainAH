@@ -3,6 +3,10 @@ local addonName, ns = ...
 local AuctionHouseAPI = {}
 ns.AuctionHouseAPI = AuctionHouseAPI
 
+C_Timer:After(1, function()
+    print('куку')
+end)
+
 local DB = ns.AuctionHouseDB
 
 -- the auction is up for people to buy
