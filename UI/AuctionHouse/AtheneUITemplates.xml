@@ -433,7 +433,7 @@
                                         <Texture parentKey="adblockIcon" file="Interface/Icons/Ability_Warrior_DefensiveStance">
                                             <Size x="18" y="18"/>
                                             <Anchors>
-                                                <Anchor point="TTOPLEFT" x="2" y="-4"/>
+                                                <Anchor point="TOPLEFT" x="2" y="-4"/>
                                             </Anchors>
                                         </Texture>
                                         <FontString inherits="GameFontNormal" justifyH="LEFT" justifyV="TOP" text="aiBlock has detected and removed suspicious content:">
