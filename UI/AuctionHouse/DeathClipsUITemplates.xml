@@ -263,7 +263,7 @@
             </Layer>
         </Layers>
         <Frames>
-            <Frame inherits="BackdropTemplate">
+            <Frame name="$parentBackdrop" parentKey="backdrop">
                 <Anchors>
                     <Anchor point="TOPLEFT" x="0" y="0"/>
                     <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
@@ -294,7 +294,7 @@
                                 <Anchor point="TOPLEFT" x="5" y="-5"/>
                             </Anchors>
                         </Texture>
-                        <FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
+                       <FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
                             <Anchors>
                                 <Anchor point="TOPLEFT" x="7" y="-7"/>
                             </Anchors>
@@ -314,7 +314,7 @@
                             <Anchor point="TOPLEFT" relativeTo="$parentFactionIcon" relativePoint="BOTTOMLEFT" x="2" y="20"/>
                         </Anchors>
                     </Frame>
-                </Frames>
+               </Frames>
             </Frame>
         </Frames>
     </Frame>

@@ -2484,7 +2484,7 @@
                             </OnClick>
                         </Scripts>
                     </CheckButton>
-                    <Frame name="OFAuctionsNoteBackdrop" inherits="BackdropTemplate" hidden="true">
+                    <Frame name="OFAuctionsNoteBackdrop" hidden="true">
                         <KeyValues>
                             <KeyValue key="backdropInfo" value="BACKDROP_TUTORIAL_16_16" type="global"/>
                         </KeyValues>
@@ -2494,6 +2494,17 @@
                         <Anchors>
                             <Anchor x="24" y="100" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
                         </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({
+                                    bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+                                    edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+                                    edgeSize = 16,
+                                    insets = { left = 4, right = 3, top = 4, bottom = 3 }
+                                })
+                                self:SetBackdropColor(0, 0, 0, 0.8)
+                            </OnLoad>
+                        </Scripts>
                     </Frame>
                     <EditBox name="OFAuctionsNote" letters="100" multiLine="true" autoFocus="false">
                         <Size x="172" y="90" />
