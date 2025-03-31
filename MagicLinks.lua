@@ -26,5 +26,3 @@ ItemRefTooltip:HookScript("OnTooltipSetSpell", function(self)
         self:Hide()
     end
 end)
-
-
