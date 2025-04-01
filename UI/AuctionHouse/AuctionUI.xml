@@ -56,7 +56,7 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Button name="OFAuctionFrameTab1" inherits="OFAuctionTabTemplate" id="1" text="Guild Orders">
+			<Button name="OFAuctionFrameTab1" inherits="OFAuctionTabTemplate" id="1" text="L_GUILD_ORDERS">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT">
 						<Offset>
@@ -65,47 +65,47 @@
 					</Anchor>
 				</Anchors>
 			</Button>
-			<Button name="OFAuctionFrameTab2" inherits="OFAuctionTabTemplate" id="2" text="Create Order">
+			<Button name="OFAuctionFrameTab2" inherits="OFAuctionTabTemplate" id="2" text="L_CREATE_ORDER">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab1" relativePoint="TOPRIGHT">
 						<Offset>
-							<AbsDimension x="-8" y="0" />
+							<AbsDimension x="-15" y="0" />
 						</Offset>
 					</Anchor>
 				</Anchors>
 			</Button>
-			<Button name="OFAuctionFrameTab3" inherits="OFAuctionTabTemplate" id="3" text="Pending Orders">
+			<Button name="OFAuctionFrameTab3" inherits="OFAuctionTabTemplate" id="3" text="L_PENDING_ORDERS">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab2" relativePoint="TOPRIGHT">
 						<Offset>
-							<AbsDimension x="-8" y="0" />
+							<AbsDimension x="-15" y="0" />
 						</Offset>
 					</Anchor>
 				</Anchors>
 			</Button>
-            <Button name="OFAuctionFrameTab4" inherits="OFAuctionTabTemplate" id="4" text="Reviews (99)">
+            <Button name="OFAuctionFrameTab4" inherits="OFAuctionTabTemplate" id="4" text="L_REVIEWS_N">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab3" relativePoint="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="-8" y="0" />
+                            <AbsDimension x="-15" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
             </Button>
-            <Button name="OFAuctionFrameTab5" inherits="OFAuctionTabTemplate" id="5" text="Stream Together">
+            <Button name="OFAuctionFrameTab5" inherits="OFAuctionTabTemplate" id="5" text="L_STREAM_TOGETHER">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab4" relativePoint="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="-8" y="0" />
+                            <AbsDimension x="-15" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
             </Button>
-            <Button name="OFAuctionFrameTab6" inherits="OFAuctionTabTemplate" id="6" text="Death Clips">
+            <Button name="OFAuctionFrameTab6" inherits="OFAuctionTabTemplate" id="6" text="L_DEATH_CLIPS">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab5" relativePoint="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="-8" y="0" />
+                            <AbsDimension x="-15" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -114,31 +114,20 @@
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab6" relativePoint="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="-8" y="0" />
+                            <AbsDimension x="-15" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
             </Button>
-            <Button name="OFAuctionFrameTab8" inherits="OFAuctionTabTemplate" id="8" text="Updat (1)">
+            <Button name="OFAuctionFrameTab8" inherits="OFAuctionTabTemplate" id="8" text="">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab7" relativePoint="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="-8" y="0" />
+                            <AbsDimension x="-15" y="0" />
                         </Offset>
                     </Anchor>
                 </Anchors>
             </Button>
-            <Frame name="OFAtheneTabAdblockIcon" frameStrata="HIGH">
-                <Size x="20" y="20"/>
-                <Anchors>
-                    <Anchor point="CENTER" relativeTo="OFAuctionFrameTab8" relativePoint="CENTER" y="3"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY">
-                        <Texture parentKey="adblockIcon" setAllPoints="true"/>
-                    </Layer>
-                </Layers>
-            </Frame>
 			<Frame name="OFAuctionFrameMoneyFrame" inherits="SmallMoneyFrameTemplate">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT">
@@ -166,7 +155,7 @@
 				</Anchors>
 				<Layers>
 					<Layer level="BACKGROUND">
-						<FontString name="OFBrowseTitle" inherits="GameFontNormal" text="OnlyFangs AH - Browse Auctions">
+						<FontString name="OFBrowseTitle" inherits="GameFontNormal" text="L_GO_AGAIN_BROWSE_AUCTIONS">
 							<Anchors>
 								<Anchor point="TOP">
 									<Offset>
@@ -485,7 +474,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFBrowseTypeSort" inherits="OFAuctionSortButtonTemplate" text="Type">
+                    <Button name="OFBrowseTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
                         <Size x="50" y="19" />
                         <Anchors>
                             <Anchor x="-2" point="LEFT" relativeTo="OFBrowseLevelSort" relativePoint="RIGHT" />
@@ -496,7 +485,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-					<Button name="OFBrowseDeliverySort" inherits="OFAuctionSortButtonTemplate" text="Misc">
+					<Button name="OFBrowseDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
 						<Size>
 							<AbsDimension x="80" y="19" />
 						</Size>
@@ -513,7 +502,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseHighBidderSort" inherits="OFAuctionSortButtonTemplate" text="Buyer/Seller">
+                    <Button name="OFBrowseHighBidderSort" inherits="OFAuctionSortButtonTemplate" text="L_BUYER_SELLER">
 						<Size>
 							<AbsDimension x="139" y="19" />
 						</Size>
@@ -530,7 +519,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseRatingSort" inherits="OFAuctionSortButtonTemplate" text="Rating">
+                    <Button name="OFBrowseRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
                         <Size>
                             <AbsDimension x="60" y="19" />
                         </Size>
@@ -547,7 +536,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-					<Button name="OFBrowseCurrentBidSort" inherits="OFAuctionSortButtonTemplate" text="Price">
+					<Button name="OFBrowseCurrentBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
 						<Size>
 							<AbsDimension x="126" y="19" />
 						</Size>
@@ -754,12 +743,9 @@
                         <Scripts>
                             <OnLoad>
                                 OFOnlineOnlyCheckButtonText:SetFontObject(GameFontHighlightSmall)
-                                OFOnlineOnlyCheckButtonText:SetText("Online Only")
+                                OFOnlineOnlyCheckButtonText:SetText(L_ONLINE_ONLY)
                             </OnLoad>
-                            <OnClick>
-                                OFAuctionFrameBrowse_Search()
-                                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                            </OnClick>
+                            <OnClick function="OFOnlineOnlyCheckButton_OnClick" />
                         </Scripts>
                     </CheckButton>
                     <CheckButton name="OFAuctionsOnlyCheckButton" inherits="UICheckButtonTemplate">
@@ -772,12 +758,9 @@
                         <Scripts>
                             <OnLoad>
                                 OFAuctionsOnlyCheckButtonText:SetFontObject(GameFontHighlightSmall)
-                                OFAuctionsOnlyCheckButtonText:SetText("Auctions Only")
+                                OFAuctionsOnlyCheckButtonText:SetText(L_AUCTIONS_ONLY)
                             </OnLoad>
-                            <OnClick>
-                                OFAuctionFrameBrowse_Search()
-                                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                            </OnClick>
+                            <OnClick function="OFAuctionsOnlyCheckButton_OnClick" />
                         </Scripts>
                     </CheckButton>
 
@@ -895,7 +878,7 @@
 						<DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />
 						<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />
 					</Button>
-					<Button name="OFBrowseFulfillButton" inherits="UIPanelButtonTemplate" text="Fulfill">
+					<Button name="OFBrowseFulfillButton" inherits="UIPanelButtonTemplate" text="L_FULFILL">
 						<Size x="80" y="22" />
 						<Anchors>
 							<Anchor x="66" y="14" point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" />
@@ -941,7 +924,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseLoanButton" inherits="UIPanelButtonTemplate" text="Loan">
+                    <Button name="OFBrowseLoanButton" inherits="UIPanelButtonTemplate" text="L_LOAN">
                         <Size x="80" y="22" />
                         <Anchors>
                             <Anchor point="RIGHT" relativeTo="OFBrowseBuyoutButton" relativePoint="LEFT" />
@@ -983,7 +966,7 @@
 				</Anchors>
 				<Layers>
 					<Layer level="BACKGROUND">
-						<FontString name="OFBidTitle" inherits="GameFontNormal" text="OnlyFangs AH - Pending Orders">
+						<FontString name="OFBidTitle" inherits="GameFontNormal" text="L_GO_AGAIN_PENDING_ORDERS">
 							<Anchors>
 								<Anchor point="TOP">
 									<Offset>
@@ -1023,7 +1006,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBidTypeSort" inherits="OFAuctionSortButtonTemplate" text="Type">
+                    <Button name="OFBidTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
                         <Size x="60" y="19" />
                         <Anchors>
                             <Anchor x="-2" point="LEFT" relativeTo="OFBidQualitySort" relativePoint="RIGHT" />
@@ -1034,7 +1017,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-				   <Button name="OFBidBuyerName" inherits="OFAuctionSortButtonTemplate" text="Buyer/Seller">
+				   <Button name="OFBidBuyerName" inherits="OFAuctionSortButtonTemplate" text="L_BUYER_SELLER">
                         <Size>
                             <AbsDimension x="164" y="19" />
                         </Size>
@@ -1051,7 +1034,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFBidRatingSort" inherits="OFAuctionSortButtonTemplate" text="Rating">
+                    <Button name="OFBidRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
                         <Size>
                             <AbsDimension x="60" y="19" />
                         </Size>
@@ -1068,7 +1051,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFBidDeliverySort" inherits="OFAuctionSortButtonTemplate" text="Misc">
+                    <Button name="OFBidDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
                         <Size>
                             <AbsDimension x="80" y="19" />
                         </Size>
@@ -1085,7 +1068,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFBidStatusSort" inherits="OFAuctionSortButtonTemplate" text="Status">
+                    <Button name="OFBidStatusSort" inherits="OFAuctionSortButtonTemplate" text="STATUS">
 						<Size>
 							<AbsDimension x="103" y="19" />
 						</Size>
@@ -1102,7 +1085,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBidBidSort" inherits="OFAuctionSortButtonTemplate" text="Price">
+                    <Button name="OFBidBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
                         <Size>
                             <AbsDimension x="126" y="19" />
                         </Size>
@@ -1324,7 +1307,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBidForgiveLoanButton" inherits="UIPanelButtonTemplate" text="Mark Loan Complete">
+                    <Button name="OFBidForgiveLoanButton" inherits="UIPanelButtonTemplate" text="L_MARK_LOAN_COMPLETE">
                         <Size>
                             <AbsDimension x="165" y="22" />
                         </Size>
@@ -1365,7 +1348,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <FontString name="OFDeathClipsTitle" inherits="GameFontNormal" text="Death Clips">
+                        <FontString name="OFDeathClipsTitle" inherits="GameFontNormal" text="L_DEATH_CLIPS">
                             <Anchors>
                                 <Anchor point="TOP">
                                     <Offset>
@@ -1388,7 +1371,7 @@
                     </Layer>
                 </Layers>
                 <Frames>
-                    <Button name="OFDeathClipsStreamerSort" inherits="OFAuctionSortButtonTemplate" text="Streamer">
+                    <Button name="OFDeathClipsStreamerSort" inherits="OFAuctionSortButtonTemplate" text="L_STREAMER">
                         <Size>
                             <AbsDimension x="170" y="19" />
                         </Size>
@@ -1405,7 +1388,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsRaceSort" inherits="OFAuctionSortButtonTemplate" text="Race">
+                    <Button name="OFDeathClipsRaceSort" inherits="OFAuctionSortButtonTemplate" text="RACE">
                         <Size x="55" y="19" />
                         <Anchors>
                             <Anchor x="-2" point="LEFT" relativeTo="OFDeathClipsStreamerSort" relativePoint="RIGHT" />
@@ -1416,7 +1399,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsLevelSort" inherits="OFAuctionSortButtonTemplate" text="Level">
+                    <Button name="OFDeathClipsLevelSort" inherits="OFAuctionSortButtonTemplate" text="LEVEL">
                         <Size>
                             <AbsDimension x="40" y="19" />
                         </Size>
@@ -1433,7 +1416,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsClassSort" inherits="OFAuctionSortButtonTemplate" text="Class">
+                    <Button name="OFDeathClipsClassSort" inherits="OFAuctionSortButtonTemplate" text="CLASS">
                         <Size>
                             <AbsDimension x="55" y="19" />
                         </Size>
@@ -1450,7 +1433,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsWhenSort" inherits="OFAuctionSortButtonTemplate" text="When">
+                    <Button name="OFDeathClipsWhenSort" inherits="OFAuctionSortButtonTemplate" text="L_WHEN">
                         <Size>
                             <AbsDimension x="55" y="19" />
                         </Size>
@@ -1467,7 +1450,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsWhereSort" inherits="OFAuctionSortButtonTemplate" text="Where">
+                    <Button name="OFDeathClipsWhereSort" inherits="OFAuctionSortButtonTemplate" text="L_WHERE">
                         <Size>
                             <AbsDimension x="80" y="19" />
                         </Size>
@@ -1484,7 +1467,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsRatingSort" inherits="OFAuctionSortButtonTemplate" text="Rating">
+                    <Button name="OFDeathClipsRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
                         <Size>
                             <AbsDimension x="90" y="19" />
                         </Size>
@@ -1501,7 +1484,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="Clip Link">
+                    <Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="L_CLIP_LINK">
                         <Size>
                             <AbsDimension x="110" y="19" />
                         </Size>
@@ -1518,7 +1501,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFDeathClipsRateClipSort" inherits="OFAuctionSortButtonTemplate" text="Rate Clip">
+                    <Button name="OFDeathClipsRateClipSort" inherits="OFAuctionSortButtonTemplate" text="L_RATE_CLIP">
                         <Size>
                             <AbsDimension x="100" y="19" />
                         </Size>
@@ -1750,7 +1733,7 @@
 				
 				<Layers>
 					<Layer level="BACKGROUND">
-						<FontString name="AHReviewsTitle" inherits="GameFontNormal" text="Reviews">
+						<FontString name="AHReviewsTitle" inherits="GameFontNormal" text="L_REVIEWS">
 							<Anchors>
 								<Anchor point="TOP">
 									<Offset>
@@ -1925,7 +1908,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-					<Button name="OFAuctionsTypeSort" inherits="OFAuctionSortButtonTemplate" text="Type">
+					<Button name="OFAuctionsTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
 						<Size x="60" y="19" />
 						<Anchors>
 							<Anchor x="-2" point="LEFT" relativeTo="OFAuctionsLevelSort" relativePoint="RIGHT" />
@@ -1936,7 +1919,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFAuctionsDeliverySort" inherits="OFAuctionSortButtonTemplate" text="Misc">
+                    <Button name="OFAuctionsDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
                         <Size x="130" y="19" />
                         <Anchors>
                             <Anchor x="-2" point="LEFT" relativeTo="OFAuctionsTypeSort" relativePoint="RIGHT" />
@@ -1947,7 +1930,7 @@
                             </OnClick>
                         </Scripts>
                     </Button>
-                    <Button name="OFAuctionsBidSort" inherits="OFAuctionSortButtonTemplate" text="Price">
+                    <Button name="OFAuctionsBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
                         <Size>
                             <AbsDimension x="161" y="19" />
                         </Size>
@@ -2315,7 +2298,7 @@
                         </Anchors>
                         <Layers>
                             <Layer>
-                                <FontString name="OFTwitchRaidViewerAmountText" inherits="GameFontHighlightSmall" text="Min Twitch viewers:">
+                                <FontString name="OFTwitchRaidViewerAmountText" inherits="GameFontHighlightSmall" text="L_MIN_TWITCH_VIEWERS">
                                     <Anchors>
                                         <Anchor x="-8" y="0" point="RIGHT" relativeTo="OFTwitchRaidViewerAmount" relativePoint="LEFT" />
                                     </Anchors>

@@ -186,7 +186,7 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="Twitch Raid" justifyH="RIGHT">
+                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="L_TWITCH_RAID" justifyH="RIGHT">
                     <Size>
                         <AbsDimension x="100" y="32" />
                     </Size>
@@ -438,7 +438,7 @@
                     <OnLoad function="OFRatingFrame_OnLoad"/>
                 </Scripts>
             </Frame>
-            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="Request Item">
+            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="L_REQUEST_ITEM">
                 <Size x="98" y="28" />
                 <Anchors>
                     <Anchor point="RIGHT">
@@ -552,7 +552,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="Twitch Raid" justifyH="RIGHT">
+                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="L_TWITCH_RAID" justifyH="RIGHT">
                     <Size>
                         <AbsDimension x="100" y="32" />
                     </Size>
@@ -849,7 +849,7 @@
                         </Anchors>
                         <Layers>
                             <Layer level="BACKGROUND">
-                                <FontString parentKey="Text" inherits="GameFontNormalSmall" justifyH="RIGHT" setAllPoints="true" text="Tip"/>
+                                <FontString parentKey="Text" inherits="GameFontNormalSmall" justifyH="RIGHT" setAllPoints="true" text="L_Tip"/>
                             </Layer>
                         </Layers>
                     </Frame>
@@ -931,7 +931,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="Twitch Raid" justifyH="RIGHT">
+                <FontString name="$parentPriceText" inherits="GameFontHighlightSmall" text="L_TWITCH_RAID" justifyH="RIGHT">
                     <Size>
                         <AbsDimension x="100" y="32" />
                     </Size>
@@ -1163,7 +1163,7 @@
                     </OnLeave>
 				</Scripts>
 			</Frame>
-            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="Select">
+            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="L_Select">
                 <Size x="98" y="28" />
                 <Anchors>
                     <Anchor point="RIGHT">
@@ -1243,7 +1243,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentComingSoonText" inherits="GameFontNormalLarge" justifyH="CENTER" text="Coming soon">
+                <FontString name="$parentComingSoonText" inherits="GameFontNormalLarge" justifyH="CENTER" text="L_COMING_SOON">
                     <Anchors>
                         <Anchor point="CENTER">
                             <Offset>

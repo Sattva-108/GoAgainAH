@@ -1,4 +1,6 @@
 local _, ns = ...
+local L = ns.L
+
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
 local CLIPS_BUTTON_HEIGHT = 37
@@ -48,9 +50,9 @@ end
 
 local function formatWhen(clip)
     if clip.ts == nil then
-        return "Unknown"
+        return L["Unknown"]
     end
-    return string.format(ns.GetPrettyDurationString(time() - clip.ts) .. " ago")
+    return ns.GetPrettyTimeAgoString(time() - clip.ts)
 end
 
 local function ResizeEntry(button, numBatchAuctions, totalAuctions)
@@ -68,6 +70,10 @@ local function ResizeEntry(button, numBatchAuctions, totalAuctions)
 end
 
 local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
+    if clip.streamer == nil or clip.streamer == "" then
+        clip.streamer = ns.GetTwitchName(clip.characterName)
+    end
+
     local buttonName = button:GetName()
     local overrides = state:GetClipOverrides(clip.id)
     local copy = {}
@@ -89,11 +95,11 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     elseif clip.characterName then
         name:SetText(clip.characterName)
     else
-        name:SetText("Unknown")
+        name:SetText(L["Unknown"])
     end
 
     local race = _G[buttonName.."Race"]
-    race:SetText(clip.race or "Unknown")
+    race:SetText(L[clip.race:lower()] or L["Unknown"])
     if clip.race and ns.RACE_COLORS[clip.race] then
         race:SetTextColor(ns.HexToRGG(ns.RACE_COLORS[clip.race]))
     else
@@ -102,7 +108,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     local iconTexture = _G[buttonName.."ItemIconTexture"]
     if clip.race then
-        iconTexture:SetTexture(string.format("Interface\\Icons\\Achievement_Character_%s_Male", clip.race))
+        iconTexture:SetTexture(string.format("Interface\\Icons\\Achievement_Character_%s_Male", string.gsub(clip.race, " ", "")))
     else
         iconTexture:SetTexture("interface/icons/inv_misc_bone_humanskull_01")
     end
@@ -117,13 +123,20 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     else
         class:SetTextColor(1, 1, 1)
     end
-    class:SetText(clip.class or "Unknown")
+    class:SetText(L[clip.class:lower()] or L["Unknown"])
 
     local when = _G[buttonName.."When"]
     when:SetText(formatWhen(clip))
 
     local where = _G[buttonName.."Where"]
-    where:SetText(clip.where or "Unknown")
+    local whereStr
+    if clip.mapId then
+        whereStr = C_Map.GetMapInfo(clip.mapId).name
+    end
+    if not whereStr then
+        whereStr = clip.where
+    end
+    where:SetText(whereStr or L["Unknown"])
 
     local clipText = _G[buttonName.."Clip"]
     local clipUrl
@@ -134,7 +147,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         -- live clip, admin can override the clip url
         clipUrl = clip.clip or ns.GetClipUrl(clip.streamer, clip.ts)
     end
-    clipUrl = clipUrl or "No Clip"
+    clipUrl = clipUrl or L["No Clip"]
     clipText:SetText(clipUrl)
     clipText:SetCursorPosition(0)
 
@@ -157,7 +170,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         rateButton:Enable()
     end
 
-    rateButton:GetFontString():SetText(string.format("Ratings (%d)", #ratings))
+    rateButton:GetFontString():SetText(string.format(L["Ratings (%d)"], #ratings))
 
     rateButton:SetScript("OnClick", function()
         ns.DebugLog("clip id:", clip.id)
@@ -174,17 +187,26 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 end
 
+local function FilterHiddenClips(state, clips)
+    local filtered = {}
+    for _, clip in ipairs(clips) do
+        local overrides = state:GetClipOverrides(clip.id)
+        if not overrides.hidden then
+            table.insert(filtered, clip)
+        end
+    end
+    return filtered
+end
+
 function OFAuctionFrameDeathClips_Update()
     local clips = {}
     for _, clip in pairs(ns.GetLiveDeathClips()) do
         table.insert(clips, clip)
     end
-    for i = 1, #ns.HardcodedDeathClips do
-        table.insert(clips, ns.HardcodedDeathClips[i])
-    end
     local state = ns.GetDeathClipReviewState()
 
     clips = ns.SortDeathClips(clips, OFGetCurrentSortParams("clips"))
+    clips = FilterHiddenClips(state, clips)
     local ratingsByClip = state:GetRatingsByClip()
     local totalClips = #clips
     local numBatchClips = min(totalClips, NUM_CLIPS_PER_PAGE)

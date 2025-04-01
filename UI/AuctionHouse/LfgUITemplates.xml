@@ -7,7 +7,7 @@
         <Frames>
 
             <!-- column headers -->
-            <Button name="OFLFGStreamerSort" inherits="OFAuctionSortButtonTemplate" text="Streamer">
+            <Button name="OFLFGStreamerSort" inherits="OFAuctionSortButtonTemplate" text="L_STREAMER">
                 <Size x="188" y="19" />
                 <Anchors>
                     <Anchor x="216" y="-51" point="TOPLEFT" />
@@ -18,7 +18,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="OFLFGLvlSort" inherits="OFAuctionSortButtonTemplate" text="Lvl">
+            <Button name="OFLFGLvlSort" inherits="OFAuctionSortButtonTemplate" text="REQ_LEVEL_ABBR">
                 <Size x="28" y="19" />
                 <Anchors>
                     <Anchor x="0" point="LEFT" relativeTo="OFLFGStreamerSort" relativePoint="RIGHT" />
@@ -29,7 +29,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="OFLFGColabSort" inherits="OFAuctionSortButtonTemplate" text="Colab">
+            <Button name="OFLFGColabSort" inherits="OFAuctionSortButtonTemplate" text="L_COLAB">
                 <Size x="145" y="19" />
                 <Anchors>
                     <Anchor x="0" point="LEFT" relativeTo="OFLFGLvlSort" relativePoint="RIGHT" />
@@ -40,7 +40,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="OFLFGAvgViewersSort" inherits="OFAuctionSortButtonTemplate" text="Viewers">
+            <Button name="OFLFGAvgViewersSort" inherits="OFAuctionSortButtonTemplate" text="L_VIEWERS">
                 <Size x="56" y="19" />
                 <Anchors>
                     <Anchor x="0" point="LEFT" relativeTo="OFLFGColabSort" relativePoint="RIGHT" />
@@ -51,7 +51,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="OFLFGLivestreamSort" inherits="OFAuctionSortButtonTemplate" text="Livestream">
+            <Button name="OFLFGLivestreamSort" inherits="OFAuctionSortButtonTemplate" text="L_LIVESTREAM">
                 <Size x="84" y="19" />
                 <Anchors>
                     <Anchor x="0" point="LEFT" relativeTo="OFLFGAvgViewersSort" relativePoint="RIGHT" />
@@ -62,7 +62,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="OFLFGRaidSort" inherits="OFAuctionSortButtonTemplate" text="Raid">
+            <Button name="OFLFGRaidSort" inherits="OFAuctionSortButtonTemplate" text="L_RAID_TWITCH">
                 <Size x="84" y="19" />
                 <Anchors>
                     <Anchor x="0" point="LEFT" relativeTo="OFLFGLivestreamSort" relativePoint="RIGHT" />
@@ -164,7 +164,7 @@
                 <Scripts>
                     <OnLoad>
                         OFLFG_CheckButtonText:SetFontObject(GameFontNormal)
-                        OFLFG_CheckButtonText:SetText("Enable OnlyFangs Collab")
+                        OFLFG_CheckButtonText:SetText(L_ENABLE_COLAB)
                     </OnLoad>
                 </Scripts>
             </CheckButton>
@@ -178,7 +178,7 @@
                 <Scripts>
                     <OnLoad>
                         OFLFG_RPTogetherCheckText:SetFontObject(GameFontHighlightSmall)
-                        OFLFG_RPTogetherCheckText:SetText("RP Together")
+                        OFLFG_RPTogetherCheckText:SetText(L_RP_TOGETHER)
                     </OnLoad>
                 </Scripts>
             </CheckButton>
@@ -192,14 +192,14 @@
                 <Scripts>
                     <OnLoad>
                         OFLFG_DungeonCheckText:SetFontObject(GameFontHighlightSmall)
-                        OFLFG_DungeonCheckText:SetText("Dungeon")
+                        OFLFG_DungeonCheckText:SetText(L_DUNGEON)
                     </OnLoad>
                     <OnClick function="OFLFG_DungeonCheck_OnClick"/>
                 </Scripts>
             </CheckButton>
 
             <!-- Role Selection -->
-            <Button name="OFLFG_DungeonTypeButton" inherits="UIPanelButtonTemplate" text="Select Dungeons">
+            <Button name="OFLFG_DungeonTypeButton" inherits="UIPanelButtonTemplate" text="L_SELECT_DUNGEONS">
                 <Size x="130" y="22"/>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonCheck" relativePoint="BOTTOMLEFT" x="10" y="-4"/>
@@ -223,7 +223,7 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="OFLFG_MinViewersText" inherits="GameFontHighlightSmall" text="Min Viewers">
+                        <FontString name="OFLFG_MinViewersText" inherits="GameFontHighlightSmall" text="L_MIN_VIEWERS">
                             <Anchors>
                                 <Anchor point="BOTTOMLEFT" relativeTo="OFLFG_MinViewers" relativePoint="TOPLEFT" x="-4" y="2"/>
                             </Anchors>
@@ -239,7 +239,7 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="OFLFG_MaxViewersText" inherits="GameFontHighlightSmall" text="Max Viewers">
+                        <FontString name="OFLFG_MaxViewersText" inherits="GameFontHighlightSmall" text="L_MAX_VIEWERS">
                             <Anchors>
                                 <Anchor point="BOTTOMLEFT" relativeTo="OFLFG_MaxViewers" relativePoint="TOPLEFT" x="-4" y="2"/>
                             </Anchors>
@@ -257,7 +257,7 @@
                 <Scripts>
                     <OnLoad>
                         OFLFG_NoMinViewersCheckText:SetFontObject(GameFontHighlightSmall)
-                        OFLFG_NoMinViewersCheckText:SetText("No Min")
+                        OFLFG_NoMinViewersCheckText:SetText(L_NO_MIN)
                     </OnLoad>
                     <OnClick>
                         local minViewers = _G["OFLFG_MinViewers"]
@@ -271,7 +271,7 @@
                 </Scripts>
             </CheckButton>
 
-            <Button name="OFLFG_ApplyButton" inherits="UIPanelButtonTemplate" text="Apply Viewers Filter">
+            <Button name="OFLFG_ApplyButton" inherits="UIPanelButtonTemplate" text="L_APPLY_VIEWERS_FILTER">
                 <Size>
                     <AbsDimension x="191" y="20" />
                 </Size>
@@ -295,7 +295,7 @@
                 <Scripts>
                     <OnLoad>
                         OFLFG_NoMaxViewersCheckText:SetFontObject(GameFontHighlightSmall)
-                        OFLFG_NoMaxViewersCheckText:SetText("No Max")
+                        OFLFG_NoMaxViewersCheckText:SetText(L_NO_MAX)
                     </OnLoad>
                     <OnClick>
                         local maxViewers = _G["OFLFG_MaxViewers"]
@@ -310,8 +310,8 @@
             </CheckButton>
 
             <!-- Block Users Button -->
-            <Button name="OFLFG_BlockUsersButton" inherits="UIPanelButtonTemplate" text="Block Users">
-                <Size x="100" y="18" />
+            <Button name="OFLFG_BlockUsersButton" inherits="UIPanelButtonTemplate" text="L_BLOCK_USERS">
+                <Size x="120" y="18" />
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFLFG_NoMinViewersCheck" relativePoint="BOTTOMLEFT" x="0" y="-5" />
                 </Anchors>
@@ -371,21 +371,21 @@
 
         <Layers>
             <Layer level="BACKGROUND">
-                <FontString name="OFLFGTitle" inherits="GameFontNormal" text="Stream Together">
+                <FontString name="OFLFGTitle" inherits="GameFontNormal" text="L_STREAM_TOGETHER">
                     <Anchors>
                         <Anchor x="52"  y="-18" point="TOP" />
                     </Anchors>
                 </FontString>
             </Layer>
             <Layer>
-                <FontString name="OFLFGTabText" inherits="GameFontHighlightSmall" text="Settings">
+                <FontString name="OFLFGTabText" inherits="GameFontHighlightSmall" text="SETTINGS">
                     <Anchors>
                         <Anchor x="121" y="-55" point="TOP" relativePoint="TOPLEFT" />
                     </Anchors>
                 </FontString>
             </Layer>
             <Layer>
-                <FontString name="OFLFG_ColabDescription" inherits="GameFontHighlightSmall" wordwrap="true" justifyH="LEFT" text="Set your requirements for who can collab with you through Twitch's Stream Together feature">
+                <FontString name="OFLFG_ColabDescription" inherits="GameFontHighlightSmall" wordwrap="true" justifyH="LEFT" text="L_COLAB_SET_REQUIREMENTS">
                     <Size x="170" y="0"/>
                     <Anchors>
                         <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="6" y="-5" />

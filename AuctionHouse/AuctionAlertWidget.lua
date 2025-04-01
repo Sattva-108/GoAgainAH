@@ -58,27 +58,28 @@ end
 local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, itemLink, payload)
     local me = UnitName("player")
 
-    local quantityStr = auction.quantity > 1 and string.format("x%d", auction.quantity) or ""
+    -- Use a localized format for quantity; if more than 1 use a multiplier string:
+    local quantityStr = auction.quantity > 1 and string.format(L["x%d"], auction.quantity) or ""
     if ns.IsFakeItem(auction.itemID) then
         quantityStr = ""
     end
 
     if not itemLink then
-        itemLink = "Unknown Item"
+        itemLink = L["Unknown Item"]
     end
 
     -- Helper function to get delivery instruction
     local function getDeliveryInstruction(duel, deathRoll, deliveryType)
         if duel then
-            return "Duel and trade them"
+            return L["Duel and trade them"]
         elseif deathRoll then
-            return "Deathroll and trade them"
+            return L["Deathroll and trade them"]
         elseif deliveryType == ns.DELIVERY_TYPE_MAIL then
-            return "Open the mailbox to accept"
+            return L["Open the mailbox to accept"]
         elseif deliveryType == ns.DELIVERY_TYPE_TRADE then
-            return "Trade them to accept"
+            return L["Trade them to accept"]
         else
-            return "Open the mailbox or trade them to accept"
+            return L["Open the mailbox or trade them to accept"]
         end
     end
     -- Convert names to hyperlinks for chat messages
@@ -86,65 +87,137 @@ local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, i
     local ownerLink = CreatePlayerLink(owner)
     local otherUserLink = auction.owner == me and buyerLink or ownerLink
 
-    local msg, msgChat
-    local extraMsg = nil
+    local msg, msgChat, extraMsg = nil, nil, nil
     if payload.source == "status_update" then
-        msg = string.format("%s sent you a mail for %s%s",
+        msg = string.format(L["%s sent you a mail for %s%s"],
             ownerName, itemLink, quantityStr)
-        msgChat = string.format("%s %s |cffffcc00sent you a mail for %s%s. It will arrive in 1 hour|r",
+        msgChat = string.format(L["%s %s |cffffcc00sent you a mail for %s%s. It will arrive in 1 hour|r"],
             ChatPrefix(), ownerLink, itemLink, quantityStr)
 
     elseif payload.source == "buy_loan" then
         local deliveryInstruction = getDeliveryInstruction(auction.duel, auction.deathRoll, auction.deliveryType)
-        local action
-        if auction.raidAmount > 0 then
-            action = " to raid you for"
-        elseif auction.duel then
-            action = auction.roleplay and " to RP and duel for" or " to duel for"
-        elseif auction.deathRoll then
-            action = auction.roleplay and " to RP and deathroll for" or " to deathroll for"
-        else
-            action = auction.roleplay and " to RP and loan-buy" or " to loan-buy"
-        end
 
-        msg = string.format("%s wants%s your %s%s",
-            buyerName, action, itemLink, quantityStr)
-        msgChat = string.format("%s %s|cffffcc00 wants%s your %s%s. %s|r",
-            ChatPrefix(), buyerLink, action, itemLink, quantityStr, deliveryInstruction)
+        if auction.raidAmount > 0 then
+            msg = string.format(L["%s wants to raid you for your %s%s"],
+                buyerName, itemLink, quantityStr)
+            msgChat = string.format(L["%s %s|cffffcc00 wants to raid you for your %s%s. %s|r"],
+                ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+        elseif auction.duel then
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP and duel for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP and duel for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants to duel for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to duel for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
+        elseif auction.deathRoll then
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP and deathroll for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP and deathroll for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants to deathroll for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to deathroll for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
+        else
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP and loan-buy your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP and loan-buy your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants to loan-buy your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to loan-buy your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
+        end
 
     elseif payload.source == "buy" and not auction.wish then
         local deliveryInstruction = getDeliveryInstruction(auction.duel, auction.deathRoll, auction.deliveryType)
-        local action
+
         if auction.raidAmount > 0 then
-            action = "raid you for"
+            msg = string.format(L["%s wants to raid you for your %s%s"],
+                buyerName, itemLink, quantityStr)
+            msgChat = string.format(L["%s %s|cffffcc00 wants to raid you for your %s%s. %s|r"],
+                ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
         elseif auction.duel then
-            action = auction.roleplay and " to RP and duel for" or " to duel for"
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP and duel for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP and duel for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants to duel for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to duel for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
         elseif auction.deathRoll then
-            action = auction.roleplay and " to RP and deathroll for" or " to deathroll for"
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP and deathroll for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP and deathroll for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants to deathroll for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to deathroll for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
         elseif ns.IsFakeItem(auction.itemID) then
-            action = auction.roleplay and " to RP for" or ""
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP for your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP for your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
         else
-            action = auction.roleplay and " to RP and buy" or " to buy"
+            if auction.roleplay then
+                msg = string.format(L["%s wants to RP and buy your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to RP and buy your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            else
+                msg = string.format(L["%s wants to buy your %s%s"],
+                    buyerName, itemLink, quantityStr)
+                msgChat = string.format(L["%s %s|cffffcc00 wants to buy your %s%s. %s|r"],
+                    ChatPrefix(), buyerLink, itemLink, quantityStr, deliveryInstruction)
+            end
         end
 
-        msg = string.format("%s wants%s your %s%s",
-            buyerName, action, itemLink, quantityStr)
-        msgChat = string.format("%s %s |cffffcc00wants%s your %s%s. %s|r",
-            ChatPrefix(), buyerLink, action, itemLink, quantityStr, deliveryInstruction)
-
     elseif payload.source == "buy" and auction.wish then
-        local action = auction.roleplay and "RP and fulfill" or "fulfill"
-        msg = string.format("%s is %sing your wishlist item %s%s",
-            ownerName, action, itemLink, quantityStr)
-        msgChat = string.format("%s %s |cffffcc00is %sing your wishlist item %s%s|r",
-            ChatPrefix(), ownerLink, action, itemLink, quantityStr)
+        if auction.roleplay then
+            msg = string.format(L["%s is RPing and fulfilling your wishlist item %s%s"],
+                ownerName, itemLink, quantityStr)
+            msgChat = string.format(L["%s %s |cffffcc00is RPing and fulfilling your wishlist item %s%s|r"],
+                ChatPrefix(), ownerLink, itemLink, quantityStr)
+        else
+            msg = string.format(L["%s is fulfilling your wishlist item %s%s"],
+                ownerName, itemLink, quantityStr)
+            msgChat = string.format(L["%s %s |cffffcc00is fulfilling your wishlist item %s%s|r"],
+                ChatPrefix(), ownerLink, itemLink, quantityStr)
+        end
 
     elseif payload.source == "complete" then
         -- Don't show alert on complete (in most cases, you just did a UI action, so an extra banner is unexpected)
         msg = nil
-        msgChat = string.format("%s |cffffcc00Transaction successful|r, %s%s with %s",
+        msgChat = string.format(L["%s |cffffcc00Transaction successful|r, %s%s with %s"],
             ChatPrefix(), itemLink, quantityStr, otherUserLink)
-        extraMsg = string.format("%s Write your review in the OnlyFangs AH Addon", ChatPrefix())
+        extraMsg = string.format(L["%s Write your review in the OnlyFangs AH Addon"],
+            ChatPrefix())
     end
 
     return msg, msgChat, extraMsg

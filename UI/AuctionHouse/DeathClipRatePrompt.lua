@@ -1,5 +1,6 @@
 local addonName, ns = ...
 local AceGUI = LibStub("AceGUI-3.0")
+local L = ns.L
 
 local PaneBackdrop  = {
     bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
@@ -8,7 +9,7 @@ local PaneBackdrop  = {
     insets = { left = 2, right = 2, top = 5, bottom = 2 }
 }
 
-local REVIEW_PLACEHOLDER = "Write your review ..."
+local REVIEW_PLACEHOLDER = L["Write your review ..."]
 
 local function CreateBorderedGroup(relativeWidth, height)
     local group = AceGUI:Create("MinimalFrame")
@@ -31,7 +32,7 @@ end
 
 local function CreateReviewPrompt()
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle("Rate Clip")
+    frame:SetTitle(L["Rate Clip"])
     frame:SetLayout("Flow")
     frame:SetWidth(410)
     frame:SetHeight(330)
@@ -60,7 +61,8 @@ local function CreateReviewPrompt()
     -- Static label
     local staticLabel = AceGUI:Create("Label")
     staticLabel:SetFontObject(GameFontNormal)
-    staticLabel:SetText("|cFFFFD100Write your review for|r")
+    local label = L["Write your review for"]
+    staticLabel:SetText("|cFFFFD100".. label .. "|r")
     staticLabel:SetHeight(16)
     reviewGroup:AddChild(staticLabel)
 
@@ -78,7 +80,7 @@ local function CreateReviewPrompt()
     reviewGroup:AddChild(targetLabel)
 
     local submitButton = AceGUI:Create("Button")
-    submitButton:SetText("Submit Review")
+    submitButton:SetText(L["Submit Review"])
     submitButton:SetFullWidth(true)
     submitButton:SetHeight(40)
     submitButton:SetDisabled(true)
@@ -202,11 +204,11 @@ end
 
 function ns.ShowDeathClipRatePrompt(clip, overrideUser)
     if not clip then
-        print(ChatPrefixError() .. " Warning: failed to open rate clip popup, missing clip")
+        print(ChatPrefixError() .. L[" Warning: failed to open rate clip popup, missing clip"])
         return
     end
     if not clip.id then
-        print(ChatPrefixError() .. " Warning: failed to open rate clip popup, missing clip ID")
+        print(ChatPrefixError() .. L[" Warning: failed to open rate clip popup, missing clip ID"])
         return
     end
     local me = overrideUser or UnitName("player")
@@ -230,7 +232,13 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
 
     -- Reset button state
     prompt.submitButton:SetDisabled((existingRating or 0) == 0)
-    prompt.submitButton:SetText(hasExistingReview and "Update Review" or "Submit Review")
+    local submitText
+    if hasExistingReview then
+        submitText = L["Update Review"]
+    else
+        submitText = L["Submit Review"]
+    end
+    prompt.submitButton:SetText(submitText)
 
     -- Update the display
     prompt:SetTargetName(ns.GetDisplayName(clip.characterName))

@@ -1,4 +1,5 @@
 local addonName, ns = ...
+L = ns.L
 
 local function SetRoleButtonEnabled(button, enabled, hideDisabled)
     if enabled then
@@ -28,17 +29,17 @@ ns.GetRoleString = function(roles)
     end
     local text = ""
     if roles[1] then
-        text = text .. "Healer"
+        text = text .. L["Healer"]
     end
     if roles[2] then
-        text = text .. (text ~= "" and ", " or "") .. "Tank"
+        text = text .. (text ~= "" and ", " or "") .. L["Tank"]
     end
     if roles[3] then
-        text = text .. (text ~= "" and ", " or "") .. "Dps"
+        text = text .. (text ~= "" and ", " or "") .. L["Dps"]
     end
 
     if string.len(text) == 0 then
-        return "(no roles selected)"
+        return L["(no roles selected)"]
     end
     return text
 end

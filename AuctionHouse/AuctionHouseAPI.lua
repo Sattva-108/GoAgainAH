@@ -1,11 +1,8 @@
 local addonName, ns = ...
+local L = ns.L
 
 local AuctionHouseAPI = {}
 ns.AuctionHouseAPI = AuctionHouseAPI
-
-C_Timer:After(1, function()
-    print('куку')
-end)
 
 local DB = ns.AuctionHouseDB
 
@@ -28,6 +25,7 @@ ns.REVIEW_TYPE_SELLER = "seller"
 ns.PRICE_TYPE_MONEY = 0
 ns.PRICE_TYPE_TWITCH_RAID = 1
 ns.PRICE_TYPE_CUSTOM = 2
+ns.PRICE_TYPE_GUILD_POINTS = 3
 
 ns.DELIVERY_TYPE_ANY = 0
 ns.DELIVERY_TYPE_MAIL = 1
@@ -56,6 +54,9 @@ function AuctionHouseAPI:GetSerializableState()
         blacklists = DB.blacklists,
         revBlacklists = DB.revBlacklists,
         lastBlacklistUpdateAt = DB.lastBlacklistUpdateAt,
+        pendingTransactions = DB.pendingTransactions,
+        revPendingTransactions = DB.revPendingTransactions,
+        lastPendingTransactionUpdateAt = DB.lastPendingTransactionUpdateAt,
     }
 end
 
@@ -103,6 +104,16 @@ function AuctionHouseAPI:Load()
     if not DB.lastBlacklistUpdateAt then
         DB.lastBlacklistUpdateAt = 0
     end
+    -- Initialize pending transactions table
+    if not DB.pendingTransactions then
+        DB.pendingTransactions = {}
+    end
+    if not DB.revPendingTransactions then
+        DB.revPendingTransactions = 0
+    end
+    if not DB.lastPendingTransactionUpdateAt then
+        DB.lastPendingTransactionUpdateAt = 0
+    end
 
     -- After requesting other states, also request the blacklist state:
     AuctionHouseDBSaved = DB
@@ -114,6 +125,7 @@ function AuctionHouseAPI:Initialize(deps)
     self.broadcastRatingUpdate = deps.broadcastRatingUpdate
     self.broadcastLFGUpdate = deps.broadcastLFGUpdate
     self.broadcastBlacklistUpdate = deps.broadcastBlacklistUpdate
+    self.broadcastPendingTransactionUpdate = deps.broadcastPendingTransactionUpdate
 end
 
 function AuctionHouseAPI:ClearPersistence()
@@ -127,16 +139,19 @@ function AuctionHouseAPI:ClearPersistence()
     ns.AuctionHouseDB.revRatings = 0
     ns.AuctionHouseDB.revLfg = 0
     ns.AuctionHouseDB.revBlacklists = 0
+    ns.AuctionHouseDB.revPendingTransactions = 0
 
     ns.AuctionHouseDB.auctions = {}
     ns.AuctionHouseDB.trades = {}
     ns.AuctionHouseDB.ratings = {}
     ns.AuctionHouseDB.lfg = {}
     ns.AuctionHouseDB.blacklists = {}
+    ns.AuctionHouseDB.pendingTransactions = {}
     ns.AuctionHouseDB.lastUpdateAt = 0
     ns.AuctionHouseDB.lastRatingUpdateAt = 0
     ns.AuctionHouseDB.lastLfgUpdateAt = 0
     ns.AuctionHouseDB.lastBlacklistUpdateAt = 0
+    ns.AuctionHouseDB.lastPendingTransactionUpdateAt = 0
 end
 
 
@@ -300,7 +315,7 @@ function AuctionHouseAPI:UpdateDB(payload)
     DB.revision = DB.revision + 1
 end
 
-function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, priceType, deliveryType, auctionType, roleplay, deathRoll, duel, raidAmount, note, overrides)
+function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, priceType, deliveryType, auctionType, roleplay, deathRoll, duel, raidAmount, points, note, overrides)
     overrides = overrides or {}
     if priceType == nil then
         priceType = ns.PRICE_TYPE_MONEY
@@ -310,16 +325,16 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
     end
 
     if not itemID then
-        return nil, "Missing itemID"
+        return nil, L["Missing itemID"]
     end
     if not quantity then
-        return nil, "Missing quantity"
+        return nil, L["Missing quantity"]
     end
-    if priceType ~= ns.PRICE_TYPE_MONEY and priceType ~= ns.PRICE_TYPE_TWITCH_RAID and priceType ~= ns.PRICE_TYPE_CUSTOM then
-        return nil, "Invalid priceType"
+    if priceType ~= ns.PRICE_TYPE_MONEY and priceType ~= ns.PRICE_TYPE_TWITCH_RAID and priceType ~= ns.PRICE_TYPE_CUSTOM and priceType ~= ns.PRICE_TYPE_GUILD_POINTS then
+        return nil, L["Invalid priceType"]
     end
     if deliveryType ~= ns.DELIVERY_TYPE_ANY and deliveryType ~= ns.DELIVERY_TYPE_MAIL and deliveryType ~= ns.DELIVERY_TYPE_TRADE then
-        return nil, "Invalid deliveryType"
+        return nil, L["Invalid deliveryType"]
     end
 
     local owner = UnitName("player")
@@ -350,6 +365,7 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
         deathRoll = deathRoll or false,
         duel = duel or false,
         raidAmount = raidAmount or 0,
+        points = points or 0,
         completeAt = 0,
         note = note or "",
         rev = 0,
@@ -423,20 +439,20 @@ function AuctionHouseAPI:RequestBuyAuction(auctionID, tip, overrides)
 
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "No such auction"
+        return nil, L["No such auction"]
     end
     if auction.status ~= ns.AUCTION_STATUS_ACTIVE then
-        return nil, "Auction is not active"
+        return nil, L["Auction is not active"]
     end
     local buyer = overrides.buyer or UnitName("player")
     if auction.owner == buyer then
-        return nil, "Cannot buy your own auction"
+        return nil, L["Cannot buy your own auction"]
     end
 
     -- validation: ensure we have the money (skip validation if simulating)
     local money = overrides.money or GetMoney()
     if money < (auction.price + (tip or 0)) then
-        return nil, "Insufficient funds"
+        return nil, L["Insufficient funds"]
     end
 
     -- update the auction data
@@ -456,10 +472,10 @@ function AuctionHouseAPI:RequestFulfillAuction(auctionID, overrides)
 
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "No such auction"
+        return nil, L["No such auction"]
     end
     if auction.status ~= ns.AUCTION_STATUS_ACTIVE then
-        return nil, "Auction is not active"
+        return nil, L["Auction is not active"]
     end
 
     -- Who is actually fulfilling this?
@@ -468,7 +484,7 @@ function AuctionHouseAPI:RequestFulfillAuction(auctionID, overrides)
     -- The buyer is the one who originally posted the buy order (i.e., the "auction.owner").
     local buyer = overrides.buyer or auction.owner
     if fulfiller == buyer then
-        return nil, "Cannot fulfill your own buy order"
+        return nil, L["Cannot fulfill your own buy order"]
     end
 
     -- Remove the original buy-order auction from the DB
@@ -493,6 +509,7 @@ function AuctionHouseAPI:RequestFulfillAuction(auctionID, overrides)
         auction.deathRoll or false,
         auction.duel or false,
         auction.raidAmount or 0,
+        auction.points or 0,
         auction.note,
         overrides.createOverrides   -- optional extra data to override
     )
@@ -525,20 +542,20 @@ function AuctionHouseAPI:RequestBuyAuctionWithLoan(auctionID, tip, overrides)
     overrides = overrides or {}
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "No such auction"
+        return nil, L["No such auction"]
     end
     if auction.status ~= ns.AUCTION_STATUS_ACTIVE then
-        return nil, "Auction is not active"
+        return nil, L["Auction is not active"]
     end
 
     local buyer = overrides.buyer or UnitName("player")
     if auction.owner == buyer then
-        return nil, "Cannot buy your own auction"
+        return nil, L["Cannot buy your own auction"]
     end
 
     -- validation: ensure owner allows to give the item for a loan
     if not auction.allowLoan then
-        return nil, "Owner does not allow loaning the item"
+        return nil, L["Owner does not allow loaning the item"]
     end
 
     -- update the auction data
@@ -556,7 +573,7 @@ end
 function AuctionHouseAPI:UpdateAuctionStatus(auctionID, status)
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "No such auction"
+        return nil, L["No such auction"]
     end
     if auction.status == status then
         return auction, nil
@@ -580,7 +597,7 @@ end
 function AuctionHouseAPI:UpdateAuctionExpiry(auctionID, newExpiryTime)
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "No such auction"
+        return nil, L["No such auction"]
     end
 
     auction.rev = (auction.rev or 0) + 1
@@ -598,7 +615,7 @@ function AuctionHouseAPI:CancelAuction(auctionID)
     local me = UnitName("player")
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "Auction does not exist"
+        return nil, L["Auction does not exist"]
     end
     local isOwner
     if auction.wish then
@@ -607,13 +624,13 @@ function AuctionHouseAPI:CancelAuction(auctionID)
         isOwner = auction.owner == me
     end
     if not isOwner then
-        return nil, "You do not own this auction"
+        return nil, L["You do not own this auction"]
     end
 
     -- check if auction is not already C.O.D.
     -- special: user can cancel the auction in case the buyer is owing money loan to "forgive" the loan
     if auction.status == ns.AUCTION_STATUS_SENT_COD then
-        return nil, "Cannot cancel auction after COD has been sent"
+        return nil, L["Cannot cancel auction after COD has been sent"]
     end
 
     local success, error = self:DeleteAuctionInternal(auctionID)
@@ -627,11 +644,11 @@ end
 -- only for use by the API internally. use CancelAuction for user requests
 function AuctionHouseAPI:DeleteAuctionInternal(auctionID, isNetworkUpdate)
     if not auctionID then
-        return nil, "No auction ID provided"
+        return nil, L["No auction ID provided"]
     end
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, "Auction does not exist"
+        return nil, L["Auction does not exist"]
     end
 
     DB.auctions[auctionID] = nil
@@ -652,10 +669,10 @@ end
 function AuctionHouseAPI:CompleteAuction(auctionID, overrides)
     local auction = DB.auctions[auctionID]
     if not auction then
-        return nil, nil, "No such auction"
+        return nil, nil, L["No such auction"]
     end
     if auction.status == ns.AUCTION_STATUS_COMPLETED then
-        return nil, nil, "Auction already completed"
+        return nil, nil, L["Auction already completed"]
     end
     overrides = overrides or {}
 
@@ -686,14 +703,14 @@ function AuctionHouseAPI:MarkLoanComplete(auctionID, overrides)
     overrides = overrides or {}
     local auction = DB.auctions[auctionID]
     if not auction then
-        return "No such auction"
+        return L["No such auction"]
     end
     if auction.status ~= ns.AUCTION_STATUS_SENT_LOAN then
-        return "No loan pending for this auction"
+        return L["No loan pending for this auction"]
     end
     local me = overrides["me"] or UnitName("player")
     if auction.owner ~= me then
-        return "You are not the owner of this auction"
+        return L["You are not the owner of this auction"]
     end
 
     local _, _, err = self:CompleteAuction(auctionID, {loanResult = ns.LOAN_RESULT_PAID})
@@ -704,14 +721,14 @@ function AuctionHouseAPI:DeclareBankruptcy(auctionID, overrides)
     overrides = overrides or {}
     local auction = DB.auctions[auctionID]
     if not auction then
-        return "No such auction"
+        return L["No such auction"]
     end
     if auction.status ~= ns.AUCTION_STATUS_SENT_LOAN then
-        return "No loan pending for this auction"
+        return L["No loan pending for this auction"]
     end
     local me = overrides["me"] or UnitName("player")
     if auction.buyer ~= me then
-        return "You are not the buyer of this auction"
+        return L["You are not the buyer of this auction"]
     end
 
     local _, _, err = self:CompleteAuction(auctionID, {loanResult = ns.LOAN_RESULT_BANKRUPTCY})
@@ -930,7 +947,7 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
 
     if not matchedAuction then
         -- items don't appear to be from the auctionhouse
-        return false, hasCandidates, "No matching auction found", nil
+        return false, hasCandidates, L["No matching auction found"], nil
     end
 
     -- we found a match, update the auction record
@@ -945,7 +962,7 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
         _, trade, err = self:CompleteAuction(matchedAuction.id)
     end
     if err then
-        return false, hasCandidates, string.format("failed to mark auction completed after transfer: %s", err), nil
+        return false, hasCandidates, string.format(L["failed to mark auction completed after transfer: %s"], err), nil
     end
 
     return true, hasCandidates, nil, trade
@@ -962,11 +979,12 @@ end
 function AuctionHouseAPI:SetBuyerReview(tradeID, data)
     local trade = DB.trades[tradeID]
     if not trade then
-        return nil, "No such trade"
+        return nil, L["No such trade"]
     end
 
     trade.buyerText = data.text
     trade.buyerRating = data.rating
+    trade.rev = trade.rev + 1
 
     self:UpdateDBTrade({trade = trade})
     self:CreateOrUpdateRating(tradeID, trade.auction.buyer, trade.auction.owner, data.rating, nil)
@@ -981,11 +999,12 @@ end
 function AuctionHouseAPI:SetSellerReview(tradeID, data)
     local trade = DB.trades[tradeID]
     if not trade then
-        return nil, "No such trade"
+        return nil, L["No such trade"]
     end
 
     trade.sellerText = data.text
     trade.sellerRating = data.rating
+    trade.rev = trade.rev + 1
 
     self:UpdateDBTrade({trade = trade})
     self:CreateOrUpdateRating(tradeID, trade.auction.buyer, trade.auction.owner, nil, data.rating)
@@ -1000,10 +1019,11 @@ end
 function AuctionHouseAPI:SetBuyerDead(tradeID)
     local trade = DB.trades[tradeID]
     if not trade then
-        return nil, "No such trade"
+        return nil, L["No such trade"]
     end
 
     trade.buyerDead = true
+    trade.rev = trade.rev + 1
 
     self:UpdateDBTrade({trade = trade})
     self:FireEvent(ns.T_TRADE_ADD_OR_UPDATE, {trade = trade, source = "buyer_dead"})
@@ -1016,10 +1036,11 @@ end
 function AuctionHouseAPI:SetSellerDead(tradeID)
     local trade = DB.trades[tradeID]
     if not trade then
-        return nil, "No such trade"
+        return nil, L["No such trade"]
     end
 
     trade.sellerDead = true
+    trade.rev = trade.rev + 1
 
     self:UpdateDBTrade({trade = trade})
     self:FireEvent(ns.T_TRADE_ADD_OR_UPDATE, {trade = trade, source = "seller_dead"})
@@ -1041,11 +1062,11 @@ end
 -- only for use by the API internally
 function AuctionHouseAPI:DeleteTradeInternal(tradeID, isNetworkUpdate)
     if not tradeID then
-        return nil, "No trade ID provided"
+        return nil, L["No trade ID provided"]
     end
     local trade = DB.trades[tradeID]
     if not trade then
-        return nil, "Trade does not exist"
+        return nil, L["Trade does not exist"]
     end
 
     DB.trades[tradeID] = nil
@@ -1105,11 +1126,11 @@ end
 
 function AuctionHouseAPI:DeleteRatingInternal(ratingID, isNetworkUpdate)
     if not ratingID then
-        return nil, "No rating ID provided"
+        return nil, L["No rating ID provided"]
     end
     local rating = DB.ratings[ratingID]
     if not rating then
-        return nil, "Rating does not exist"
+        return nil, L["Rating does not exist"]
     end
 
     DB.ratings[ratingID] = nil
@@ -1176,10 +1197,10 @@ end
 
 function AuctionHouseAPI:AddToBlacklist(playerName, blacklistedNames)
     if not playerName then
-        return nil, "Missing player name"
+        return nil, L["Missing player name"]
     end
     if not blacklistedNames or #blacklistedNames == 0 then
-        return nil, "No names to blacklist"
+        return nil, L["No names to blacklist"]
     end
 
     local entry = {
@@ -1196,15 +1217,15 @@ end
 
 function AuctionHouseAPI:RemoveFromBlacklist(ownerName, unblacklistName)
     if not ownerName then
-        return nil, "Missing owner name"
+        return nil, L["Missing owner name"]
     end
     if not unblacklistName then
-        return nil, "Missing name to unblacklist"
+        return nil, L["Missing name to unblacklist"]
     end
 
     local blacklist = DB.blacklists[ownerName]
     if not blacklist then
-        return nil, "Owner has no blacklist"
+        return nil, L["Owner has no blacklist"]
     end
 
     -- Find and remove the name from the blacklist
@@ -1219,7 +1240,7 @@ function AuctionHouseAPI:RemoveFromBlacklist(ownerName, unblacklistName)
     end
 
     if not found then
-        return nil, "Name not found in blacklist"
+        return nil, L["Name not found in blacklist"]
     end
 
     -- Update the blacklist with the filtered names
@@ -1251,7 +1272,7 @@ end
 function AuctionHouseAPI:ExtendAuction(auctionId)
     local auction = DB.auctions[auctionId]
     if not auction then
-        return nil, "No such auction"
+        return nil, L["No such auction"]
     end
 
     auction.expiresAt = time() + ns.GetConfig().auctionExpiry

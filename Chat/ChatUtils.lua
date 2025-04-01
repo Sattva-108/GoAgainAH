@@ -1,11 +1,11 @@
 function ChatPrefix()
     -- color = "ffffcc00"
-    return "|cffFF8000OnlyFangs AH|r"
+    return "|cffFF8000" .. L["GoAgain AH"] .. "|r"
 end
 
 function ChatPrefixError()
     -- color = "FFFF0000"
-    return "|cFFFF0000OnlyFangs AH|r"
+    return "|cFFFF0000" .. L["GoAgain AH"] .. "|r"
 end
 
 function CreatePlayerLink(playerName)
@@ -17,12 +17,12 @@ function CreateAddonLink(menuName, displayText)
     --   newMsg = newMsg.."|Hgarrmission:weakauras|h|h|r";
 end
 
---function ChatUtils_Initialize()
- --   hooksecurefunc("SetItemRef", function(link, linkType, button, chatFrame)
- --       if link == "athene:main" then
-    --        local _, myIdentifier, var1, var2 = strsplit(":", linkType)
-    --        print(linkType, myIdentifier)
-    --        return
+function ChatUtils_Initialize()
+    -- hooksecurefunc("SetItemRef", function(link, linkType, button, chatFrame)
+    --     if link == "athene:main" then
+    --         local _, myIdentifier, var1, var2 = strsplit(":", linkType)
+    --         print(linkType, myIdentifier)
+    --         -- return
 
     --         if linkType then
     --             -- Handle the click event here
@@ -30,6 +30,6 @@ end
     --             print(linkType)
     --             return
     --         end
-   --     end
-  --  end)
---end
+    --     end
+    -- end)
+end

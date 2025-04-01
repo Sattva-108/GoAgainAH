@@ -154,7 +154,7 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentOfflineText" inherits="GameFontHighlightSmall" text="Offline Death" justifyH="LEFT">
+                        <FontString name="$parentOfflineText" inherits="GameFontHighlightSmall" text="L_OFFLINE_DEATH" justifyH="LEFT">
                             <Size>
                                 <AbsDimension x="90" y="32" />
                             </Size>
@@ -223,7 +223,7 @@
                     </Layer>
                 </Layers>
             </EditBox>
-            <Button name="$parentRate" inherits="UIPanelButtonTemplate" text="Rate Clip">
+            <Button name="$parentRate" inherits="UIPanelButtonTemplate" text="L_RATE_CLIP">
                 <Size>
                     <AbsDimension x="80" y="20" />
                 </Size>
@@ -322,7 +322,7 @@
         <Size x="350" y="370"/>
         <Layers>
             <Layer level="ARTWORK">
-                <FontString parentKey="noReviewsText" inherits="GameFontNormal" text="There are no reviews for this clip yet.">
+                <FontString parentKey="noReviewsText" inherits="GameFontNormal" text="L_NO_REVIEWS_YET">
                     <Anchors>
                         <Anchor point="CENTER"/>
                     </Anchors>
@@ -384,7 +384,7 @@
                     <Anchor point="TOPLEFT" relativeTo="$parentEntry3" relativePoint="BOTTOMLEFT" y="-3"/>
                 </Anchors>
             </Frame>
-            <Button parentKey="markOfflineButton" inherits="UIPanelButtonTemplate" text="Offline Death">
+            <Button parentKey="markOfflineButton" inherits="UIPanelButtonTemplate" text="L_OFFLINE_DEATH">
                 <Size>
                     <AbsDimension x="380" y="40" />
                 </Size>
@@ -392,7 +392,7 @@
                     <Anchor point="BOTTOM" x="15" y="-5" />
                 </Anchors>
             </Button>
-            <Button parentKey="writeReviewButton" inherits="UIPanelButtonTemplate" text="Write Review">
+            <Button parentKey="writeReviewButton" inherits="UIPanelButtonTemplate" text="L_WRITE_REVIEW">
                 <Size>
                     <AbsDimension x="380" y="40" />
                 </Size>

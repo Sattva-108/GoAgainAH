@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local Database = {}
 ns.ItemDB = Database
 local ITEM_MATCH = '(%w%w%w%w)([^_]+)'
@@ -24,12 +25,14 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
                                     for level, items in pairs(levels) do
                                         if level >= minLevel and level <= maxLevel then
                                             local function maybeAddItem(id, name)
-                                                if search and not name:lower():find(search) then
+                                                local englishName = name
+                                                local nameLocalized = L[name] or name
+                                                if search and not englishName:lower():find(search) and not nameLocalized:lower():find(search) then
                                                     return
                                                 end
                                                 tinsert(results, {
                                                     id = id,
-                                                    name = name,
+                                                    name = nameLocalized,
                                                     quality = rarity,
                                                     level = level,
                                                     equipSlot = equipSlot,
@@ -126,3 +129,34 @@ end
 function Database:GetLink(id, name, quality)
     return ('%s|Hitem:%d:::::::::::::::|h[%s]|h|r'):format(ITEM_QUALITY_COLORS[quality].hex, id, name)
 end
+
+--function Database:Translate()
+--    if ItemTranslations == nil then
+--        ItemTranslations = {}
+--    end
+--    local translations = ItemTranslations
+--    local allItems = self:Find()
+--    local toTranslate = {}
+--
+--    for _, item in ipairs(allItems) do
+--        if item.class ~= ns.SPELL_ITEM_CLASS_ID and translations[item.name] == nil then
+--            tinsert(toTranslate, item)
+--        end
+--    end
+--
+--    if #toTranslate == 0 then
+--        print("All items are translated")
+--        return
+--    end
+--
+--    local i = 1
+--    C_Timer:NewTicker(0.2, function()
+--        local item = toTranslate[i]
+--        ns.GetItemInfoAsync(item.id, function(...)
+--            local info = ns.ItemInfoToTable(...)
+--            translations[item.name] = info.name
+--            print("Translated", item.name, "to", info.name)
+--        end)
+--        i = i + 1
+--    end, #toTranslate)
+--end

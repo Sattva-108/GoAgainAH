@@ -1,13 +1,14 @@
 local addonName, ns = ...
-local AuctionHouse = ns.AuctionHouse
+local L = ns.L
 
-local MailboxUI = AuctionHouse:NewModule("MailboxUI", "AceEvent-3.0")
+local MailboxUI = ns.AuctionHouseAddon:NewModule("MailboxUI", "AceEvent-3.0")
 ns.MailboxUI = MailboxUI
 
+local NOTE_PLACEHOLDER = L["Add Note ..."]
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 
 StaticPopupDialogs["GAH_MAIL_CANCEL_AUCTION"] = {
-    text = "Are you sure you want to cancel this auction?",
+    text = L["Are you sure you want to cancel this auction?"],
     button1 = YES,
     button2 = NO,
     OnAccept = function(self, data)
@@ -39,13 +40,13 @@ end
 function MailboxUI:ValidateMailForAuction(auctionId, overrideRecipient)
     local auction = ns.AuctionHouseDB.auctions[auctionId]
     if not auction then
-        return false, "Auction not found"
+        return false, L["Auction not found"]
     end
 
     -- Check mail recipient using stored value instead of UI element
     local recipient = overrideRecipient or self.currentRecipient
     if recipient ~= auction.buyer then
-        return false, string.format("Invalid recipient. Required: %s, Current: %s",
+        return false, string.format(L["Invalid recipient. Required: %s, Current: %s"],
             auction.buyer, recipient or "")
     end
 
@@ -68,12 +69,12 @@ function MailboxUI:ValidateMailForAuction(auctionId, overrideRecipient)
     local itemsOk = totalQuantity >= auction.quantity
 
     if not moneyOk then
-        return false, string.format("Invalid money amount. Required: %d copper, Current: %d copper",
+        return false, string.format(L["Invalid money amount. Required: %d copper, Current: %d copper"],
             expectedCopper, self.currentMailCopper)
     end
 
     if not itemsOk then
-        return false, string.format("Insufficient items. Required: %d, Current: %d",
+        return false, string.format(L["Insufficient items. Required: %d, Current: %d"],
             auction.quantity, totalQuantity)
     end
 
@@ -90,7 +91,7 @@ function MailboxUI:CreateMailboxUI()
 
     -- Create a container frame (AceGUI Frame)
     local frame = AceGUI:Create("Frame")
-    frame:SetTitle("OnlyFangs AH")
+    frame:SetTitle(L["GoAgain AH"])
     frame:SetStatusText("")
     frame:SetLayout("Flow")
     frame:EnableResize(false)
@@ -142,7 +143,7 @@ function MailboxUI:CreateMailboxUI()
 
     -- "No Orders" message
     self.noOrdersLabel = AceGUI:Create("Label")
-    self.noOrdersLabel:SetText("No Pending Orders")
+    self.noOrdersLabel:SetText(L["No Pending Orders"])
     self.noOrdersLabel:SetFont(GameFontNormalLarge:GetFont())
     self.noOrdersLabel:SetFullWidth(true)
     self.noOrdersLabel:SetJustifyH("CENTER")
@@ -191,7 +192,7 @@ function MailboxUI:CreateMailboxUI()
         ownerContainer:SetFullWidth(true)
 
         local username = AceGUI:Create("Label")
-        username:SetText("Loading...")
+        username:SetText(L["Loading..."])
         username:SetFontObject(GameFontNormalSmall)
         username:SetWidth(180)
         ownerContainer:AddChild(username)
@@ -210,9 +211,9 @@ function MailboxUI:CreateMailboxUI()
         ownerContainer:AddChild(space)
 
         local reviewsLabel = AceGUI:Create("Label")
-        reviewsLabel:SetText("999 reviews")  -- Placeholder reviews count
+        reviewsLabel:SetText(L["%d reviews"])  -- Using the existing translation
         reviewsLabel:SetFontObject(GameFontNormalSmall)
-        reviewsLabel:SetColor(0.5, 0.5, 0.5)  -- Gray color
+        reviewsLabel:SetVertexColor(0.5, 0.5, 0.5)  -- Gray color
         reviewsLabel:SetWidth(60)
         ownerContainer:AddChild(reviewsLabel)
 
@@ -256,7 +257,7 @@ function MailboxUI:CreateMailboxUI()
 
 
         local acceptButton = AceGUI:Create("Button")
-        acceptButton:SetText("Accept")
+        acceptButton:SetText(ACCEPT)
         acceptButton:SetWidth(85)
         acceptButton:SetCallback("OnClick", function()
             if not orderGroup.auctionId then
@@ -270,7 +271,7 @@ function MailboxUI:CreateMailboxUI()
             end
 
             local note = orderGroup.noteBox:GetText()
-            if not note or note == "" or note == 'Add note ...' then
+            if not note or note == "" or note == NOTE_PLACEHOLDER then
                 note = ""
             end
 
@@ -278,7 +279,7 @@ function MailboxUI:CreateMailboxUI()
 
             local ok, err = PrefillAuctionMail(totalCopper, auction.quantity, auction.itemID, auction.buyer, note)
             if not ok then
-                print(ChatPrefixError() .. " Failed to send mail:", err)
+                print(ChatPrefixError() .. L[" Failed to send mail:"], err)
 
                 ClearMailFields()
                 self.pendingAuctionId = nil
@@ -311,20 +312,20 @@ function MailboxUI:CreateMailboxUI()
         noteBox:SetFullWidth(true)
         noteBox:SetMaxLetters(225)
         noteBox:DisableButton(true)
-        noteBox:SetText("Add note ...")
+        noteBox:SetText(NOTE_PLACEHOLDER)
         noteBox.editBox:SetFontObject(GameFontNormalSmall)
         noteBox.editBox:SetTextColor(1, 1, 1, 0.75)
 
         -- Clear placeholder text on focus
         noteBox.editBox:SetScript("OnEditFocusGained", function(self)
-            if noteBox:GetText() == "Add note ..." then
+            if noteBox:GetText() == NOTE_PLACEHOLDER then
                 noteBox:SetText("")
             end
         end)
         -- Restore placeholder text if empty on focus lost
         noteBox.editBox:SetScript("OnEditFocusLost", function(self)
             if noteBox:GetText() == "" then
-                noteBox:SetText("Add note ...")
+                noteBox:SetText(NOTE_PLACEHOLDER)
             end
         end)
 
@@ -394,7 +395,7 @@ function MailboxUI:CreateMailboxUI()
 
     -- Prev button
     local prevButton = AceGUI:Create("Button")
-    prevButton:SetText("Prev")
+    prevButton:SetText(PREV)
     prevButton:SetWidth(buttonWidth)
     prevButton:SetCallback("OnClick", function()
         if self.currentPage > 1 then
@@ -413,7 +414,7 @@ function MailboxUI:CreateMailboxUI()
 
     -- Accept All button
     local acceptAllButton = AceGUI:Create("Button")
-    acceptAllButton:SetText("Accept All")
+    acceptAllButton:SetText(L["Accept All"])
     acceptAllButton:SetWidth(actionButtonWidth)
     acceptAllButton:SetCallback("OnClick", function()
         ns.DebugLog("[DEBUG] Accept All clicked")
@@ -423,7 +424,7 @@ function MailboxUI:CreateMailboxUI()
 
     -- Decline All button
     local declineAllButton = AceGUI:Create("Button")
-    declineAllButton:SetText("Decline All")
+    declineAllButton:SetText(L["Decline All"])
     declineAllButton:SetWidth(actionButtonWidth)
     declineAllButton:SetCallback("OnClick", function()
         StaticPopup_Show("OF_DECLINE_ALL")
@@ -439,7 +440,7 @@ function MailboxUI:CreateMailboxUI()
 
     -- Next button
     local nextButton = AceGUI:Create("Button")
-    nextButton:SetText("Next")
+    nextButton:SetText(NEXT)
     nextButton:SetWidth(buttonWidth)
     nextButton:SetCallback("OnClick", function()
         local allAuctions = ns.AuctionHouseAPI:GetMySellPendingAuctions()
@@ -492,9 +493,10 @@ function MailboxUI:UpdateSlot(slotIndex, auction)
 
     -- Reset note box to default state
     -- placeholder, will be overwritten when you click the box
-    local noteText = "Add note ..."
+    local noteText = NOTE_PLACEHOLDER
     if auction.raidAmount and auction.raidAmount > 0 then
-        noteText = "You promised to raid twitch.tv/" .. ns.GetTwitchName(auction.owner) .. " for this item"
+        local streamUrl = "twitch.tv/".. ns.GetTwitchName(auction.owner)
+        noteText = string.format(L["You promised to raid %s for this item"], streamUrl)
     end
     slot.noteBox:SetText(noteText)
 
@@ -507,12 +509,12 @@ function MailboxUI:UpdateSlot(slotIndex, auction)
     slot.acceptButton:SetDisabled(not hasEnoughItems)
 
     -- Update accept button text based on auction type
-    slot.acceptButton:SetText(auction.status == ns.AUCTION_STATUS_PENDING_LOAN and "Loan" or "Accept")
+    slot.acceptButton:SetText(auction.status == ns.AUCTION_STATUS_PENDING_LOAN and L["Loan"] or ACCEPT)
 
     -- Update owner info
-    slot.username:SetText(ns.GetDisplayName(auction.buyer) or "Unknown")
+    slot.username:SetText(ns.GetDisplayName(auction.buyer) or L["Unknown"])
     slot.starRating:SetRating(ratingAvg)
-    slot.reviewsLabel:SetText(string.format("%d reviews", ratingCount))
+    slot.reviewsLabel:SetText(string.format(L["%d reviews"], ratingCount))
 
     slot:ShowSlot()
     slot.auctionId = auction.id
@@ -773,9 +775,34 @@ function MailboxUI:OnMailSendSuccess()
             end
 
             ns.AuctionHouseAPI:UpdateAuctionStatus(self.pendingAuctionId, newStatus)
-            print(ChatPrefix() .. " Mail successfully sent")
+            if auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
+                -- broadcast TX to:
+                --   * remove points from auction.buyer
+                --   * add points to auction.owner
+                -- err = ns.TransferGuildPoints(auction.buyer, auction.owner, auction.points, auction.id)
+
+                -- Add pending transaction for guild points transfer
+                local tx, err = ns.PendingTxAPI:AddPendingTransaction({
+                    type = ns.PRICE_TYPE_GUILD_POINTS,
+                    amount = auction.points,
+                    from = auction.buyer,
+                    to = auction.owner,
+                    id = auction.id,
+                })
+                if tx then
+                    -- immediately handle locally for fast/correct apply
+                    ns.PendingTxAPI:HandlePendingTransactionChange(tx)
+                else
+                    print(ChatPrefixError() .. L[" Failed to transfer points:"], err)
+                    -- NOTE: error here should not happen and will mean points aren't correctly charged.
+                    -- we can't easily recover to a better state
+                    return
+                end
+            end
+
+            print(ChatPrefix() .. L[" Mail successfully sent"])
         else
-            print(ChatPrefixError() .. " Mail didn't match auction and is not being tracked:", err)
+            print(ChatPrefixError() .. L[" Mail didn't match auction and is not being tracked:"], err)
         end
     end
 

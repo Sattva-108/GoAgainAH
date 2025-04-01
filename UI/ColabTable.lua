@@ -1,17 +1,18 @@
 local addonName, ns = ...
+local L = ns.L
 
 local max_rows = 25
 
 local column_data = {
     {
-        "Streamer",
+        L["Streamer"],
         90,
         function(_entry, _server_name)
             return _entry["name"] or ""
         end,
     },
     {
-        "Race",
+        RACE,
         60,
         function(_entry, _server_name)
             if _entry["race_id"] == nil then
@@ -25,14 +26,14 @@ local column_data = {
         end,
     },
     {
-        "Level",
+        LEVEL,
         40,
         function(_entry, _server_name)
             return _entry["level"] or ""
         end,
     },
     {
-        "Class",
+        CLASS,
         60,
         function(_entry, _server_name)
             if _entry["class_id"] == nil then
@@ -55,14 +56,14 @@ local column_data = {
         end,
     },
     {
-        "Avg. Viewers",
+        L["Avg. Viewers"],
         60,
         function(_entry, _server_name)
             return _entry["viewers"] or ""
         end,
     },
     {
-        "Livestream",
+        L["Livestream"],
         120,
         function(_entry, _server_name)
             return _entry["livestream"] or ""

@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 
 local _SCANNER = "Athene_ScannerTooltip"
 local Scanner = _G[_SCANNER] or CreateFrame("GameTooltip", _SCANNER, UIParent, "GameTooltipTemplate")
@@ -40,10 +41,16 @@ local REALM_NAME_SUFFIX = "-" .. REALM_NAME:gsub("%s+", "")
 -- Helper function to get race icon texture
 local function GetRaceIcon(raceName)
     local iconMap = {
+        -- Horde
         ["Tauren"] = "0:16:16:32",
-        ["Undead"] = "16:32:16:32",
+        ["Undead"] = "16:32:16:32", 
         ["Troll"] = "32:48:16:32",
-        ["Orc"] = "48:64:16:32"
+        ["Orc"] = "48:64:16:32",
+        -- Alliance
+        ["Human"] = "0:16:0:16",
+        ["Dwarf"] = "16:32:0:16",
+        ["NightElf"] = "48:64:0:16",
+        ["Gnome"] = "32:48:0:16"
     }
 
     if iconMap[raceName] then
@@ -52,28 +59,51 @@ local function GetRaceIcon(raceName)
     return nil
 end
 
+OFGetRaceIcon = GetRaceIcon
+
 
 ns.IsGuildMember = function(name)
-    if not _G.OnlyFangsStreamerMap then
-        -- fallback to checking for online members, shouldn't happen on prod
-        local data = ns.GuildRegister:GetMemberData(name)
-        if data then
+    if SixtyProjectLoader ~= nil then
+        ---@type SixtyProjectFunctions
+        local SixtyProjectFunctions = SixtyProjectLoader:ImportModule("SixtyProjectFunctions")
+        local guildData = SixtyProjectFunctions.GetGuildData()
+        if guildData and guildData[name] then
             return true
         end
-        return false
     end
 
-    local fullCharName = name .. REALM_NAME_SUFFIX
-    local ofTwitchName = _G.OnlyFangsStreamerMap[fullCharName]
-    if ofTwitchName then
+    if _G.OnlyFangsStreamerMap then
+        local fullCharName = name .. REALM_NAME_SUFFIX
+        local ofTwitchName = _G.OnlyFangsStreamerMap[fullCharName]
+        if ofTwitchName then
+            return true
+        end
+    end
+
+    -- fallback to checking for online members, shouldn't happen on prod
+    local data = ns.GuildRegister:GetMemberData(name .. REALM_NAME_SUFFIX)
+    if data then
         return true
     end
-    return false
+
+    -- might still be guild member if the GuildRegister table didn't finish updating (server delay)
+    -- check our hardcoded list for safety
+    return ns.GetAvgViewers(name) > 0
 end
 
 ns.GetTwitchName = function(owner)
     if not owner then
         return ""
+    end
+
+    if SixtyProjectLoader ~= nil then
+        ---@type SixtyProjectFunctions
+        local SixtyProjectFunctions = SixtyProjectLoader:ImportModule("SixtyProjectFunctions")
+        local guildData = SixtyProjectFunctions.GetGuildData()
+
+        if guildData and guildData[owner] and guildData[owner].Streamer and guildData[owner].Streamer ~= "" then
+            return guildData[owner].Streamer
+        end
     end
 
     -- for testing
@@ -87,11 +117,21 @@ ns.GetTwitchName = function(owner)
         return "Flawlezz"
     end
 
+
     if _G.OnlyFangsStreamerMap then
         local fullCharName = owner .. REALM_NAME_SUFFIX
         local ofTwitchName = _G.OnlyFangsStreamerMap[fullCharName]
         if ofTwitchName then
             return ofTwitchName
+        end
+    end
+
+    -- "Go Again" specific logic: guild member public note is the streamer name
+    -- as a fallback in case the streamer name is not in the streamer map
+    if REALM_NAME == "Soulseeker" then
+        local guildInfo = ns.GuildRegister.table[owner .. REALM_NAME_SUFFIX]
+        if guildInfo and guildInfo.publicNote then
+            return guildInfo.publicNote
         end
     end
     return nil
@@ -128,7 +168,20 @@ ns.GetDisplayName = function (name, racePosition, maxCharacters)
 end
 
 ns.GetUserRace = function(owner)
-    return _G.OnlyFangsRaceMap and _G.OnlyFangsRaceMap[owner .. REALM_NAME_SUFFIX]
+    if _G.OnlyFangsRaceMap then
+        return _G.OnlyFangsRaceMap[owner .. REALM_NAME_SUFFIX]
+    end
+    if SixtyProjectLoader ~= nil then
+        ---@type SixtyProjectFunctions
+        local SixtyProjectFunctions = SixtyProjectLoader:ImportModule("SixtyProjectFunctions")
+        local guildData = SixtyProjectFunctions.GetGuildData()
+
+        if guildData and guildData[owner] and guildData[owner].Race then
+            return guildData[owner].Race
+        end
+    end
+
+    return nil
 end
 
 -- Converts a price in copper to gold, silver, and copper components
@@ -211,7 +264,7 @@ function PrefillAuctionMail(totalCopper, quantity, itemID, recipient, note)
         end
 
         if not exactMatch then
-            return false, string.format("Please manually split stacks to get exactly %d items.", quantity)
+            return false, string.format(L["Please manually split stacks to get exactly %d items."], quantity)
         end
 
         -- Now proceed with adding items to mail
@@ -279,16 +332,124 @@ ns.CreateCompositeFilter = function(filters)
     end
 end
 
+--- @param browseParams BrowseParams
 ns.IsDefaultBrowseParams = function(browseParams)
-    local text, minLevel, maxLevel, categoryIndex = unpack(browseParams)
-    return (not text or text == '') and not minLevel and not maxLevel and not categoryIndex
+    return (not browseParams.text or browseParams.text == '') and not browseParams.minLevel and not browseParams.maxLevel and not browseParams.class
 end
 
+local InventoryType = {}
+InventoryType.IndexNonEquipType = 0
+InventoryType.IndexHeadType = 1
+InventoryType.IndexNeckType = 2
+InventoryType.IndexShoulderType = 3
+InventoryType.IndexBodyType = 4
+InventoryType.IndexChestType = 5
+InventoryType.IndexWaistType = 6
+InventoryType.IndexLegsType = 7
+InventoryType.IndexFeetType = 8
+InventoryType.IndexWristType = 9
+InventoryType.IndexHandType = 10
+InventoryType.IndexFingerType = 11
+InventoryType.IndexTrinketType = 12
+InventoryType.IndexWeaponType = 13
+InventoryType.IndexShieldType = 14
+InventoryType.IndexRangedType = 15
+InventoryType.IndexCloakType = 16
+InventoryType.Index2HweaponType = 17
+InventoryType.IndexBagType = 18
+InventoryType.IndexTabardType = 19
+InventoryType.IndexRobeType = 20
+InventoryType.IndexWeaponmainhandType = 21
+InventoryType.IndexWeaponoffhandType = 22
+InventoryType.IndexHoldableType = 23
+InventoryType.IndexAmmoType = 24
+InventoryType.IndexThrownType = 25
+InventoryType.IndexRangedrightType = 26
+InventoryType.IndexQuiverType = 27
+InventoryType.IndexRelicType = 28
+InventoryType.IndexProfessionToolType = 29
+InventoryType.IndexProfessionGearType = 30
+InventoryType.IndexEquipablespellOffensiveType = 31
+InventoryType.IndexEquipablespellUtilityType = 32
+InventoryType.IndexEquipablespellDefensiveType = 33
+InventoryType.IndexEquipablespellWeaponType = 34
+
+local invTypeToIndex = {
+    ["INVTYPE_2HWEAPON"] = InventoryType.Index2HweaponType,
+    ["INVTYPE_BAG"] = InventoryType.IndexBagType,
+    ["INVTYPE_BODY"] =  InventoryType.IndexBodyType,
+    ["INVTYPE_CHEST"] =  InventoryType.IndexChestType,
+    ["INVTYPE_CLOAK"] =  InventoryType.IndexCloakType,
+    ["INVTYPE_FEET"] =  InventoryType.IndexFeetType,
+    ["INVTYPE_FINGER"] =  InventoryType.IndexFingerType,
+    ["INVTYPE_HAND"] =  InventoryType.IndexHandType,
+    ["INVTYPE_HEAD"] =  InventoryType.IndexHeadType,
+    ["INVTYPE_HOLDABLE"] =  InventoryType.IndexHoldableType,
+    ["INVTYPE_LEGS"] =  InventoryType.IndexLegsType,
+    ["INVTYPE_NECK"] =  InventoryType.IndexNeckType,
+    ["INVTYPE_RANGED"] =  InventoryType.IndexRangedType,
+    ["INVTYPE_ROBE"] =  InventoryType.IndexChestType,
+    ["INVTYPE_SHIELD"] =  InventoryType.IndexShieldType,
+    ["INVTYPE_SHOULDER"] =  InventoryType.IndexShoulderType,
+    ["INVTYPE_TABARD"] =  InventoryType.IndexTabardType,
+    ["INVTYPE_THROWN"] =  InventoryType.IndexThrownType,
+    ["INVTYPE_TRINKET"] =  InventoryType.IndexTrinketType,
+    ["INVTYPE_WAIST"] =  InventoryType.IndexWaistType,
+    ["INVTYPE_WEAPON"] =  InventoryType.IndexWeaponType,
+    ["INVTYPE_WEAPONMAINHAND"] =  InventoryType.IndexWeaponmainhandType,
+    ["INVTYPE_WEAPONOFFHAND"] =  InventoryType.IndexWeaponoffhandType,
+    ["INVTYPE_WRIST"] =  InventoryType.IndexWristType,
+}
+
+--- @param browseParams BrowseParams
 ns.BrowseParamsToItemDBArgs = function(browseParams)
-    local text, minLevel, maxLevel, categoryIndex, page, faction, exactMatch = unpack(browseParams)
-    return text, ns.CategoryIndexToID[categoryIndex], nil, nil, nil, minLevel, maxLevel
+    local text = browseParams.text
+    local minLevel = browseParams.minLevel
+    local maxLevel = browseParams.maxLevel
+    local categoryIndex = browseParams.class
+    local subCategoryIndex = browseParams.subclass
+    local subSubCategoryIndex = browseParams.slot
+
+    local classID, subClassID
+    if categoryIndex and subCategoryIndex and subCategoryIndex > 0 then
+        local cat = OFAuctionFrame_FindDeepestCategory(categoryIndex, subCategoryIndex, subSubCategoryIndex)
+        local filter = cat.filters[1]
+        classID = filter.classID
+        subClassID = filter.subClassID
+    elseif categoryIndex then
+        classID = ns.CategoryIndexToID[categoryIndex]
+    end
+    return text, classID, subClassID, nil, nil, minLevel, maxLevel
 end
 
+--- @param browseParams BrowseParams
+ns.FilterItemsExtra = function(items, browseParams)
+    if not browseParams.class or browseParams.class == 0 then
+        return items
+    end
+    if not browseParams.subclass or browseParams.subclass == 0 then
+        return items
+    end
+    if not browseParams.slot or browseParams.slot == 0 then
+        return items
+    end
+
+    local cat = OFAuctionFrame_FindDeepestCategory(browseParams.class, browseParams.subclass, browseParams.slot)
+    local filter = cat.filters[1]
+    local invType = filter.inventoryType
+    local filtered = {}
+    for _, item in ipairs(items) do
+        local itemEquipLoc = select(4,ns.GetItemInfoInstant(item.id))
+        local itemInvType = invTypeToIndex[itemEquipLoc] or 0
+        if itemInvType == invType then
+            table.insert(filtered, item)
+        end
+    end
+    return filtered
+end
+
+
+--- @param browseParams BrowseParams
 local function CreateBrowseAuctionFilters(browseParams)
     local playerName = UnitName("player")
     local filters = {
@@ -300,7 +461,18 @@ local function CreateBrowseAuctionFilters(browseParams)
         function(item) return not ns.BlacklistAPI:IsBlacklisted(item.owner, ns.BLACKLIST_TYPE_ORDERS, playerName) end,
     }
 
-    local text, minLevel, maxLevel, categoryIndex, page, faction, exactMatch, onlineOnly, auctionsOnly = unpack(browseParams)
+    local text = browseParams.text
+    local minLevel = browseParams.minLevel
+    local maxLevel = browseParams.maxLevel
+    local categoryIndex = browseParams.class
+    local subCategoryIndex = browseParams.subclass
+    local subSubCategoryIndex = browseParams.slot
+    local page = browseParams.page
+    local faction = browseParams.faction
+    local exactMatch = browseParams.exactMatch
+    local onlineOnly = browseParams.onlineOnly
+    local auctionsOnly = browseParams.auctionsOnly
+
     if text and text ~= "" then
         if exactMatch then
             table.insert(filters, function(item)
@@ -327,10 +499,20 @@ local function CreateBrowseAuctionFilters(browseParams)
         end)
     end
     if categoryIndex and categoryIndex > 0 then
-        table.insert(filters, function(item)
-            local classID = select(6,ns.GetItemInfoInstant(item.itemID))
-            return classID == ns.CategoryIndexToID[categoryIndex]
-        end)
+        if subCategoryIndex and subCategoryIndex > 0 then
+            local cat = OFAuctionFrame_FindDeepestCategory(categoryIndex, subCategoryIndex, subSubCategoryIndex)
+            local filter = cat.filters[1]
+            table.insert(filters, function(item)
+                local itemID, itemType, itemSubType, itemEquipLoc, icon, classID, subclassID = ns.GetItemInfoInstant(item.itemID)
+                local itemInvType = invTypeToIndex[itemEquipLoc] or 0
+                return classID == filter.classID and filter.subClassID == subclassID and (filter.inventoryType == nil or filter.inventoryType == 0 or filter.inventoryType == itemInvType)
+            end)
+        else
+            table.insert(filters, function(item)
+                local classID = select(6,ns.GetItemInfoInstant(item.itemID))
+                return classID == ns.CategoryIndexToID[categoryIndex]
+            end)
+        end
     end
     if onlineOnly then
         table.insert(filters, function(item)
@@ -442,6 +624,7 @@ local function queryAndSort(filter, sortParams)
     return auctions
 end
 
+--- @param browseParams BrowseParams
 ns.GetBrowseAuctions = function(browseParams)
     local filter = CreateBrowseAuctionFilters(browseParams)
     local auctions = ns.AuctionHouseAPI:QueryAuctions(filter)
@@ -527,36 +710,48 @@ ns.CanCancelAuction = function(auction)
     return auction.owner == UnitName("player") and auction.status == ns.AUCTION_STATUS_ACTIVE
 end
 
+ns.GetPrettyTimeAgoString = function(duration)
+    if duration > 86400 then
+        return string.format(L["%dd ago"], math.floor(duration / 86400))
+    elseif duration > 3600 then
+        return string.format(L["%dh ago"], math.floor(duration / 3600))
+    elseif duration > 60 then
+        return string.format(L["%dm ago"], math.floor(duration / 60))
+    else
+        return string.format(L["%ds ago"], duration)
+    end
+end
+
 ns.GetPrettyDurationString = function(duration)
     if duration > 86400 then
-        return string.format("%dd", math.floor(duration / 86400))
+        return string.format(L["%dd"], math.floor(duration / 86400))
     elseif duration > 3600 then
-        return string.format("%dh", math.floor(duration / 3600))
+        return string.format(L["%dh"], math.floor(duration / 3600))
     elseif duration > 60 then
-        return string.format("%dm", math.floor(duration / 60))
+        return string.format(L["%dm"], math.floor(duration / 60))
     else
-        return string.format("%ds", duration)
+        return string.format(L["%ds"], duration)
     end
 end
 
 ns.GetAuctionStatusDisplayString = function(auction)
     local status = auction.status
     if status == ns.AUCTION_STATUS_ACTIVE then
-        return "active"
+        return L["active"]
     elseif status == ns.AUCTION_STATUS_PENDING_TRADE or status == ns.AUCTION_STATUS_PENDING_LOAN then
-        return "pending"
+        return L["pending"]
     elseif status == ns.AUCTION_STATUS_SENT_COD then
-        return "sent C.O.D. mail"
+        return L["sent C.O.D. mail"]
     elseif status == ns.AUCTION_STATUS_SENT_LOAN then
         local now = time()
         if auction.expiresAt < now then
-            return string.format("loan (expired %s)", ns.GetPrettyDurationString(now - auction.expiresAt))
+            return string.format(L["loan (expired %s)"], ns.GetPrettyDurationString(now - auction.expiresAt))
         else
-            return string.format("loan (%s)", ns.GetPrettyDurationString(auction.expiresAt - time()))
+            return string.format(L["loan (%s)"], ns.GetPrettyDurationString(auction.expiresAt - time()))
         end
     else
         ns.DebugLog("[DEBUG] Unknown status: " .. status)
-        return "Unknown"
+        return L["Unknown"]
     end
 end
 
@@ -577,29 +772,29 @@ end
 ns.GetAuctionStatusTooltip = function(auction)
     local header, body
     if auction.status == ns.AUCTION_STATUS_ACTIVE then
-        header = "Active"
-        body = "This item is currently up for auction."
+        header = L["Active"]
+        body = L["This item is currently up for auction."]
     elseif auction.status == ns.AUCTION_STATUS_PENDING_TRADE or auction.status == ns.AUCTION_STATUS_PENDING_LOAN then
-        header = "Pending"
+        header = L["Pending"]
         if auction.deliveryType == ns.DELIVERY_TYPE_MAIL then
-            body = "Mail the item"
+            body = L["Mail the item"]
         elseif auction.deliveryType == ns.DELIVERY_TYPE_TRADE then
-            body = "Trade the item"
+            body = L["Trade the item"]
         else
-            body = "Trade or mail the item"
+            body = L["Trade or mail the item"]
         end
     elseif auction.status == ns.AUCTION_STATUS_SENT_COD then
-        header = "sent C.O.D. mail"
-        body = "Wait for the mail to arrive and complete the trade."
+        header = L["sent C.O.D. mail"]
+        body = L["Wait for the mail to arrive and complete the trade."]
     elseif auction.status == ns.AUCTION_STATUS_SENT_LOAN then
-        header = "Loan"
-        body = "Waiting for the loan to be paid and/or marked as complete."
+        header = L["Loan"]
+        body = L["Waiting for the loan to be paid and/or marked as complete."]
     elseif auction.status == ns.AUCTION_STATUS_COMPLETED then
-        header = "Completed"
-        body = "This auction has been completed."
+        header = L["Completed"]
+        body = L["This auction has been completed."]
     else
-        header = "Unknown"
-        body = "Unknown status"
+        header = L["Unknown"]
+        body = L["Unknown status"]
     end
 
     return WHITE_HEADER_COLOR .. header .. RESET_COLOR .. "\n" .. BodyText(body)
@@ -613,9 +808,9 @@ end
 ns.GetAuctionTypeDisplayString = function(auctionType)
     local auctionTypeLabel
     if auctionType == ns.AUCTION_TYPE_BUY then
-        auctionTypeLabel = "Wishlist"
+        auctionTypeLabel = L["Wishlist"]
     else
-        auctionTypeLabel = "Auction"
+        auctionTypeLabel = L["Auction"]
     end
     return auctionTypeLabel
 end
@@ -624,9 +819,9 @@ ns.GetDeliveryTypeDisplayString = function(auction)
     local deliveryType = auction.deliveryType
     local deliveryTypeLabel
     if deliveryType == ns.DELIVERY_TYPE_MAIL then
-        deliveryTypeLabel = "Mail"
+        deliveryTypeLabel = L["Mail"]
     elseif deliveryType == ns.DELIVERY_TYPE_TRADE then
-        deliveryTypeLabel = "Trade"
+        deliveryTypeLabel = L["Trade"]
     else
         deliveryTypeLabel = ""
     end
@@ -641,9 +836,9 @@ ns.GetDeliveryTypeDisplayString = function(auction)
     return deliveryTypeLabel
 end
 
-OF_ROLEPLAY_TOOLTIP = "Requires roleplay when doing the trade. Leave a note to specify the exact requirements."
-OF_DEATH_ROLL_TOOLTIP = " The winner of the deathroll gets/keeps the item(s) and gold.\n\nOne player rolls 1-1000, each consecutive rolls is between 1 and the previous roll's result (eg. /roll 1-567). First player to roll 1 loses."
-OF_DUEL_TOOLTIP = "Do a normal duel (not Mak`Gora!!). The winner of the duel gets/keeps the item(s) and gold."
+OF_ROLEPLAY_TOOLTIP = L["Requires roleplay when doing the trade. Leave a note to specify the exact requirements."]
+OF_DEATH_ROLL_TOOLTIP = L[" The winner of the deathroll gets/keeps the item(s) and gold.\n\nOne player rolls 1-1000, each consecutive rolls is between 1 and the previous roll's result (eg. /roll 1-567). First player to roll 1 loses."]
+OF_DUEL_TOOLTIP = L["Do a normal duel (not Mak`Gora!!). The winner of the duel gets/keeps the item(s) and gold."]
 
 
 ns.GetDeliveryTypeTooltip = function(auction)
@@ -652,34 +847,34 @@ ns.GetDeliveryTypeTooltip = function(auction)
     local deliveryTypeLabel
     local deliveryType = auction.deliveryType
     if deliveryType == ns.DELIVERY_TYPE_MAIL then
-        deliveryTypeLabel = "Item has to be delivered via mail"
+        deliveryTypeLabel = L["Item has to be delivered via mail"]
     elseif deliveryType == ns.DELIVERY_TYPE_TRADE then
-        deliveryTypeLabel = "Item has to be delivered via trade"
+        deliveryTypeLabel = L["Item has to be delivered via trade"]
     else
-        deliveryTypeLabel = "Item can be delivered via trade or mail"
+        deliveryTypeLabel = L["Item can be delivered via trade or mail"]
     end
 
     -- 1. Delivery Type section
-    table.insert(sections, SectionHeader("Delivery") .. BodyText(deliveryTypeLabel))
+    table.insert(sections, SectionHeader(L["Delivery"]) .. BodyText(deliveryTypeLabel))
     local hasNote = auction.note and auction.note ~= ""
 
     -- 3. Roleplay section (if applicable)
     if auction.roleplay then
-        local roleplayInfo = "Roleplay is required during the trade."
+        local roleplayInfo = L["Roleplay is required during the trade."]
         if hasNote then
-            roleplayInfo = roleplayInfo .. "\nCheck the note below for potential details."
+            roleplayInfo = roleplayInfo .. L["\nCheck the note below for potential details."]
         end
         if deliveryType == ns.DELIVERY_TYPE_MAIL or deliveryType == ns.DELIVERY_TYPE_ANY then
             roleplayInfo = roleplayInfo ..
-                    "\nFor mail delivery, be creative with the mail note you send."
+                    L["\nFor mail delivery, be creative with the mail note you send."]
         end
 
-        table.insert(sections, SectionHeader("Roleplay") .. BodyText(roleplayInfo))
+        table.insert(sections, SectionHeader(L["Roleplay"]) .. BodyText(roleplayInfo))
     end
 
     -- 4. Additional Notes (if applicable)
     if hasNote then
-        table.insert(sections, SectionHeader("Note") .. BodyText(auction.note))
+        table.insert(sections, SectionHeader(L["Note"]) .. BodyText(auction.note))
     end
 
     -- Join all sections with a blank line in between

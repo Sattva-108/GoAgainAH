@@ -31,7 +31,7 @@ local function CreateSyncedState(name)
                 local success, err = pcall(func, ...)
                 if not success then
                     -- You can optionally log or handle errors here
-                    print(ChatPrefixError() .. " Error in event handler for " .. eventName .. ": " .. err)
+                    print(ChatPrefixError() .. L[" Error in event handler for "] .. eventName .. ": " .. err)
                 end
             end
         end

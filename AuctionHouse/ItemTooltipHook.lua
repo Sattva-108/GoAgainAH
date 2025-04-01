@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 
 local function boolSorter(l, r)
     local ln = l and 1 or 0
@@ -28,21 +29,34 @@ GameTooltip:HookScript("OnTooltipSetItem", function(tooltip, ...)
     local count = 0
     for k,v in pairs(auctions) do count = count + 1 end
 
+    local function wrapColor(text, color)
+        return "|cff"..color..text.."|r"
+    end
+
+    local goAgainAH = wrapColor(L["<GoAgain AH>"], "ff4040")
+
+
     local headerShown = false
     if OFAuctionFrame:IsShown() and OFAuctionFrameAuctions:IsShown() then
-        tooltip:AddLine("|cffff4040<OnlyFangs AH>|r")
-        tooltip:AddLine("right-click: use item")
-        tooltip:AddLine("shift+right-click: auction item")
+        tooltip:AddLine(goAgainAH)
+        tooltip:AddLine(L["right-click: use item"])
+        tooltip:AddLine(L["shift+right-click: auction item"])
+        headerShown = true
+    end
+    if OFAuctionFrame:IsShown() and OFAuctionFrameBrowse:IsShown() then
+        tooltip:AddLine(goAgainAH)
+        tooltip:AddLine(L["shift+left-click: search for item"])
         headerShown = true
     end
     local isShiftPressed = IsShiftKeyDown()
 
     local max = 5
     if count >= 1 then
+        local neededBy = wrapColor(L["Needed By:"],"ffff00")
         if headerShown then
-            tooltip:AddLine("|cffffff00Needed By:|r")
+            tooltip:AddLine(neededBy)
         else
-            tooltip:AddLine("|cffff4040<OnlyFangs AH>|r |cffffff00Needed By:|r")
+            tooltip:AddLine(goAgainAH .. " " .. neededBy)
         end
         local i = 0
         for _, a in pairs(auctions) do
@@ -50,20 +64,23 @@ GameTooltip:HookScript("OnTooltipSetItem", function(tooltip, ...)
             if i < max or count == max or isShiftPressed then
                 local moneyString
                 if a.deathRoll then
-                    moneyString = "Death Roll"
+                    moneyString = L["Death Roll"]
                 elseif a.duel then
-                    moneyString = "Duel (Normal)"
+                    moneyString = L["Duel (Normal)"]
                 elseif a.priceType == ns.PRICE_TYPE_TWITCH_RAID then
-                    moneyString = string.format("Twitch Raid %d+", a.raidAmount)
+                    moneyString = string.format(L["Twitch Raid %d+"], a.raidAmount)
                 elseif a.priceType == ns.PRICE_TYPE_CUSTOM then
-                    moneyString = "Custom"
+                    moneyString = L["Custom"]
+                elseif a.priceType == ns.PRICE_TYPE_GUILD_POINTS then
+                    moneyString = string.format(L["%d Points"], a.points)
                 else
                     moneyString = ns.GetMoneyString(a.price)
                 end
-                tooltip:AddLine("  " .. ns.GetDisplayName(a.owner) .. " x" .. a.quantity .. " for " .. moneyString)
+                tooltip:AddLine("  " .. ns.GetDisplayName(a.owner) .. " x" .. a.quantity .. L[" for "] .. moneyString)
             else
                 local extra = count - max + 1
-                tooltip:AddLine("  |cffbbbbbb+ " .. tostring(extra) .. " more (hold shift)|r")
+                local line = wrapColor(string.format(L["+%d more (hold shift)"], extra), "bbbbbb")
+                tooltip:AddLine("  " .. line)
                 break
             end
         end

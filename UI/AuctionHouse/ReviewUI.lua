@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local OF_REVIEWS_PER_PAGE = 15
 local REVIEWS_IN_1_SCREEN = 3
@@ -9,15 +10,15 @@ local TAB_RECENT_REVIEWS = 2
 local TAB_LEADERBOARD = 3
 
 ns.REVIEW_TABS = {
-    { name = "My Reviews", id = TAB_MY_REVIEWS },
-    { name = "Recent Reviews", id = TAB_RECENT_REVIEWS },
-    { name = "Leaderboard", id = TAB_LEADERBOARD, disabled = true },
+    { name = L["My Reviews"], id = TAB_MY_REVIEWS },
+    { name = L["Recent Reviews"], id = TAB_RECENT_REVIEWS },
+    { name = L["Leaderboard"], id = TAB_LEADERBOARD, disabled = true },
 }
 
 StaticPopupDialogs["OF_LEAVE_REVIEW"] = {
-    text = "Auction completed successfully!\nWrite your review",
-    button1 = "Write Review",
-    button2 = "Do it later",
+    text = L["Auction completed successfully!\nWrite your review"],
+    button1 = L["Write Review"],
+    button2 = L["Do it later"],
     OnAccept = function(self, data)
         -- Start the review process with the provided tradeID
         local trade = ns.AuctionHouse.db.trades[data.tradeID]
@@ -48,21 +49,31 @@ local function FormatTimeAgo(timestamp)
     local months  = math.floor(diff / 2592000)
     local years   = math.floor(diff / 31536000)
 
+    local num, format
     if years > 0 then
-        return years .. "y ago"
+        num = years
+        format = L["%dy ago"]
     elseif months > 0 then
-        return months .. "mo ago"
+        num = months
+        format = L["%dmo ago"]
     elseif weeks > 0 then
-        return weeks .. "w ago"
+        num = weeks
+        format = L["%dw ago"]
     elseif days > 0 then
-        return days .. "d ago"
+        num = days
+        format = L["%dd ago"]
     elseif hours > 0 then
-        return hours .. "h ago"
+        num = hours
+        format = L["%dh ago"]
     elseif minutes > 0 then
-        return minutes .. "m ago"
+        num = minutes
+        format = L["%dm ago"]
     else
-        return seconds .. "s ago"
+        num = seconds
+        format = L["%ds ago"]
     end
+
+    return string.format(format, num)
 end
 
 local function GetReviews(selectedTab)
@@ -88,8 +99,8 @@ local function GetReviews(selectedTab)
             -- NOTE: OnlyFangsRaceMap was only added to onlyfangs on dec 24
             -- so the race might not be available if the user's OnlyFangs addon is out of date,
             -- but it's the best we can do easily
-            local sellerDisplayName = ns.GetDisplayName(auction.owner, 'left') or "Unknown"
-            local buyerDisplayName = ns.GetDisplayName(auction.buyer, 'right') or "Unknown"
+            local sellerDisplayName = ns.GetDisplayName(auction.owner, 'left') or L["Unknown"]
+            local buyerDisplayName = ns.GetDisplayName(auction.buyer, 'right') or L["Unknown"]
 
             table.insert(results, {
                 trade = trade,
@@ -244,9 +255,9 @@ local function UpdateMyReviewsText()
     local tabText
     local pendingReviews = ns.AuctionHouseAPI:GetPendingReviewCount()
     if pendingReviews > 0 then
-         tabText = string.format("My Reviews (%d)", pendingReviews)
+         tabText = string.format(L["My Reviews (%d)"], pendingReviews)
     else
-         tabText = "My Reviews"
+         tabText = L["My Reviews"]
     end
 
     -- Update tab highlights
@@ -698,18 +709,18 @@ local function UpdateReviewSide(card, side, review)
 
     if (timeLeft > 0 and not bothHaveText) or not text then
         -- hide the real review text until timer runs out, or both parties submit their review
-        local placeholder = "Pending Review"
+        local placeholder = L["Pending"]
         if text then
-            placeholder = "Completed Review"
+            placeholder = L["Completed Review"]
         elseif timeLeft <= 0 then
-            placeholder = "Didn't write a review"
+            placeholder = L["Didn't write a review"]
         end
         reviewText:SetText(placeholder)
 
         stars:Hide()
     else
         -- there is a review and we're allowed to show it
-        reviewText:SetText(text or "Pending Review")
+        reviewText:SetText(text or L["Pending Review"])
 
         stars:SetRating(rating or 0)
         stars:Show()
@@ -717,7 +728,7 @@ local function UpdateReviewSide(card, side, review)
 
     -- show time remaning if there is any
     if timeLeft > 0 and not text then
-        timeRemaining:SetText(ns.GetTimeText(timeLeft) .. " left")
+        timeRemaining:SetText(ns.GetTimeText(timeLeft))
         timeRemaining:SetTextColor(1, 0.82, 0) -- Golden yellow color
         timeRemaining:Show()
     else
@@ -732,7 +743,7 @@ local function UpdateReviewSide(card, side, review)
     end
 
     if isMeInvolved and not text and timeLeft > 0 and not isSideDead and not isOtherSideDead then
-        button:SetText(isMySide and "Write Review" or "Whisper")
+        button:SetText(isMySide and L["Write Review"] or WHISPER)
         button:SetScript("OnClick", function()
             if isMySide then
                 ns.ShowReviewPopup(review.trade)
@@ -777,8 +788,8 @@ local function UpdateReviewCardInner(card, review)
     card.priceWidget:UpdateView(review.auction)
 
 
-    card.userName:SetText(review.leftReviewer or "Unknown")
-    card.userNameRight:SetText(review.rightReviewer or "Unknown")
+    card.userName:SetText(review.leftReviewer or L["Unknown"])
+    card.userNameRight:SetText(review.rightReviewer or L["Unknown"])
 
     -- Update both sides using the new function
     UpdateReviewSide(card, "left", review)
@@ -896,8 +907,8 @@ function OFAuctionFrame_UpdateReviewsTabText()
 
     local pendingReviews = ns.AuctionHouseAPI:GetPendingReviewCount()
     if pendingReviews > 0 then
-        OFAuctionFrameTab4:SetText(string.format("Reviews (%d)", pendingReviews))
+        OFAuctionFrameTab4:SetText(string.format(L["Reviews (%d)"], pendingReviews))
     else
-        OFAuctionFrameTab4:SetText("Reviews")
+        OFAuctionFrameTab4:SetText(L["Reviews"])
     end
 end

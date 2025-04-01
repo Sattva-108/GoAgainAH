@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local MAX_PRICE = (9999 * 100 * 100) + (99 * 100) + 99
 local MONEY_FRAME_HEIGHT = 15
@@ -70,7 +71,7 @@ local function CreateMoneyFrame(parent, rightPad)
 
     ----------------------------------------------------------------------------
     -- Dynamically size the parent "moneyFrame" so text does not clip the icons.
-    -- We measure each text’s width plus the icons and spacing, then set the frame.
+    -- We measure each text's width plus the icons and spacing, then set the frame.
     ----------------------------------------------------------------------------
 
     -- Force the FontStrings to update their widths so GetStringWidth is accurate.
@@ -92,7 +93,7 @@ end
 local function CreateTextAndPriceWidget(parent, rightPad)
     -- Create label
     local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    label:SetText("Deathroll")
+    label:SetText(L["Deathroll"])
     label:SetJustifyH("RIGHT")
     label:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -4, -4)
 
@@ -175,7 +176,7 @@ ns.CreatePriceWidget = function(parent, config)
     -- Price row
     ---------------------------------------------------------------------------
     local priceLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    priceLabel:SetText("Price")
+    priceLabel:SetText(L["Price"])
     priceLabel:SetTextColor(0.5, 0.5, 0.5)
     priceLabel:SetJustifyH("RIGHT")
     priceLabel:SetHeight(MONEY_FRAME_HEIGHT)
@@ -191,7 +192,7 @@ ns.CreatePriceWidget = function(parent, config)
     -- Tip row
     ---------------------------------------------------------------------------
     local tipLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    tipLabel:SetText("Tip (0%)")
+    tipLabel:SetText(L["Tip (0%)"])
     tipLabel:SetTextColor(0.5, 0.5, 0.5)
     tipLabel:SetJustifyH("RIGHT")
     tipLabel:SetHeight(MONEY_FRAME_HEIGHT)
@@ -208,7 +209,7 @@ ns.CreatePriceWidget = function(parent, config)
     ---------------------------------------------------------------------------
     local textAndPriceWidget = CreateTextAndPriceWidget(frame, rightPad)
 
-    -- Adjust this section to match the same “vertical” anchoring style
+    -- Adjust this section to match the same "vertical" anchoring style
     -- used for priceMoneyFrame and tipMoneyFrame elsewhere in the file:
 
     -- Clear existing points
@@ -261,22 +262,28 @@ ns.CreatePriceWidget = function(parent, config)
         if auction.priceType == ns.PRICE_TYPE_TWITCH_RAID then
             self.textAndPriceWidget.Show()
             self.textAndPriceWidget:UpdateView({
-                text = string.format("Twitch Raid %d+", auction.raidAmount or 0),
+                text = string.format(L["Twitch Raid %d+"], auction.raidAmount or 0),
                 money = money,
                 renderDeathRollIcon = false,
             })
-
+        elseif auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
+            self.textAndPriceWidget.Show()
+            self.textAndPriceWidget:UpdateView({
+                text = string.format(L["%d Points"], auction.points or 0),
+                money = money,
+                renderDeathRollIcon = false,
+            })
         elseif auction.deathRoll then
             self.textAndPriceWidget.Show()
             self.textAndPriceWidget:UpdateView({
-                text = "Deathroll",
+                text = L["Deathroll"],
                 renderDeathRollIcon = true,
                 money = money,
             })
         elseif auction.duel then
             self.textAndPriceWidget.Show()
             self.textAndPriceWidget:UpdateView({
-                text = "Duel (Normal)",
+                text = L["Duel (Normal)"],
                 renderDuelIcon = true,
                 money = money,
             })
@@ -284,18 +291,18 @@ ns.CreatePriceWidget = function(parent, config)
         elseif auction.itemID == ns.ITEM_ID_GOLD then
             self.textAndPriceWidget.Show()
             self.textAndPriceWidget:UpdateView({
-                text = auction.roleplay and "Roleplay" or "",
+                text = auction.roleplay and L["Roleplay"] or "",
                 money = nil,
             })
 
         elseif auction.loanResult then
-            local text = "loan"
+            local text = L["loan"]
             local color = {r = 1, g = 1, b = 1} -- default white
             if auction.loanResult == ns.LOAN_RESULT_BANKRUPTCY then
-                text = "Declared Bankruptcy"
+                text = L["Declared Bankruptcy"]
                 color = {r = 1, g = 0.1, b = 0.1} -- red
             elseif auction.loanResult == ns.LOAN_RESULT_PAID then
-                text = "Loan paid"
+                text = L["Loan paid"]
                 color = {r = 0.1, g = 1, b = 0.1} -- green
             end
 
@@ -319,7 +326,7 @@ ns.CreatePriceWidget = function(parent, config)
                 local tipPercentage = (auction.price > 0)
                     and math.floor((auction.tip or 0) / auction.price * 100)
                      or 0
-                self.tipLabel:SetText(string.format("Tip (%d%%)", tipPercentage))
+                self.tipLabel:SetText(string.format(L["Tip (%d%%)"], tipPercentage))
             end
 
             self.priceMoneyFrame:SetMoney(auction.price or 0)

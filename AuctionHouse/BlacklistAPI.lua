@@ -1,5 +1,5 @@
 local addonName, ns = ...
-
+L = ns.L
 -----------------------------------------------------------------------------
 -- Add numeric enums for blacklist types
 -----------------------------------------------------------------------------
@@ -47,13 +47,13 @@ end
 -----------------------------------------------------------------------------
 function BlacklistAPI:AddToBlacklist(playerName, blType, blacklistedName)
     if not playerName then
-        return nil, "Missing player name"
+        return nil, L["Missing player name"]
     end
     if not blType then
-        return nil, "Missing blacklist type"
+        return nil, L["Missing blacklist type"]
     end
     if not blacklistedName then
-        return nil, "No name to blacklist"
+        return nil, L["No name to blacklist"]
     end
 
     local currentEntry = DB.blacklists[playerName]
@@ -62,7 +62,7 @@ function BlacklistAPI:AddToBlacklist(playerName, blType, blacklistedName)
     -- Check if name already exists in the blacklist
     for _, name in ipairs(currentNames) do
         if name == blacklistedName then
-            return nil, "Name already in blacklist"
+            return nil, L["Name already in blacklist"]
         end
     end
 
@@ -94,23 +94,23 @@ end
 -----------------------------------------------------------------------------
 function BlacklistAPI:RemoveFromBlacklist(ownerName, blType, unblacklistName)
     if not ownerName then
-        return nil, "Missing owner name"
+        return nil, L["Missing owner name"]
     end
     if not blType then
-        return nil, "Missing blacklist type"
+        return nil, L["Missing blacklist type"]
     end
     if not unblacklistName then
-        return nil, "Missing name to unblacklist"
+        return nil, L["Missing name to unblacklist"]
     end
 
     local blacklist = DB.blacklists[ownerName]
     if not blacklist then
-        return nil, "Owner has no blacklist"
+        return nil, L["Owner has no blacklist"]
     end
 
     local namesForType = blacklist.namesByType and blacklist.namesByType[blType]
     if not namesForType then
-        return nil, "No names found for this blacklist type"
+        return nil, L["No names found for this blacklist type"]
     end
 
     local found = false
@@ -125,7 +125,7 @@ function BlacklistAPI:RemoveFromBlacklist(ownerName, blType, unblacklistName)
     end
 
     if not found then
-        return nil, "Name not found in blacklist for type " .. tostring(blType)
+        return nil, string.format(L["Name not found in blacklist for type %s"], tostring(blType))
     end
 
     -- Build updated payload for this player and type

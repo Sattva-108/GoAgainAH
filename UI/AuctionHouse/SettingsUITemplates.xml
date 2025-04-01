@@ -8,7 +8,7 @@
         <!-- title -->
         <Layers>
             <Layer level="BACKGROUND">
-                <FontString name="AHSettingsTitle" inherits="GameFontNormal" text="Settings">
+                <FontString name="AHSettingsTitle" inherits="GameFontNormal" text="SETTINGS">
                     <Anchors>
                         <Anchor point="TOP">
                             <Offset>
@@ -19,7 +19,7 @@
                 </FontString>
 
                 <!-- Orders header -->
-                <FontString name="AHSettingsOrdersHeader" inherits="GameFontHighlight" text="Orders">
+                <FontString name="AHSettingsOrdersHeader" inherits="GameFontHighlight" text="L_ORDERS">
                     <Anchors>
                         <Anchor point="TOPLEFT">
                             <Offset>
@@ -30,7 +30,7 @@
                 </FontString>
 
                 <!-- Reviews header -->
-                <FontString name="AHSettingsReviewsHeader" inherits="GameFontHighlight" text="Reviews">
+                <FontString name="AHSettingsReviewsHeader" inherits="GameFontHighlight" text="L_REVIEWS">
                     <Anchors>
                         <Anchor point="TOPLEFT" relativeTo="AHSettingsOrdersHeader" relativePoint="BOTTOMLEFT">
                             <Offset>
@@ -164,7 +164,7 @@
 
 
             <!-- bottom-right 'remove' / 'whisper' button -->
-            <Button name="OFSettingsBottomButton1" inherits="UIPanelButtonTemplate" text="Remove">
+            <Button name="OFSettingsBottomButton1" inherits="UIPanelButtonTemplate" text="REMOVE">
                 <Size>
                     <AbsDimension x="90" y="22" />
                 </Size>
@@ -192,7 +192,7 @@
             </Button>
 
             <!-- bottom-right 'blackllist player' button -->
-            <Button name="OFSettingsBottomButton2" inherits="UIPanelButtonTemplate" text="Blacklist player">
+            <Button name="OFSettingsBottomButton2" inherits="UIPanelButtonTemplate" text="L_BLACKLIST_PLAYER">
                 <Size>
                     <AbsDimension x="135" y="22" />
                 </Size>

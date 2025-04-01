@@ -5,7 +5,7 @@ local POPUP_NAME = "OF_UPDATE_AVAILABLE"
 ns.PREF_UPDATE_AVAILABLE_LAST_SHOWN_AT = "UPDATE_AVAILABLE_LAST_SHOWN_AT"
 
 function OFGetUpdateUrl()
-    return ns.GetConfig().updateAvailableUrl
+    return "В разработке"
 end
 
 local message = L["Update Available. Please copy the link to update."]

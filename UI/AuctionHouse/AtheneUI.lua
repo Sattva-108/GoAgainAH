@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local SEEN_CHANGELOG_VERSION_KEY = "SeenChangelogVersion"
 
@@ -11,32 +12,15 @@ ns.IsAtheneBlocked = function()
         or ns.BlacklistAPI:IsBlacklisted(me, ns.BLACKLIST_TYPE_REVIEW, "Athene")
 end
 
-local function OnAtheneBlockedStateChanged()
-    OFAuctionFrame_UpdateAtheneTab()
-    OFAtheneUI_Update(true)
-    AuctionFrame_UpdatePortrait()
-end
-
-function OFAtheneAdblockCheckbox_OnClick(self)
-    local me = UnitName("player")
-
-    if OFAtheneAdblockCheckbox:GetChecked() then
-        ns.BlacklistAPI:AddToBlacklist(me, ns.BLACKLIST_TYPE_ORDERS, "Athene")
-    else
-        ns.BlacklistAPI:RemoveFromBlacklist(me, ns.BLACKLIST_TYPE_ORDERS, "Athene")
-    end
-
-    OnAtheneBlockedStateChanged()
-end
-
 function OFFeedbackInputField_OnLoad(self)
+    -- Store the placeholder text for comparison
+    self.placeholder = L["Note"] .. "..."
+
     self:SetFontObject("ChatFontSmall")
-    self:SetText("Note...")
+    self:SetText(self.placeholder)
     self:SetCursorPosition(0)
     self:SetAutoFocus(false)
 
-    -- Store the placeholder text for comparison
-    self.placeholder = "Note..."
 
     OFAtheneFeedbackButton:Disable()
 
@@ -81,19 +65,12 @@ local function GetPatchNotes()
 end
 
 function OFAtheneUI_Initialize()
-    OFAtheneAdblockCheckbox:SetChecked(ns.IsAtheneBlocked())
-
     local function Update()
         OFAtheneUI_Update(false)
     end
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, Update)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_DELETED, Update)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_SYNCED, Update)
-    ns.AuctionHouseAPI:RegisterEvent(ns.T_ON_BLACKLIST_STATE_UPDATE, Update)
-end
-
-function OFAtheneUI_OnLoad()
-    OFAtheneTabAdblockIcon:SetParent(OFAuctionFrameTab8)
 end
 
 local function HasSeenLatestVersion()
@@ -121,7 +98,7 @@ function OFAtheneUI_Update(resetScroll)
     if resetScroll then
         OFAtheneScrollFrame:SetVerticalScroll(0)
     end
-    OFAtheneVersionText:SetText("Version "..ns.AuctionHouse.addonVersion..".")
+    OFAtheneVersionText:SetText(L["Version"] .. " " ..ns.AuctionHouse.addonVersion..".")
     AthenePatchNotesFrameText:SetText(GetPatchNotes())
     if ns.AuctionHouse:IsUpdateAvailable() then
         OFUpdateAvailableFrame:Show()
@@ -130,13 +107,7 @@ function OFAtheneUI_Update(resetScroll)
         OFUpdateAvailableFrame:Hide()
         OFAtheneUpToDateText:Show()
     end
-    if ns.IsAtheneBlocked() then
-        OFAtheneAdBlockContainer:Show()
-        OFAtheneAdContainer:Hide()
-    else
-        OFAtheneAdBlockContainer:Hide()
-        OFAtheneAdContainer:Show()
-    end
+    OFAtheneAdContainer:Show()
 end
 
 local function CreateReviewForAthene(idPrefix, text, reply)
@@ -159,13 +130,17 @@ end
 
 function OFAtheneFeedback_OnSubmit()
     CreateReviewForAthene("f-", "Feedback: "..OFFeedbackInputField:GetText(), "Thanks for the feedback")
-    print(ChatPrefix() .. " Feedback submitted")
-    OFFeedbackInputField:SetText("Note...")
+    print(ChatPrefix() .. L[" Feedback submitted"])
+    OFFeedbackInputField:SetText(L["Note"] .. "...")
+
+    OFAuctionFrameSwitchTab(ns.AUCTION_TAB_REVIEWS)
 end
 
 function OFAtheneAIRequest_OnSubmit()
     CreateReviewForAthene("a-", "I want my own AI", "I'll back you up")
-    print(ChatPrefix() .. " AI request submitted")
+    print(ChatPrefix() .. L[" AI request submitted"])
+
+    OFAuctionFrameSwitchTab(ns.AUCTION_TAB_REVIEWS)
 end
 
 local function GetAdBlockIconPath()
@@ -179,15 +154,9 @@ end
 
 function OFAuctionFrame_UpdateAtheneTab()
     if ns.AuctionHouse:IsUpdateAvailable() or not HasSeenLatestVersion() then
-        OFAuctionFrameTab8:SetText("            (1)")
+        OFAuctionFrameTab8:SetText("Athene (1)")
     else
-        OFAuctionFrameTab8:SetText("")
-    end
-    local icn = OFAtheneTabAdblockIcon.adblockIcon
-    if ns.IsAtheneBlocked() then
-        icn:SetTexture(GetAdBlockIconPath())
-    else
-        icn:SetTexture(GetAtheneIconPath())
+        OFAuctionFrameTab8:SetText("Athene")
     end
 end
 

@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 
 local TAB_ORDERS_MY_BLACKLIST = 1
 local TAB_ORDERS_OTHER_BLACKLIST = 2
@@ -6,11 +7,11 @@ local TAB_REVIEW_MY_BLACKLIST = 3
 local TAB_REVIEW_OTHER_BLACKLIST = 4
 
 local TABS = {
-    { name = "My blacklist", id = TAB_ORDERS_MY_BLACKLIST },
-    { name = "Who blacklisted me?", id = TAB_ORDERS_OTHER_BLACKLIST },
+    { name = L["My blacklist"], id = TAB_ORDERS_MY_BLACKLIST },
+    { name = L["Who blacklisted me?"], id = TAB_ORDERS_OTHER_BLACKLIST },
 
-    { name = "My Blacklist", id = TAB_REVIEW_MY_BLACKLIST },
-    { name = "Who blacklisted me?", id = TAB_REVIEW_OTHER_BLACKLIST },
+    { name = L["My Blacklist"], id = TAB_REVIEW_MY_BLACKLIST },
+    { name = L["Who blacklisted me?"], id = TAB_REVIEW_OTHER_BLACKLIST },
 }
 
 local selectedAuctionItems = {
@@ -45,8 +46,8 @@ end
 
 StaticPopupDialogs[STATIC_POPUP_NAME] = {
     text = "",
-    button1 = "Blacklist Player",
-    button2 = "Cancel",
+    button1 = L["Blacklist Player"],
+    button2 = CANCEL,
     maxLetters = 12,
     OnAccept = function(self)
         local playerName = ToPascalCase(self.editBox:GetText())
@@ -58,10 +59,11 @@ StaticPopupDialogs[STATIC_POPUP_NAME] = {
     end,
     OnShow = function(self)
         local selectedTab = OFAuctionFrameSettings.selectedTab
+        local line1 = L["Type the name of the player you want to blacklist."]
         if selectedTab == TAB_REVIEW_MY_BLACKLIST or selectedTab == TAB_REVIEW_OTHER_BLACKLIST then
-            self.text:SetText("Type the name of the player you want to blacklist.\nThey will not appear in the reviews of other players.")
+            self.text:SetText(line1 .. "\n" .. L["They will not appear in the reviews of other players."])
         else
-            self.text:SetText("Type the name of the player you want to blacklist.\nThey will not be able to buyout or fulfill any of your orders")
+            self.text:SetText(line1 .. "\n" .. L["They will not be able to buyout or fulfill any of your orders"])
         end
         self.editBox:SetFocus()
 
@@ -216,15 +218,13 @@ function SettingsUI_Initialize()
     --     ns.DebugLog("intiializing, blacklist Athene")
     -- end
 
-    if not ns.AuctionHouseDB.isBlacklistInitV2 then
-        local me = UnitName("player")
-
+    local me = UnitName("player")
+    if not (ns.AuctionHouseDB.blacklists and ns.AuctionHouseDB.blacklists[me]) then
         -- undo the v1 logic of blacklisting Athene on start
         -- (just run once)
         ns.BlacklistAPI:AddToBlacklist(me, ns.BLACKLIST_TYPE_ORDERS, "Athene")
         ns.BlacklistAPI:RemoveFromBlacklist(me, ns.BLACKLIST_TYPE_ORDERS, "Athene")
-        ns.AuctionHouseDB.isBlacklistInitV2 = true
-        ns.DebugLog("intiializing, unblacklist Athene")
+        ns.DebugLog("initializing blacklist for " .. me .. ", unblacklist Athene")
     end
 
     -- UpdateAtheneTabVisibility()
@@ -310,9 +310,9 @@ local function UpdateBottomButtons()
     -- Set button text based on selected tab
     local self = OFAuctionFrameSettings
     if self.selectedTab == TAB_ORDERS_OTHER_BLACKLIST or self.selectedTab == TAB_REVIEW_OTHER_BLACKLIST then
-        OFSettingsBottomButton1:SetText("Whisper")
+        OFSettingsBottomButton1:SetText(WHISPER)
     else
-        OFSettingsBottomButton1:SetText("Remove")
+        OFSettingsBottomButton1:SetText(REMOVE)
     end
 end
 
@@ -355,7 +355,7 @@ function OFSettingsBottomButton1_OnClick()
             -- Handle remove functionality
             local blType = GetBlacklistTypeFromTab(tab)
             ns.BlacklistAPI:RemoveFromBlacklist(UnitName("player"), blType, button.name:GetText())
-            end
+        end
     end
 
     -- clear selection

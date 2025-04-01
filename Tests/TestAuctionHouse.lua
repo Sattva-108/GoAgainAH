@@ -479,6 +479,7 @@ end
 
 local originalBroadcastMessage
 local originalSendDm
+local originalIsSyncWindowExpired
 -- Add original WoW API function storage
 local originalGetInboxHeaderInfo
 local originalGetInboxItem
@@ -506,6 +507,10 @@ local function ResetTestHooks()
     if originalUnitName then
         UnitName = originalUnitName
     end
+    if originalIsSyncWindowExpired then
+        AH.IsSyncWindowExpired = originalIsSyncWindowExpired
+    end
+    AH.ignoreSenderCheck = false
 end
 
 local function RunMailboxTest()
@@ -929,6 +934,176 @@ local function RunMailboxTest()
     print("[OK] RunMailboxTest")
 end
 
+local function RunDeathClipsTest()
+    local messagesSent = {}
+    local broadcastMessages = {}
+    local receivedMessages = {}
+
+    local function CleanupTest()
+        API:ClearPersistence()
+        messagesSent = {}
+        broadcastMessages = {}
+        receivedMessages = {}
+    end
+
+    -- Mock SendDm and BroadcastMessage
+    AH.SendDm = function(self, message, recipient, prio)
+        table.insert(messagesSent, {message = message, recipient = recipient, prio = prio})
+        return true
+    end
+
+    AH.BroadcastMessage = function(self, message)
+        table.insert(broadcastMessages, message)
+        return true
+    end
+
+    AH.IsSyncWindowExpired = function()
+        return false
+    end
+
+    local function requestLatestState(since, clips)
+        local dataPayload = { since = since, clips = clips }
+        local messagePayload = { ns.T_DEATH_CLIPS_STATE_REQUEST, dataPayload }
+        local message = AH:Serialize(messagePayload)
+        AH.ignoreSenderCheck = true
+        AH:OnCommReceived(ns.COMM_PREFIX, message, "GUILD", UnitName("player"))
+        table.insert(receivedMessages, {payload = dataPayload})
+    end
+
+
+    local function AddClip(id, ts, overrides)
+        overrides = overrides or {}
+        local clip = {
+            id = id,
+            ts = ts,
+            streamer = overrides.streamer or "TestStreamer",
+            characterName = overrides.characterName or "TestCharacter",
+            race = overrides.race or "Human",
+            class = overrides.class or "Warrior",
+            level = overrides.level or 60,
+            where = overrides.where or "TestLocation",
+            mapId = overrides.mapId or 123,
+        }
+        ns.AddNewDeathClips({clip})
+    end
+
+    local function ExpectDeathClipStateDm()
+        assertEq(#messagesSent, 1, "Should send a response message")
+        local msg = messagesSent[1]
+        local success, data = AH:Deserialize(msg.message)
+        assert(success, "Failed to deserialize message")
+        assertEq(data[1], ns.T_DEATH_CLIPS_STATE, "Unexpected message type")
+        local success, newClips = AH:Deserialize(LibDeflate:DecompressDeflate(data[2]))
+        assert(success, "Failed to deserialize payload")
+        return newClips
+    end
+
+    local function ExpectDeathClipStateRequest()
+        assertEq(#broadcastMessages, 1, "Should have sent a request message")
+        local success, data = AH:Deserialize(broadcastMessages[1])
+        assert(success, "Failed to deserialize message")
+        assertEq(data[1], ns.T_DEATH_CLIPS_STATE_REQUEST, "Unexpected message type")
+        return data[2]
+    end
+
+    local now = time()
+
+    local function testSyncNewClipLegacy()
+        AddClip("1", now)
+        requestLatestState(now - 1, nil)
+        local clips = ExpectDeathClipStateDm()
+        assertEq(#clips, 1, "Should include new clip")
+        assertEq(clips[1].id, "1", "Should include correct clip")
+    end
+
+    local function testDoesNotSendOldClipLegacy()
+        AddClip("1", now - 1)
+        requestLatestState(now, nil)
+        assertEq(#messagesSent, 0, "Should not send a response message without new clips")
+    end
+
+    local function testOnlySendsNewClipLegacy()
+        AddClip("old", now - 1)
+        AddClip("new", now + 1)
+        requestLatestState(now, nil)
+        local clips = ExpectDeathClipStateDm()
+        assertEq(#clips, 1, "Should only include new clip")
+        assertEq(clips[1].id, "new", "Should include correct clip")
+    end
+
+    local function testSyncOldClip()
+        AddClip("old", now - 1)
+        requestLatestState(now, {fromTs = now - 2, clips={}})
+
+        local clips = ExpectDeathClipStateDm()
+        assertEq(#clips, 1, "Should include old clip")
+        assertEq(clips[1].id, "old", "Should include correct clip")
+    end
+
+    local function testSkipsSeenClip()
+        AddClip("old", now - 1)
+        AddClip("seen", now - 1)
+        requestLatestState(now, {fromTs = now - 2, clips={["seen"]=true}})
+
+        local clips = ExpectDeathClipStateDm()
+        assertEq(#clips, 1, "Should only include old clip")
+        assertEq(clips[1].id, "old", "Should include correct clip")
+    end
+
+    local function testStateRequestEmpty()
+        AH:RequestLatestDeathClipState(now)
+        local data = ExpectDeathClipStateRequest()
+        assertEq(data.since, 0, "Should request all clips")
+        assertEq(data.clips.fromTs, now - ns.GetConfig().deathClipsSyncWindow, "Fromts should be correct")
+        for _, clip in pairs(data.clips.clips) do
+            assert(false, "Should not include any clips")
+        end
+    end
+
+    local function testStateRequestExcludeOldClips()
+        local fromTs = now - ns.GetConfig().deathClipsSyncWindow
+        AddClip("old", fromTs - 1)
+        AH:RequestLatestDeathClipState(now)
+        local data = ExpectDeathClipStateRequest()
+        assertEq(data.since, fromTs - 1, "Should request clips since latest one")
+        assertEq(data.clips.fromTs, fromTs, "FromTs should be correct")
+        for _, clip in pairs(data.clips.clips) do
+            assert(false, "Should not include any clips")
+        end
+    end
+
+    local function testStateRequestIncludesNewClips()
+        local fromTs = now - ns.GetConfig().deathClipsSyncWindow
+        AddClip("old", fromTs - 1)
+        AddClip("new", fromTs)
+        AH:RequestLatestDeathClipState(now)
+        local data = ExpectDeathClipStateRequest()
+        assertEq(data.since, fromTs, "Should request all clips")
+        assertEq(data.clips.fromTs, fromTs, "FromTs should be correct")
+        assertEq(data.clips.clips["new"], true, "Should include new clip")
+        assertEq(data.clips.clips["old"], nil, "Should not include old clip")
+    end
+
+    local tests = {
+        testSyncNewClipLegacy,
+        testDoesNotSendOldClipLegacy,
+        testOnlySendsNewClipLegacy,
+        testSyncOldClip,
+        testSkipsSeenClip,
+        testStateRequestEmpty,
+        testStateRequestExcludeOldClips,
+        testStateRequestIncludesNewClips,
+    }
+
+    for _, test in ipairs(tests) do
+        -- Clear auction database before each test to ensure isolation
+        CleanupTest()
+        test()
+    end
+
+    print("[OK] RunDeathClipsTest")
+end
+
 local function RunTest(testFunc)
     API:ClearPersistence()
     ResetTestHooks()
@@ -939,6 +1114,7 @@ AH.OnInitialize = function()
     -- Store original functions
     originalBroadcastMessage = AH.BroadcastMessage
     originalSendDm = AH.SendDm
+    originalIsSyncWindowExpired = AH.IsSyncWindowExpired
     originalGetInboxHeaderInfo = GetInboxHeaderInfo
     originalGetInboxItem = GetInboxItem
     originalGetInboxItemLink = GetInboxItemLink
@@ -958,6 +1134,7 @@ AH.OnInitialize = function()
     RunTest(RunSyncTest)
     RunTest(RunAuctionStatusTest)
     RunTest(RunMailboxTest)
+    RunTest(RunDeathClipsTest)
 
     ResetTestHooks()
 end

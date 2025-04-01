@@ -1,13 +1,14 @@
 -- namespace
 local _, ns = ...;
+local L = ns.L
 
 -- constants
-local CATEGORY_DUNGEON = "All Dungeons"
-local CATEGORY_RAID = "All Raids"
+local CATEGORY_DUNGEON = L["All Dungeons"]
+local CATEGORY_RAID = L["All Raids"]
 
 local DUNGEONS = {
     {
-        name = "Ragefire Chasm",
+        name = L["Ragefire Chasm"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 10,
@@ -15,7 +16,7 @@ local DUNGEONS = {
         maximumLevel = 18
     },
     {
-        name = "Wailing Caverns",
+        name = L["Wailing Caverns"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 10,
@@ -23,7 +24,7 @@ local DUNGEONS = {
         maximumLevel = 24
     },
     {
-        name = "The Deadmines",
+        name = L["The Deadmines"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 10,
@@ -31,7 +32,7 @@ local DUNGEONS = {
         maximumLevel = 23
     },
     {
-        name = "Shadowfang Keep",
+        name = L["Shadowfang Keep"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 14,
@@ -39,7 +40,7 @@ local DUNGEONS = {
         maximumLevel = 30
     },
     {
-        name = "Blackfathom Deeps",
+        name = L["Blackfathom Deeps"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 15,
@@ -47,7 +48,7 @@ local DUNGEONS = {
         maximumLevel = 32
     },
     {
-        name = "The Stockade",
+        name = L["The Stockade"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 15,
@@ -55,7 +56,7 @@ local DUNGEONS = {
         maximumLevel = 32
     },
     {
-        name = "Gnomeregan",
+        name = L["Gnomeregan"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 19,
@@ -63,7 +64,7 @@ local DUNGEONS = {
         maximumLevel = 38
     },
     {
-        name = "Razorfen Kraul",
+        name = L["Razorfen Kraul"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 25,
@@ -71,7 +72,7 @@ local DUNGEONS = {
         maximumLevel = 37
     },
     {
-        name = "Scarlet Monastery - Graveyard",
+        name = L["Scarlet Monastery - Graveyard"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 21,
@@ -79,7 +80,7 @@ local DUNGEONS = {
         maximumLevel = 38
     },
     {
-        name = "Scarlet Monastery - Library",
+        name = L["Scarlet Monastery - Library"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 21,
@@ -87,7 +88,7 @@ local DUNGEONS = {
         maximumLevel = 41
     },
     {
-        name = "Scarlet Monastery - Armory",
+        name = L["Scarlet Monastery - Armory"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 21,
@@ -95,7 +96,7 @@ local DUNGEONS = {
         maximumLevel = 44
     },
     {
-        name = "Scarlet Monastery - Cathedral",
+        name = L["Scarlet Monastery - Cathedral"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 21,
@@ -103,7 +104,7 @@ local DUNGEONS = {
         maximumLevel = 46
     },
     {
-        name = "Uldaman",
+        name = L["Uldaman"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 30,
@@ -111,7 +112,7 @@ local DUNGEONS = {
         maximumLevel = 51
     },
     {
-        name = "Razorfen Downs",
+        name = L["Razorfen Downs"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 35,
@@ -119,7 +120,7 @@ local DUNGEONS = {
         maximumLevel = 46
     },
     {
-        name = "Zul'Farrak",
+        name = L["Zul'Farrak"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 39,
@@ -127,7 +128,7 @@ local DUNGEONS = {
         maximumLevel = 52
     },
     {
-        name = "Maraudon",
+        name = L["Maraudon"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 30,
@@ -135,7 +136,7 @@ local DUNGEONS = {
         maximumLevel = 55
     },
     {
-        name = "Temple of Atal'Hakkar",
+        name = L["Temple of Atal'Hakkar"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 45,
@@ -143,7 +144,7 @@ local DUNGEONS = {
         maximumLevel = 60
     },
     {
-        name = "Blackrock Depths",
+        name = L["Blackrock Depths"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 48,
@@ -151,7 +152,7 @@ local DUNGEONS = {
         maximumLevel = 60
     },
     {
-        name = "Lower Blackrock Spire",
+        name = L["Lower Blackrock Spire"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 48,
@@ -159,7 +160,7 @@ local DUNGEONS = {
         maximumLevel = 60
     },
     {
-        name = "Upper Blackrock Spire",
+        name = L["Upper Blackrock Spire"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 10,
         requiredLevel = 48,
@@ -167,7 +168,7 @@ local DUNGEONS = {
         maximumLevel = 60
     },
     {
-        name = "Dire Maul",
+        name = L["Dire Maul"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 48,
@@ -175,7 +176,7 @@ local DUNGEONS = {
         maximumLevel = 60
     },
     {
-        name = "Scholomance",
+        name = L["Scholomance"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 48,
@@ -183,7 +184,7 @@ local DUNGEONS = {
         maximumLevel = 60
     },
     {
-        name = "Stratholme",
+        name = L["Stratholme"],
         category = CATEGORY_DUNGEON,
         maxPlayers = 5,
         requiredLevel = 48,
@@ -195,7 +196,7 @@ ns.DUNGEONS = DUNGEONS
 
 local RAIDS = {
     {
-        name = "Zul'Gurub",
+        name = L["Zul'Gurub"],
         category = CATEGORY_RAID,
         maxPlayers = 20,
         requiredLevel = 60,
@@ -203,7 +204,7 @@ local RAIDS = {
         maximumLevel = 60
     },
     {
-        name = "Onyxia's Lair",
+        name = L["Onyxia's Lair"],
         category = CATEGORY_RAID,
         maxPlayers = 40,
         requiredLevel = 50,
@@ -211,7 +212,7 @@ local RAIDS = {
         maximumLevel = 60
     },
     {
-        name = "Molten Core",
+        name = L["Molten Core"],
         category = CATEGORY_RAID,
         maxPlayers = 40,
         requiredLevel = 58,
@@ -219,7 +220,7 @@ local RAIDS = {
         maximumLevel = 60
     },
     {
-        name = "Blackwing Lair",
+        name = L["Blackwing Lair"],
         category = CATEGORY_RAID,
         maxPlayers = 40,
         requiredLevel = 60,
@@ -227,7 +228,7 @@ local RAIDS = {
         maximumLevel = 60
     },
     {
-        name = "Ruins of Ahn'Qiraj",
+        name = L["Ruins of Ahn'Qiraj"],
         category = CATEGORY_RAID,
         maxPlayers = 20,
         requiredLevel = 60,
@@ -235,7 +236,7 @@ local RAIDS = {
         maximumLevel = 60
     },
     {
-        name = "Temple of Ahn'Qiraj",
+        name = L["Temple of Ahn'Qiraj"],
         category = CATEGORY_RAID,
         maxPlayers = 40,
         requiredLevel = 60,
@@ -243,7 +244,7 @@ local RAIDS = {
         maximumLevel = 60
     },
     {
-        name = "Naxxramas",
+        name = L["Naxxramas"],
         category = CATEGORY_RAID,
         maxPlayers = 40,
         requiredLevel = 60,

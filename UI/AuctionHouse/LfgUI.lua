@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local NUM_RESULTS_TO_DISPLAY = 9
 
@@ -36,6 +37,7 @@ local function CheckRequirements(entry)
             -- Clamp the level range to 0-60
             local minLevel = math.max(0, entry.level - 6)
             local maxLevel = math.min(60, entry.level + 6)
+            -- TODO Cedric still up-to-date for GoAgain?
             table.insert(reasons, string.format("Must be between level %d-%d (OnlyFangs rule)", minLevel, maxLevel))
         end
 
@@ -46,7 +48,7 @@ local function CheckRequirements(entry)
 
         if entry.isDungeon and (not myEntry or not myEntry.isDungeon) then
             meetsRequirements = false
-            table.insert(reasons, "Enable Any Dungeon")
+            table.insert(reasons, L["Enable Any Dungeon"])
         end
     end
 
@@ -62,11 +64,11 @@ local function AddPartyMemberToTooltip(unit)
     local role = UnitGroupRolesAssigned(unit)
     local roleName = _G[role]
     if role == "DAMAGER" then
-        roleName = "Dps"
+        roleName = L["Dps"]
     elseif role == "TANK" then
-        roleName = "Tank"
+        roleName = L["Tank"]
     elseif role == "HEALER" then
-        roleName = "Healer"
+        roleName = L["Healer"]
     end
     GameTooltip:AddLine(name .. " " .. roleName, 1, 1, 1)
 end
@@ -76,8 +78,8 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
 
     if copy and meetsRequirements then
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Copy Link")
-        GameTooltip:AddLine("Press CTRL+C to copy", 1, 1, 1)
+        GameTooltip:AddLine(L["Copy Link"])
+        GameTooltip:AddLine(L["Press CTRL+C to copy"], 1, 1, 1)
 
     else
         GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 0, 5)
@@ -86,7 +88,8 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
 
         if entry then
             GameTooltip:AddLine(entry.name)
-            GameTooltip:AddLine(string.format("Level %d %s %s", entry.level, ToPascalCase(entry.race), ToPascalCase(entry.class)), 1, 1, 1)
+            GameTooltip:AddLine(string.format(L["Level %d %s %s"], entry.level, ns.LocalizeEnum(entry.race), ns.LocalizeEnum(entry.class)), 1, 1, 1)
+
             if entry.isDungeon and entry.roles then
                 GameTooltip:AddLine(ns.GetRoleString(entry.roles), 1, 1, 1)
             end
@@ -95,12 +98,12 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
         end
 
         if not meetsRequirements then
-            GameTooltip:AddLine("REQUIREMENTS NOT MET", 0.8, 0, 0)
-            GameTooltip:AddLine("This streamer has set certain level and/or viewer requirements")
+            GameTooltip:AddLine(L["REQUIREMENTS NOT MET"], 0.8, 0, 0)
+            GameTooltip:AddLine(L["This streamer has set certain level and/or viewer requirements"])
             GameTooltip:AddLine(" ")
 
             if requirementsReason and #requirementsReason > 0 then
-                GameTooltip:AddLine("They require:", 1, 1, 1)
+                GameTooltip:AddLine(L["They require:"], 1, 1, 1)
                 for _, reason in ipairs(requirementsReason) do
                     GameTooltip:AddLine("• " .. reason, 1, 1, 1, true)
                 end
@@ -139,17 +142,17 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
 
             if hasRP then
                 if IsInGroup() and UnitInParty(entry.name) then
-                    GameTooltip:AddLine("Roleplay")
-                    GameTooltip:AddLine("This party has roleplay enabled.", 1, 1, 1)
+                    GameTooltip:AddLine(L["Roleplay"])
+                    GameTooltip:AddLine(L["This party has roleplay enabled."], 1, 1, 1)
                 else
-                    GameTooltip:AddLine("Roleplay (RP) enabled")
+                    GameTooltip:AddLine(L["Roleplay (RP) enabled"])
                 end
                 GameTooltip:AddLine(" ")
             end
 
             -- Show party members if in group
             if #partyMembers > 0 then
-                GameTooltip:AddLine("Party")
+                GameTooltip:AddLine(L["Party"])
                 for _, member in ipairs(partyMembers) do
                     AddPartyMemberToTooltip(member.unit)
                 end
@@ -159,7 +162,7 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
             -- Show all dungeons the player has selected
             local scroll = OFAuctionFrameLFG.dungeonScrollList
             if scroll and entry.isDungeon then
-                GameTooltip:AddLine("Dungeons")
+                GameTooltip:AddLine(L["Dungeons"])
 
                 if entry.dungeons then
                 -- Create a sorted copy of the dungeons table
@@ -210,7 +213,7 @@ local function GetDungeonText(entry)
         return nil
 
     else
-        return dungeonCount .. " dungeons"
+        return dungeonCount .. " " .. L["dungeons"]
     end
 end
 
@@ -218,7 +221,7 @@ local function GetColabText(entry)
     local text = ""
 
     if entry.isRP then
-        text = "RP"
+        text = L["RP"]
     end
 
     if entry.isDungeon then
@@ -314,7 +317,12 @@ local function UpdateEntry(i, offset, button, entry)
 
     -- Replace the show/hide logic with texture update
     if button.onlineIcon then
-        local status = entry.isOnline and "Online" or "Offline"
+        local status
+        if entry.isOnline then
+            status = L["Online"]
+        else
+            status = L["Offline"]
+        end
         local iconPath = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_" .. status .. ".png"
         button.onlineIcon:SetTexture(iconPath)
     end

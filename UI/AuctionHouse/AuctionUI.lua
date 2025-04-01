@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 OF_AH_ADDON_NAME = addonName
 
@@ -13,9 +14,9 @@ OF_LAST_ITEM_AUCTIONED = "";
 OF_LAST_ITEM_COUNT = 0;
 OF_LAST_ITEM_BUYOUT = 0;
 
-OF_NOTE_PLACEHOLDER = "Leave a note..."
+OF_NOTE_PLACEHOLDER = L["Leave a note..."]
 
-OF_BROWSE_SEARCH_PLACEHOLDER = "Search or wishlist"
+OF_BROWSE_SEARCH_PLACEHOLDER = L["Search or wishlist"]
 
 local TAB_BROWSE = 1
 local TAB_AUCTIONS = 2
@@ -34,7 +35,7 @@ ns.AUCTION_TAB_DEATH_CLIPS = TAB_DEATH_CLIPS
 ns.AUCTION_TAB_SETTINGS = TAB_SETTINGS
 ns.AUCTION_TAB_ATHENE = TAB_ATHENE
 
-local BROWSE_PARAM_INDEX_PAGE = 5;
+local BROWSE_PARAM_INDEX_PAGE = 7;
 local PRICE_TYPE_UNIT = 1;
 local PRICE_TYPE_STACK = 2;
 
@@ -91,6 +92,8 @@ function OFAllowLoansCheckButton_OnClick(button)
         roleplay = false
         duel = false
         deathRoll = false
+
+        -- only gold
         local priceType = OFAuctionFrameAuctions.priceTypeIndex
         if priceType ~= ns.PRICE_TYPE_MONEY then
             OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
@@ -117,6 +120,13 @@ function OFDeathRollCheckButton_OnClick(button)
         duel = false
         roleplay = false
         allowLoans = false
+
+        -- only gold allowed
+        local priceType = OFAuctionFrameAuctions.priceTypeIndex
+        if priceType ~= ns.PRICE_TYPE_MONEY then
+            OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
+            OFPriceTypeDropdown:GenerateMenu()
+        end
     end
     OFSpecialFlagCheckButton_OnClick()
     OFUpdateAuctionSellItem()
@@ -128,6 +138,13 @@ function OFDuelCheckButton_OnClick(button)
         deathRoll = false
         roleplay = false
         allowLoans = false
+
+        -- only gold allowed
+        local priceType = OFAuctionFrameAuctions.priceTypeIndex
+        if priceType ~= ns.PRICE_TYPE_MONEY then
+            OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
+            OFPriceTypeDropdown:GenerateMenu()
+        end
     end
     OFSpecialFlagCheckButton_OnClick()
     OFUpdateAuctionSellItem()
@@ -214,7 +231,7 @@ function OFBidInviteButton_OnClick()
 end
 
 StaticPopupDialogs["OF_CANCEL_AUCTION_PENDING"] = {
-    text = "Are you sure you want to cancel this auction?",
+    text = L["Are you sure you want to cancel this auction?"],
     button1 = YES,
     button2 = NO,
     OnAccept = function(self)
@@ -235,7 +252,7 @@ StaticPopupDialogs["OF_CANCEL_AUCTION_PENDING"] = {
 };
 
 StaticPopupDialogs["OF_CANCEL_AUCTION_ACTIVE"] = {
-    text = "Are you sure you want to cancel this auction?",
+    text = L["Are you sure you want to cancel this auction?"],
     button1 = YES,
     button2 = NO,
     OnAccept = function(self)
@@ -282,12 +299,12 @@ local function CreateSpecialModifierBuyConfirmPrompt(text)
     }
 end
 
-StaticPopupDialogs["OF_BUY_AUCTION_DEATH_ROLL"] = CreateSpecialModifierBuyConfirmPrompt("Are you sure you want to accept a death roll for this auction?")
+StaticPopupDialogs["OF_BUY_AUCTION_DEATH_ROLL"] = CreateSpecialModifierBuyConfirmPrompt(L["Are you sure you want to accept a death roll for this auction?"])
 
-StaticPopupDialogs["OF_BUY_AUCTION_DUEL"] = CreateSpecialModifierBuyConfirmPrompt("Are you sure you want to accept a duel for this auction?")
+StaticPopupDialogs["OF_BUY_AUCTION_DUEL"] = CreateSpecialModifierBuyConfirmPrompt(L["Are you sure you want to accept a duel for this auction?"])
 
 StaticPopupDialogs["OF_BUY_AUCTION_GOLD"] = {
-    text = "Are you sure you want to buy this auction?",
+    text = L["Are you sure you want to buy this auction?"],
     button1 = YES,
     button2 = NO,
     OnAccept = function(self)
@@ -308,7 +325,7 @@ StaticPopupDialogs["OF_BUY_AUCTION_GOLD"] = {
 }
 
 StaticPopupDialogs["OF_DECLINE_ALL"] = {
-	text = "Are you sure you want to unlist all your pending orders?",
+	text = L["Are you sure you want to unlist all your pending orders?"],
     button1 = YES,
     button2 = NO,
 	OnAccept = function()
@@ -325,9 +342,9 @@ StaticPopupDialogs["OF_DECLINE_ALL"] = {
 }
 
 StaticPopupDialogs["OF_FORGIVE_LOAN"] = {
-    text = "Mark loan complete? This will complete the trade.",
-    button1 = "Mark Loan Complete",
-    button2 = "Cancel",
+    text = L["Mark loan complete? This will complete the trade."],
+    button1 = L["Mark Loan Complete"],
+    button2 = CANCEL,
     OnAccept = function(self)
         local error = ns.AuctionHouseAPI:MarkLoanComplete(OFAuctionFrame.auction.id)
         if error == nil then
@@ -350,9 +367,9 @@ StaticPopupDialogs["OF_FORGIVE_LOAN"] = {
 };
 
 StaticPopupDialogs["OF_DECLARE_BANKRUPTCY"] = {
-    text = "Declare Bankruptcy? This will complete the trade without fulfilling your end of the deal.",
-    button1 = "Declare Bankruptcy",
-    button2 = "Cancel",
+    text = L["Declare Bankruptcy? This will complete the trade without fulfilling your end of the deal."],
+    button1 = L["Declare Bankruptcy"],
+    button2 = CANCEL,
     OnAccept = function(self)
         local error = ns.AuctionHouseAPI:DeclareBankruptcy(OFAuctionFrame.auction.id)
         if error == nil then
@@ -376,9 +393,9 @@ StaticPopupDialogs["OF_DECLARE_BANKRUPTCY"] = {
 };
 
 StaticPopupDialogs["OF_MARK_AUCTION_COMPLETE"] = {
-    text = "Mark auction complete? This will complete the trade.",
-    button1 = "Mark Auction Complete",
-    button2 = "Cancel",
+    text = L["Mark auction complete? This will complete the trade."],
+    button1 = L["Mark Auction Complete"],
+    button2 = CANCEL,
     OnAccept = function(self)
         local auction, trade, error = ns.AuctionHouseAPI:CompleteAuction(OFAuctionFrame.auction.id)
         if error == nil then
@@ -408,7 +425,7 @@ StaticPopupDialogs["OF_MARK_AUCTION_COMPLETE"] = {
 };
 
 StaticPopupDialogs["OF_FULFILL_AUCTION"] = {
-    text = "Are you sure you want to fulfill this wishlist request?",
+    text = L["Are you sure you want to fulfill this wishlist request?"],
     button1 = YES,
     button2 = NO,
     OnAccept = function(self)
@@ -438,7 +455,7 @@ StaticPopupDialogs["OF_FULFILL_AUCTION"] = {
                 end
             end
             local name = ns.GetDisplayName(auction.owner)
-            self.text:SetText(string.format("Are you sure you want to fulfill the wishlist request of %s for %s?", name, itemName))
+            self.text:SetText(string.format(L["Are you sure you want to fulfill the wishlist request of %s for %s?"], name, itemName))
         end)
     end,
     OnCancel = function(self)
@@ -465,6 +482,11 @@ function OFUpdateAuctionSellItem()
     elseif priceType == ns.PRICE_TYPE_TWITCH_RAID then
         OFBuyoutPrice:Hide()
         OFTwitchRaidViewerAmount:Show()
+        OFTwitchRaidViewerAmountText:SetText(L_MIN_TWITCH_VIEWERS)
+    elseif priceType == ns.PRICE_TYPE_GUILD_POINTS then
+        OFBuyoutPrice:Hide()
+        OFTwitchRaidViewerAmount:Show()
+        OFTwitchRaidViewerAmountText:SetText(L["Amount"])
     else
         OFBuyoutPrice:Hide()
         OFTwitchRaidViewerAmount:Hide()
@@ -506,6 +528,10 @@ local function UnlockCheckButton(button)
 end
 
 local function OnMoneySelected(self)
+    if not self.moneyInputFrame then
+        return
+    end
+
     local copper = MoneyInputFrame_GetCopper(self.moneyInputFrame)
     local myMoney = GetMoney()
     if myMoney < copper then
@@ -535,7 +561,7 @@ function OFSelectEnchantForAuction(itemID)
 end
 
 StaticPopupDialogs["OF_SELECT_AUCTION_MONEY"] = {
-    text = "Select the amount for the auction",
+    text = L["Select the amount for the auction"],
     button1 = ACCEPT,
     button2 = CANCEL,
     OnAccept = function(self)
@@ -770,8 +796,6 @@ function OFAuctionFrameSwitchTab(index)
     else
         icnOffset = 3
     end
-
-    OFAtheneTabAdblockIcon:SetPoint("CENTER", OFAuctionFrameTab8, "CENTER", 0, icnOffset)
 end
 
 -- Browse tab functions
@@ -816,6 +840,7 @@ end
 
 
 function OFRequestItemButton_OnClick(button)
+    print("Request item", button:GetParent().itemID, button:GetParent().item.equipSlot)
     ns.AuctionWishlistConfirmPrompt:Show(
         button:GetParent().itemID,
         nil,
@@ -925,39 +950,46 @@ function OFAuctionFrame_OnClickSortColumn(sortTable, sortColumn)
     end
 end
 
-local prevBrowseParams;
-local function OFAuctionFrameBrowse_SearchHelper(...)
-    local page = select(BROWSE_PARAM_INDEX_PAGE, ...);
+---@type BrowseParams
+local prevBrowseParams
 
-	if ( not prevBrowseParams ) then
-		-- if we are doing a search for the first time then create the browse param cache
-		prevBrowseParams = { };
-	else
+---@param newParams BrowseParams
+local function OFAuctionFrameBrowse_SearchHelper(newParams)
+    local page = newParams.page
+
+	if prevBrowseParams then
 		-- if we have already done a browse then see if any of the params have changed (except for the page number)
-		local param;
-		for i = 1, select('#', ...) do
-            param = select(i, ...)
-			if ( i ~= BROWSE_PARAM_INDEX_PAGE and param ~= prevBrowseParams[i] ) then
-				-- if we detect a change then we want to reset the page number back to the first page
-				page = 0;
-				OFAuctionFrameBrowse.page = page;
-				break;
-			end
-		end
+        for k, v in pairs(newParams) do
+            if ( k ~= "page" and v ~= prevBrowseParams[k] ) then
+                -- if we detect a change then we want to reset the page number back to the first page
+                page = 0;
+                OFAuctionFrameBrowse.page = page;
+                break;
+            end
+        end
 	end
 
-	-- store this query's params so we can compare them with the next set of params we get
-	for i = 1, select('#', ...) do
-		if ( i == BROWSE_PARAM_INDEX_PAGE ) then
-			prevBrowseParams[i] = page;
-		else
-			prevBrowseParams[i] = select(i, ...);
-		end
-	end
+    newParams.page = page
+    prevBrowseParams = newParams
+end
+
+function OFAuctionsOnlyCheckButton_OnClick(self)
+    ns.PlayerPrefs:Set("OFAuctionsOnlyCheckButton", self:GetChecked())
+    OFAuctionFrameBrowse_Search()
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+end
+
+function OFOnlineOnlyCheckButton_OnClick(self)
+    ns.PlayerPrefs:Set("OFOnlineOnlyCheckButton", self:GetChecked())
+    OFAuctionFrameBrowse_Search()
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
 function OFAuctionFrameBrowse_OnShow()
     OFAuctionFrameBrowse_Reset(OFBrowseResetButton)
+
+    OFOnlineOnlyCheckButton:SetChecked(ns.PlayerPrefs:Get("OFOnlineOnlyCheckButton") or false)
+    OFAuctionsOnlyCheckButton:SetChecked(ns.PlayerPrefs:Get("OFAuctionsOnlyCheckButton") or false)
 
     local auctions = ns.GetBrowseAuctions({}, {})
     local itemIds = {}
@@ -1070,17 +1102,19 @@ function OFAuctionFrameBrowse_Search()
         maxLevel = tonumber(OFBrowseMaxLevel:GetNumber())
     end
 
-    OFAuctionFrameBrowse_SearchHelper(
+    OFAuctionFrameBrowse_SearchHelper(BrowseParams.New(
         text,
         minLevel,
         maxLevel,
         OFAuctionFrameBrowse.selectedCategoryIndex,
+        OFAuctionFrameBrowse.selectedSubCategoryIndex,
+        OFAuctionFrameBrowse.selectedSubSubCategoryIndex,
         OFAuctionFrameBrowse.page,
         OFAuctionFrameBrowse.factionIndex,
         exactMatch,
         OFOnlineOnlyCheckButton:GetChecked(),
         OFAuctionsOnlyCheckButton:GetChecked()
-    )
+    ))
     -- after updating filters, we need to query auctions and item db again
     browseResultCache = nil
 
@@ -1401,6 +1435,7 @@ local function UpdateItemEntry(index, i, offset, button, item, numBatchAuctions,
     button.itemCount = 1
     button.itemIndex = index
     button.itemID = item.id
+    button.item = item
     button.isEnchantEntry = false
     button.auction = nil
     button:UnlockHighlight()
@@ -1416,7 +1451,7 @@ local function UpdateEnchantAuctionEntry(index, i, offset, button, numBatchAucti
 
     ResizeEntryAuctions(i, button, numBatchAuctions, totalEntries)
 
-    UpdateItemName(quality, buttonName, name)
+    UpdateItemName(quality, buttonName, L["Enchants"])
 
     UpdateItemIcon(0, buttonName, icon, 1, true)
 
@@ -1482,11 +1517,11 @@ local function UpdatePrice(buttonName, auction)
         MoneyFrame_Update(moneyFrame, auction.price)
         local iconXOffset
         if auction.deathRoll then
-            priceText:SetText("Death Roll")
+            priceText:SetText(L["Death Roll"])
             deathRollIcon:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\icons\\Icn_DeathRoll")
             iconXOffset = -60
         else
-            priceText:SetText("Duel (Normal)")
+            priceText:SetText(L["Duel (Normal)"])
             iconXOffset = -80
             deathRollIcon:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\icons\\Icn_Duel")
         end
@@ -1518,7 +1553,14 @@ local function UpdatePrice(buttonName, auction)
         deathRollIcon:Hide()
         priceText:SetJustifyH("CENTER")
         priceText:SetPoint("RIGHT", button, "RIGHT", 0, 3)
-        priceText:SetText(string.format("Twitch Raid %d+", auction.raidAmount))
+        priceText:SetText(string.format(L["Twitch Raid %d+"], auction.raidAmount))
+        priceText:Show()
+        moneyFrame:Hide()
+    elseif auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
+        deathRollIcon:Hide()
+        priceText:SetJustifyH("CENTER")
+        priceText:SetPoint("RIGHT", button, "RIGHT", 0, 3)
+        priceText:SetText(string.format(L["%d Points"], auction.points))
         priceText:Show()
         moneyFrame:Hide()
     else
@@ -1527,7 +1569,7 @@ local function UpdatePrice(buttonName, auction)
         deathRollIcon:Show()
         priceText:SetJustifyH("RIGHT")
         priceText:SetPoint("RIGHT", button, "RIGHT", -5, 3)
-        priceText:SetText("Custom")
+        priceText:SetText("Custom")  -- not localized because the exclamation icon is hardcoded, and the Spanish word is much longer
         priceText:Show()
         moneyFrame:Hide()
     end
@@ -1596,6 +1638,9 @@ local function UpdateBrowseEntry(index, i, offset, button, auction, numBatchAuct
         if ( GetMoney() < buyoutPrice ) then
             canBuyout = nil
         end
+        if auction.priceType == ns.PRICE_TYPE_GUILD_POINTS and ns.GetGuildPoints(UnitName("player")) < auction.points then
+            canBuyout = nil
+        end
         if ( (ownerName ~= UnitName("player")) ) then
             if auction.auctionType == ns.AUCTION_TYPE_BUY then
                 if ns.GetItemCount(auction.itemID, true) >= auction.quantity then
@@ -1628,9 +1673,10 @@ function OFAuctionFrameBrowse_Update()
     if browseResultCache ~= nil then
         auctions, items = browseResultCache.auctions, browseResultCache.items
     else
-        auctions = ns.GetBrowseAuctions(prevBrowseParams or {})
+        auctions = ns.GetBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
         if prevBrowseParams and not ns.IsDefaultBrowseParams(prevBrowseParams) then
-            items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams or {}))
+            items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams))
+            items = ns.FilterItemsExtra(items, prevBrowseParams)
         else
             items = {}
         end
@@ -1852,17 +1898,17 @@ local function UpdatePendingEntry(index, i, offset, button, auction, numBatchAuc
         end
         local isLoan = auction.status == ns.AUCTION_STATUS_SENT_LOAN or auction.status == ns.AUCTION_STATUS_PENDING_LOAN
         if ns.IsSpellItem(auction.itemID) then
-            OFBidForgiveLoanButtonText:SetText("Mark Auction Complete")
+            OFBidForgiveLoanButtonText:SetText(L["Mark Auction Complete"])
             if auction.owner == me then
                 OFBidForgiveLoanButton:Enable()
             end
         elseif isLoan and auction.owner ~= me then
-            OFBidForgiveLoanButtonText:SetText("Declare Bankruptcy")
+            OFBidForgiveLoanButtonText:SetText(L["Declare Bankruptcy"])
             if auction.status == ns.AUCTION_STATUS_SENT_LOAN then
                 OFBidForgiveLoanButton:Enable()
             end
         else
-            OFBidForgiveLoanButtonText:SetText("Mark Loan Complete")
+            OFBidForgiveLoanButtonText:SetText(L["Mark Loan Complete"])
         end
 
         if not isOwner then
@@ -2087,7 +2133,8 @@ function OFSetupPriceTypeDropdown(self)
     end
 
     self.SetPriceSelected = function(frame, index)
-        if index == ns.PRICE_TYPE_TWITCH_RAID then
+        if index ~= ns.PRICE_TYPE_MONEY then
+            allowLoans = false
             deathRoll = false
             duel = false
         end
@@ -2149,6 +2196,15 @@ function OFAuctionFrameAuctions_OnLoad(self)
             C_Container.PickupContainerItem(bagIdx, slotIdx);
             OFAuctionSellItemButton_OnClick(OFAuctionsItemButton, "LeftButton")
         end
+        if button == "LeftButton" and IsShiftKeyDown() and OFAuctionFrame:IsShown() and OFAuctionFrameBrowse:IsShown() then
+            local bagIdx, slotIdx = item:GetParent():GetID(), item:GetID()
+            local itemName = C_Container.GetContainerItemInfo(bagIdx, slotIdx).itemName
+            if itemName then
+                OFBrowseName:SetText(itemName)
+                OFBrowseName:SetTextColor(1, 1, 1)
+                OFAuctionFrameBrowse_Search()
+            end
+        end
     end)
 end
 
@@ -2187,7 +2243,7 @@ function OFAuctionFrameAuctions_OnHide(self)
 end
 
 function OFAuctionFrameAuctions_OnShow()
-    OFAuctionsTitle:SetFormattedText("OnlyFangs AH - %s's Auctions", UnitName("player"))
+    OFAuctionsTitle:SetFormattedText(L["GoAgain AH - %s's Auctions"], UnitName("player"))
 	OFAuctionsFrameAuctions_ValidateAuction()
 	OFAuctionFrameAuctions_Update()
     OFPriceTypeDropdown:GenerateMenu()
@@ -2431,6 +2487,10 @@ function OFAuctionsFrameAuctions_ValidateAuction()
         if OFTwitchRaidViewerAmount:GetNumber() < 1 then
             return
         end
+    elseif priceType == ns.PRICE_TYPE_GUILD_POINTS then
+        if OFTwitchRaidViewerAmount:GetNumber() < 1 then
+            return
+        end
     elseif priceType == ns.PRICE_TYPE_CUSTOM then
         local note = OFAuctionsNote:GetText()
         if (note == "" or note == OF_NOTE_PLACEHOLDER) and not duel and not deathRoll and not roleplay then
@@ -2460,19 +2520,19 @@ end
 
 local function SetupUnitPriceTooltip(tooltip, type, auctionItem, excludeMissions)
     if not excludeMissions and auctionItem.auction and auctionItem.auction.deathRoll then
-        GameTooltip_SetTitle(tooltip, "Death Roll")
+        GameTooltip_SetTitle(tooltip, L["Death Roll"])
         GameTooltip_AddNormalLine(tooltip, OF_DEATH_ROLL_TOOLTIP, true)
         tooltip:Show()
         return true
     end
     if not excludeMissions and auctionItem.auction and auctionItem.auction.duel then
-        GameTooltip_SetTitle(tooltip, "Duel (Normal)")
+        GameTooltip_SetTitle(tooltip, L["Duel (Normal)"])
         GameTooltip_AddNormalLine(tooltip, OF_DUEL_TOOLTIP, true)
         tooltip:Show()
         return true
     end
     if not excludeMissions and auctionItem.auction and auctionItem.auction.priceType == ns.PRICE_TYPE_CUSTOM then
-        GameTooltip_SetTitle(tooltip, "Custom Price")
+        GameTooltip_SetTitle(tooltip, L["Custom Price"])
         GameTooltip_AddNormalLine(tooltip, auctionItem.auction.note, true)
         tooltip:Show()
         return true
@@ -2553,11 +2613,11 @@ function OFAuctionFrameItem_OnEnter(self, type)
 	-- add price per unit info
 	local button = self:GetParent()
     if button.isEnchantEntry then
-        GameTooltip_SetTitle(GameTooltip, "Enchants")
-        GameTooltip_AddNormalLine(GameTooltip, "Select the enchant you want to put up for auction", true)
+        GameTooltip_SetTitle(GameTooltip, L["Enchants"])
+        GameTooltip_AddNormalLine(GameTooltip, L["Select the enchant you want to put up for auction"], true)
     elseif type == "owner" and button.itemID == ns.ITEM_ID_GOLD then
-        GameTooltip_SetTitle(GameTooltip, "Gold")
-        GameTooltip_AddNormalLine(GameTooltip, "Select the amount of gold you want to put up for auction", true)
+        GameTooltip_SetTitle(GameTooltip, L["Gold"])
+        GameTooltip_AddNormalLine(GameTooltip, L["Select the amount of gold you want to put up for auction"], true)
     elseif ns.IsFakeItem(button.itemID) then
         local title, description = ns.GetFakeItemTooltip(button.itemID)
         GameTooltip_SetTitle(GameTooltip, title)
@@ -2652,25 +2712,32 @@ function OFAuctionsCreateAuctionButton_OnClick()
 
     local priceType = OFAuctionFrameAuctions.priceTypeIndex
     local deliveryType = OFAuctionFrameAuctions.deliveryTypeIndex
-    local buyoutPrice, raidAmount
+    local buyoutPrice, raidAmount, points
     if priceType == ns.PRICE_TYPE_MONEY then
         buyoutPrice = GetBuyoutPrice()
         raidAmount = 0
+        points = 0
     elseif priceType == ns.PRICE_TYPE_TWITCH_RAID then
         buyoutPrice = 0
         raidAmount = OFTwitchRaidViewerAmount:GetNumber()
+        points = 0
+    elseif priceType == ns.PRICE_TYPE_GUILD_POINTS then
+        buyoutPrice = 0
+        raidAmount = 0
+        points = OFTwitchRaidViewerAmount:GetNumber()
     else
         buyoutPrice = 0
         raidAmount = 0
+        points = 0
     end
 
 
     local error, auctionCap, _
     auctionCap = ns.GetConfig().auctionCap
     if #ns.GetMyAuctions() >= auctionCap then
-        error = string.format("You cannot have more than %d auctions", auctionCap)
+        error = string.format(L["You cannot have more than %d auctions"], auctionCap)
     else
-        _, error = ns.AuctionHouseAPI:CreateAuction(itemID, buyoutPrice, count, allowLoans, priceType, deliveryType, ns.AUCTION_TYPE_SELL, roleplay, deathRoll, duel, raidAmount, note)
+        _, error = ns.AuctionHouseAPI:CreateAuction(itemID, buyoutPrice, count, allowLoans, priceType, deliveryType, ns.AUCTION_TYPE_SELL, roleplay, deathRoll, duel, raidAmount, points, note)
     end
     if error then
         UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0);

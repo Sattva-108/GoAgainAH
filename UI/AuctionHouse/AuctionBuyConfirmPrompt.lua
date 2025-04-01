@@ -1,19 +1,19 @@
 local _, ns = ...
+local L = ns.L
 
 --------------------------------------------------------------------------------
 -- Sample Ace3-based "Buy Auction" prompt
 --------------------------------------------------------------------------------
 local AceGUI = LibStub("AceGUI-3.0")
-local AuctionHouse = ns.AuctionHouse
 
-local AuctionBuyConfirmPrompt = AuctionHouse:NewModule("AuctionBuyConfirmPrompt", "AceEvent-3.0")
+local AuctionBuyConfirmPrompt = ns.AuctionHouseAddon:NewModule("AuctionBuyConfirmPrompt", "AceEvent-3.0")
 ns.AuctionBuyConfirmPrompt = AuctionBuyConfirmPrompt
 
 -- Call this function from your addon when you need to show the Buy Auction window.
 local function CreateBuyAuctionPrompt()
     -- Create the main frame
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle("Buy Auction")
+    frame:SetTitle(L["Buy Auction"])
     frame:SetLayout("Flow")
     frame.frame:SetResizable(false)
     frame:SetWidth(380)
@@ -32,7 +32,7 @@ local function CreateBuyAuctionPrompt()
     local sellerGroup = AceGUI:Create("InlineGroup")
     sellerGroup:SetFullWidth(true)
     sellerGroup:SetLayout("List")
-    sellerGroup:SetTitle("Seller")
+    sellerGroup:SetTitle(L["Seller"])
     sellerGroup:SetHeight(80)
     frame:AddChild(sellerGroup)
 
@@ -49,7 +49,7 @@ local function CreateBuyAuctionPrompt()
     local tipGroup = AceGUI:Create("InlineGroup")
     tipGroup:SetFullWidth(true)
     tipGroup:SetLayout("List")
-    tipGroup:SetTitle("Add a tip?")
+    tipGroup:SetTitle(L["Add a tip?"])
     tipGroup:SetHeight(240)
     frame:AddChild(tipGroup)
 
@@ -99,7 +99,7 @@ local function CreateBuyAuctionPrompt()
     
     -- Custom text in center
     local customText = AceGUI:Create("Label")
-    customText:SetText("custom")
+    customText:SetText(L["Custom"])
     customText:SetWidth(80)
     customText:SetHeight(16)
     customText:SetJustifyH("CENTER")
@@ -172,7 +172,7 @@ local function CreateBuyAuctionPrompt()
     rightContainer:AddChild(buyoutContainer)
 
     local buyoutLabel = AceGUI:Create("Label")
-    buyoutLabel:SetText("Buyout")
+    buyoutLabel:SetText(BUYOUT)
     buyoutLabel:SetWidth(60)
     buyoutContainer:AddChild(buyoutLabel)
 
@@ -189,7 +189,7 @@ local function CreateBuyAuctionPrompt()
     rightContainer:AddChild(tipContainer)
 
     local tipLabel = AceGUI:Create("Label")
-    tipLabel:SetText("Tip")
+    tipLabel:SetText(L["Tip"])
     tipLabel:SetWidth(60)
     tipContainer:AddChild(tipLabel)
 
@@ -204,7 +204,7 @@ local function CreateBuyAuctionPrompt()
     local buyoutButton = AceGUI:Create("Button")
     -- You can include a money frame next to this text, or simply show it in the text
 
-    buyoutButton:SetText("Buyout")
+    buyoutButton:SetText(BUYOUT)
     buyoutButton:SetFullWidth(true)
     buyoutButton:SetHeight(40)
     frame:AddChild(buyoutButton)
@@ -297,14 +297,14 @@ local function CreateBuyAuctionPrompt()
         button25:SetDisabled(presetTips)
         if priceType == ns.PRICE_TYPE_TWITCH_RAID then
             self.buyoutLabel:SetWidth(130)
-            self.buyoutLabel:SetText(string.format("Twitch Raid %d+", raidAmount))
+            self.buyoutLabel:SetText(string.format(L["Twitch Raid %d+"], raidAmount))
             self.buyoutMoneyFrame:Hide()
         elseif priceType == ns.PRICE_TYPE_CUSTOM then
             self.buyoutLabel:SetText("")
             self.buyoutMoneyFrame:Hide()
         else
             self.buyoutLabel:SetWidth(60)
-            self.buyoutLabel:SetText("Buyout")
+            self.buyoutLabel:SetText(BUYOUT)
             self.buyoutMoneyFrame:Show()
         end
     end
@@ -338,11 +338,11 @@ function AuctionBuyConfirmPrompt:Show(auction, withLoan, onSuccess, onError, onC
     end
     local title, submitButtonText
     if withLoan then
-        title = "Buy Auction with Loan"
-        submitButtonText = "Loan"
+        title = L["Buy Auction with Loan"]
+        submitButtonText = L["Loan"]
     else
-        title = "Buy Auction"
-        submitButtonText = "Buyout"
+        title = L["Buy Auction"]
+        submitButtonText = BUYOUT
     end
     local tipAmount = 0
     local prompt = self.prompt

@@ -1,10 +1,11 @@
 local _, ns = ...
+local L = ns.L
 local AceGUI = LibStub("AceGUI-3.0")
 
 local function CreateSpellScroll()
     -- Create the main frame
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle("Select Enchant")
+    frame:SetTitle(L["Select Enchant"])
     frame:SetLayout("Flow")
     frame:SetWidth(400)
     frame:SetHeight(450)
@@ -19,7 +20,7 @@ local function CreateSpellScroll()
 
     -- Create the search box
     local searchBox = AceGUI:Create("EditBox")
-    searchBox:SetLabel("Search:")
+    searchBox:SetLabel(L["Search:"])
     searchBox:SetWidth(300)
     searchBox:DisableButton(true)
     frame:AddChild(searchBox)
@@ -60,13 +61,14 @@ local function CreateSpellScroll()
             end
         end
 
+        local maxEntries = 50
         local totalMatches = #matches
-        local displayCount = math.min(50, totalMatches)
+        local displayCount = math.min(maxEntries, totalMatches)
 
         -- Show total entries message if we're limiting results
-        if totalMatches > 50 then
+        if totalMatches > maxEntries then
             local countLabel = AceGUI:Create("Label")
-            countLabel:SetText(string.format("Displaying 50 out of %d entries", totalMatches))
+            countLabel:SetText(string.format(L["Displaying %d out of %d entries"], maxEntries, totalMatches))
             countLabel:SetFullWidth(true)
             scroll:AddChild(countLabel)
         end
@@ -108,7 +110,7 @@ local function CreateSpellScroll()
 
             -- "Select" button
             local selectButton = AceGUI:Create("Button")
-            selectButton:SetText("Select")
+            selectButton:SetText(L["Select"])
             selectButton:SetWidth(80)
             selectButton:SetCallback("OnClick", function()
                 OFSelectEnchantForAuction(itemID)
@@ -148,4 +150,3 @@ ns.HideAuctionSelectEnchantPrompt = function()
         auctionSelectEnchantPrompt:Hide()
     end
 end
-

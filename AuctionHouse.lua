@@ -1,7 +1,8 @@
 local addonName, ns = ...
+local L = ns.L
 
-local AuctionHouse = LibStub("AceAddon-3.0"):NewAddon("AuctionHouse", "AceComm-3.0", "AceSerializer-3.0")
-ns.AuctionHouse = AuctionHouse
+local Addon = LibStub("AceAddon-3.0"):NewAddon("AuctionHouse", "AceComm-3.0", "AceSerializer-3.0")
+ns.AuctionHouseAddon = Addon
 local LibDeflate = LibStub("LibDeflate")
 local API = ns.AuctionHouseAPI
 
@@ -47,29 +48,56 @@ ns.T_BLACKLIST_DELETED = T_BLACKLIST_DELETED
 ns.T_BLACKLIST_SYNCED = T_BLACKLIST_SYNCED
 ns.T_ON_BLACKLIST_STATE_UPDATE = T_ON_BLACKLIST_STATE_UPDATE
 
+-- Pending transactions
+local T_PENDING_TRANSACTION_STATE_REQUEST = "PENDING_TRANSACTION_STATE_REQUEST"
+local T_PENDING_TRANSACTION_STATE         = "PENDING_TRANSACTION_STATE"
+local T_PENDING_TRANSACTION_ADD_OR_UPDATE  = "PENDING_TRANSACTION_ADD_OR_UPDATE"
+local T_PENDING_TRANSACTION_DELETED        = "PENDING_TRANSACTION_DELETED"
+local T_PENDING_TRANSACTION_SYNCED         = "PENDING_TRANSACTION_SYNCED"
+
+ns.T_PENDING_TRANSACTION_STATE_REQUEST = T_PENDING_TRANSACTION_STATE_REQUEST
+ns.T_PENDING_TRANSACTION_STATE = T_PENDING_TRANSACTION_STATE
+ns.T_PENDING_TRANSACTION_ADD_OR_UPDATE = T_PENDING_TRANSACTION_ADD_OR_UPDATE
+ns.T_PENDING_TRANSACTION_DELETED = T_PENDING_TRANSACTION_DELETED
+ns.T_PENDING_TRANSACTION_SYNCED = T_PENDING_TRANSACTION_SYNCED
+ns.T_ON_PENDING_TRANSACTION_STATE_UPDATE = "OnPendingTransactionStateUpdate"
+
+local T_AUCTION_ACK = "AUCTION_ACK"
+local T_TRADE_ACK             = "TRADE_ACK"
+local T_RATING_ACK            = "RATING_ACK"
+local T_LFG_ACK               = "LFG_ACK"
+local T_BLACKLIST_ACK         = "BLACKLIST_ACK"
+local T_PENDING_TRANSACTION_ACK = "PENDING_TRANSACTION_ACK"
+
+ns.T_AUCTION_ACK = T_AUCTION_ACK
+ns.T_TRADE_ACK               = T_TRADE_ACK
+ns.T_RATING_ACK              = T_RATING_ACK
+ns.T_LFG_ACK                 = T_LFG_ACK
+ns.T_BLACKLIST_ACK           = T_BLACKLIST_ACK
+ns.T_PENDING_TRANSACTION_ACK = T_PENDING_TRANSACTION_ACK
+
 local knownAddonVersions = {}
 
 local ADMIN_USERS = {
-    ["Athenegpt-Doomhowl"] = 1,
-    ["Maralli-Doomhowl"] = 1,
-    ["Atheneadmin-Doomhowl"] = 1,
+    --["Athenegpt-Soulseeker"] = 1,
+   -- ["Maralle-Soulseeker"] = 1,
 }
 
 -- Constants
 local TEST_USERS = {
-    ["Pencilbow"] = "AtheneDev-pencilbow",
-    ["Onefingerjoe"] = "AtheneDev-jannysice",
-    ["Flawlezzgg"] = "AtheneDev-flawlezzgg",
-    ["Pencilshaman"] = "AtheneDev-pencilshaman",
-    ["Smorcstronk"] = "AtheneDev-smorcstronk",
+  --  ["Pencilbow"] = "AtheneDev-pencilbow",
+   -- ["Onefingerjoe"] = "AtheneDev-jannysice",
+  --  ["Flawlezzgg"] = "AtheneDev-flawlezzgg",
+   -- ["Pencilshaman"] = "AtheneDev-pencilshaman",
+   -- ["Smorcstronk"] = "AtheneDev-smorcstronk",
 }
 ns.TEST_USERS = TEST_USERS
 local TEST_USERS_RACE = {
-    ["Pencilbow"] = "Orc",
-    ["Onefingerjoe"] = "Orc",
-    ["Flawlezzgg"] = "Orc",
-    ["Pencilshaman"] = "Undead",
-    ["Smorcstronk"] = "Orc",
+  --  ["Pencilbow"] = "Human",
+   -- ["Onefingerjoe"] = "Human",
+   -- ["Flawlezzgg"] = "Human",
+   -- ["Pencilshaman"] = "Undead",
+   -- ["Smorcstronk"] = "Orc",
 }
 
 ns.COMM_PREFIX = COMM_PREFIX
@@ -109,6 +137,7 @@ ns.T_ADMIN_REMOVE_CLIP = "ADMIN_REMOVE_CLIP"
 ns.T_DEATH_CLIPS_MARK_OFFLINE = "DEATH_CLIPS_MARK_OFFLINE"
 ns.EV_DEATH_CLIPS_CHANGED = "DEATH_CLIPS_CHANGED"
 ns.T_ADMIN_UPDATE_CLIP_OVERRIDES = "ADMIN_UPDATE_CLIP_OVERRIDES"
+ns.T_DEATH_CLIP_ADDED = "DEATH_CLIP_ADDED"
 
 ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST = "DEATH_CLIP_REVIEW_STATE_REQUEST"
 ns.T_DEATH_CLIP_REVIEW_STATE = "DEATH_CLIP_REVIEW_STATE"
@@ -117,6 +146,8 @@ ns.T_DEATH_CLIP_REVIEW_UPDATED = "DEATH_CLIP_REVIEW_UPDATED"
 -- version check
 ns.T_ADDON_VERSION_REQUEST = "ADDON_VERSION_REQUEST"
 ns.T_ADDON_VERSION_RESPONSE = "ADDON_VERSION_RESPONSE"
+
+ns.T_SET_GUILD_POINTS = "SET_GUILD_POINTS"
 
 local G, W = "GUILD", "WHISPER"
 
@@ -128,6 +159,13 @@ local CHANNEL_WHITELIST = {
     [ns.T_AUCTION_STATE] = {[W]=1},
     [ns.T_AUCTION_ADD_OR_UPDATE] = {[G]=1},
     [ns.T_AUCTION_DELETED] = {[G]=1},
+
+    [ns.T_AUCTION_ACK] = {[G]=1},
+    [ns.T_TRADE_ACK] = {[G]=1},
+    [ns.T_RATING_ACK] = {[G]=1},
+    [ns.T_LFG_ACK] = {[G]=1},
+    [ns.T_BLACKLIST_ACK] = {[G]=1},
+    [ns.T_PENDING_TRANSACTION_ACK] = {[G]=1},
 
     [ns.T_TRADE_STATE_REQUEST] = {[G]=1},
     [ns.T_TRADE_STATE] = {[W]=1},
@@ -146,6 +184,7 @@ local CHANNEL_WHITELIST = {
     [ns.T_DEATH_CLIP_REVIEW_STATE] = {[W]=1},
     [ns.T_DEATH_CLIP_REVIEW_UPDATED] = {[G]=1},
     [ns.T_ADMIN_UPDATE_CLIP_OVERRIDES] = {}, --admin only
+    [ns.T_DEATH_CLIP_ADDED] = {[G]=1},
 
 
     [ns.T_ADDON_VERSION_REQUEST] = {[G]=1},
@@ -162,8 +201,15 @@ local CHANNEL_WHITELIST = {
     [ns.T_BLACKLIST_STATE]         = {[W] = 1},
     [ns.T_BLACKLIST_ADD_OR_UPDATE] = {[G] = 1},
     [ns.T_BLACKLIST_DELETED]       = {[G] = 1},
-}
 
+    [ns.T_SET_GUILD_POINTS] = {[W] = 1},
+
+    -- Pending transaction
+    [ns.T_PENDING_TRANSACTION_DELETED] = {[G] = 1},
+    [ns.T_PENDING_TRANSACTION_ADD_OR_UPDATE] = {[G] = 1},
+    [ns.T_PENDING_TRANSACTION_STATE_REQUEST] = {[G] = 1},
+    [ns.T_PENDING_TRANSACTION_STATE] = {[W] = 1},
+}
 
 local function getFullName(name)
     local shortName, realmName = string.split("-", name)
@@ -184,18 +230,77 @@ local function isMessageAllowed(sender, channel, messageType)
     return true
 end
 
-function AuctionHouse:OnInitialize()
+local AuctionHouse = {}
+AuctionHouse.__index = AuctionHouse
+
+function AuctionHouse.new()
+    local instance = setmetatable({}, AuctionHouse)
+
+    -- Initialize ack tables
+    instance.lastAckAuctionRevisions = {}
+    instance.lastAckTradeRevisions = {}
+    instance.lastAckRatingRevisions = {}
+    instance.lastAckLFGRevisions = {}
+    instance.lastAckBlacklistRevisions = {}
+    instance.lastAckPendingTransactionRevisions = {}
+
+    -- Initialize ack broadcast flags for various state types
+    instance.ackBroadcasted = false
+    instance.tradeAckBroadcasted = false
+    instance.ratingAckBroadcasted = false
+    instance.lfgAckBroadcasted = false
+    instance.blacklistAckBroadcasted = false
+    instance.pendingTransactionAckBroadcasted = false
+
+    -- Hooks for testing; by default they do nothing.
+    instance.OnStateRequestHandled = function(self, sender, payload)
+    end
+    instance.OnStateResponseHandled = function(self, sender, payload)
+    end
+
+    return instance
+end
+
+function AuctionHouse:SetupTestUsers()
+    local realmName = GetRealmName()
+    realmName = realmName:gsub("%s+", "")
+
+    if _G.OnlyFangsStreamerMap then
+        for name, value in pairs(TEST_USERS) do
+            _G.OnlyFangsStreamerMap[name .. "-" .. realmName] = value
+        end
+    end
+    if _G.OnlyFangsRaceMap then
+        for name, value in pairs(TEST_USERS_RACE) do
+            _G.OnlyFangsRaceMap[name .. "-" .. realmName] = value
+        end
+    end
+
+    if _G.SixtyProject and _G.SixtyProject.dbGlobal and _G.SixtyProject.dbGlobal.Guild then
+        for name, twitchName in pairs(TEST_USERS) do
+            local guildEntry = _G.SixtyProject.dbGlobal.Guild[name] or {}
+            guildEntry.Streamer = twitchName
+            guildEntry.Race = TEST_USERS_RACE[name] or "Human"
+            guildEntry.Class = "Warrior"  -- Default dummy value
+            guildEntry.Level = 60         -- Max level
+            guildEntry.Gender = 2         -- 2 typically represents female
+            guildEntry.Honor = 0          -- Starting honor
+            guildEntry.Alive = true       -- Default to alive
+            guildEntry.Points = 0         -- Starting points
+            guildEntry.LastSync = time()
+            _G.SixtyProject.dbGlobal.Guild[name] = guildEntry
+        end
+    end
+end
+
+function AuctionHouse:Initialize()
+    self.playerName = UnitName("player")
     self.addonVersion = GetAddOnMetadata(addonName, "Version")
     knownAddonVersions[self.addonVersion] = true
 
-    --ChatUtils_Initialize()
+    ChatUtils_Initialize()
 
     -- Initialize API
-    --C_Timer:After(1, function()
-      --  for key, value in pairs(ns) do
-     --       print("Ключ:", key, "Значение:", value)
-     --   end
-   -- end)
     ns.AuctionHouseAPI:Initialize({
         broadcastAuctionUpdate = function(dataType, payload)
             self:BroadcastAuctionUpdate(dataType, payload)
@@ -212,6 +317,9 @@ function AuctionHouse:OnInitialize()
         broadcastBlacklistUpdate = function(dataType, payload)
             self:BroadcastBlacklistUpdate(dataType, payload)
         end,
+        broadcastPendingTransactionUpdate = function(dataType, payload)
+            self:BroadcastPendingTransactionUpdate(dataType, payload)
+        end,
     })
     ns.AuctionHouseAPI:Load()
     self.db = ns.AuctionHouseDB
@@ -226,19 +334,19 @@ function AuctionHouse:OnInitialize()
         if payload.fromNetwork then
             return
         end
-        self:BroadcastMessage(self:Serialize({ ns.T_DEATH_CLIP_REVIEW_UPDATED,  {review=payload.review}}))
+        self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_UPDATED,  {review=payload.review}}))
     end)
     clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_MARKED_OFFLINE, function(payload)
         if payload.fromNetwork then
             return
         end
-        self:BroadcastMessage(self:Serialize({ ns.T_DEATH_CLIPS_MARK_OFFLINE,  {clipID=payload.clipID}}))
+        self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIPS_MARK_OFFLINE,  {clipID=payload.clipID}}))
     end)
     clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, function(payload)
         if payload.fromNetwork then
             return
         end
-        self:BroadcastMessage(self:Serialize({ ns.T_ADMIN_UPDATE_CLIP_OVERRIDES,  {clipID=payload.clipID, overrides=payload.overrides}}))
+        self:BroadcastMessage(Addon:Serialize({ ns.T_ADMIN_UPDATE_CLIP_OVERRIDES,  {clipID=payload.clipID, overrides=payload.overrides}}))
     end)
 
     -- Initialize UI
@@ -262,8 +370,8 @@ function AuctionHouse:OnInitialize()
     AHConfigSaved = ns.GetConfig()
 
     -- Register comm prefixes
-    self:RegisterComm(COMM_PREFIX)
-    self:RegisterComm(OF_COMM_PREFIX)
+    Addon:RegisterComm(COMM_PREFIX)
+    Addon:RegisterComm(OF_COMM_PREFIX)
 
     -- chat commands
     SLASH_GAH1 = "/gah"
@@ -278,22 +386,13 @@ function AuctionHouse:OnInitialize()
     end)
 
     -- Add TEST_USERS to OnlyFangsStreamerMap for debugging. eg the mail don't get auto returned
-    -- run periodically because these maps get rebuilt regularly when the guild roaster updates
+    -- run periodically because these maps get rebuilt regularly when the guild roster updates
     if TEST_USERS[UnitName("player")] then
-        C_Timer:NewTicker(1, function()
-            local realmName = GetRealmName()
-            realmName = realmName:gsub("%s+", "")
+        -- Run setup immediately
+        self:SetupTestUsers()
 
-            if _G.OnlyFangsStreamerMap then
-                for name, value in pairs(TEST_USERS) do
-                    _G.OnlyFangsStreamerMap[name .. "-" .. realmName] = value
-                end
-            end
-            if _G.OnlyFangsRaceMap then
-                for name, value in pairs(TEST_USERS_RACE) do
-                    _G.OnlyFangsRaceMap[name .. "-" .. realmName] = value
-                end
-            end
+        C_Timer:NewTicker(1, function()
+            self:SetupTestUsers()
         end)
     end
 
@@ -302,11 +401,12 @@ function AuctionHouse:OnInitialize()
     self:RequestLatestState()
     self:RequestLatestTradeState()
     self:RequestLatestRatingsState()
-    self:RequestLatestDeathClipState()
+    self:RequestLatestDeathClipState(self.initAt)
     self:RequestLatestLFGState()
     self:RequestLatestBlacklistState()
     self:RequestAddonVersion()
     self:RequestDeathClipReviewState()
+    self:RequestLatestPendingTransactionState()
 
     if self.db.showDebugUIOnLoad and self.CreateDebugUI then
         self:CreateDebugUI()
@@ -321,44 +421,44 @@ function AuctionHouse:OnInitialize()
     end
 
     self.ignoreSenderCheck = false
-
-    -- Define boolean flags for each state change type
-    self.receivedAuctionState = false
-    self.receivedTradeState = false
-    self.receivedDeathClipsState = false
-    self.receivedRatingState = false
-    self.receivedLFGState = false
-    self.receivedBlacklistState = false
 end
 
 function AuctionHouse:BroadcastMessage(message)
     local channel = "GUILD"
-    self:SendCommMessage(COMM_PREFIX, message, channel)
+    Addon:SendCommMessage(COMM_PREFIX, message, channel)
     return true
 end
 
 function AuctionHouse:SendDm(message, recipient, prio)
-    self:SendCommMessage(COMM_PREFIX, message, "WHISPER", string.format("%s-%s", recipient, GetRealmName()), prio)
+    Addon:SendCommMessage(COMM_PREFIX, message, "WHISPER", string.format("%s-%s", recipient, GetRealmName()), prio)
 end
 
 function AuctionHouse:BroadcastAuctionUpdate(dataType, payload)
-    self:BroadcastMessage(self:Serialize({ dataType, payload }))
+    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
 end
 
 function AuctionHouse:BroadcastTradeUpdate(dataType, payload)
-    self:BroadcastMessage(self:Serialize({ dataType, payload }))
+    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
 end
 
 function AuctionHouse:BroadcastRatingUpdate(dataType, payload)
-    self:BroadcastMessage(self:Serialize({ dataType, payload }))
+    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
 end
 
 function AuctionHouse:BroadcastLFGUpdate(dataType, payload)
-    self:BroadcastMessage(self:Serialize({ dataType, payload }))
+    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
 end
 
 function AuctionHouse:BroadcastBlacklistUpdate(dataType, payload)
-    self:BroadcastMessage(self:Serialize({ dataType, payload }))
+    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+end
+
+function AuctionHouse:BroadcastPendingTransactionUpdate(dataType, payload)
+    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+end
+
+function AuctionHouse:BroadcastDeathClipAdded(clip)
+    self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_ADDED, clip }))
 end
 
 function AuctionHouse:IsSyncWindowExpired()
@@ -367,21 +467,140 @@ function AuctionHouse:IsSyncWindowExpired()
     return GetTime() - self.initAt > 120
 end
 
-local function IsGuildMember(name)
-    if ns.GuildRegister.table[getFullName(name)] then
-        return true
+-- Helper: a random delay biased toward the higher end.
+local function randomBiasedDelay(min, max)
+    -- Using an exponent to skew the result toward 'max'
+    return min + (max - min) * (math.random()^(1/3))
+end
+
+ns.RandomBiasedDelay = randomBiasedDelay
+
+-- Helper: converts a string into a numeric seed.
+local function stringToSeed(s)
+    local seed = 0
+    for i = 1, #s do
+        seed = seed + s:byte(i) * i
+    end
+    return seed
+end
+
+-- Helper: performs a Fisher–Yates shuffle using a simple linear congruential generator.
+local function seededShuffle(t, seed)
+    local m = 2147483647  -- a large prime for modulus
+    local a = 16807       -- common multiplier for LCG
+    local localSeed = seed
+    for i = #t, 2, -1 do
+        localSeed = (localSeed * a) % m
+        local j = (localSeed % i) + 1
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
+-- Helper: decide if we are a primary responder based on a deterministic shuffle of the guild roster.
+function AuctionHouse:IsPrimaryResponder(playerName, dataType, sender)
+    local myName = getFullName(playerName)
+    local guildMembers = {}
+    local senderFullName = getFullName(sender)
+
+    table.insert(guildMembers, myName)
+
+    -- Use DB.blacklists as source of names, but filter for online guild members
+    if ns.GuildRegister.table then
+        for name, _ in pairs(self.db.blacklists or {}) do
+            -- Check if this player is in the guild and online, and is not the sender
+            if ns.GuildRegister.table[name] and 
+               ns.GuildRegister.table[name].isOnline and
+               name ~= senderFullName and
+               name ~= myName then
+                table.insert(guildMembers, name)
+            end
+        end
+    end
+    table.sort(guildMembers)
+
+    -- Derive a seed from the sender so that the shuffle is deterministic
+    local seed = stringToSeed(dataType .. "#" .. sender)
+    seededShuffle(guildMembers, seed)
+
+    local myRank = nil
+    for i, name in ipairs(guildMembers) do
+        if name == myName then
+            myRank = i
+            break
+        end
     end
 
-    -- might still be guild member if the GuildRegister table didn't finish updating (server delay)
-    -- check our hardcoded list for safety
-    return ns.GetAvgViewers(name) > 0
+    -- Top 2 in the shuffled order are the primary responders
+    return (myRank ~= nil and myRank <= 2)
+end
+
+-- wrapper function for overridding during tests
+function AuctionHouse:After(delay, callback)
+    C_Timer:After(delay, callback)
+end
+
+function Addon:OnCommReceived(prefix, message, distribution, sender)
+    ns.AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
+end
+
+function AuctionHouse:HandleStateUpdate(sender, dataType, cfg, sendPayloadFn)
+    local dbRev = cfg.rev
+    if dbRev <= cfg.payloadRev then
+        ns.DebugLog("[DEBUG] Ignoring", dataType, ". local rev:", dbRev, "requester rev:", cfg.payloadRev)
+        return
+    end
+    cfg.setLastAck(sender, nil)
+
+    local function sendUpdate()
+        local ackRev = cfg.getLastAck(sender)
+        if ackRev and ackRev >= dbRev then
+            ns.DebugLog("[DEBUG] Delayed " .. dataType .. " update cancelled due to ACK received")
+            return
+        end
+
+        sendPayloadFn()
+        ns.DebugLog(string.format("[DEBUG] Sent %s: rev %d, requester rev %d, ack %s",
+            dataType, dbRev, cfg.payloadRev, tostring(ackRev or -1)))
+    end
+
+    if self:IsPrimaryResponder(self.playerName, dataType, sender) then
+        ns.DebugLog("[DEBUG] Immediate " .. dataType .. " state update (primary responder)")
+        sendUpdate()
+    else
+        local delay = randomBiasedDelay(5, 50)
+        ns.DebugLog("[DEBUG] Scheduling delayed " .. dataType .. " state update in " .. math.floor(delay) .. "s")
+        self:After(delay, sendUpdate)
+    end
+end
+
+function AuctionHouse:HandleAck(dataType, sender, payload, ackTable)
+    local lastAckRev = ackTable[sender]
+
+    ns.DebugLog(string.format("[DEBUG] Received %s ACK from %s with revision: %d local:%d",
+        dataType,
+        sender,
+        payload.revision,
+        (lastAckRev or -1)
+    ))
+
+    if not lastAckRev or lastAckRev < payload.revision then
+        ackTable[sender] = payload.revision
+    end
+end
+
+function AuctionHouse:BroadcastAck(ackType, revision, isHigherRevision, broadcastFlag)
+    if not self[broadcastFlag] or isHigherRevision then
+        ns.DebugLog("[DEBUG] Broadcasting " .. ackType .. " ACK with revision: " .. tostring(revision))
+        self:BroadcastMessage(Addon:Serialize({ ackType, { revision = revision } }))
+        self[broadcastFlag] = true
+    end
 end
 
 function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     -- disallow whisper messages from outside the guild to avoid bad actors to inject malicious data
     -- this means that early on during login we might discard messages from guild members until the guild roaster is known.
     -- however, since we sync the state with the guild roaster on login this shouldn't be a problem.
-    if distribution == W and not IsGuildMember(sender) then
+    if not self.ignoreSenderCheck and distribution == W and not ns.IsGuildMember(sender) then
         return
     end
 
@@ -393,7 +612,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         return
     end
 
-    local success, data = self:Deserialize(message)
+    local success, data = Addon:Deserialize(message)
     if not success then
         return
     end
@@ -404,7 +623,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     local dataType = data[1]
     local payload = data[2]
 
-    ns.DebugLog("[DEBUG] recv", dataType, sender)
+    ns.DebugLog("[DEBUG]", self.playerName, "recv", dataType, sender)
     if not isMessageAllowed(sender, distribution, dataType) then
         ns.DebugLog("[DEBUG] Ignoring message from", sender, "of type", dataType, "in channel", distribution)
         return
@@ -432,9 +651,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         API:UpdateDBRating(payload)
         API:FireEvent(ns.T_RATING_ADD_OR_UPDATE, { rating = payload.rating, source = payload.source })
 
-    elseif dataType == ns.T_RATING_DELETE then
+    elseif dataType == ns.T_RATING_DELETED then
         API:DeleteRatingInternal(payload, true)
-        API:FireEvent(ns.T_RATING_DELETE, { ratingID = payload.ratingID })
+        API:FireEvent(ns.T_RATING_DELETED, { ratingID = payload.ratingID })
 
     -- LFG
     elseif dataType == ns.T_LFG_ADD_OR_UPDATE then
@@ -444,46 +663,45 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     elseif dataType == ns.T_LFG_DELETED then
         local success, err = ns.LfgAPI:DeleteEntry(payload, true, true)
         if not success then
-            ns.DebugLog("Failed to delete LFG entry:", err)
+            ns.DebugLog("Failed to delete LFG entry:", payload, err)
         end
         API:FireEvent(ns.T_LFG_DELETED, { lfgKey = payload })
 
+    elseif dataType == ns.T_PENDING_TRANSACTION_ADD_OR_UPDATE then
+        -- Update the pending transaction in the DB and fire event
+        ns.PendingTxAPI:UpdateDBPendingTransaction(payload)
+        API:FireEvent(ns.T_PENDING_TRANSACTION_ADD_OR_UPDATE, { pendingTransaction = payload.transaction, source = payload.source })
+
+        -- Handle the transaction
+        ns.PendingTxAPI:HandlePendingTransactionChange(payload.transaction)
+
+    elseif dataType == ns.T_PENDING_TRANSACTION_DELETED then
+        -- Delete the pending transaction and fire event
+        local success, err = ns.PendingTxAPI:RemovePendingTransaction(payload, true)
+        if not success then
+            ns.DebugLog("Failed to delete Pending Tx:", payload, err)
+        end
+
     elseif dataType == T_AUCTION_STATE_REQUEST then
-        -- Extract the list of auction IDs and their revisions from the requester
-        local responsePayload, auctionCount, deletedCount = self:BuildDeltaState(payload.revision, payload.auctions)
+        self:HandleStateUpdate(sender, T_AUCTION_STATE_REQUEST, {
+            rev = self.db.revision,
+            payloadRev = payload.revision,
+            getLastAck = function(sender) return self.lastAckAuctionRevisions[sender] end,
+            setLastAck = function(sender, value) self.lastAckAuctionRevisions[sender] = value end
+        }, function()
+            local responsePayload, _, __ = self:BuildDeltaState(payload.revision, payload.auctions)
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
 
-        -- Serialize and compress the response
-        local serializeStart = GetTimePreciseSec()
-        local serialized = self:Serialize(responsePayload)
-        local serializeTime = (GetTimePreciseSec() - serializeStart) * 1000
-
-        local compressStart = GetTimePreciseSec()
-        local compressed = LibDeflate:CompressDeflate(serialized)
-        local compressTime = (GetTimePreciseSec() - compressStart) * 1000
-
-        ns.DebugLog(string.format("[DEBUG] Sending delta state to %s: %d auctions, %d deleted IDs, rev %d (bytes-compressed: %d, serialize: %.0fms, compress: %.0fms)",
-                sender, auctionCount, deletedCount, self.db.revision,
-                #compressed,
-                serializeTime, compressTime
-        ))
-
-        -- Send the delta state back to the requester
-        self:SendDm(self:Serialize({ T_AUCTION_STATE, compressed }), sender, "BULK")
+            self:SendDm(Addon:Serialize({ T_AUCTION_STATE, compressed }), sender, "BULK")
+        end)
 
     elseif dataType == T_AUCTION_STATE then
-        if self:IsSyncWindowExpired() and self.receivedAuctionState then
-            ns.DebugLog("ignoring T_AUCTION_STATE")
-            return
-        end
-        self.receivedAuctionState = true
-
-        -- Decompress the payload before processing
         local decompressStart = GetTimePreciseSec()
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
 
         local deserializeStart = GetTimePreciseSec()
-        local success, state = self:Deserialize(decompressed)
+        local success, state = Addon:Deserialize(decompressed)
         local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
 
         if not success then
@@ -491,7 +709,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
         -- Update revision and lastUpdateAt if necessary
-        if state.revision > self.db.revision then
+        local isHigherRevision = state.revision > self.db.revision
+        if isHigherRevision then
             -- Update local auctions with received data
             for id, auction in pairs(state.auctions or {}) do
                 local oldAuction = self.db.auctions[id]
@@ -537,29 +756,29 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 #payload,
                 decompressTime, deserializeTime
             ))
-        -- else
-        --     ns.DebugLog("[DEBUG] Ignoring outdated state update", state.revision, self.db.revision)
+        end
+
+        -- Broadcast an ACK on the guild channel
+        self:BroadcastAck(ns.T_AUCTION_ACK, self.db.revision, isHigherRevision, "ackBroadcasted")
+
+        -- Added hook call so that (for example) tests can capture state response data:
+        if self.OnStateResponseHandled then
+            self:OnStateResponseHandled(sender, state)
         end
 
     elseif dataType == T_CONFIG_REQUEST then
-        if payload.version < AHConfigSaved.version then
-            self:SendDm(self:Serialize({ T_CONFIG_CHANGED, AHConfigSaved }), sender, "BULK")
+        if AHConfigSaved and payload.version < AHConfigSaved.version then
+            self:SendDm(Addon:Serialize({ T_CONFIG_CHANGED, AHConfigSaved }), sender, "BULK")
         end
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        local newClips = ns.GetNewDeathClips(payload.since)
+        local newClips = ns.GetNewDeathClips(payload.since, payload.clips)
         if #newClips > 0 then
-            local newClipsCompressed = LibDeflate:CompressDeflate(self:Serialize(newClips))
-            self:SendDm(self:Serialize({ ns.T_DEATH_CLIPS_STATE, newClipsCompressed }), sender, "BULK")
+            local newClipsCompressed = LibDeflate:CompressDeflate(Addon:Serialize(newClips))
+            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, newClipsCompressed }), sender, "BULK")
         end
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
-        if self:IsSyncWindowExpired() and self.receivedDeathClipsState then
-            ns.DebugLog("ignoring T_DEATH_CLIPS_STATE")
-            return
-        end
-        self.receivedDeathClipsState = true
-
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        local success, newClips = self:Deserialize(decompressed)
+        local success, newClips = Addon:Deserialize(decompressed)
         if success then
             ns.AddNewDeathClips(newClips)
             API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
@@ -572,12 +791,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local state = ns.GetDeathClipReviewState()
         if state.persisted.rev > rev then
             local responsePayload = state:GetSyncedState()
-            local compressed = LibDeflate:CompressDeflate(self:Serialize(responsePayload))
-            self:SendDm(self:Serialize({ ns.T_DEATH_CLIP_REVIEW_STATE, compressed }), sender, "BULK")
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
+            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_STATE, compressed }), sender, "BULK")
         end
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE then
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        local success, state = self:Deserialize(decompressed)
+        local success, state = Addon:Deserialize(decompressed)
         if success then
             local reviewState = ns.GetDeathClipReviewState()
             reviewState:SyncState(state)
@@ -591,42 +810,34 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         reviewState:UpdateClipOverrides(payload.clipID, payload.overrides, true)
     elseif dataType == ns.T_ADMIN_REMOVE_CLIP then
         ns.RemoveDeathClip(payload.clipID)
+    elseif dataType == ns.T_DEATH_CLIP_ADDED then
+        ns.AddNewDeathClips({payload})
+        local magicLink = ns.CreateMagicLink(ns.SPELL_ID_DEATH_CLIPS, L["watch death clip"])
+        print(string.format(L["%s has died at Lv. %d."], ns.GetDisplayName(payload.characterName), payload.level) .. " " .. magicLink)
     elseif dataType == T_CONFIG_CHANGED then
         if payload.version > AHConfigSaved.version then
             AHConfigSaved = payload
         end
+
     elseif dataType == ns.T_TRADE_STATE_REQUEST then
-        local responsePayload, tradeCount, deletedCount = self:BuildTradeDeltaState(payload.revTrades, payload.trades)
-
-        -- serialize and compress
-        local serializeStart = GetTimePreciseSec()
-        local serialized = self:Serialize(responsePayload)
-        local serializeTime = (GetTimePreciseSec() - serializeStart) * 1000
-
-        local compressStart = GetTimePreciseSec()
-        local compressed = LibDeflate:CompressDeflate(serialized)
-        local compressTime = (GetTimePreciseSec() - compressStart) * 1000
-
-        ns.DebugLog(string.format("[DEBUG] Sending delta trades to %s: %d trades, %d deleted IDs, revTrades %d (compressed bytes: %d, serialize: %.0fms, compress: %.0fms)",
-            sender, tradeCount, deletedCount, self.db.revTrades,
-            #compressed, serializeTime, compressTime
-        ))
-
-        self:SendDm(self:Serialize({ ns.T_TRADE_STATE, compressed }), sender, "BULK")
+        self:HandleStateUpdate(sender, ns.T_TRADE_STATE_REQUEST, {
+            rev = self.db.revTrades or 0,
+            payloadRev = payload.revTrades,
+            getLastAck = function(sender) return self.lastAckTradeRevisions[sender] end,
+            setLastAck = function(sender, value) self.lastAckTradeRevisions[sender] = value end
+        }, function()
+            local responsePayload, tradeCount, deletedCount = self:BuildTradeDeltaState(payload.revision, payload.trades)
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
+            self:SendDm(Addon:Serialize({ ns.T_TRADE_STATE, compressed }), sender, "BULK")
+        end)
 
     elseif dataType == ns.T_TRADE_STATE then
-        if self:IsSyncWindowExpired() and self.receivedTradeState then
-            ns.DebugLog("ignoring T_TRADE_STATE")
-            return
-        end
-        self.receivedTradeState = true
-
         local decompressStart = GetTimePreciseSec()
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
 
         local deserializeStart = GetTimePreciseSec()
-        local ok, state = self:Deserialize(decompressed)
+        local ok, state = Addon:Deserialize(decompressed)
         local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
 
         if not ok then
@@ -634,7 +845,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
         -- apply the trade state delta if it is ahead of ours
-        if state.revTrades > self.db.revTrades then
+        local isHigherRevision = state.revTrades > self.db.revTrades
+        if isHigherRevision then
             for id, trade in pairs(state.trades or {}) do
                 local oldTrade = self.db.trades[id]
                 self.db.trades[id] = trade
@@ -669,40 +881,31 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ns.DebugLog("[DEBUG] Outdated trade state ignored", state.revTrades, self.db.revTrades)
         end
 
+        -- Broadcast trade ACK
+        self:BroadcastAck(ns.T_TRADE_ACK, self.db.revTrades, isHigherRevision, "tradeAckBroadcasted")
 
     elseif dataType == ns.T_RATING_STATE_REQUEST then
-        local responsePayload, ratingCount, deletedCount = self:BuildRatingsDeltaState(payload.revision, payload.ratings)
+        self:HandleStateUpdate(sender, ns.T_RATING_STATE_REQUEST, {
+            rev = self.db.revRatings or 0,
+            payloadRev = payload.revision,
+            getLastAck = function(sender) return self.lastAckRatingRevisions[sender] end,
+            setLastAck = function(sender, value) self.lastAckRatingRevisions[sender] = value end
+        }, function()
+            local responsePayload, ratingCount, deletedCount = self:BuildRatingsDeltaState(payload.revision, payload.ratings)
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
 
-        -- Serialize and compress the response
-        local serialized = self:Serialize(responsePayload)
-        local compressed = LibDeflate:CompressDeflate(serialized)
-
-        ns.DebugLog(string.format("[DEBUG] Sending delta ratings to %s: %d ratings, %d deleted IDs, revision %d (compressed: %db, uncompressed: %db)",
-            sender, ratingCount, deletedCount, self.db.revRatings, #compressed, #serialized))
-
-        -- Send the delta state back to the requester
-        self:SendDm(self:Serialize({ ns.T_RATING_STATE, compressed }), sender, "BULK")
+            self:SendDm(Addon:Serialize({ ns.T_RATING_STATE, compressed }), sender, "BULK")
+        end)
 
     elseif dataType == ns.T_RATING_STATE then
-        if self:IsSyncWindowExpired() and self.receivedRatingState then
-            ns.DebugLog("ignoring T_RATING_STATE")
-            return
-        end
-        self.receivedRatingState = true
-
-        -- local decompressStart = GetTimePreciseSec()
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        -- local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
-
-        -- local deserializeStart = GetTimePreciseSec()
-        local ok, state = self:Deserialize(decompressed)
-        -- local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
-
+        local ok, state = Addon:Deserialize(decompressed)
         if not ok then
             return
         end
 
-        if state.revision > self.db.revRatings then
+        local isHigherRevision = state.revision > self.db.revRatings
+        if isHigherRevision then
             -- Update local ratings with received data
             for id, rating in pairs(state.ratings or {}) do
                 self.db.ratings[id] = rating
@@ -719,32 +922,31 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             API:FireEvent(ns.T_ON_RATING_STATE_UPDATE)
         end
 
+        -- Broadcast rating ACK
+        self:BroadcastAck(ns.T_RATING_ACK, self.db.revRatings, isHigherRevision, "ratingAckBroadcasted")
 
     elseif dataType == ns.T_LFG_STATE_REQUEST then
-        -- Build LFG delta and return
-        local responsePayload, lfgCount, deletedCount = self:BuildLFGDeltaState(payload.revLfg, payload.lfgEntries)
-        local serialized = self:Serialize(responsePayload)
-        local compressed = LibDeflate:CompressDeflate(serialized)
-        ns.DebugLog(string.format("[DEBUG] Sending delta LFG entries to %s: %d entries, %d deleted, revLfg %d (bytes: %d)",
-            sender, lfgCount, deletedCount, self.db.revLfg, #compressed
-        ))
-        self:SendDm(self:Serialize({ ns.T_LFG_STATE, compressed }), sender, "BULK")
+        self:HandleStateUpdate(sender, ns.T_LFG_STATE_REQUEST, {
+            rev = self.db.revLfg or 0,
+            payloadRev = payload.revLfg,
+            getLastAck = function(sender) return self.lastAckLFGRevisions[sender] end,
+            setLastAck = function(sender, value) self.lastAckLFGRevisions[sender] = value end
+        }, function()
+            local responsePayload, lfgCount, deletedCount = self:BuildLFGDeltaState(payload.revLfg, payload.lfgEntries)
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
+
+            self:SendDm(Addon:Serialize({ ns.T_LFG_STATE, compressed }), sender, "BULK")
+        end)
 
     elseif dataType == ns.T_LFG_STATE then
-        if self:IsSyncWindowExpired() and self.receivedLFGState then
-            ns.DebugLog("ignoring T_LFG_STATE")
-            return
-        end
-        self.receivedLFGState = true
-
-        -- Decompress and apply LFG delta
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        local ok, state = self:Deserialize(decompressed)
+        local ok, state = Addon:Deserialize(decompressed)
         if not ok then
             return
         end
 
-        if state.revLfg > self.db.revLfg then
+        local isHigherRevision = state.revLfg > self.db.revLfg
+        if isHigherRevision then
             for user, entry in pairs(state.lfg or {}) do
                 local oldEntry = self.db.lfg[user]
                 self.db.lfg[user] = entry
@@ -762,6 +964,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             API:FireEvent(ns.T_ON_LFG_STATE_UPDATE)
         end
 
+        -- Broadcast LFG ACK
+        self:BroadcastAck(ns.T_LFG_ACK, self.db.revLfg, isHigherRevision, "lfgAckBroadcasted")
+
     elseif dataType == ns.T_ADDON_VERSION_REQUEST then
         knownAddonVersions[payload.version] = true
         local latestVersion = ns.GetLatestVersion(knownAddonVersions)
@@ -770,7 +975,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             if ns.ChangeLog[latestVersion] then
                 payload.changeLog = ns.ChangeLog[latestVersion]
             end
-            self:SendDm(self:Serialize({ ns.T_ADDON_VERSION_RESPONSE, payload  }), sender, "BULK")
+            self:SendDm(Addon:Serialize({ ns.T_ADDON_VERSION_RESPONSE, payload  }), sender, "BULK")
         end
     elseif dataType == ns.T_ADDON_VERSION_RESPONSE then
         ns.DebugLog("[DEBUG] new addon version available", payload.version)
@@ -797,47 +1002,33 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     --     end
 
     elseif dataType == ns.T_BLACKLIST_STATE_REQUEST then
-        -- "payload" includes revBlacklists and blacklistEntries with blType
-        local responsePayload, blCount, deletedCount =
-            self:BuildBlacklistDeltaState(payload.revBlacklists, payload.blacklistEntries)
+        self:HandleStateUpdate(sender, ns.T_BLACKLIST_STATE_REQUEST, {
+            rev = self.db.revBlacklists or 0,
+            payloadRev = payload.revBlacklists,
+            getLastAck = function(sender) return self.lastAckBlacklistRevisions[sender] end,
+            setLastAck = function(sender, value) self.lastAckBlacklistRevisions[sender] = value end
+        }, function()
+            local responsePayload, blCount, deletedCount = self:BuildBlacklistDeltaState(payload.revBlacklists, payload.blacklistEntries)
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
 
-        -- Serialize and compress the response
-        local serializeStart = GetTimePreciseSec()
-        local serialized = self:Serialize(responsePayload)
-        local serializeTime = (GetTimePreciseSec() - serializeStart) * 1000
-
-        local compressStart = GetTimePreciseSec()
-        local compressed = LibDeflate:CompressDeflate(serialized)
-        local compressTime = (GetTimePreciseSec() - compressStart) * 1000
-
-        ns.DebugLog(string.format(
-            "[DEBUG] Sending delta blacklists to %s: %d changed, %d deleted, revBlacklists %d (bytes: %d, serialize: %.0fms, compress: %.0fms)",
-            sender, blCount, deletedCount, self.db.revBlacklists, #compressed, serializeTime, compressTime
-        ))
-
-        self:SendDm(self:Serialize({ ns.T_BLACKLIST_STATE, compressed }), sender, "BULK")
+            self:SendDm(Addon:Serialize({ ns.T_BLACKLIST_STATE, compressed }), sender, "BULK")
+        end)
 
     elseif dataType == ns.T_BLACKLIST_STATE then
-        if self:IsSyncWindowExpired() and self.receivedBlacklistState then
-            ns.DebugLog("ignoring T_BLACKLIST_STATE")
-            return
-        end
-        self.receivedBlacklistState = true
-
-        -- "payload" is compressed state with per-type blacklists
         local decompressStart = GetTimePreciseSec()
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
 
         local deserializeStart = GetTimePreciseSec()
-        local ok, state = self:Deserialize(decompressed)
+        local ok, state = Addon:Deserialize(decompressed)
         local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
 
         if not ok then
             return
         end
 
-        if state.revBlacklists > (self.db.revBlacklists or 0) then
+        local isHigherRevision = state.revBlacklists > (self.db.revBlacklists or 0)
+        if isHigherRevision then
             -- Update local blacklists
             for user, entry in pairs(state.blacklists or {}) do
                 local oldEntry = self.db.blacklists[user]
@@ -867,6 +1058,84 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         else
             ns.DebugLog("[DEBUG] Outdated blacklist state ignored", state.revBlacklists, self.db.revBlacklists)
         end
+
+        self:BroadcastAck(ns.T_BLACKLIST_ACK, self.db.revBlacklists, isHigherRevision, "blacklistAckBroadcasted")
+
+    elseif dataType == ns.T_SET_GUILD_POINTS then
+        ns.OffsetMyGuildPoints(payload.points, payload.txId)
+
+    elseif dataType == ns.T_PENDING_TRANSACTION_STATE_REQUEST then
+        self:HandleStateUpdate(sender, ns.T_PENDING_TRANSACTION_STATE_REQUEST, {
+            rev = self.db.revPendingTransactions or 0,
+            payloadRev = payload.revPendingTransactions,
+            getLastAck = function(sender) return self.lastAckPendingTransactionRevisions[sender] end,
+            setLastAck = function(sender, value) self.lastAckPendingTransactionRevisions[sender] = value end
+        }, function()
+            local responsePayload, txnCount, deletedCount = self:BuildPendingTransactionsDeltaState(payload.revPendingTransactions, payload.pendingTransactions)
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
+
+            self:SendDm(Addon:Serialize({ ns.T_PENDING_TRANSACTION_STATE, compressed }), sender, "BULK")
+        end)
+
+    elseif dataType == ns.T_PENDING_TRANSACTION_STATE then
+        local decompressStart = GetTimePreciseSec()
+        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
+
+        local ok, state = Addon:Deserialize(decompressed)
+        if not ok then
+            return
+        end
+
+        local isHigherRevision = state.revPendingTransactions > (self.db.revPendingTransactions or 0)
+        if isHigherRevision then
+            for id, txn in pairs(state.pendingTransactions or {}) do
+                local oldTxn = (self.db.pendingTransactions or {})[id]
+                if not self.db.pendingTransactions then self.db.pendingTransactions = {} end
+                self.db.pendingTransactions[id] = txn
+                if not oldTxn then
+                    API:FireEvent(ns.T_PENDING_TRANSACTION_SYNCED, { pendingTransaction = txn, source = "create" })
+                else
+                    API:FireEvent(ns.T_PENDING_TRANSACTION_SYNCED, { pendingTransaction = txn })
+                end
+
+                -- Handle each transaction in the sync
+                ns.PendingTxAPI:HandlePendingTransactionChange(txn)
+            end
+
+            for _, id in ipairs(state.deletedTxnIds or {}) do
+                if self.db.pendingTransactions then
+                    self.db.pendingTransactions[id] = nil
+                end
+            end
+
+            self.db.revPendingTransactions = state.revPendingTransactions
+            self.db.lastPendingTransactionUpdateAt = state.lastPendingTransactionUpdateAt
+
+            API:FireEvent(ns.T_ON_PENDING_TRANSACTION_STATE_UPDATE)
+
+            ns.DebugLog(string.format("[DEBUG] Updated local pending transactions with %d new/updated, %d deleted, revPendingTransactions %d (compressed: %d, decompress: %.0fms)",
+                #(state.pendingTransactions or {}), #(state.deletedTxnIds or {}), self.db.revPendingTransactions, #payload, decompressTime))
+        else
+            ns.DebugLog("[DEBUG] Outdated pending transactions state ignored", state.revPendingTransactions, self.db.revPendingTransactions)
+        end
+
+        -- Broadcast pending transaction ACK
+        self:BroadcastAck(ns.T_PENDING_TRANSACTION_ACK, self.db.revPendingTransactions, isHigherRevision, "pendingTransactionAckBroadcasted")
+
+    elseif dataType == ns.T_AUCTION_ACK then
+        self:HandleAck("auction", sender, payload, self.lastAckAuctionRevisions)
+    elseif dataType == ns.T_TRADE_ACK then
+        self:HandleAck("trade", sender, payload, self.lastAckTradeRevisions)
+    elseif dataType == ns.T_RATING_ACK then
+        self:HandleAck("rating", sender, payload, self.lastAckRatingRevisions)
+    elseif dataType == ns.T_LFG_ACK then
+        self:HandleAck("LFG", sender, payload, self.lastAckLFGRevisions)
+    elseif dataType == ns.T_BLACKLIST_ACK then
+        self:HandleAck("blacklist", sender, payload, self.lastAckBlacklistRevisions)
+    elseif dataType == ns.T_PENDING_TRANSACTION_ACK then
+        self:HandleAck("pending transaction", sender, payload, self.lastAckPendingTransactionRevisions)
+
     else
         ns.DebugLog("[DEBUG] unknown event type", dataType)
     end
@@ -878,7 +1147,7 @@ function AuctionHouse:BuildDeltaState(requesterRevision, requesterAuctions)
     local auctionCount = 0
     local deletionCount = 0
 
-    if requesterRevision < self.db.revision then
+    if not requesterRevision or requesterRevision < self.db.revision then
         -- Convert requesterAuctions array to lookup table with revisions
         local requesterAuctionLookup = {}
         for _, auctionInfo in ipairs(requesterAuctions or {}) do
@@ -960,7 +1229,7 @@ function AuctionHouse:BuildRatingsDeltaState(requesterRevision, requesterRatings
     local ratingCount = 0
     local deletionCount = 0
 
-    if requesterRevision < self.db.revRatings then
+    if not requesterRevision or requesterRevision < self.db.revRatings then
         -- Convert requesterRatings array to lookup table with revisions
         local requesterRatingLookup = {}
         for _, ratingInfo in ipairs(requesterRatings or {}) do
@@ -1002,7 +1271,7 @@ function AuctionHouse:BuildLFGDeltaState(requesterRevision, requesterLFG)
     local lfgCount = 0
     local deletionCount = 0
 
-    if requesterRevision < (self.db.revLfg or 0) then
+    if not requesterRevision or requesterRevision < (self.db.revLfg or 0) then
         local requesterLFGLookup = {}
         for _, info in ipairs(requesterLFG or {}) do
             requesterLFGLookup[info.name] = info.rev
@@ -1039,7 +1308,7 @@ function AuctionHouse:BuildBlacklistDeltaState(requesterRevision, requesterBlack
     local blacklistCount = 0
     local deletionCount = 0
 
-    if requesterRevision < (self.db.revBlacklists or 0) then
+    if not requesterRevision or requesterRevision < (self.db.revBlacklists or 0) then
         -- Convert the requester's blacklist array into a name->rev lookup with blType
         local requesterBLLookup = {}
         for _, info in ipairs(requesterBlacklists or {}) do
@@ -1073,8 +1342,49 @@ function AuctionHouse:BuildBlacklistDeltaState(requesterRevision, requesterBlack
     }, blacklistCount, deletionCount
 end
 
+function AuctionHouse:BuildPendingTransactionsDeltaState(requesterRevision, requesterTxns)
+    local txnsToSend = {}
+    local deletedTxnIds = {}
+    local txnCount = 0
+    local deletionCount = 0
+
+    if not requesterRevision or requesterRevision < (self.db.revPendingTransactions or 0) then
+        local requesterTxnLookup = {}
+        for _, info in ipairs(requesterTxns or {}) do
+            requesterTxnLookup[info.id] = info.rev
+        end
+
+        for id, txn in pairs(self.db.pendingTransactions or {}) do
+            local requesterRev = requesterTxnLookup[id]
+            if not requesterRev or (txn.rev > requesterRev) then
+                txnsToSend[id] = txn
+                txnCount = txnCount + 1
+            end
+        end
+
+        for id, _ in pairs(requesterTxnLookup) do
+            if not self.db.pendingTransactions or not self.db.pendingTransactions[id] then
+                table.insert(deletedTxnIds, id)
+                deletionCount = deletionCount + 1
+            end
+        end
+    end
+
+    return {
+        v = 1,
+        pendingTransactions = txnsToSend,
+        deletedTxnIds = deletedTxnIds,
+        revPendingTransactions = self.db.revPendingTransactions or 0,
+        lastPendingTransactionUpdateAt = self.db.lastPendingTransactionUpdateAt or 0,
+    }, txnCount, deletionCount
+end
+
 function AuctionHouse:RequestLatestConfig()
-    self:BroadcastMessage(self:Serialize({ T_CONFIG_REQUEST, { version = AHConfigSaved.version } }))
+    self:BroadcastMessage(Addon:Serialize({ T_CONFIG_REQUEST, { version = AHConfigSaved.version } }))
+end
+
+function AuctionHouse:RequestOffsetGuildPoints(playerName, points, txId)
+    self:SendDm(Addon:Serialize({ ns.T_SET_GUILD_POINTS, { points = points, txId=txId } }), playerName, "NORMAL")
 end
 
 
@@ -1102,6 +1412,20 @@ function AuctionHouse:BuildRatingsTable()
     return ratings
 end
 
+function AuctionHouse:BuildDeathClipsTable(now)
+    local allClips = ns.GetLiveDeathClips()
+    local fromTs = now - ns.GetConfig().deathClipsSyncWindow
+    local clips = {}
+    for clipID, clip in pairs(allClips) do
+        if clip.ts and clip.ts >= fromTs then
+            clips[clipID] = true
+        end
+    end
+
+    local payload = { fromTs = fromTs, clips = clips }
+    return payload
+end
+
 -- Build a table of LFG entries for a request
 function AuctionHouse:BuildLFGTable()
     local lfgEntries = {}
@@ -1119,11 +1443,23 @@ function AuctionHouse:BuildBlacklistTable()
     return blacklistEntries
 end
 
+function AuctionHouse:BuildPendingTransactionsTable()
+    local pendingTxns = {}
+    for id, txn in pairs(self.db.pendingTransactions or {}) do
+        table.insert(pendingTxns, { id = id, rev = txn.rev })
+    end
+    return pendingTxns
+end
+
 
 function AuctionHouse:RequestLatestState()
+    -- Reset ACK flags for a new request cycle.
+    self.ackBroadcasted = false
+    self.lastAckAuctionRevisions = {} -- Clear all ACKs when starting a new request
+
     local auctions = self:BuildAuctionsTable()
     local payload = { T_AUCTION_STATE_REQUEST, { revision = self.db.revision, auctions = auctions } }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
 
     self:BroadcastMessage(msg)
 end
@@ -1131,7 +1467,7 @@ end
 function AuctionHouse:RequestLatestTradeState()
     local trades = self:BuildTradesTable()
     local payload = { ns.T_TRADE_STATE_REQUEST, { revTrades = self.db.revTrades, trades = trades } }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
 
     self:BroadcastMessage(msg)
 end
@@ -1139,21 +1475,22 @@ end
 function AuctionHouse:RequestLatestRatingsState()
     local ratings = self:BuildRatingsTable()
     local payload = { ns.T_RATING_STATE_REQUEST, { revision = self.db.revRatings, ratings = ratings } }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
 
     self:BroadcastMessage(msg)
 end
 
-function AuctionHouse:RequestLatestDeathClipState()
-    local payload = { ns.T_DEATH_CLIPS_STATE_REQUEST, { since = ns.GetLastDeathClipTimestamp() } }
-    local msg = self:Serialize(payload)
+function AuctionHouse:RequestLatestDeathClipState(now)
+    local clips = self:BuildDeathClipsTable(now)
+    local payload = { ns.T_DEATH_CLIPS_STATE_REQUEST, { since = ns.GetLastDeathClipTimestamp(), clips = clips } }
+    local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
 
 function AuctionHouse:RequestLatestLFGState()
     local lfgEntries = self:BuildLFGTable()
     local payload = { ns.T_LFG_STATE_REQUEST, { revLfg = self.db.revLfg or 0, lfgEntries = lfgEntries } }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
 
@@ -1163,13 +1500,20 @@ function AuctionHouse:RequestLatestBlacklistState()
         ns.T_BLACKLIST_STATE_REQUEST,
         { revBlacklists = self.db.revBlacklists or 0, blacklistEntries = blacklistEntries }
     }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
 
 function AuctionHouse:RequestDeathClipReviewState()
     local payload = { ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST, { rev = ns.GetDeathClipReviewState().persisted.rev } }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
+    self:BroadcastMessage(msg)
+end
+
+function AuctionHouse:RequestLatestPendingTransactionState()
+    local pendingTransactions = self:BuildPendingTransactionsTable()
+    local payload = { ns.T_PENDING_TRANSACTION_STATE_REQUEST, { revPendingTransactions = self.db.revPendingTransactions or 0, pendingTransactions = pendingTransactions } }
+    local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
 
@@ -1185,7 +1529,7 @@ end
 
 function AuctionHouse:RequestAddonVersion()
     local payload = { ns.T_ADDON_VERSION_REQUEST, { version = self.addonVersion } }
-    local msg = self:Serialize(payload)
+    local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
 function AuctionHouse:GetLatestVersion()
@@ -1274,7 +1618,7 @@ local function playRandomDeathClip()
 end
 
 ns.GameEventHandler:On("PLAYER_DEAD", function()
-    print(ChatPrefix() .. " removing auctions after death")
+    print(ChatPrefix() .. " " .. L["removing auctions after death"])
     AuctionHouse:CleanupAuctionsAndTrades()
     playRandomDeathClip()
 end)
@@ -1282,7 +1626,7 @@ end)
 
 local function cleanupIfKicked()
     if not IsInGuild() then
-        print(ChatPrefix() .. " removing auctions after gkick")
+        print(ChatPrefix() .. " " .. L["removing auctions after gkick"])
         AuctionHouse:CleanupAuctionsAndTrades()
     end
 end
@@ -1294,3 +1638,11 @@ end)
 ns.GameEventHandler:On("PLAYER_ENTERING_WORLD", function()
     C_Timer:After(10, cleanupIfKicked)
 end)
+
+
+ns.AuctionHouseClass = AuctionHouse
+ns.AuctionHouse = AuctionHouse.new(UnitName("player"))
+
+function Addon:OnInitialize()
+    ns.AuctionHouse:Initialize()
+end

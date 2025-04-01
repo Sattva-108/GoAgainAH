@@ -1,53 +1,126 @@
 local _, ns = ...
+local L = ns.L
 
 ns.ChangeLog = {
+    ["1.1.15"] = {
+        -- armor & weapons filtering
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+
+        L["Improved stability"],
+        L["More detailed armor & weapon filters"],
+    },
+    ["1.1.14"] = {
+        -- minor followup bugfixes for state syncing
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+
+        L["Improved stability"],
+        L["More detailed armor & weapon filters"],
+    },
+    ["1.1.13"] = {
+        -- bugfixes/optimization for state syncing
+        -- bugfixes for review syncing
+        -- persist checkboxes in browse menu
+        -- add weapons/armor sub-categories in browse menu
+        -- after submitting, 'I want my AI' and feedback now switch to the review tab
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+
+        L["Improved stability"],
+        L["More detailed armor & weapon filters"],
+    },
+    ["1.1.12"] = {
+        -- bugfixes for state syncing and deathclip syncing
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+        L["Added shift+left click to search"],
+    },
+    ["1.1.11"] = {
+        -- bugfixes for deathclips. localization bugfix for nightelf icon and druid text
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+        L["Added shift+left click to search"],
+    },
+    ["1.1.10"] = {
+        -- minor bugfixes
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+    },
+    ["1.1.9"] = {
+        -- support trading for points
+        L["Allow buying and selling with Guild Points!"],
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Rate & review death clips"],
+        L["Stream Together Dungeon Finder"],
+    },
+    ["1.1.8"] = {
+        -- support Spanish and GoAgain!
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        -- L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
+        L["Stream Together Dungeon Finder"],
+    },
     ["1.1.6"] = {
-        "Gold Orders (Deathrolls, TwitchRaids, etc.)",
-        "Create or Request Enchants",
-        "Rate & review death clips",
-        "Duel Auctions: Winner of the duel gets to keep the gold & item",
-        "Stream Together Dungeon Finder",
         -- minor changes to paladin tab
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        -- L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
+        L["Stream Together Dungeon Finder"],
     },
     ["1.1.5"] = {
-        "Gold Orders (Deathrolls, TwitchRaids, etc.)",
-        "Create or Request Enchants",
-        "Rate & review death clips",
-        "Duel Auctions: Winner of the duel gets to keep the gold & item",
-        "Stream Together Dungeon Finder",
         -- minor changes to paladin tab
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
+        L["Stream Together Dungeon Finder"],
     },
     ["1.1.4"] = {
-        "Gold Orders (Deathrolls, TwitchRaids, etc.)",
-        "Create or Request Enchants",
-        "Rate & review death clips",
-        "Duel Auctions: Winner of the duel gets to keep the gold & item",
-        "Stream Together Dungeon Finder",
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
+        L["Stream Together Dungeon Finder"],
         -- fix: auction data sometimes didn't load for users
         -- quality of life improvements for auctionhouse (filtering/sorting)
         -- minor changes to death clips
     },
     ["1.1.2"] = {
-        "Gold Orders (Deathrolls, TwitchRaids, etc.)",
-        "Create or Request Enchants",
-        "Rate & review death clips",
-        "Duel Auctions: Winner of the duel gets to keep the gold & item",
-        "Stream Together Dungeon Finder",
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
+        L["Stream Together Dungeon Finder"],
         -- fix: tipping popup button
         -- user-experience improvements to Stream Together. auto-enable, tooltips, whisper/invite always usable
     },
     ["1.1.1"] = {
-        "Gold Orders (Deathrolls, TwitchRaids, etc.)",
-        "Create or Request Enchants",
-        "Rate & review death clips",
-        "Duel Auctions: Winner of the duel gets to keep the gold & item",
-        "Stream Together Dungeon Finder",
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
+        L["Stream Together Dungeon Finder"],
     },
     ["1.1.0"] = {
-        "Gold Orders (Deathrolls, TwitchRaids, etc.)",
-        "Create or Request Enchants",
-        "Rate & review death clips",
-        "Duel Auctions: Winner of the duel gets to keep the gold & item",
+        L["Gold Orders (Deathrolls, TwitchRaids, etc.)"],
+        L["Create or Request Enchants"],
+        L["Rate & review death clips"],
+        L["Duel Auctions: Winner of the duel gets to keep the gold & item"],
     },
 
     -- ["1.0.7-14"] = {

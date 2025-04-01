@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 local LfgAPI = {}
 ns.LfgAPI = LfgAPI
@@ -23,7 +24,7 @@ end
 
 function LfgAPI:UpsertEntry(data)
     if not data.name then
-        return nil, "No name provided"
+        return nil, L["No name provided"]
     end
 
     local currentRev = -1
@@ -43,15 +44,15 @@ end
 
 function LfgAPI:DeleteEntry(name, isNetworkUpdate, admin)
     if not name then
-        return nil, "No name provided"
+        return nil, L["No name provided"]
     end
 
     local me = UnitName("player")
     if name ~= me and not admin then
-        return nil, "You can only delete your own LFG entry"
+        return nil, L["You can only delete your own LFG entry"]
     end
     if not DB.lfg[name] then
-        return nil, "LFG entry does not exist"
+        return nil, L["LFG entry does not exist"]
     end
 
     DB.lfg[name] = nil

@@ -1,10 +1,11 @@
 local _, ns = ...
+local L = ns.L
 
 local AceGUI = LibStub("AceGUI-3.0")
 
 local function CreateDeathClipReviewsPrompt()
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle("Clip Reviews")
+    frame:SetTitle(L["Clip Reviews"])
     frame:SetLayout("Flow")
     frame.frame:SetResizable(false)
     frame.title:EnableMouse(false)

@@ -6,14 +6,14 @@
         </Anchors>
         <Layers>
             <Layer level="BACKGROUND">
-                <FontString name="AtheneTitle" inherits="GameFontNormal" text="What's new">
+                <FontString name="AtheneTitle" inherits="GameFontNormal" text="Athene">
                     <Anchors>
                         <Anchor x="52"  y="-18" point="TOP" />
                     </Anchors>
                 </FontString>
             </Layer>
             <Layer>
-                <FontString name="AtheneTabText" inherits="GameFontHighlightSmall" text="What's new">
+                <FontString name="AtheneTabText" inherits="GameFontHighlightSmall" text="L_WHATS_NEW">
                     <Anchors>
                         <Anchor x="121" y="-55" point="TOP" relativePoint="TOPLEFT" />
                     </Anchors>
@@ -23,7 +23,7 @@
                         <Anchor x="25" y="-80" point="TOPLEFT" relativePoint="TOPLEFT" />
                     </Anchors>
                 </FontString>
-                <FontString name="OFAtheneUpToDateText" inherits="GameFontHighlightSmall" text="You're up to date" hidden="true" justifyH="LEFT">
+                <FontString name="OFAtheneUpToDateText" inherits="GameFontHighlightSmall" text="L_YOU_RE_UP_TO_DATE" hidden="true" justifyH="LEFT">
                     <Anchors>
                         <Anchor x="0" y="-10" point="TOPLEFT" relativeTo="OFAtheneVersionText" relativePoint="BOTTOMLEFT" />
                     </Anchors>
@@ -31,46 +31,14 @@
             </Layer>
         </Layers>
         <Frames>
-            <CheckButton name="OFAtheneAdblockCheckbox">
-                <Size x="24" y="24"/>
-                <Anchors>
-                    <Anchor point="TOPRIGHT" x="-80" y="-45"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="ARTWORK">
-                        <Texture parentKey="icon" file="Interface/Icons/Ability_Warrior_DefensiveStance">
-                            <Size x="18" y="18"/>
-                            <Anchors>
-                                <Anchor point="LEFT" relativePoint="RIGHT" x="2" y="0"/>
-                            </Anchors>
-                        </Texture>
-                        <FontString inherits="GameFontNormal" text="Enable aiBlock">
-                            <Anchors>
-                                <Anchor point="LEFT" relativePoint="RIGHT" x="22" y="0"/>
-                            </Anchors>
-                        </FontString>
-                    </Layer>
-                </Layers>
-                <NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
-                <PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
-                <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
-                <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
-                <DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled"/>
-                <Scripts>
-                    <OnShow>
-                        self.icon:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\icons\\Icn_Adblock")
-                    </OnShow>
-                    <OnClick function="OFAtheneAdblockCheckbox_OnClick" />
-                </Scripts>
-            </CheckButton>
-            <Frame name="OFUpdateAvailableFrame">
+           <Frame name="OFUpdateAvailableFrame">
                 <Size x="160" y="100" />
                 <Anchors>
                     <Anchor x="0" y="-10" point="TOPLEFT" relativeTo="OFAtheneVersionText" relativePoint="BOTTOMLEFT" />
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <FontString name="$parentUpdateAvailableText" inherits="GameFontHighlight" text="Update Available">
+                        <FontString name="$parentUpdateAvailableText" inherits="GameFontHighlight" text="L_UPDATE_AVAILABLE">
                             <Anchors>
                                 <Anchor x="0" y="-10" point="TOPLEFT" relativeTo="OFAtheneVersionText" relativePoint="BOTTOMLEFT" />
                             </Anchors>
@@ -143,7 +111,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <FontString name="$parentText" inherits="GameFontNormal" text="What's New:" justifyH="LEFT" />
+                        <FontString name="$parentText" inherits="GameFontNormal" text="L_WHATS_NEW_COLON" justifyH="LEFT" />
                     </Layer>
                 </Layers>
             </Frame>
@@ -170,7 +138,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <FontString name="$parentTitle" inherits="GameFontNormal" text="Bugs &amp; Feedback" justifyH="LEFT">
+                        <FontString name="$parentTitle" inherits="GameFontNormal" text="L_BUGS_AND_FEEDBACK" justifyH="LEFT">
                             <Anchors>
                                 <Anchor x="5" y="-7" point="TOPLEFT" relativePoint="TOPLEFT" />
                             </Anchors>
@@ -225,11 +193,11 @@
                                     <OnEditFocusLost>
                                         EditBox_ClearHighlight(self)
                                         if self:GetText() == "" then
-                                            self:SetText("Note...")
+                                            self:SetText(self.placeholder)
                                         end
                                     </OnEditFocusLost>
                                     <OnEditFocusGained>
-                                        if self:GetText() == "Note..." then
+                                        if self:GetText() == self.placeholder then
                                             self:SetText("")
                                         end
                                     </OnEditFocusGained>
@@ -271,26 +239,77 @@
                         <FontString inherits="ChatFontNormal"/>
                         <Scripts>
                             <OnLoad>
-                                OFReadOnlyEditBox_OnLoad(self, "Maralli")
+                                OFReadOnlyEditBox_OnLoad(self, "Maralle")
                             </OnLoad>
                         </Scripts>
                     </EditBox>
 
-                    <Button name="$parentButton" inherits="UIPanelButtonTemplate" text="Whisper">
+                    <Button name="$parentButton" inherits="UIPanelButtonTemplate" text="WHISPER">
                         <Size x="80" y="25" />
                         <Anchors>
                             <Anchor point="BOTTOM" x="40" />
                         </Anchors>
                         <Scripts>
                             <OnClick>
-                                ChatFrame_SendTell("Maralli")
+                                ChatFrame_SendTell("Maralle")
                             </OnClick>
                         </Scripts>
                     </Button>
                 </Frames>
                 <Scripts>
                     <OnShow>
-                        OFWhisperFrame_OnShow(self, "Maralli")
+                        OFWhisperFrame_OnShow(self, "Maralle")
+                    </OnShow>
+                </Scripts>
+            </Frame>
+            <Frame name="OFAtheneWhisperFrame">
+                <Size x="180" y="30" />
+                <Anchors>
+                    <Anchor x="35" y="40" point="BOTTOMLEFT" />
+                </Anchors>
+                <Layers>
+                </Layers>
+                <Frames>
+                    <EditBox parentKey="inputField" inherits="InputBoxInstructionsTemplate" autoFocus="false">
+                        <Size x="80" y="35" />
+                        <Anchors>
+                            <Anchor x="0" y="0" point="TOPLEFT" />
+                        </Anchors>
+                        <Layers>
+                            <Layer level="ARTWORK">
+                                <Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
+                                    <Anchors>
+                                        <Anchor x="0" y="0" point="LEFT"/>
+                                    </Anchors>
+                                </Texture>
+                            </Layer>
+                        </Layers>
+                        <TextInsets>
+                            <AbsInset left="10" right="0" top="0" bottom="0"/>
+                        </TextInsets>
+                        <FontString inherits="ChatFontNormal"/>
+                        <Scripts>
+                            <OnLoad>
+                                OFReadOnlyEditBox_OnLoad(self, "Athenegpt")
+                            </OnLoad>
+                        </Scripts>
+                    </EditBox>
+
+                    <Button name="$parentButton" inherits="UIPanelButtonTemplate" text="WHISPER">
+                        <Size x="80" y="25" />
+                        <Anchors>
+                            <Anchor point="BOTTOM" x="40" />
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                ChatFrame_SendTell("Athenegpt")
+                            </OnClick>
+                        </Scripts>
+                    </Button>
+                </Frames>
+                <Scripts>
+                    <OnShow>
+                        OFWhisperFrame_OnShow(self, "Athenegpt")
                     </OnShow>
                 </Scripts>
             </Frame>
@@ -368,10 +387,10 @@
                                         </Scripts>
                                         <FontString inherits="ChatFontNormal"/>
                                     </EditBox>
-                                    <Button name="OFAtheneAIRequestSubmitButton" inherits="UIPanelButtonTemplate" text="I want my own AI" >
+                                    <Button name="OFAtheneAIRequestSubmitButton" inherits="UIPanelButtonTemplate" text="L_I_WANT_MY_OWN_AI" >
                                         <Size x="180" y="25"/>
                                         <Anchors>
-                                            <Anchor point="TOPRIGHT" x="-80" y="177" relativePoint="BOTTOMRIGHT" relativeTo="$parentTexture1"/>
+                                            <Anchor point="TOPRIGHT" x="-90" y="193" relativePoint="BOTTOMRIGHT" relativeTo="$parentTexture1"/>
                                         </Anchors>
                                         <Scripts>
                                             <OnClick function="OFAtheneAIRequest_OnSubmit" />
@@ -384,7 +403,7 @@
                                         </Anchors>
                                         <Scripts>
                                             <OnLoad>
-                                                OFReadOnlyEditBox_OnLoad(self, "Maral#2664")
+                                                OFReadOnlyEditBox_OnLoad(self, "Athene#1780")
                                             </OnLoad>
                                         </Scripts>
                                         <FontString inherits="ChatFontNormal"/>
@@ -396,7 +415,7 @@
                                         </Anchors>
                                         <Scripts>
                                             <OnLoad>
-                                                OFReadOnlyEditBox_OnLoad(self, "Maralle")
+                                                OFReadOnlyEditBox_OnLoad(self, "Athenelive")
                                             </OnLoad>
                                         </Scripts>
                                         <FontString inherits="ChatFontNormal"/>
@@ -423,43 +442,6 @@
                                     </OnLoad>
                                 </Scripts>
                             </Frame>
-                            <Frame name="OFAtheneAdBlockContainer">
-                                <Size x="575" y="300"/>
-                                <Anchors>
-                                    <Anchor point="TOPLEFT" />
-                                </Anchors>
-                                <Layers>
-                                    <Layer level="BACKGROUND">
-                                        <Texture parentKey="adblockIcon" file="Interface/Icons/Ability_Warrior_DefensiveStance">
-                                            <Size x="18" y="18"/>
-                                            <Anchors>
-                                                <Anchor point="TOPLEFT" x="2" y="-4"/>
-                                            </Anchors>
-                                        </Texture>
-                                        <FontString inherits="GameFontNormal" justifyH="LEFT" justifyV="TOP" text="aiBlock has detected and removed suspicious content:">
-                                            <Size x="575" y="30"/>
-                                            <Anchors>
-                                                <Anchor point="TOPLEFT" y="-7" x="22"/>
-                                            </Anchors>
-                                        </FontString>
-                                        <FontString inherits="GameFontNormal" justifyH="LEFT" justifyV="TOP" text="- 3 references to a shit AI platform|n- presence of cult-leader vibes|n- 1 link to a cringefest 'comeback' YouTube video.|n|nWe thank our aiBlock users for keeping OnlyFangs safe from suspicious content:">
-                                            <Size x="575" y="300"/>
-                                            <Anchors>
-                                                <Anchor point="TOPLEFT" y="-30"/>
-                                            </Anchors>
-                                        </FontString>
-                                        <FontString parentKey="usersText" name="$parentUsersText" inherits="GameFontNormal" justifyH="LEFT" justifyV="TOP">
-                                            <Size x="575" y="500"/>
-                                            <Anchors>
-                                                <Anchor point="TOPLEFT" y="-125" />
-                                            </Anchors>
-                                        </FontString>
-                                    </Layer>
-                                </Layers>
-                                <Scripts>
-                                    <OnShow function="OFAtheneAdBlockContainer_Update" />
-                                </Scripts>
-                            </Frame>
                         </Frames>
 
                     </Frame>
@@ -468,7 +450,6 @@
         </Frames>
         <Scripts>
             <OnShow function="OFAtheneUI_OnShow" />
-            <OnLoad function="OFAtheneUI_OnLoad" />
         </Scripts>
     </Frame>
 </Ui>

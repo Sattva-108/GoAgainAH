@@ -1,9 +1,9 @@
 local _, ns = ...
+local L = ns.L
 
 local AceGUI = LibStub("AceGUI-3.0")
-local AuctionHouse = ns.AuctionHouse
 
-local AuctionWishlistConfirmPrompt = AuctionHouse:NewModule("AuctionWishlistConfirmPrompt", "AceEvent-3.0")
+local AuctionWishlistConfirmPrompt = ns.AuctionHouseAddon:NewModule("AuctionWishlistConfirmPrompt", "AceEvent-3.0")
 ns.AuctionWishlistConfirmPrompt = AuctionWishlistConfirmPrompt
 
 local NOTES_PLACEHOLDER = OF_NOTE_PLACEHOLDER
@@ -11,7 +11,7 @@ local NOTES_PLACEHOLDER = OF_NOTE_PLACEHOLDER
 local function CreateWishlistConfirmPrompt()
     -- Create the main frame
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle("Request Item")
+    frame:SetTitle(L["Request Item"])
     frame:SetLayout("Flow")
     frame.frame:SetResizable(false)
     frame:SetWidth(400)
@@ -28,7 +28,7 @@ local function CreateWishlistConfirmPrompt()
     -- Main container that holds icon on the left and texts on the right
     -------------------------------------------------------------------------------
     local itemGroup = AceGUI:Create("InlineGroup") -- Changed from InlineGroup to SimpleGroup
-    itemGroup:SetTitle("Item")
+    itemGroup:SetTitle(L["Item"])
     itemGroup.noAutoHeight = true
     itemGroup:SetFullWidth(true)
     itemGroup:SetLayout("Flow") -- Changed to Flow layout to put icon and text side by side
@@ -86,7 +86,7 @@ local function CreateWishlistConfirmPrompt()
 
     -- Amount Label
     local amountLabel = AceGUI:Create("Label")
-    amountLabel:SetText("Amount")
+    amountLabel:SetText(L["Amount"])
     amountLabel:SetWidth(55)
     amountLabel.label:SetFontObject(GameFontNormal)
     amountLabel.label:SetTextColor(1, 0.82, 0)
@@ -111,7 +111,7 @@ local function CreateWishlistConfirmPrompt()
     -- Reward Section
     ----------------------------------------------------------------------------
     local rewardGroup = AceGUI:Create("InlineGroup")
-    rewardGroup:SetTitle("Reward")
+    rewardGroup:SetTitle(L["Reward"])
     rewardGroup:SetLayout("Flow")
     rewardGroup:SetFullWidth(true)
     frame:AddChild(rewardGroup)
@@ -121,7 +121,7 @@ local function CreateWishlistConfirmPrompt()
 
     -- Price Type Dropdown
     local priceTypeLabel = AceGUI:Create("Label")
-    priceTypeLabel:SetText("Type")
+    priceTypeLabel:SetText(L["Type"])
     priceTypeLabel:SetWidth(50)
     priceTypeLabel.label:SetFontObject(GameFontNormalSmall)
     priceTypeLabel.label:SetTextColor(1, 0.82, 0)
@@ -130,20 +130,25 @@ local function CreateWishlistConfirmPrompt()
 
     local priceTypeDropdown = AceGUI:Create("Dropdown")
     priceTypeDropdown:SetList({
-        ["Gold"] = "Gold",
-        ["TwitchRaid"] = "Twitch Raid",
-        ["Other"] = "Other",
+        ["Gold"] = L["Gold"],
+        ["TwitchRaid"] = L["Twitch Raid"],
+        ["Other"] = L["Other"],
     })
     priceTypeDropdown:SetValue("Gold")
     priceTypeDropdown:SetWidth(120)
 
     rewardGroup:AddChild(priceTypeDropdown)
 
+    local labelPadding = AceGUI:Create("MinimalFrame")
+    labelPadding:SetWidth(5)
+    labelPadding:SetHeight(5)
+    rewardGroup:AddChild(labelPadding)
+
     local priceInputMoneyFrame = CreateFrame("Frame", "RequestPriceInputMoneyFrame", priceTypeDropdown.frame, "MoneyInputFrameTemplate")
     priceInputMoneyFrame:SetPoint("LEFT", priceTypeDropdown.frame, "RIGHT", 15, 0)
 
     local twitchRaidLabel = AceGUI:Create("Label")
-    twitchRaidLabel:SetText(" Min Viewers")
+    twitchRaidLabel:SetText(L[" Min Viewers"])
     twitchRaidLabel:SetWidth(85)
     twitchRaidLabel.label:SetFontObject(GameFontNormal)
     twitchRaidLabel.label:Hide()
@@ -166,7 +171,7 @@ local function CreateWishlistConfirmPrompt()
     rewardGroup:AddChild(space)
 
     local deliveryTypeLabel = AceGUI:Create("Label")
-    deliveryTypeLabel:SetText("Delivery")
+    deliveryTypeLabel:SetText(L["Delivery"])
     deliveryTypeLabel:SetWidth(50)
     deliveryTypeLabel.label:SetFontObject(GameFontNormalSmall)
     deliveryTypeLabel.label:SetTextColor(1, 0.82, 0)
@@ -175,9 +180,9 @@ local function CreateWishlistConfirmPrompt()
 
     local deliveryTypeDropdown = AceGUI:Create("Dropdown")
     deliveryTypeDropdown:SetList({
-        ["Any"] = "Any",
-        ["Mail"] = "Mail",
-        ["Trade"] = "Trade"
+        ["Any"] = L["Any"],
+        ["Mail"] = L["Mail"],
+        ["Trade"] = L["Trade"]
     })
     deliveryTypeDropdown:SetValue("Any")
     deliveryTypeDropdown:SetWidth(120)
@@ -191,11 +196,11 @@ local function CreateWishlistConfirmPrompt()
     rewardGroup:AddChild(space)
 
     local roleplayCheck = AceGUI:Create("CheckBox")
-    roleplayCheck:SetLabel("Roleplay")
+    roleplayCheck:SetLabel(L["Roleplay"])
     roleplayCheck:SetWidth(100)
     roleplayCheck.frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(roleplayCheck.frame, "ANCHOR_RIGHT")
-        GameTooltip_SetTitle(GameTooltip, "Roleplay")
+        GameTooltip_SetTitle(GameTooltip, L["Roleplay"])
         GameTooltip_AddNormalLine(GameTooltip, OF_ROLEPLAY_TOOLTIP, true)
         GameTooltip:Show()
     end)
@@ -207,11 +212,11 @@ local function CreateWishlistConfirmPrompt()
     rewardGroup:AddChild(roleplayCheck)
 
     local deathRollCheck = AceGUI:Create("CheckBox")
-    deathRollCheck:SetLabel("Death Roll")
+    deathRollCheck:SetLabel(L["Death Roll"])
     deathRollCheck:SetWidth(100)
     deathRollCheck.frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(deathRollCheck.frame, "ANCHOR_RIGHT")
-        GameTooltip_SetTitle(GameTooltip, "Death Roll");
+        GameTooltip_SetTitle(GameTooltip, L["Death Roll"])
         GameTooltip_AddNormalLine(GameTooltip, OF_DEATH_ROLL_TOOLTIP, true)
         GameTooltip:Show()
     end)
@@ -220,11 +225,11 @@ local function CreateWishlistConfirmPrompt()
     end)
 
     local duelCheck = AceGUI:Create("CheckBox")
-    duelCheck:SetLabel("Duel (Normal)")
+    duelCheck:SetLabel(L["Duel (Normal)"])
     duelCheck:SetWidth(120)
     duelCheck.frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(deathRollCheck.frame, "ANCHOR_RIGHT")
-        GameTooltip_SetTitle(GameTooltip, "Duel (Normal)");
+        GameTooltip_SetTitle(GameTooltip, L["Duel (Normal)"])
         GameTooltip_AddNormalLine(GameTooltip, OF_DUEL_TOOLTIP, true)
         GameTooltip:Show()
     end)
@@ -239,6 +244,12 @@ local function CreateWishlistConfirmPrompt()
             raidAmountInput.editbox:Hide()
         elseif value == "TwitchRaid" then
             priceInputMoneyFrame:Hide()
+            twitchRaidLabel:SetText(L[" Min Viewers"])
+            twitchRaidLabel.label:Show()
+            raidAmountInput.editbox:Show()
+        elseif value == "Points" then
+            priceInputMoneyFrame:Hide()
+            twitchRaidLabel:SetText(L["Points"])
             twitchRaidLabel.label:Show()
             raidAmountInput.editbox:Show()
         else
@@ -287,7 +298,7 @@ local function CreateWishlistConfirmPrompt()
 
     -- Notes Section
     local notesBox = AceGUI:Create("MultiLineEditBox")
-    notesBox:SetLabel("Notes")
+    notesBox:SetLabel(L["Notes"])
     notesBox:SetMaxLetters(100)
     notesBox:SetFullWidth(true)
     notesBox:SetHeight(60)
@@ -312,7 +323,7 @@ local function CreateWishlistConfirmPrompt()
     local buyoutButton = AceGUI:Create("Button")
     -- You can include a money frame next to this text, or simply show it in the text
 
-    buyoutButton:SetText("Create Request")
+    buyoutButton:SetText(L["Create Request"])
     buyoutButton:SetFullWidth(250)
     buyoutButton:SetHeight(40)
     buyoutButton.frame:SetPoint("CENTER", frame.frame, "CENTER", 0, 0)
@@ -411,8 +422,9 @@ local function CreateWishlistConfirmPrompt()
 
             if isGold then
                 self.priceTypeDropdown:SetList({
-                    ["TwitchRaid"] = "Twitch Raid",
-                    ["Other"] = "Other",
+                    ["TwitchRaid"] = L["Twitch Raid"],
+                    ["Points"] = L["Points"],
+                    ["Other"] = L["Other"],
                 })
                 self.priceTypeDropdown:SetValue("Other")
                 MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, 0)
@@ -421,9 +433,10 @@ local function CreateWishlistConfirmPrompt()
                 self.amountInput.editbox:Hide()
             else
                 self.priceTypeDropdown:SetList({
-                    ["Gold"] = "Gold",
-                    ["TwitchRaid"] = "Twitch Raid",
-                    ["Other"] = "Other",
+                    ["Gold"] = L["Gold"],
+                    ["TwitchRaid"] = L["Twitch Raid"],
+                    ["Points"] = L["Points"],
+                    ["Other"] = L["Other"],
                 })
                 self.priceTypeDropdown:SetValue("Gold")
                 self.priceInputMoneyFrame:Show()
@@ -488,17 +501,22 @@ function AuctionWishlistConfirmPrompt:Show(itemID, onSuccess, onError, onCancel)
     self.prompt:Reset()
     self.prompt:SetItem(itemID)
 
-    self.prompt:OnSubmit(function(itemAmount, priceType, price, deliveryType, raidAmount, roleplay, deathRoll, duel, notes)
+    self.prompt:OnSubmit(function(itemAmount, priceType, price, deliveryType, otherAmount, roleplay, deathRoll, duel, notes)
+        local raidAmount = 0
+        local points = 0
         if priceType == "Gold" then
             priceType = ns.PRICE_TYPE_MONEY
-            raidAmount = 0
         elseif priceType == "TwitchRaid" then
             priceType = ns.PRICE_TYPE_TWITCH_RAID
             price = 0
+            raidAmount = otherAmount
+        elseif priceType == "Points" then
+            priceType = ns.PRICE_TYPE_GUILD_POINTS
+            price = 0
+            points = otherAmount
         else
             priceType = ns.PRICE_TYPE_CUSTOM
             price = 0
-            raidAmount = 0
         end
 
         if deliveryType == "Mail" then
@@ -515,7 +533,17 @@ function AuctionWishlistConfirmPrompt:Show(itemID, onSuccess, onError, onCancel)
             notes = ""
         end
         if priceType == ns.PRICE_TYPE_CUSTOM and notes == "" and not deathRoll and not duel and not roleplay then
-            UIErrorsFrame:AddMessage("Leave a note for the custom price", 1.0, 0.1, 0.1, 1.0)
+            UIErrorsFrame:AddMessage(L["Leave a note for the custom price"], 1.0, 0.1, 0.1, 1.0)
+            PlaySoundFile("sound/interface/error.ogg", "Dialog")
+            return
+        end
+        if priceType == ns.PRICE_TYPE_MONEY and price > GetMoney() then
+            PlayVocalErrorSoundID(40)
+            UIErrorsFrame:AddMessage(ERR_NOT_ENOUGH_MONEY, 1.0, 0.1, 0.1, 1.0)
+            return
+        end
+        if priceType == ns.PRICE_TYPE_GUILD_POINTS and points > (ns.GetGuildPoints(UnitName("player")) or 0) then
+            UIErrorsFrame:AddMessage(L["You don't have enough points"], 1.0, 0.1, 0.1, 1.0)
             PlaySoundFile("sound/interface/error.ogg", "Dialog")
             return
         end
@@ -532,6 +560,7 @@ function AuctionWishlistConfirmPrompt:Show(itemID, onSuccess, onError, onCancel)
             deathRoll,
             duel,
             raidAmount,
+            points,
             notes
         )
         if res then

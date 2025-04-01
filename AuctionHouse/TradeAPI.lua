@@ -1,5 +1,4 @@
 local addonName, ns = ...
-local AuctionHouse = ns.AuctionHouse
 
 local TradeAPI = {}
 ns.TradeAPI = TradeAPI
@@ -10,6 +9,9 @@ function TradeAPI:OnInitialize()
     self.eventFrame:SetScript("OnEvent", function(_, event, ...)
         self:OnEvent(event, ...)
     end)
+
+    -- Add trade show timestamp tracking
+    self.lastTradeShowTime = 0
 
     -- Register events
     self.eventFrame:RegisterEvent("MAIL_SHOW")
@@ -28,7 +30,7 @@ function TradeAPI:OnInitialize()
         local targetName = GetUnitName("NPC", true)
         if event == "TRADE_SHOW" and targetName then
             -- Delay slightly, workaround for items sometimes not getting tracked
-            C_Timer.After(1, function()
+            C_Timer:After(1, function()
                 self:TryPrefillTradeWindow(targetName)
             end)
         end
@@ -153,10 +155,10 @@ local function HandleTradeOK()
 
     -- Debug prints for items
     for i, item in pairs(t.playerItems) do
-        ns.DebugLog("[DEBUG] HandleTradeOK Player Item", i, ":", item.itemID, "x", item.numItems)
+        ns.DebugLog("[DEBUG] HandleTradeOK Player Item", i, ":", item.itemID, "x", item.count)
     end
     for i, item in pairs(t.targetItems) do
-        ns.DebugLog("[DEBUG] HandleTradeOK Target Item", i, ":", item.itemID, "x", item.numItems)
+        ns.DebugLog("[DEBUG] HandleTradeOK Target Item", i, ":", item.itemID, "x", item.count)
     end
     ns.DebugLog(
         "[DEBUG] HandleTradeOK",
@@ -176,6 +178,27 @@ local function HandleTradeOK()
 
         if success and trade then
             StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id })
+
+            -- success, subtract points
+            if trade.auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
+                local tx, err = ns.PendingTxAPI:AddPendingTransaction({
+                    type = ns.PRICE_TYPE_GUILD_POINTS,
+                    amount = trade.auction.points,
+                    from = trade.auction.buyer,
+                    to = trade.auction.owner,
+                    id = trade.auction.id,
+                })
+                if tx then
+                    -- immediately handle locally for fast/correct apply
+                    ns.PendingTxAPI:HandlePendingTransactionChange(tx)
+                else
+                    print(ChatPrefixError() .. L[" Failed to transfer points:"], err)
+                    -- NOTE: error here should not happen and will mean points aren't correctly charged.
+                    -- we can't easily recover to a better state
+                    return
+                end
+            end
+
             return true, nil
         elseif err and hadCandidates then
             local itemInfo = ""
@@ -240,6 +263,10 @@ function TradeAPI:OnEvent(event, ...)
         local _, arg2 = ...
         if (arg2 == ERR_TRADE_CANCELLED) then
             -- print("[DEBUG] Trade cancelled")
+            local timeSinceShow = GetTime() - self.lastTradeShowTime
+            if timeSinceShow < 0.5 then
+                print(ChatPrefixError() .. L[" The Go Again addon requires that both players target each other before starting a trade."])
+            end
             Reset("trade cancelled")
         elseif (arg2 == ERR_TRADE_COMPLETE) then
             HandleTradeOK()
@@ -247,6 +274,7 @@ function TradeAPI:OnEvent(event, ...)
 
     elseif event == "TRADE_SHOW" then
         CurrentTrade().targetName = GetUnitName("NPC", true)
+        self.lastTradeShowTime = GetTime()
 
     elseif event == "TRADE_PLAYER_ITEM_CHANGED" then
         local arg1 = ...
@@ -313,11 +341,11 @@ function TradeAPI:PrefillGold(relevantAuction, totalPrice, targetName)
             MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, totalPrice)
 
             -- success message
-            print("Onlyfangsah: Auto-filled trade with " .. GetCoinTextureString(totalPrice) ..
-                    " for auction from " .. targetName)
+            print(ChatPrefix() .. L[" Auto-filled trade with "] .. GetCoinTextureString(totalPrice) ..
+                    L[" for auction from "] .. targetName)
         else
-            print(ChatPrefixError() .. " You don't have enough gold to complete this trade. "
-                .. "The auction costs " .. GetCoinTextureString(totalPrice) .. "")
+            print(ChatPrefixError() .. L[" You don't have enough gold to complete this trade. "] ..
+                L["The auction costs "] .. GetCoinTextureString(totalPrice))
         end
     end
 end
@@ -341,15 +369,15 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName)
             itemLink = itemLink or "item"
             itemDescription = quantity .. "x " .. itemLink
         end
-        print("Onlyfangsah: Auto-filled trade with " ..
-                itemDescription .. " for auction to " .. targetName)
+        print(ChatPrefix() .. L[" Auto-filled trade with "] ..
+                itemDescription .. L[" for auction to "] .. targetName)
     else
         -- error message when item not found or quantity doesn't match exactly
         local itemName = select(2, ns.GetItemInfo(itemID)) or "item"
         local errorMsg = not slot and
-            " Could not find " .. quantity .. "x " .. itemName .. " in your bags for the trade"
+            L[" Could not find "] .. quantity .. "x " .. itemName .. L[" in your bags for the trade"]
             or
-            " Found the item but stack size doesn't match exactly. Please manually split a stack of " .. quantity .. " " .. itemName
+            L[" Found the item but stack size doesn't match exactly. Please manually split a stack of "] .. quantity .. " " .. itemName
         print(ChatPrefixError() .. errorMsg)
     end
 end
@@ -401,7 +429,7 @@ function TradeAPI:TryPrefillTradeWindow(targetName)
     local totalPrice = (relevantAuction.price or 0) + (relevantAuction.tip or 0)
 
     if ns.IsUnsupportedFakeItem(itemID) then
-        print("Onlyfangsah: Unknown Item when trading with " .. targetName .. ". Update to the latest version to trade this item")
+        print(ChatPrefix() .. L[" Unknown Item when trading with "] .. targetName .. L[". Update to the latest version to trade this item"])
         return
     end
 
