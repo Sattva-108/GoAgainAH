@@ -1,6 +1,6 @@
 local addonName, ns = ...
 
-local L = LibStub("AceLocale-3.0"):NewLocale("GoAgainAH", "esMX", false, true)
+local L = LibStub("AceLocale-3.0"):NewLocale("GoAgainAH", "esMX", false)
 local locale = GetLocale()
 
 if locale ~= "esMX" then
