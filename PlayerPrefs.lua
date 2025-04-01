@@ -4,7 +4,7 @@ local _, ns = ...
 local PlayerPrefs = {}
 ns.PlayerPrefs = PlayerPrefs
 
-local function GetPrefs()
+local function GetPlayerPrefs()
     if not PlayerPrefsSaved then
         PlayerPrefsSaved = {}
     end
@@ -12,9 +12,27 @@ local function GetPrefs()
 end
 
 function PlayerPrefs:Get(key)
-    return GetPrefs()[key]
+    return GetPlayerPrefs()[key]
 end
 
 function PlayerPrefs:Set(key, value)
-    GetPrefs()[key] = value
+    GetPlayerPrefs()[key] = value
+end
+
+local CharacterPrefs = {}
+ns.CharacterPrefs = CharacterPrefs
+
+local function GetCharacterPrefs()
+    if not CharacterPrefsSaved then
+        CharacterPrefsSaved = {}
+    end
+    return CharacterPrefsSaved
+end
+
+function CharacterPrefs:Get(key)
+    return GetCharacterPrefs()[key]
+end
+
+function CharacterPrefs:Set(key, value)
+    GetCharacterPrefs()[key] = value
 end

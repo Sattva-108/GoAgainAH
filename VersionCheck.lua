@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 
 local POPUP_NAME = "OF_UPDATE_AVAILABLE"
 ns.PREF_UPDATE_AVAILABLE_LAST_SHOWN_AT = "UPDATE_AVAILABLE_LAST_SHOWN_AT"
@@ -7,9 +8,12 @@ function OFGetUpdateUrl()
     return ns.GetConfig().updateAvailableUrl
 end
 
+local message = L["Update Available. Please copy the link to update."]
+message = string.format("|cffffffff%s|r", message)
+
 StaticPopupDialogs[POPUP_NAME] = {
-    text = "|cffffd100OnlyFangs AH|r\n|cffffffffUpdate Available. Please copy the link to update.|r",
-    button1 = "Open Guild AH (5)",
+    text = "|cffffd100GoAgain AH|r\n" .. message,
+    button1 = string.format(L["Open Guild AH (%s)"], 5),
     OnAccept = function()
         ns.PlayerPrefs:Set(ns.PREF_UPDATE_AVAILABLE_LAST_SHOWN_AT, time())
         OFAuctionFrame:Show()
@@ -20,16 +24,16 @@ StaticPopupDialogs[POPUP_NAME] = {
         self.editBox:SetFocus()
         self.editBox:HighlightText()
         local seconds = 5
-        self.button1:SetText("Open Guild AH ("..seconds..")")
+        self.button1:SetText(string.format(L["Open Guild AH (%s)"], seconds))
         self.button1:Disable()
         C_Timer:NewTicker(1, function(ticker)
             seconds = max(0, seconds - 1)
             if seconds == 0 then
-                self.button1:SetText("Open Guild AH")
+                self.button1:SetText(L["Open Guild AH"])
                 self.button1:Enable()
                 ticker:Cancel()
             else
-                self.button1:SetText("Open Guild AH ("..seconds..")")
+                self.button1:SetText(string.format(L["Open Guild AH (%s)"], seconds))
             end
         end)
     end,

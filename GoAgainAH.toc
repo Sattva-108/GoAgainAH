@@ -1,11 +1,17 @@
 ## Interface: 30300
-## Version: 1.1.6
-## Title: OnlyFangs AH
-## Notes: Guild Auction House for |cFFFF0000OnlyFangs|r
-## Author: Athene
+## Version: 1.1.15
+## Title: Go Again AH
+## Notes: Guild Auction House for |cFFFF0000Go Again|r
+## Notes-esES: Casa de subastas para |cFFFF0000Go Again|r
+## Notes-esMX: Casa de subastas para |cFFFF0000Go Again|r
+## Author: Athene, MottiDowerro
 ## SavedVariables: AuctionHouseDBSaved, AHConfigSaved, LiveDeathClips, PlayerPrefsSaved, DeathClipReviewsSaved
+## SavedVariablesPerCharacter: CharacterPrefsSaved
 
 dependencies.xml
+# Debug\testLocale.lua
+Locale\Locale.xml
+UI\AuctionHouse\AuctionHouseLocales.lua
 GameEventHandler.lua
 MagicLinks.lua
 Utils.lua
@@ -31,6 +37,7 @@ Chat\ChatUtils.lua
 # Debug\DebugCommands.lua
 Config.lua
 OFCommandHandler.lua
+GuildPointUtils.lua
 PlayerPrefs.lua
 VersionCheck.lua
 AuctionHouse\AuctionHouseUtils.lua
@@ -45,11 +52,15 @@ AuctionHouse.lua
 # Debug\Tabs\LfgTab.lua
 # Debug\Tabs\BlacklistTab.lua
 # Debug\Tabs\DeathClipsTab.lua
+# Debug\Tabs\PendingTransactionsTab.lua
 # Debug\AuctionHouseDebugUI.lua
+# Debug\DebugMethods.lua
 AuctionHouse\AuctionAlertWidget.lua
 AuctionHouse\TradeAPI.lua
 AuctionHouse\BlacklistAPI.lua
+AuctionHouse\PendingTxAPI.lua
 AuctionHouse\ItemTooltipHook.lua
+UI\AuctionHouse\BrowseParams.lua
 UI\Mailbox\Mailbox.lua
 
 UI\AuctionHouse\AuctionData.lua
@@ -57,7 +68,6 @@ UI\AuctionHouse\ReviewUI.lua
 
 DeathClips\DeathClipReviews.lua
 DeathClips\DeathClipUtils.lua
-DeathClips\HardcodedDeathClips.lua
 DeathClips\LiveDeathClips.lua
 LFG\LFGUtils.lua
 UI\AuctionHouse\DeathClipReviewsPrompt.lua
@@ -84,3 +94,4 @@ UI\AuctionHouse\Localization.lua
 UI\AuctionHouse\ReviewPopup.lua
 
 # Tests\TestAuctionHouse.lua
+# Tests\TestAuctionHouseStateSync.lua

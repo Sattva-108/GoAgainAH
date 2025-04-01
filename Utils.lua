@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local L = ns.L
 
 ns.id_to_class = {
     [1] = "Warrior",
@@ -183,7 +184,7 @@ ns.GetItemCount = function(itemId, includeBank)
     if itemId == ns.ITEM_ID_GOLD then
         return GetMoney()
     end
-    if itemId == ns.ITEM_ID_FACTION_POINTS then
+    if itemId == ns.ITEM_ID_GUILD_POINTS then
         return 0
     end
     return GetItemCount(itemId, includeBank)
@@ -211,9 +212,9 @@ ns.GetTimeText = function(timeLeft)
     local minutes = math.floor((timeLeft % 3600) / 60)
 
     if hours > 0 then
-        return string.format("%dh", hours)
+        return string.format(L["%dh left"], hours)
     else
-        return string.format("%dm", minutes)
+        return string.format(L["%dm left"], minutes)
     end
 end
 
