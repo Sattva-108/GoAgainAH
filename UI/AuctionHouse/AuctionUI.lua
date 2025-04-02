@@ -2190,15 +2190,17 @@ function OFAuctionFrameAuctions_OnLoad(self)
     OFSetupPriceTypeDropdown(self)
     OFSetupDeliveryDropdown(self)
 
+    -- fixme when have time for locales, to actually make it alt instead of shift ( as shift splits stacks )
     hooksecurefunc(_G, "ContainerFrameItemButton_OnModifiedClick", function(item, button, ...)
         if button == "RightButton" and IsShiftKeyDown() and OFAuctionFrame:IsShown() and OFAuctionFrameAuctions:IsShown() then
             local bagIdx, slotIdx = item:GetParent():GetID(), item:GetID()
-            C_Container.PickupContainerItem(bagIdx, slotIdx);
+            PickupContainerItem(bagIdx, slotIdx);
             OFAuctionSellItemButton_OnClick(OFAuctionsItemButton, "LeftButton")
         end
+        -- fixme 3.3.5 when itemName is no nil
         if button == "LeftButton" and IsShiftKeyDown() and OFAuctionFrame:IsShown() and OFAuctionFrameBrowse:IsShown() then
             local bagIdx, slotIdx = item:GetParent():GetID(), item:GetID()
-            local itemName = C_Container.GetContainerItemInfo(bagIdx, slotIdx).itemName
+            local itemName = GetContainerItemInfo(bagIdx, slotIdx).itemName
             if itemName then
                 OFBrowseName:SetText(itemName)
                 OFBrowseName:SetTextColor(1, 1, 1)
