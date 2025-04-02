@@ -2228,6 +2228,25 @@ function OFAuctionFrameAuctions_OnLoad(self)
             end
         end
     end)
+
+    -- **Styling OFAuctionsItemButton using SetBackdrop:**
+    local button = OFAuctionsItemButton;
+
+    -- Set Backdrop Properties
+    button:SetBackdrop({
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", -- Border texture
+        edgeSize = 16,                                       -- Border size in pixels
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }, -- Insets for the content within the border
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", -- Background texture (optional, can also use color)
+    });
+
+    -- Set Backdrop Border Color
+    button:SetBackdropBorderColor(0, 0, 0);       -- Black border (R, G, B, Alpha - Alpha defaults to 1 if not specified)
+
+    -- Set Backdrop Background Color (optional, if you want a solid background color instead of bgFile texture)
+    button:SetBackdropColor(0.1, 0.1, 0.1, 0.8);  -- Dark grey background with some transparency (R, G, B, Alpha)
+
+    -- If you ONLY want a border and no background texture or color, you can comment out or remove `bgFile` and `SetBackdropColor`.
 end
 
 function OFAuctionFrameAuctions_OnEvent(self, event, ...)
