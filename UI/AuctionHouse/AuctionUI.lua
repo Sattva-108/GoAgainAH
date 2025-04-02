@@ -500,7 +500,7 @@ function OFUpdateAuctionSellItem()
     if (texture) then
         OFAuctionsItemButton:SetNormalTexture(texture)
     else
-        OFAuctionsItemButton:ClearNormalTexture()
+        OFAuctionsItemButton:SetNormalTexture(nil)
     end
 
     OFAuctionsItemButton.stackCount = stackCount
