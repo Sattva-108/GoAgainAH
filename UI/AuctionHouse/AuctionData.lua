@@ -356,10 +356,19 @@ function OFAuctionCategoryMixin:CreateSubCategory(classID, subClassID, inventory
     local name = "";
     if inventoryType then
         name = GetItemInventorySlotInfo(inventoryType);
+        C_Timer:After(1, function()
+            print(name, 'invtype', inventoryType)
+        end)
     elseif classID and subClassID then
         name = GetItemSubClassInfo(classID, subClassID);
+        C_Timer:After(1, function()
+            print(name, 'classid subclass id', classID, subClassID)
+        end)
     elseif classID then
         name = GetItemClassInfo(classID);
+        C_Timer:After(1, function()
+            print(name, 'classid', classID)
+        end)
     end
     return self:CreateNamedSubCategory(name);
 end
@@ -407,10 +416,7 @@ end
 
 do
 	local function GenerateSubClassesHelper(self, classID, ...)
-		for i = 1, select("#", ...) do
-			local subClassID = select(i, ...);
-			self:CreateSubCategoryAndFilter(classID, subClassID);
-		end
+		self:CreateSubCategory(classID);
 	end
 
 	function OFAuctionCategoryMixin:GenerateSubCategoriesAndFiltersFromSubClass(classID)
@@ -418,16 +424,16 @@ do
 	end
 end
 
-function OFAuctionCategoryMixin:FindSubCategoryByName(name)
-	if self.subCategories then
-		for i, subCategory in ipairs(self.subCategories) do
-			if subCategory.name == name then
-				return subCategory;
-			end
-		end
-	end
-end
-
+--function OFAuctionCategoryMixin:FindSubCategoryByName(name)
+--	if self.subCategories then
+--		for i, subCategory in ipairs(self.subCategories) do
+--			if subCategory.name == name then
+--				return subCategory;
+--			end
+--		end
+--	end
+--end
+    
 function OFAuctionCategoryMixin:SortSubCategories()
 	if self.subCategories then
 		table.sort(self.subCategories, function(left, right)
@@ -515,34 +521,34 @@ do -- Armor
     local miscCategory = armorCategory:CreateSubCategory(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_GENERIC);
     miscCategory:AddBulkInventoryTypeCategories(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_GENERIC, MiscArmorInventoryTypes);
 
-    local clothCategory = armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_CLOTH);
+    local clothCategory = armorCategory:CreateSubCategory(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_CLOTH);
     clothCategory:AddBulkInventoryTypeCategories(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_CLOTH, ClothArmorInventoryTypes);
 
-    local clothChestCategory = clothCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
-    clothChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_CLOTH, Enum.InventoryType.IndexRobeType);
+   -- local clothChestCategory = clothCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
+   -- clothChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_CLOTH, Enum.InventoryType.IndexRobeType);
 
-    local leatherCategory = armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LEATHER);
+    local leatherCategory = armorCategory:CreateSubCategory(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LEATHER);
     leatherCategory:AddBulkInventoryTypeCategories(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LEATHER, ArmorInventoryTypes);
 
-    local leatherChestCategory = leatherCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
-    leatherChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LEATHER, Enum.InventoryType.IndexRobeType);
+  --  local leatherChestCategory = leatherCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
+  --  leatherChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LEATHER, Enum.InventoryType.IndexRobeType);
 
-    local mailCategory = armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_MAIL);
+    local mailCategory = armorCategory:CreateSubCategory(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_MAIL);
     mailCategory:AddBulkInventoryTypeCategories(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_MAIL, ArmorInventoryTypes);
 
-    local mailChestCategory = mailCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
-    mailChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_MAIL, Enum.InventoryType.IndexRobeType);
+   -- local mailChestCategory = mailCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
+   -- mailChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_MAIL, Enum.InventoryType.IndexRobeType);
 
-    local plateCategory = armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_PLATE);
+    local plateCategory = armorCategory:CreateSubCategory(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_PLATE);
     plateCategory:AddBulkInventoryTypeCategories(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_PLATE, ArmorInventoryTypes);
 
-    local plateChestCategory = plateCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
-    plateChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_PLATE, Enum.InventoryType.IndexRobeType);
+   -- local plateChestCategory = plateCategory:FindSubCategoryByName(GetItemInventorySlotInfo(Enum.InventoryType.IndexChestType));
+  --  plateChestCategory:AddFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_PLATE, Enum.InventoryType.IndexRobeType);
 
-    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_SHIELD);
-    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LIBRAM);
-    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_IDOL);
-    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_TOTEM);
+    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_SHIELD, Enum.InventoryType.IndexShieldType);
+    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_LIBRAM, Enum.InventoryType.IndexWeaponoffhandType);
+    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_IDOL, Enum.InventoryType.IndexRelicType);
+    armorCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_ARMOR, LE_ITEM_ARMOR_TOTEM, Enum.InventoryType.IndexRelicType);
 end
 
 do -- Containers
@@ -553,20 +559,12 @@ end
 
 do -- Consumables (SubClasses Added in TBC)
     local consumablesCategory = OFAuctionFrame_CreateCategory(AUCTION_CATEGORY_CONSUMABLES);
-    if ClassicExpansionAtLeast(LE_EXPANSION_BURNING_CRUSADE) then
-        consumablesCategory:GenerateSubCategoriesAndFiltersFromSubClass(LE_ITEM_CLASS_CONSUMABLE);
-    else
-        consumablesCategory:AddFilter(LE_ITEM_CLASS_CONSUMABLE);
-    end
+    consumablesCategory:GenerateSubCategoriesAndFiltersFromSubClass(LE_ITEM_CLASS_CONSUMABLE);
 end
 
 do -- Trade Goods (SubClasses Added in TBC)
     local tradeGoodsCategory = OFAuctionFrame_CreateCategory(AUCTION_CATEGORY_TRADE_GOODS);
-    if ClassicExpansionAtLeast(LE_EXPANSION_BURNING_CRUSADE) then
-        tradeGoodsCategory:GenerateSubCategoriesAndFiltersFromSubClass(LE_ITEM_CLASS_TRADEGOODS);
-    else
-        tradeGoodsCategory:AddFilter(LE_ITEM_CLASS_TRADEGOODS);
-    end
+    tradeGoodsCategory:GenerateSubCategoriesAndFiltersFromSubClass(LE_ITEM_CLASS_TRADEGOODS);
 end
 
 do -- Recipes
@@ -574,24 +572,22 @@ do -- Recipes
     recipesCategory:GenerateSubCategoriesAndFiltersFromSubClass(LE_ITEM_CLASS_RECIPE);
 end
 
-do -- Reagent (Changed to a ItemClass.Miscellaneous and other ClassIDs in TBC)
-    if GetClassicExpansionLevel() == LE_EXPANSION_CLASSIC then
-        local reagentCategory = OFAuctionFrame_CreateCategory(AUCTION_CATEGORY_REAGENT);
-        reagentCategory:AddFilter(LE_ITEM_CLASS_MISCELLANEOUS);
-    end
-end
+--do -- Reagent (Changed to a ItemClass.Miscellaneous and other ClassIDs in TBC)
+ --   if GetClassicExpansionLevel() == LE_EXPANSION_CLASSIC then
+  --      local reagentCategory = OFAuctionFrame_CreateCategory(AUCTION_CATEGORY_REAGENT);
+   --     reagentCategory:AddFilter(LE_ITEM_CLASS_MISCELLANEOUS);
+  --  end
+--end
 
 do -- Miscellaneous (SubClasses Added in TBC)
     local miscellaneousCategory = OFAuctionFrame_CreateCategory(AUCTION_CATEGORY_MISCELLANEOUS);
-    miscellaneousCategory:AddFilter(Enum.ItemClass.Miscellaneous);
-    if ClassicExpansionAtLeast(LE_EXPANSION_BURNING_CRUSADE) then
-        miscellaneousCategory:CreateSubCategoryAndFilter(Enum.ItemClass.Miscellaneous, Enum.ItemMiscellaneousSubclass.Junk);
-        miscellaneousCategory:CreateSubCategoryAndFilter(Enum.ItemClass.Miscellaneous, Enum.ItemMiscellaneousSubclass.Reagent);
-        miscellaneousCategory:CreateSubCategoryAndFilter(Enum.ItemClass.Miscellaneous, Enum.ItemMiscellaneousSubclass.CompanionPet);
-        miscellaneousCategory:CreateSubCategoryAndFilter(Enum.ItemClass.Miscellaneous, Enum.ItemMiscellaneousSubclass.Holiday);
-        miscellaneousCategory:CreateSubCategoryAndFilter(Enum.ItemClass.Miscellaneous, Enum.ItemMiscellaneousSubclass.Other);
-        miscellaneousCategory:CreateSubCategoryAndFilter(Enum.ItemClass.Miscellaneous, Enum.ItemMiscellaneousSubclass.Mount);
-    end
+    miscellaneousCategory:AddFilter(LE_ITEM_CLASS_MISCELLANEOUS);
+    miscellaneousCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_MISCELLANEOUS, LE_ITEM_MISCELLANEOUS_JUNK);
+    miscellaneousCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_MISCELLANEOUS, LE_ITEM_MISCELLANEOUS_REAGENT);
+    miscellaneousCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_MISCELLANEOUS, LE_ITEM_MISCELLANEOUS_PET);
+    miscellaneousCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_MISCELLANEOUS, LE_ITEM_MISCELLANEOUS_HOLIDAY);
+    miscellaneousCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_MISCELLANEOUS, LE_ITEM_MISCELLANEOUS_OTHER);
+    miscellaneousCategory:CreateSubCategoryAndFilter(LE_ITEM_CLASS_MISCELLANEOUS, LE_ITEM_MISCELLANEOUS_MOUNT);
 end
 
 OFAuctionFrame_CreateCategory(L["Enchants"]):SetFlag("BLUE_HIGHLIGHT")
