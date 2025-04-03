@@ -616,11 +616,11 @@ function OFAuctionFrame_OnLoad (self)
 
 	MoneyFrame_SetMaxDisplayWidth(OFAuctionFrameMoneyFrame, 160);
 
-	if GetClassicExpansionLevel() == LE_EXPANSION_CLASSIC then
+	--if GetClassicExpansionLevel() == LE_EXPANSION_CLASSIC then
 		--Vanilla textures are slightly different from later expansions so we need to adjust the placement of the BrowseResetButton
-		OFBrowseResetButton:SetSize(97, 22);
-		OFBrowseResetButton:SetPoint("TOPLEFT", 37, -79);
-	end
+	--	OFBrowseResetButton:SetSize(97, 22);
+	--	OFBrowseResetButton:SetPoint("TOPLEFT", 37, -79);
+	--end
 end
 
 function OFAuctionFrame_Show()

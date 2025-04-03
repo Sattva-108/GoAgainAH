@@ -356,19 +356,10 @@ function OFAuctionCategoryMixin:CreateSubCategory(classID, subClassID, inventory
     local name = "";
     if inventoryType then
         name = GetItemInventorySlotInfo(inventoryType);
-        C_Timer:After(1, function()
-            print(name, 'invtype', inventoryType)
-        end)
     elseif classID and subClassID then
         name = GetItemSubClassInfo(classID, subClassID);
-        C_Timer:After(1, function()
-            print(name, 'classid subclass id', classID, subClassID)
-        end)
     elseif classID then
         name = GetItemClassInfo(classID);
-        C_Timer:After(1, function()
-            print(name, 'classid', classID)
-        end)
     end
     return self:CreateNamedSubCategory(name);
 end
