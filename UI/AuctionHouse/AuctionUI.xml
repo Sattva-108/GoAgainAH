@@ -2562,7 +2562,6 @@
 			<OnHide>
 				PlaySound(SOUNDKIT.AUCTION_WINDOW_CLOSE)
                 OFCloseAuctionStaticPopups()
-				CloseSideDressUpFrame(self)
 				SetAuctionsTabShowing(false)
 			</OnHide>
 			<OnMouseWheel>

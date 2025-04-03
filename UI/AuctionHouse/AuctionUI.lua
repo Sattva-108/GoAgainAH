@@ -591,6 +591,15 @@ StaticPopupDialogs["OF_SELECT_AUCTION_MONEY"] = {
 
 
 function OFAuctionFrame_OnLoad (self)
+    if not OFAuctionFrameBrowse.OFFilterButtons then
+        OFAuctionFrameBrowse.OFFilterButtons = {}
+        for _, child in ipairs({ OFAuctionFrameBrowse:GetChildren() }) do
+            if child:IsObjectType("Button") and string.find(child:GetName(), "OFAuctionFilterButton") then
+                table.insert(OFAuctionFrameBrowse.OFFilterButtons, child)
+            end
+        end
+    end
+    
     tinsert(UISpecialFrames, "OFAuctionFrame")
 
 	-- Tab Handling code
@@ -669,6 +678,18 @@ function AuctionFrame_UpdatePortrait()
     -- end
 end
 
+
+function OFAuctionFrame_SetUpSideDressUpFrame(parentFrame, anchorPoint, relativeTo, offsetX, offsetY)
+    local dressUpFrame = _G["DressUpFrame"]
+    dressUpFrame:SetParent(parentFrame)
+    dressUpFrame:SetPoint(anchorPoint, parentFrame, relativeTo, offsetX, offsetY)
+    dressUpFrame:SetMovable(true)
+    dressUpFrame:SetUserPlaced(true)
+    dressUpFrame:SetClampedToScreen(true)
+    dressUpFrame:Show()
+    dressUpFrame.ResetButton:Click()
+end
+
 function OFAuctionFrame_OnShow (self)
     OFAuctionFrameSwitchTab(initialTab)
     initialTab = TAB_BROWSE
@@ -677,7 +698,7 @@ function OFAuctionFrame_OnShow (self)
 	OFBrowseNoResultsText:SetText(BROWSE_SEARCH_TEXT);
 	PlaySound(SOUNDKIT.AUCTION_WINDOW_OPEN);
 
-	SetUpSideDressUpFrame(self, 840, 1020, "TOPLEFT", "TOPRIGHT", -2, -28);
+	OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
     OFAuctionFrame_UpdateReviewsTabText()
     OFAuctionFrame_UpdateAtheneTab()
 end
@@ -1255,13 +1276,13 @@ function OFFilterButton_SetUp(button, info)
 	local line = _G[button:GetName().."Lines"];
 	local tex = button:GetNormalTexture();
 
-	if (info.blueHighlight) then
-		tex:SetTexCoord(0, 1, 0, 1);
-		tex:SetAtlas("token-button-category")
-	else
-		tex:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-FilterBg");
-		tex:SetTexCoord(0, 0.53125, 0, 0.625);
-	end
+    if (info.blueHighlight) then
+        tex:SetTexture("Interface\\AuctionFrame\\auctionhouse-itemicon-border-blue")
+        tex:SetTexCoord(0, 1, 0, 1)
+    else
+        tex:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-FilterBg")
+        tex:SetTexCoord(0, 0.53125, 0, 0.625)
+    end
 
 	if ( info.type == "category" ) then
 		button:SetNormalFontObject(GameFontNormalSmallLeft);
