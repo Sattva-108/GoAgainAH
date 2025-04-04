@@ -48,19 +48,23 @@
 			</Layer>
 		</Layers>
 		<Scripts>
-			<OnLoad>
-				self:SetPushedTextOffset(0, 0);
-			</OnLoad>
-			<OnClick>
-				OFAuctionFrameFilter_OnClick(self, button, down);
-                OFAuctionFrameBrowse_Search()
-			</OnClick>
-			<OnMouseDown>
-				self.Text:AdjustPointsOffset(1, -1);
-			</OnMouseDown>
-			<OnMouseUp>
-				self.Text:AdjustPointsOffset(-1, 1);
-			</OnMouseUp>
+    		<OnLoad>
+       		    self.originalTextAnchor = { self.Text:GetPoint() };
+      		    --self:SetPushedTextOffset(0, 0);
+   		    </OnLoad>
+   		    <OnClick>
+     		    OFAuctionFrameFilter_OnClick(self, button, down);
+     		    OFAuctionFrameBrowse_Search();
+  		    </OnClick>
+   		    <OnMouseDown>
+    		    local point, relativeTo, relativePoint, x, y = self.Text:GetPoint();
+    		    self.Text:SetPoint(point, relativeTo, relativePoint, x + 1, y - 1);
+  		    </OnMouseDown>
+   		    <OnMouseUp>
+			    if self.originalTextAnchor then
+				    self.Text:SetPoint(unpack(self.originalTextAnchor));
+    		    end
+ 		    </OnMouseUp>
 		</Scripts>
 		<NormalTexture name="$parentNormalTexture" file="Interface\AuctionFrame\UI-AuctionFrame-FilterBg">
 			<TexCoords left="0" right="0.53125" top="0" bottom="0.625" />
