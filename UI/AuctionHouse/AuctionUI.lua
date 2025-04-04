@@ -1276,14 +1276,6 @@ function OFFilterButton_SetUp(button, info)
 	local line = _G[button:GetName().."Lines"];
 	local tex = button:GetNormalTexture();
 
-    if (info.blueHighlight) then
-        tex:SetTexture("Interface\\AuctionFrame\\auctionhouse-itemicon-border-blue")
-        tex:SetTexCoord(0, 1, 0, 1)
-    else
-        tex:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-FilterBg")
-        tex:SetTexCoord(0, 0.53125, 0, 0.625)
-    end
-
 	if ( info.type == "category" ) then
 		button:SetNormalFontObject(GameFontNormalSmallLeft);
 		button:SetText(info.name);
