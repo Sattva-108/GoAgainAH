@@ -97,7 +97,7 @@ function OFAllowLoansCheckButton_OnClick(button)
         local priceType = OFAuctionFrameAuctions.priceTypeIndex
         if priceType ~= ns.PRICE_TYPE_MONEY then
             OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
-            OFPriceTypeDropdown:GenerateMenu()
+            ToggleDropDownMenu(1, nil, OFPriceTypeDropdown, "cursor", 0, 0)
         end
     end
     OFUpdateAuctionSellItem()
@@ -125,7 +125,7 @@ function OFDeathRollCheckButton_OnClick(button)
         local priceType = OFAuctionFrameAuctions.priceTypeIndex
         if priceType ~= ns.PRICE_TYPE_MONEY then
             OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
-            OFPriceTypeDropdown:GenerateMenu()
+            ToggleDropDownMenu(1, nil, OFPriceTypeDropdown, "cursor", 0, 0)
         end
     end
     OFSpecialFlagCheckButton_OnClick()
@@ -143,7 +143,7 @@ function OFDuelCheckButton_OnClick(button)
         local priceType = OFAuctionFrameAuctions.priceTypeIndex
         if priceType ~= ns.PRICE_TYPE_MONEY then
             OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
-            OFPriceTypeDropdown:GenerateMenu()
+            ToggleDropDownMenu(1, nil, OFPriceTypeDropdown, "cursor", 0, 0)
         end
     end
     OFSpecialFlagCheckButton_OnClick()
@@ -156,12 +156,12 @@ function OFSpecialFlagCheckButton_OnClick()
         local priceType = OFAuctionFrameAuctions.priceTypeIndex
         if priceType == ns.PRICE_TYPE_TWITCH_RAID then
             OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
-            OFPriceTypeDropdown:GenerateMenu()
+            ToggleDropDownMenu(1, nil, OFPriceTypeDropdown, "cursor", 0, 0)
         end
         local deliveryType = OFAuctionFrameAuctions.deliveryTypeIndex
         if deliveryType ~= ns.DELIVERY_TYPE_TRADE then
             OFSetupDeliveryDropdown(OFAuctionFrameAuctions, ns.DELIVERY_TYPE_TRADE)
-            OFDeliveryDropdown:GenerateMenu()
+            ToggleDropDownMenu(1, nil, OFDeliveryDropdown, "cursor", 0, 0)
         end
     end
 end
@@ -500,7 +500,7 @@ function OFUpdateAuctionSellItem()
     if (texture) then
         OFAuctionsItemButton:SetNormalTexture(texture)
     else
-        OFAuctionsItemButton:ClearNormalTexture()
+        OFAuctionsItemButton:SetNormalTexture(nil)
     end
 
     OFAuctionsItemButton.stackCount = stackCount
@@ -535,7 +535,7 @@ local function OnMoneySelected(self)
     local copper = MoneyInputFrame_GetCopper(self.moneyInputFrame)
     local myMoney = GetMoney()
     if myMoney < copper then
-        PlayVocalErrorSoundID(40)
+        PlaySound(847) -- Plays the default "error" sound
         UIErrorsFrame:AddMessage(ERR_NOT_ENOUGH_MONEY, 1.0, 0.1, 0.1, 1.0)
         return
     end
@@ -2265,10 +2265,9 @@ end
 
 function OFAuctionFrameAuctions_OnShow()
     OFAuctionsTitle:SetFormattedText(L["GoAgain AH - %s's Auctions"], UnitName("player"))
-	OFAuctionsFrameAuctions_ValidateAuction()
-	OFAuctionFrameAuctions_Update()
-    OFPriceTypeDropdown:GenerateMenu()
-    OFDeliveryDropdown:GenerateMenu()
+    OFAuctionsFrameAuctions_ValidateAuction()
+    OFAuctionFrameAuctions_Update()
+
 end
 
 local function UpdateAuctionEntry(index, i, offset, button, auction, numBatchAuctions, totalAuctions)
@@ -2629,10 +2628,10 @@ function OFAuctionPriceTooltipFrame_OnLeave(self)
 end
 
 function OFAuctionFrameItem_OnEnter(self, type)
-	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 
-	-- add price per unit info
-	local button = self:GetParent()
+    -- Add price per unit info
+    local button = self:GetParent()
     if button.isEnchantEntry then
         GameTooltip_SetTitle(GameTooltip, L["Enchants"])
         GameTooltip_AddNormalLine(GameTooltip, L["Select the enchant you want to put up for auction"], true)
@@ -2646,23 +2645,23 @@ function OFAuctionFrameItem_OnEnter(self, type)
     elseif ns.IsSpellItem(button.itemID) then
         GameTooltip:SetSpellByID(ns.ItemIDToSpellID(button.itemID))
     else
-        GameTooltip:SetItemByID(button.itemID)
+        GameTooltip:SetHyperlink("item:" .. button.itemID)
     end
     GameTooltip:Show()
 
     SetupUnitPriceTooltip(GameTooltip, type, button, true);
-	if (type == "list") then
-		activeTooltipAuctionFrameItem = self;
-	end
+    if (type == "list") then
+        activeTooltipAuctionFrameItem = self;
+    end
     if button.itemID ~= ns.ITEM_ID_GOLD then
         GameTooltip_ShowCompareItem()
     end
 
-	if ( IsModifiedClick("DRESSUP") ) then
-		ShowInspectCursor();
-	else
-		ResetCursor();
-	end
+    if (IsModifiedClick("DRESSUP")) then
+        ShowInspectCursor();
+    else
+        ResetCursor();
+    end
 end
 
 function OFAuctionFrameItem_OnClickModified(self, type, index, overrideID)

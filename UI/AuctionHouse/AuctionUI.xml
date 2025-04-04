@@ -2364,7 +2364,7 @@
                                 OFAllowLoansCheckButtonText:SetText("Allow loan")
                             </OnLoad>
 							<OnEnter>
-							    GameTooltip:SetOwner(OFAllowLoansCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
+							    GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
                                 GameTooltip_SetTitle(GameTooltip, "Buyout with loan");
                                 GameTooltip_AddNormalLine(GameTooltip, "Allow players to buy the item on a loan. They have 7 days to pay or declare bankruptcy.", true);
                                 GameTooltip:Show();
@@ -2393,15 +2393,15 @@
                                 OFRoleplayCheckButtonText:SetFontObject(GameFontHighlightSmall);
                                 OFRoleplayCheckButtonText:SetText("Roleplay");
                             </OnLoad>
-							<OnEnter>
-                                GameTooltip:SetOwner(OFRoleplayCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
+                            <OnEnter>
+                                GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
                                 GameTooltip_SetTitle(GameTooltip, "Roleplay");
                                 GameTooltip_AddNormalLine(GameTooltip, OF_ROLEPLAY_TOOLTIP, true);
                                 GameTooltip:Show();
-							</OnEnter>
-							<OnLeave>
+                            </OnEnter>
+                            <OnLeave>
                                 GameTooltip:Hide();
-							</OnLeave>
+                            </OnLeave>
                             <OnClick>
                                 OFRoleplayCheckButton_OnClick(self)
                             </OnClick>
@@ -2424,7 +2424,7 @@
                                 OFDeathRollCheckButtonText:SetText("Death Roll");
                             </OnLoad>
 							<OnEnter>
-                                GameTooltip:SetOwner(OFDeathRollCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15);
+                                GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
                                 GameTooltip_SetTitle(GameTooltip, "Death Roll");
                                 GameTooltip_AddNormalLine(GameTooltip, OF_DEATH_ROLL_TOOLTIP, true);
                                 GameTooltip:Show();
@@ -2454,7 +2454,7 @@
                                 OFDuelCheckButtonText:SetText("Duel (Normal)")
                             </OnLoad>
 							<OnEnter>
-                                GameTooltip:SetOwner(OFDuelCheckButtonText, "ANCHOR_TOPRIGHT", 100, 15)
+                                GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15)
                                 GameTooltip_SetTitle(GameTooltip, "Duel (Normal)")
                                 GameTooltip_AddNormalLine(GameTooltip, OF_DUEL_TOOLTIP, true)
                                 GameTooltip:Show()
