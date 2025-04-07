@@ -162,6 +162,22 @@ ns.GetItemInfo = function(id, quantity)
     return GetItemInfo(id)
 end
 
+local frame = CreateFrame("Frame")
+local pendingCallbacks = {}
+
+frame:SetScript("OnUpdate", function()
+    for itemId, data in pairs(pendingCallbacks) do
+        local info = { GetItemInfo(itemId) }
+        if info[1] then
+            -- Item is now loaded, run all callbacks
+            for _, entry in ipairs(data.callbacks) do
+                entry.callback(unpack(info))
+            end
+            pendingCallbacks[itemId] = nil
+        end
+    end
+end)
+
 ns.GetItemInfoAsync = function(itemId, callback, quantity)
     if ns.IsFakeItem(itemId) then
         callback(ns.GetFakeItemInfo(itemId, quantity))
@@ -172,10 +188,15 @@ ns.GetItemInfoAsync = function(itemId, callback, quantity)
         return
     end
 
-    local item = Item:CreateFromItemID(itemId)
-    item:ContinueOnItemLoad(function()
-        callback(GetItemInfo(itemId))
-    end)
+    local info = { GetItemInfo(itemId) }
+    if info[1] then
+        callback(unpack(info))
+    else
+        if not pendingCallbacks[itemId] then
+            pendingCallbacks[itemId] = { callbacks = {} }
+        end
+        table.insert(pendingCallbacks[itemId].callbacks, { callback = callback })
+    end
 end
 
 -- GetItemCount returns the number of times you own itemId
