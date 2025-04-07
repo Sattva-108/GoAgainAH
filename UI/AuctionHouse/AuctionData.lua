@@ -578,16 +578,18 @@ OFAuctionFrame_CreateCategory(L["Enchants"]):SetFlag("BLUE_HIGHLIGHT")
 OFAuctionFrame_CreateCategory(L["Gold Missions"]):SetFlag("BLUE_HIGHLIGHT")
 
 ns.CategoryIndexToID = {
-    2,
-    4,
-    1,
-    0,
-    7,
-    6,
-    11,
-    9,
-    5,
-    15,
-    ns.SPELL_ITEM_CLASS_ID,
-    ns.GOLD_ITEM_CLASS_ID,
+    2,							-- Оружие
+    4,							-- Доспехи
+    1,							-- Сумки
+    0,							-- Расход. предметы
+    16,							-- Символы
+    7,							-- Хозяйственные предметы
+    6,							-- Боеприпасы
+    11,							-- Амуниция
+    9,							-- Рецепты
+    3,							-- Самоцветы
+	15,							-- Разное
+	12,							-- Задания
+    ns.SPELL_ITEM_CLASS_ID,		-- Enchants
+    ns.GOLD_ITEM_CLASS_ID,		-- Gold Missions
 }
