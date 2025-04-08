@@ -69,7 +69,16 @@ local function OFGetAuctionSellItemInfo()
     if auctionSellItemInfo == nil then
         return nil
     end
-    return unpack(auctionSellItemInfo)
+
+    local name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID = unpack(auctionSellItemInfo)
+
+    -- Only fetch itemID from GetItemInfo if it's missing (ignore gold and enchants)
+    if not itemID and name then
+        local itemLink = select(2, GetItemInfo(name))
+        itemID = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
+    end
+
+    return name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID
 end
 
 function OFGetCurrentSortParams(type)
