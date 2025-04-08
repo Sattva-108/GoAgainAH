@@ -747,7 +747,9 @@ local function AssignCreateOrderTextures()
     OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-TopLeft");
     OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Top");
     OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-TopRight");
-    OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft.png");
+    --TODO FIXME 3.3.5 cannot use the blp file from the folder, using blizzard one for now
+    --OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft.png");
+    OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-BotLeft");
     OFAuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot");
     OFAuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-BotRight");
 end
