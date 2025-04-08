@@ -7,7 +7,7 @@ if not ldb then return end
 local plugin = ldb:NewDataObject(addonName, {
     type = "data source",
     text = "0",
-    icon = "Interface\\AddOns\\"..addonName.."\\Media\\icon_of_64px.png",
+    icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8",
 })
 
 function plugin.OnClick(self, button)
