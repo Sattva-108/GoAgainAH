@@ -88,7 +88,7 @@ local function CreateBuyAuctionPrompt()
     dividerGroup:SetFullWidth(true)
     dividerGroup:SetLayout("Flow")
     dividerGroup:SetHeight(16)
-    
+
     -- Left divider
     local leftDivider = AceGUI:Create("Label")
     leftDivider:SetImage("interface/mailframe/ui-mailframe-invoiceline.blp")
@@ -96,7 +96,7 @@ local function CreateBuyAuctionPrompt()
     leftDivider:SetWidth(120)
     leftDivider:SetHeight(16)
     dividerGroup:AddChild(leftDivider)
-    
+
     -- Custom text in center
     local customText = AceGUI:Create("Label")
     customText:SetText(L["Custom"])
@@ -104,7 +104,7 @@ local function CreateBuyAuctionPrompt()
     customText:SetHeight(16)
     customText:SetJustifyH("CENTER")
     dividerGroup:AddChild(customText)
-    
+
     -- Right divider
     local rightDivider = AceGUI:Create("Label")
     rightDivider:SetImage("interface/mailframe/ui-mailframe-invoiceline.blp")
@@ -112,7 +112,7 @@ local function CreateBuyAuctionPrompt()
     rightDivider:SetWidth(120)
     rightDivider:SetHeight(16)
     dividerGroup:AddChild(rightDivider)
-    
+
     tipGroup:AddChild(dividerGroup)
 
     local space = AceGUI:Create("InlineGroup")
@@ -131,7 +131,7 @@ local function CreateBuyAuctionPrompt()
     frame:AddChild(itemGroup)
 
     -- Left side container for icon and name
-    local leftContainer = AceGUI:Create("SimpleGroup") 
+    local leftContainer = AceGUI:Create("SimpleGroup")
     leftContainer:SetLayout("Flow")
     leftContainer:SetWidth(150)
     leftContainer:SetHeight(80)
@@ -142,13 +142,13 @@ local function CreateBuyAuctionPrompt()
     itemIcon:SetImage("Interface\\Icons\\INV_Misc_QuestionMark")
     itemIcon:SetImageSize(32, 32)
     itemIcon:SetWidth(40)
-    
+
     -- Add count text in bottom right
     local countText = itemIcon.frame:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
     countText:SetPoint("BOTTOMRIGHT", -2, 2)
     countText:SetText("1")
     itemIcon.countText = countText -- Store reference for updating later
-    
+
     leftContainer:AddChild(itemIcon)
 
     -- Item Name
@@ -176,10 +176,12 @@ local function CreateBuyAuctionPrompt()
     buyoutLabel:SetWidth(60)
     buyoutContainer:AddChild(buyoutLabel)
 
-    local buyoutMoneyFrame = CreateFrame("Frame", "BuyoutMoneyFrame", buyoutContainer.frame, "MoneyFrameTemplate")
-    MoneyFrame_SetType(buyoutMoneyFrame, "AUCTION");
+    local buyoutMoneyFrame = CreateFrame("Frame", "GoAgainAHBuyoutMoneyFrame", frame.frame, "MoneyFrameTemplate") -- PARENT CHANGED, UNIQUE NAME
     buyoutMoneyFrame:SetPoint("LEFT", buyoutLabel.frame, "RIGHT", 0, 0)
     buyoutMoneyFrame:SetScale(0.8)
+    MoneyFrame_OnLoad(buyoutMoneyFrame) -- EXPLICITLY CALL OnLoad
+    MoneyFrame_SetType(buyoutMoneyFrame, "AUCTION")
+    MoneyFrame_UpdateMoney(buyoutMoneyFrame)
 
     -- Tip container
     local tipContainer = AceGUI:Create("SimpleGroup")
@@ -193,10 +195,12 @@ local function CreateBuyAuctionPrompt()
     tipLabel:SetWidth(60)
     tipContainer:AddChild(tipLabel)
 
-    local tipMoneyFrame = CreateFrame("Frame", "TipMoneyFrame", tipContainer.frame, "MoneyFrameTemplate")
-    MoneyFrame_SetType(tipMoneyFrame, "AUCTION");
+    local tipMoneyFrame = CreateFrame("Frame", "GoAgainAHTipMoneyFrame", frame.frame, "MoneyFrameTemplate") -- PARENT CHANGED, UNIQUE NAME
     tipMoneyFrame:SetPoint("LEFT", tipLabel.frame, "RIGHT", 0, 0)
     tipMoneyFrame:SetScale(0.8)
+    MoneyFrame_OnLoad(tipMoneyFrame) -- EXPLICITLY CALL OnLoad
+    MoneyFrame_SetType(tipMoneyFrame, "AUCTION")
+    MoneyFrame_UpdateMoney(tipMoneyFrame)
 
     ----------------------------------------------------------------------------
     -- Big Buyout Button
@@ -213,8 +217,8 @@ local function CreateBuyAuctionPrompt()
         frame = frame,
         sellerNameLabel = sellerNameLabel,
         tipMoneyInputFrame = tipMoneyInputFrame,
-        buyoutMoneyFrame = buyoutMoneyFrame,
-        tipMoneyFrame = tipMoneyFrame,
+        buyoutMoneyFrame = buyoutMoneyFrame, -- Using the FRAME VAR directly now
+        tipMoneyFrame = tipMoneyFrame, -- Using the FRAME VAR directly now
         submitButton = buyoutButton,
         itemIcon = itemIcon,
         itemNameLabel = itemNameLabel,
@@ -375,7 +379,7 @@ function AuctionBuyConfirmPrompt:Show(auction, withLoan, onSuccess, onError, onC
 
         local res, err
         if withLoan then
-             res, err = ns.AuctionHouseAPI:RequestBuyAuctionWithLoan(auction.id, tipAmount)
+            res, err = ns.AuctionHouseAPI:RequestBuyAuctionWithLoan(auction.id, tipAmount)
         else
             res, err = ns.AuctionHouseAPI:RequestBuyAuction(auction.id, tipAmount)
         end
