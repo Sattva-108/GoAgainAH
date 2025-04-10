@@ -4,7 +4,6 @@ local Database = {}
 ns.ItemDB = Database
 
 function Database:Find(search, class, subclass, slot, quality, minLevel, maxLevel)
-    -- Start timer
     local startTime = GetTime()
 
     search = search and search:lower()
@@ -15,60 +14,52 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
     local lowerSearch = search or ""
 
     for id, data in pairs(ItemsCache) do
-        local nameEN, nameRU = data[1], data[2]
+        local nameRU = data[2]
         local itemQuality = data[3]
         local itemLevel = data[4]
         local itemClass = data[6]
         local itemSubclass = data[7]
         local price = data[11]
 
-        -- Filter by class, subclass, and level first (cheap checks)
         if (not class or class == itemClass) and
                 (not subclass or subclass == itemSubclass) and
-                itemLevel >= minLevel and itemLevel <= maxLevel then
+                itemLevel >= minLevel and itemLevel <= maxLevel and
+                (not quality or quality == itemQuality) then
 
-            -- Check if the item meets the quality condition
-            if not quality or quality == itemQuality then
-                -- If search string is provided, check the name match (optimized)
-                local meetsSearch = true
-                if lowerSearch ~= "" then
-                    local nameENLower = nameEN:lower()
-                    local nameRULower = nameRU and nameRU:lower() or ""
-                    meetsSearch = nameENLower:find(lowerSearch, 1, true) or nameRULower:find(lowerSearch, 1, true)
-                end
+            local meetsSearch = true
+            if lowerSearch ~= "" then
+                local nameRULower = nameRU and nameRU:lower() or ""
+                meetsSearch = nameRULower:find(lowerSearch, 1, true)
+            end
 
-                -- If it meets all conditions, add to results
-                if meetsSearch then
-                    table.insert(results, {
-                        id = id,
-                        name = nameRU or nameEN,
-                        quality = itemQuality,
-                        level = itemLevel,
-                        equipSlot = slot,
-                        subclass = itemSubclass,
-                        class = itemClass,
-                        quantity = 0,
-                        price = price or 0,
-                        owner = "",
-                        expiresAt = 0,
-                        status = "",
-                        auctionType = 0,
-                        deliveryType = 0,
-                    })
-                end
+            if meetsSearch then
+                table.insert(results, {
+                    id = id,
+                    name = nameRU,
+                    quality = itemQuality,
+                    level = itemLevel,
+                    equipSlot = slot,
+                    subclass = itemSubclass,
+                    class = itemClass,
+                    quantity = 0,
+                    price = price or 0,
+                    owner = "",
+                    expiresAt = 0,
+                    status = "",
+                    auctionType = 0,
+                    deliveryType = 0,
+                })
             end
         end
     end
 
-    -- End timer and calculate elapsed time
     local endTime = GetTime()
     local elapsedTime = endTime - startTime
-
-    -- Print the time taken in seconds
     print(string.format("Search took %.2f seconds", elapsedTime))
 
     return results
 end
+
 
 function Database:FindClosest(search)
     local size = #search
