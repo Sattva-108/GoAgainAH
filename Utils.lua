@@ -162,10 +162,8 @@ ns.GetItemInfo = function(id, quantity)
     return GetItemInfo(id)
 end
 
--- In Sirus we prolly don't even need the Async one, as the items from ItemsCache table already cached?
--- If not we just make sure it's getting cached here.
--- TODO FIXME TESTME 3.3.5 with cleared cache.
--- It happens in the requesting item via first tab ( where search is)
+-- it's really upsetting that even if we had GetItemInfoInstant
+-- it wouldn't give us the ItemSellPrice
 ns.GetItemInfoAsync = function(itemId, callback, quantity)
     if ns.IsFakeItem(itemId) then
         callback(ns.GetFakeItemInfo(itemId, quantity))
@@ -179,6 +177,7 @@ ns.GetItemInfoAsync = function(itemId, callback, quantity)
     local itemName = GetItemInfo(itemId)
     if itemName then
         callback(GetItemInfo(itemId))
+    -- FIXME TODO 3.3.5 is this ever needed? was initially was made to fix itemSellprice to Request Item
     else
         -- Retry until item is cached
         local retries = 0

@@ -447,7 +447,18 @@ local function CreateWishlistConfirmPrompt()
                 })
                 self.priceTypeDropdown:SetValue("Gold")
                 self.priceInputMoneyFrame:Show()
-                MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, itemInfo.itemSellPrice * itemInfo.itemStackCount)
+                if itemInfo.itemSellPrice then
+                    MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, itemInfo.itemSellPrice * itemInfo.itemStackCount)
+                else
+                    -- Don't set a default value if itemSellPrice is missing
+                    -- Clear visual fields to avoid confusion
+                    local frame = self.priceInputMoneyFrame
+                    if frame then
+                        if frame.gold then frame.gold:SetText("") end
+                        if frame.silver then frame.silver:SetText("") end
+                        if frame.copper then frame.copper:SetText("") end
+                    end
+                end
                 self.goldAmountInputMoneyFrame:Hide()
                 self.amountInput.editbox:Show()
             end
@@ -471,15 +482,15 @@ local function CreateWishlistConfirmPrompt()
                 quantity = self.amountInput.editbox:GetNumber()
             end
             callback(
-                quantity,
-                self.priceTypeDropdown:GetValue(),
-                MoneyInputFrame_GetCopper(self.priceInputMoneyFrame),
-                self.deliveryTypeDropdown:GetValue(),
-                self.raidAmountInput.editbox:GetNumber(),
-                self.roleplayCheck:GetValue(),
-                self.deathRollCheck:GetValue(),
-                self.duelCheck:GetValue(),
-                self.notesBox.editBox:GetText()
+                    quantity,
+                    self.priceTypeDropdown:GetValue(),
+                    MoneyInputFrame_GetCopper(self.priceInputMoneyFrame),
+                    self.deliveryTypeDropdown:GetValue(),
+                    self.raidAmountInput.editbox:GetNumber(),
+                    self.roleplayCheck:GetValue(),
+                    self.deathRollCheck:GetValue(),
+                    self.duelCheck:GetValue(),
+                    self.notesBox.editBox:GetText()
             )
         end)
     end
