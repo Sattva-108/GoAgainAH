@@ -680,7 +680,9 @@ ns.GetItemInfoInstant = function(itemID)
 end
 
 ns.ItemInfoToTable = function(...)
-    local name, itemLink, quality, level, minLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, texture, itemSellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = ...
+    local name, itemLink, quality, level, minLevel, itemType, itemSubType,
+    itemStackCount, itemEquipLoc, texture, itemSellPrice = ...
+
     if not name then
         return nil
     end
@@ -696,13 +698,7 @@ ns.ItemInfoToTable = function(...)
         itemStackCount = itemStackCount,
         itemEquipLoc = itemEquipLoc,
         texture = texture,
-        itemSellPrice = itemSellPrice,
-        classID = classID,
-        subclassID = subclassID,
-        bindType = bindType,
-        expacID = expacID,
-        setID = setID,
-        isCraftingReagent = isCraftingReagent
+        itemSellPrice = itemSellPrice
     }
 end
 
