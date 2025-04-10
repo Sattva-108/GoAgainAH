@@ -707,7 +707,7 @@ function OFAuctionFrame_OnShow (self)
 	OFBrowseNoResultsText:SetText(BROWSE_SEARCH_TEXT);
 	PlaySound(SOUNDKIT.AUCTION_WINDOW_OPEN);
 
-	OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
+	--OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
     OFAuctionFrame_UpdateReviewsTabText()
     OFAuctionFrame_UpdateAtheneTab()
 end
