@@ -4,38 +4,38 @@ local Database = {}
 ns.ItemDB = Database
 
 function Database:Find(search, class, subclass, slot, quality, minLevel, maxLevel)
+    local startTime = GetTime()
+
     search = search and search:lower()
     minLevel = minLevel or 0
     maxLevel = maxLevel or math.huge
 
     local results = {}
+    local lowerSearch = search or ""
 
     for id, data in pairs(ItemsCache) do
-        local nameEN, nameRU = data[1], data[2]
+        local nameRU = data[2]
         local itemQuality = data[3]
         local itemLevel = data[4]
         local itemClass = data[6]
         local itemSubclass = data[7]
         local price = data[11]
 
-        -- Ensure required data exists
-        if nameEN and itemLevel and itemClass and itemSubclass then
-            local meetsLevel = itemLevel >= minLevel and itemLevel <= maxLevel
-            local meetsClass = not class or class == itemClass
-            local meetsSubclass = not subclass or subclass == itemSubclass
-            local meetsQuality = not quality or quality == itemQuality
+        if (not class or class == itemClass) and
+                (not subclass or subclass == itemSubclass) and
+                itemLevel >= minLevel and itemLevel <= maxLevel and
+                (not quality or quality == itemQuality) then
 
             local meetsSearch = true
-            if search then
-                local nameENLower = nameEN:lower()
+            if lowerSearch ~= "" then
                 local nameRULower = nameRU and nameRU:lower() or ""
-                meetsSearch = nameENLower:find(search, 1, true) or nameRULower:find(search, 1, true)
+                meetsSearch = nameRULower:find(lowerSearch, 1, true)
             end
 
-            if meetsLevel and meetsClass and meetsSubclass and meetsQuality and meetsSearch then
+            if meetsSearch then
                 table.insert(results, {
                     id = id,
-                    name = nameRU or nameEN,
+                    name = nameRU,
                     quality = itemQuality,
                     level = itemLevel,
                     equipSlot = slot,
@@ -53,8 +53,13 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
         end
     end
 
+    local endTime = GetTime()
+    local elapsedTime = endTime - startTime
+    print(string.format("Search took %.2f seconds", elapsedTime))
+
     return results
 end
+
 
 function Database:FindClosest(search)
     local size = #search
