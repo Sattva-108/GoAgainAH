@@ -447,16 +447,46 @@ local function CreateWishlistConfirmPrompt()
                 })
                 self.priceTypeDropdown:SetValue("Gold")
                 self.priceInputMoneyFrame:Show()
+                -- Check if itemSellPrice exists
                 if itemInfo.itemSellPrice then
-                    MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, itemInfo.itemSellPrice * itemInfo.itemStackCount)
+                    if itemInfo.itemSellPrice > 0 then
+                        -- Set the price if itemSellPrice is greater than 0
+                        local totalPrice = itemInfo.itemSellPrice * itemInfo.itemStackCount
+                        MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, totalPrice)
+                    else
+                        -- If no valid price found, clear the price field (leave it empty)
+                        local frame = self.priceInputMoneyFrame
+                        if frame then
+                            if frame.gold then frame.gold:SetText("") end
+                            if frame.silver then frame.silver:SetText("") end
+                            if frame.copper then frame.copper:SetText("") end
+                        end
+                    end
                 else
-                    -- Don't set a default value if itemSellPrice is missing
-                    -- Clear visual fields to avoid confusion
-                    local frame = self.priceInputMoneyFrame
-                    if frame then
-                        if frame.gold then frame.gold:SetText("") end
-                        if frame.silver then frame.silver:SetText("") end
-                        if frame.copper then frame.copper:SetText("") end
+                    -- If itemSellPrice is nil, query the database for the price
+                    local _, _, _, _, _, classID, subclassID = GetItemInfoInstant(itemID)
+                    local results = ns.ItemDB:Find(itemInfo.name, classID, subclassID)
+
+                    local fallbackPrice = nil
+                    for _, result in ipairs(results) do
+                        if result.id == itemID and result.price then
+                            fallbackPrice = result.price
+                            break
+                        end
+                    end
+
+                    -- If a valid fallback price is found and it's greater than 0, set it
+                    if fallbackPrice and fallbackPrice > 0 then
+                        local totalPrice = fallbackPrice * itemInfo.itemStackCount
+                        MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, totalPrice)
+                    else
+                        -- If no valid price found, clear the price field (leave it empty)
+                        local frame = self.priceInputMoneyFrame
+                        if frame then
+                            if frame.gold then frame.gold:SetText("") end
+                            if frame.silver then frame.silver:SetText("") end
+                            if frame.copper then frame.copper:SetText("") end
+                        end
                     end
                 end
                 self.goldAmountInputMoneyFrame:Hide()
