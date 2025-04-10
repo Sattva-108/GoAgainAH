@@ -356,7 +356,7 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName)
     local bag, slot, exactMatch = self:FindBestMatchForTrade(itemID, quantity)
     if slot and exactMatch then
         -- select item
-        C_Container.PickupContainerItem(bag, slot)
+        PickupContainerItem(bag, slot)
 
         -- place it into the first trade slot
         ClickTradeButton(1)
@@ -455,25 +455,25 @@ local function FindItemInBags(itemID, quantity, matchQuantityExact)
     }
 
     for bag = 0, NUM_BAG_SLOTS do
-        local slots = C_Container.GetContainerNumSlots(bag)
+        local slots = GetContainerNumSlots(bag)
         for slot = 1, slots do
-            local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
-            if itemInfo then
-                local count = itemInfo.stackCount
-                local link = itemInfo.hyperlink
-                local bagItemID = tonumber(link:match("item:(%d+):"))
-
-                if bagItemID == itemID then
-                    if matchQuantityExact then
-                        if count == quantity then
-                            return bag, slot
-                        end
-                    else
-                        -- Find the stack that's closest to (but not less than) the desired quantity
-                        if count >= quantity and (bestMatch.count == 0 or count < bestMatch.count) then
-                            bestMatch.bag = bag
-                            bestMatch.slot = slot
-                            bestMatch.count = count
+            local texture, itemCount, locked, quality, readable = GetContainerItemInfo(bag, slot)
+            if texture then
+                local link = GetContainerItemLink(bag, slot)
+                if link then
+                    local bagItemID = tonumber(link:match("item:(%d+):"))
+                    if bagItemID == itemID then
+                        if matchQuantityExact then
+                            if itemCount == quantity then
+                                return bag, slot
+                            end
+                        else
+                            -- Find the stack that's closest to (but not less than) the desired quantity
+                            if itemCount >= quantity and (bestMatch.count == 0 or itemCount < bestMatch.count) then
+                                bestMatch.bag = bag
+                                bestMatch.slot = slot
+                                bestMatch.count = itemCount
+                            end
                         end
                     end
                 end
