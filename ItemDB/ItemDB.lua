@@ -3,6 +3,15 @@ local L = ns.L
 local Database = {}
 ns.ItemDB = Database
 
+function Database:PreprocessCache()
+    -- Preprocess the ItemsCache to store lowercase names
+    self.lowercaseCache = {}
+    for id, data in pairs(ItemsCache) do
+        local nameRU = data[2]
+        self.lowercaseCache[id] = nameRU and nameRU:lower() or ""
+    end
+end
+
 function Database:Find(search, class, subclass, slot, quality, minLevel, maxLevel)
     local startTime = GetTime()
 
@@ -13,6 +22,11 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
     local results = {}
     local lowerSearch = search or ""
 
+    -- If lowercase cache is not yet created, preprocess it
+    if not self.lowercaseCache then
+        self:PreprocessCache()
+    end
+
     for id, data in pairs(ItemsCache) do
         local nameRU = data[2]
         local itemQuality = data[3]
@@ -21,6 +35,8 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
         local itemSubclass = data[7]
         local price = data[11]
 
+        local nameRULower = self.lowercaseCache[id]
+
         if (not class or class == itemClass) and
                 (not subclass or subclass == itemSubclass) and
                 itemLevel >= minLevel and itemLevel <= maxLevel and
@@ -28,7 +44,8 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
 
             local meetsSearch = true
             if lowerSearch ~= "" then
-                local nameRULower = nameRU and nameRU:lower() or ""
+                -- We use a simple string search here, but if necessary,
+                -- you can implement your own faster matching algorithm
                 meetsSearch = nameRULower:find(lowerSearch, 1, true)
             end
 
@@ -59,6 +76,7 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
 
     return results
 end
+
 
 
 function Database:FindClosest(search)
