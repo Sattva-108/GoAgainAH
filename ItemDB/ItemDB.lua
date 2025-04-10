@@ -3,15 +3,6 @@ local L = ns.L
 local Database = {}
 ns.ItemDB = Database
 
-function Database:PreprocessCache()
-    -- Preprocess the ItemsCache to store lowercase names
-    self.lowercaseCache = {}
-    for id, data in pairs(ItemsCache) do
-        local nameRU = data[2]
-        self.lowercaseCache[id] = nameRU and nameRU:lower() or ""
-    end
-end
-
 function Database:Find(search, class, subclass, slot, quality, minLevel, maxLevel)
     local startTime = GetTime()
 
@@ -24,7 +15,13 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
 
     -- If lowercase cache is not yet created, preprocess it
     if not self.lowercaseCache then
-        self:PreprocessCache()
+        -- Preprocess the ItemsCache to store lowercase names
+        -- this function helps to make search box query 2x times faster
+        self.lowercaseCache = {}
+        for id, data in pairs(ItemsCache) do
+            local nameRU = data[2]
+            self.lowercaseCache[id] = nameRU and nameRU:lower() or ""
+        end
     end
 
     for id, data in pairs(ItemsCache) do
