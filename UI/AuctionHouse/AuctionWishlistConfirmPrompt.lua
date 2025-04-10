@@ -368,11 +368,13 @@ local function CreateWishlistConfirmPrompt()
     end
 
     function prompt:Show()
+        -- FIXME 3.3.5
         PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
         self.frame:Show()
     end
 
     function prompt:Hide()
+        -- FIXME 3.3.5
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
         self.frame:Hide()
     end
@@ -405,7 +407,12 @@ local function CreateWishlistConfirmPrompt()
                 elseif ns.IsSpellItem(itemID) then
                     GameTooltip:SetSpellByID(ns.ItemIDToSpellID(itemID))
                 else
-                    GameTooltip:SetItemByID(itemID)
+                    local name, link = GetItemInfo(itemID)
+                    if link then
+                        GameTooltip:SetHyperlink(link)
+                    else
+                        GameTooltip:SetHyperlink("item:" .. itemID)
+                    end
                 end
                 GameTooltip:Show()
             end)
