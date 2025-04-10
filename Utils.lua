@@ -162,6 +162,10 @@ ns.GetItemInfo = function(id, quantity)
     return GetItemInfo(id)
 end
 
+-- In Sirus we prolly don't even need the Async one, as the items from ItemsCache table already cached?
+-- If not we just make sure it's getting cached here.
+-- TODO FIXME TESTME 3.3.5 with cleared cache.
+-- It happens in the requesting item via first tab ( where search is)
 ns.GetItemInfoAsync = function(itemId, callback, quantity)
     if ns.IsFakeItem(itemId) then
         callback(ns.GetFakeItemInfo(itemId, quantity))
@@ -172,11 +176,25 @@ ns.GetItemInfoAsync = function(itemId, callback, quantity)
         return
     end
 
-    local item = Item:CreateFromItemID(itemId)
-    item:ContinueOnItemLoad(function()
+    local itemName = GetItemInfo(itemId)
+    if itemName then
         callback(GetItemInfo(itemId))
-    end)
+    else
+        -- Retry until item is cached
+        local retries = 0
+        local maxRetries = 10
+        local f = CreateFrame("Frame")
+        f:SetScript("OnUpdate", function(self, elapsed)
+            retries = retries + 1
+            local name = GetItemInfo(itemId)
+            if name or retries >= maxRetries then
+                self:SetScript("OnUpdate", nil)
+                callback(GetItemInfo(itemId))
+            end
+        end)
+    end
 end
+
 
 -- GetItemCount returns the number of times you own itemId
 -- for gold it returns the amount of copper you have
