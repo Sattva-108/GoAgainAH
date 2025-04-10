@@ -664,8 +664,8 @@
 							</OnEnterPressed>
 							<OnEnter>
 								GameTooltip_SetDefaultAnchor(GameTooltip, self)
-								GameTooltip_SetTitle(GameTooltip, AUCTION_TOOLTIP_BROWSE_BY_NAME_TITLE)
-								GameTooltip_AddNormalLine(GameTooltip, AUCTION_TOOLTIP_BROWSE_BY_NAME_BODY, true)
+								GameTooltip_SetTitle(GameTooltip, "Поиск по имени предмета")
+<!--								GameTooltip_AddNormalLine(GameTooltip, "Find items by name", true)-->
 								GameTooltip:Show()
 							</OnEnter>
 							<OnLeave>
