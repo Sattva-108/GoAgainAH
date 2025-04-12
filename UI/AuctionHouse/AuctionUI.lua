@@ -1700,6 +1700,25 @@ function OFAuctionFrameBrowse_Update()
         auctions = ns.GetBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
         if prevBrowseParams and not ns.IsDefaultBrowseParams(prevBrowseParams) then
             items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams))
+            local tooltip = AuctionHouseUtilScanTooltip -- Reuse Blizzard's hidden tooltip
+
+            for _, item in ipairs(items) do
+                if item.id then
+                    tooltip:ClearLines()
+                    tooltip:SetOwner(UIParent, "ANCHOR_NONE")
+                    tooltip:SetHyperlink("item:"..item.id)
+
+                    print("Tooltip for itemID:", item.id)
+
+                    for i = 1, tooltip:NumLines() do
+                        local left = _G["AuctionHouseUtilScanTooltipTextLeft"..i]
+                        if left and left:GetText() then
+                            print("  "..left:GetText())
+                        end
+                    end
+                end
+            end
+
             items = ns.FilterItemsExtra(items, prevBrowseParams)
         else
             items = {}
