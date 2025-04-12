@@ -5,7 +5,7 @@
 ## Notes-esES: Casa de subastas para |cFFFF0000Go Again|r
 ## Notes-esMX: Casa de subastas para |cFFFF0000Go Again|r
 ## Author: Athene, MottiDowerro
-## SavedVariables: AuctionHouseDBSaved, AHConfigSaved, LiveDeathClips, PlayerPrefsSaved, DeathClipReviewsSaved
+## SavedVariables: AuctionHouseDBSaved, AHConfigSaved, LiveDeathClips, PlayerPrefsSaved, DeathClipReviewsSaved, AHBOP
 ## SavedVariablesPerCharacter: CharacterPrefsSaved
 
 dependencies.xml

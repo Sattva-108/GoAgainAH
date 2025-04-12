@@ -3,6 +3,11 @@ local L = ns.L
 
 OF_AH_ADDON_NAME = addonName
 
+if type(AHBOP) ~= "table" then
+    AHBOP = {}
+end
+
+
 -- keep last item sent to auction & it's price
 
 -- To experiment with different "20x" label strings, use:
@@ -1700,29 +1705,43 @@ function OFAuctionFrameBrowse_Update()
         auctions = ns.GetBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
         if prevBrowseParams and not ns.IsDefaultBrowseParams(prevBrowseParams) then
             items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams))
-            local tooltip = AuctionHouseUtilScanTooltip -- Reuse Blizzard's hidden tooltip
+
+            local tooltip = AuctionHouseUtilScanTooltip
+            local newBoPCount = 0
 
             for _, item in ipairs(items) do
-                if item.id then
+                if item.id and type(item.id) == "number" then
                     tooltip:ClearLines()
                     tooltip:SetOwner(UIParent, "ANCHOR_NONE")
                     tooltip:SetHyperlink("item:"..item.id)
 
-                    print("Tooltip for itemID:", item.id)
-
+                    local isBoP = false
                     for i = 1, tooltip:NumLines() do
                         local left = _G["AuctionHouseUtilScanTooltipTextLeft"..i]
-                        if left and left:GetText() then
-                            print("  "..left:GetText())
+                        local text = left and left:GetText()
+                        if text and text:find("Становится персональным при получении") then
+                            isBoP = true
+                            break
                         end
                     end
+
+                    if isBoP and not AHBOP[item.id] then
+                        AHBOP[item.id] = true
+                        newBoPCount = newBoPCount + 1
+                    end
+                else
+                    ns.DebugLog("Item missing valid .id:", ns.Dump(item))
                 end
             end
 
+            print("BoP items added to AHBOP:", newBoPCount)
+
+            -- Still pass all items
             items = ns.FilterItemsExtra(items, prevBrowseParams)
         else
             items = {}
         end
+
         browseResultCache = { auctions = auctions, items = items }
         browseSortDirty = true
     end
