@@ -1727,6 +1727,8 @@ function OFAuctionFrameBrowse_Update()
 
                     if isBoP and not AHBOP[item.id] then
                         AHBOP[item.id] = true
+                        -- Print item link to chat
+                        print("\124cffffffffFound BoP:\124r \124Hitem:"..item.id..":::::::::::::\124h["..(item.name or "unknown").."]\124h")
                         newBoPCount = newBoPCount + 1
                     end
                 else
