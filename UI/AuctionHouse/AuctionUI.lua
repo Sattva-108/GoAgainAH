@@ -1719,7 +1719,7 @@ function OFAuctionFrameBrowse_Update()
                     for i = 1, tooltip:NumLines() do
                         local left = _G["AuctionHouseUtilScanTooltipTextLeft"..i]
                         local text = left and left:GetText()
-                        if text and text:find("Становится персональным при получении") then
+                        if text and (text:find("Становится персональным при получении") or text:find("Привязано к учетной записи")) then
                             isBoP = true
                             break
                         end
@@ -1736,8 +1736,16 @@ function OFAuctionFrameBrowse_Update()
 
             print("BoP items added to AHBOP:", newBoPCount)
 
-            -- Still pass all items
-            items = ns.FilterItemsExtra(items, prevBrowseParams)
+            -- Filter out items that are in AHBOP
+            local filteredItems = {}
+            for _, item in ipairs(items) do
+                if item.id and not AHBOP[item.id] then
+                    table.insert(filteredItems, item)
+                end
+            end
+
+            items = ns.FilterItemsExtra(filteredItems, prevBrowseParams)
+
         else
             items = {}
         end
