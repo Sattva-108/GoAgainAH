@@ -28,6 +28,7 @@ UI\Widgets\StarRatingWidget.lua
 UI\Widgets\ScrollList.lua
 UI\Widgets\RoleWidget.lua
 ItemDB\ItemsVanilla.lua
+ItemDB\ItemsBoP.lua
 ItemDB\ItemDB.lua
 ItemDB\Enchants.lua
 ItemDB\SpecialItems.lua

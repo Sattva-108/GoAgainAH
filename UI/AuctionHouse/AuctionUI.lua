@@ -1700,7 +1700,14 @@ function OFAuctionFrameBrowse_Update()
         auctions = ns.GetBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
         if prevBrowseParams and not ns.IsDefaultBrowseParams(prevBrowseParams) then
             items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams))
-            items = ns.FilterItemsExtra(items, prevBrowseParams)
+            -- Filter out items that are in ns.itemsBoP
+            local filteredItems = {}
+            for _, item in ipairs(items) do
+                if item.id and not ns.itemsBoP[item.id] then
+                    table.insert(filteredItems, item)
+                end
+            end
+            items = ns.FilterItemsExtra(filteredItems, prevBrowseParams)
         else
             items = {}
         end
