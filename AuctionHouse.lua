@@ -6,6 +6,14 @@ ns.AuctionHouseAddon = Addon
 local LibDeflate = LibStub("LibDeflate")
 local API = ns.AuctionHouseAPI
 
+-- backport from ClassicAPI by Tsoukie
+local InitalGTPSCall
+local function GetTimePreciseSec()
+    local Time = GetTime()
+    if InitalGTPSCall == nil then InitalGTPSCall = Time end
+    return Time - InitalGTPSCall
+end
+
 
 local COMM_PREFIX = "OFAuctionHouse"
 local OF_COMM_PREFIX = "OnlyFangsAddon"
@@ -430,7 +438,8 @@ function AuctionHouse:BroadcastMessage(message)
 end
 
 function AuctionHouse:SendDm(message, recipient, prio)
-    Addon:SendCommMessage(COMM_PREFIX, message, "WHISPER", string.format("%s-%s", recipient, GetRealmName()), prio)
+    -- FIXME TODO 3.3.5 HC guys must have weird names right???
+    Addon:SendCommMessage(COMM_PREFIX, message, "WHISPER", recipient, prio)
 end
 
 function AuctionHouse:BroadcastAuctionUpdate(dataType, payload)
@@ -508,7 +517,7 @@ function AuctionHouse:IsPrimaryResponder(playerName, dataType, sender)
     if ns.GuildRegister.table then
         for name, _ in pairs(self.db.blacklists or {}) do
             -- Check if this player is in the guild and online, and is not the sender
-            if ns.GuildRegister.table[name] and 
+            if ns.GuildRegister.table[name] and
                ns.GuildRegister.table[name].isOnline and
                name ~= senderFullName and
                name ~= myName then
@@ -567,7 +576,7 @@ function AuctionHouse:HandleStateUpdate(sender, dataType, cfg, sendPayloadFn)
         ns.DebugLog("[DEBUG] Immediate " .. dataType .. " state update (primary responder)")
         sendUpdate()
     else
-        local delay = randomBiasedDelay(5, 50)
+        local delay = randomBiasedDelay(5, 15)
         ns.DebugLog("[DEBUG] Scheduling delayed " .. dataType .. " state update in " .. math.floor(delay) .. "s")
         self:After(delay, sendUpdate)
     end

@@ -81,7 +81,7 @@ ns.IsGuildMember = function(name)
     end
 
     -- fallback to checking for online members, shouldn't happen on prod
-    local data = ns.GuildRegister:GetMemberData(name .. REALM_NAME_SUFFIX)
+    local data = ns.GuildRegister:GetMemberData(name)
     if data then
         return true
     end

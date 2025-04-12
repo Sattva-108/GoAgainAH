@@ -452,6 +452,9 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
+					<OnLoad>
+						self:SetFrameLevel(98)
+					</OnLoad>
                     <OnClick>
                         OFRequestItemButton_OnClick(self)
                     </OnClick>
