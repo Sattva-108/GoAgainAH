@@ -34,7 +34,9 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
 
         local nameRULower = self.lowercaseCache[id]
 
-        if (not class or class == itemClass) and
+        -- Skip items with quality 6 or 7
+        if itemQuality ~= 6 and itemQuality ~= 7 and
+                (not class or class == itemClass) and
                 (not subclass or subclass == itemSubclass) and
                 itemLevel >= minLevel and itemLevel <= maxLevel and
                 (not quality or quality == itemQuality) then
