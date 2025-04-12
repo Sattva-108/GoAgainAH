@@ -1442,6 +1442,7 @@ local function UpdateItemEntry(index, i, offset, button, item, numBatchAuctions,
     Hide("HighBidder")
     Hide("MoneyFrame")
 
+    _G[buttonName.."RequestItem"]:SetFrameLevel(99)
     _G[buttonName.."RequestItem"]:Show()
 
     local levelText = _G[buttonName.."Level"]
@@ -1491,6 +1492,7 @@ local function UpdateEnchantAuctionEntry(index, i, offset, button, numBatchAucti
     Hide("HighBidder")
     Hide("MoneyFrame")
 
+    _G[buttonName.."RequestItem"]:SetFrameLevel(99)
     _G[buttonName.."RequestItem"]:Show()
 
     local levelText = _G[buttonName.."Level"]
