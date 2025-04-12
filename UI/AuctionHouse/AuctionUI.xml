@@ -664,8 +664,8 @@
 							</OnEnterPressed>
 							<OnEnter>
 								GameTooltip_SetDefaultAnchor(GameTooltip, self)
-								GameTooltip_SetTitle(GameTooltip, AUCTION_TOOLTIP_BROWSE_BY_NAME_TITLE)
-								GameTooltip_AddNormalLine(GameTooltip, AUCTION_TOOLTIP_BROWSE_BY_NAME_BODY, true)
+								GameTooltip_SetTitle(GameTooltip, "Поиск по имени предмета")
+<!--								GameTooltip_AddNormalLine(GameTooltip, "Find items by name", true)-->
 								GameTooltip:Show()
 							</OnEnter>
 							<OnLeave>
@@ -2237,7 +2237,7 @@
                     <Frame name="OFDeliveryDropdown" inherits="UIDropDownMenuTemplate" id="1">
                         <Size x="110" y="22" />
                         <Anchors>
-                            <Anchor x="88" y="278" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
+                            <Anchor x="60" y="278" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
                         </Anchors>
                         <Layers>
                             <Layer level="OVERLAY">
@@ -2245,7 +2245,7 @@
                                     <Anchors>
                                         <Anchor point="LEFT" relativePoint="LEFT">
                                             <Offset>
-                                                <AbsDimension x="-58" y="1"/>
+                                                <AbsDimension x="-35" y="1"/>
                                             </Offset>
                                         </Anchor>
                                     </Anchors>
@@ -2266,7 +2266,7 @@
                                     <Anchors>
                                         <Anchor point="LEFT" relativePoint="LEFT">
                                             <Offset>
-                                                <AbsDimension x="-58" y="1"/>
+                                                <AbsDimension x="-35" y="1"/>
                                             </Offset>
                                         </Anchor>
                                     </Anchors>

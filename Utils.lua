@@ -162,6 +162,8 @@ ns.GetItemInfo = function(id, quantity)
     return GetItemInfo(id)
 end
 
+-- it's really upsetting that even if we had GetItemInfoInstant
+-- it wouldn't give us the ItemSellPrice
 ns.GetItemInfoAsync = function(itemId, callback, quantity)
     if ns.IsFakeItem(itemId) then
         callback(ns.GetFakeItemInfo(itemId, quantity))
@@ -172,11 +174,26 @@ ns.GetItemInfoAsync = function(itemId, callback, quantity)
         return
     end
 
-    local item = Item:CreateFromItemID(itemId)
-    item:ContinueOnItemLoad(function()
+    local itemName = GetItemInfo(itemId)
+    if itemName then
         callback(GetItemInfo(itemId))
-    end)
+    -- FIXME TODO 3.3.5 is this ever needed? was initially was made to fix itemSellprice to Request Item
+    else
+        -- Retry until item is cached
+        local retries = 0
+        local maxRetries = 10
+        local f = CreateFrame("Frame")
+        f:SetScript("OnUpdate", function(self, elapsed)
+            retries = retries + 1
+            local name = GetItemInfo(itemId)
+            if name or retries >= maxRetries then
+                self:SetScript("OnUpdate", nil)
+                callback(GetItemInfo(itemId))
+            end
+        end)
+    end
 end
+
 
 -- GetItemCount returns the number of times you own itemId
 -- for gold it returns the amount of copper you have

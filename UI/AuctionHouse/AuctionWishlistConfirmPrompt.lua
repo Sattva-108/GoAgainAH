@@ -368,11 +368,13 @@ local function CreateWishlistConfirmPrompt()
     end
 
     function prompt:Show()
+        -- FIXME 3.3.5
         PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
         self.frame:Show()
     end
 
     function prompt:Hide()
+        -- FIXME 3.3.5
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
         self.frame:Hide()
     end
@@ -405,7 +407,12 @@ local function CreateWishlistConfirmPrompt()
                 elseif ns.IsSpellItem(itemID) then
                     GameTooltip:SetSpellByID(ns.ItemIDToSpellID(itemID))
                 else
-                    GameTooltip:SetItemByID(itemID)
+                    local name, link = GetItemInfo(itemID)
+                    if link then
+                        GameTooltip:SetHyperlink(link)
+                    else
+                        GameTooltip:SetHyperlink("item:" .. itemID)
+                    end
                 end
                 GameTooltip:Show()
             end)
@@ -440,7 +447,48 @@ local function CreateWishlistConfirmPrompt()
                 })
                 self.priceTypeDropdown:SetValue("Gold")
                 self.priceInputMoneyFrame:Show()
-                MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, itemInfo.itemSellPrice * itemInfo.itemStackCount)
+                -- Check if itemSellPrice exists
+                if itemInfo.itemSellPrice then
+                    if itemInfo.itemSellPrice > 0 then
+                        -- Set the price if itemSellPrice is greater than 0
+                        local totalPrice = itemInfo.itemSellPrice * itemInfo.itemStackCount
+                        MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, totalPrice)
+                    else
+                        -- If no valid price found, clear the price field (leave it empty)
+                        local frame = self.priceInputMoneyFrame
+                        if frame then
+                            if frame.gold then frame.gold:SetText("") end
+                            if frame.silver then frame.silver:SetText("") end
+                            if frame.copper then frame.copper:SetText("") end
+                        end
+                    end
+                else
+                    -- If itemSellPrice is nil, query the database for the price
+                    local _, _, _, _, _, classID, subclassID = GetItemInfoInstant(itemID)
+                    local results = ns.ItemDB:Find(itemInfo.name, classID, subclassID)
+
+                    local fallbackPrice = nil
+                    for _, result in ipairs(results) do
+                        if result.id == itemID and result.price then
+                            fallbackPrice = result.price
+                            break
+                        end
+                    end
+
+                    -- If a valid fallback price is found and it's greater than 0, set it
+                    if fallbackPrice and fallbackPrice > 0 then
+                        local totalPrice = fallbackPrice * itemInfo.itemStackCount
+                        MoneyInputFrame_SetCopper(self.priceInputMoneyFrame, totalPrice)
+                    else
+                        -- If no valid price found, clear the price field (leave it empty)
+                        local frame = self.priceInputMoneyFrame
+                        if frame then
+                            if frame.gold then frame.gold:SetText("") end
+                            if frame.silver then frame.silver:SetText("") end
+                            if frame.copper then frame.copper:SetText("") end
+                        end
+                    end
+                end
                 self.goldAmountInputMoneyFrame:Hide()
                 self.amountInput.editbox:Show()
             end
@@ -464,15 +512,15 @@ local function CreateWishlistConfirmPrompt()
                 quantity = self.amountInput.editbox:GetNumber()
             end
             callback(
-                quantity,
-                self.priceTypeDropdown:GetValue(),
-                MoneyInputFrame_GetCopper(self.priceInputMoneyFrame),
-                self.deliveryTypeDropdown:GetValue(),
-                self.raidAmountInput.editbox:GetNumber(),
-                self.roleplayCheck:GetValue(),
-                self.deathRollCheck:GetValue(),
-                self.duelCheck:GetValue(),
-                self.notesBox.editBox:GetText()
+                    quantity,
+                    self.priceTypeDropdown:GetValue(),
+                    MoneyInputFrame_GetCopper(self.priceInputMoneyFrame),
+                    self.deliveryTypeDropdown:GetValue(),
+                    self.raidAmountInput.editbox:GetNumber(),
+                    self.roleplayCheck:GetValue(),
+                    self.deathRollCheck:GetValue(),
+                    self.duelCheck:GetValue(),
+                    self.notesBox.editBox:GetText()
             )
         end)
     end

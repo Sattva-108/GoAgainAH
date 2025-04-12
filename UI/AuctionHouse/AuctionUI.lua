@@ -69,7 +69,16 @@ local function OFGetAuctionSellItemInfo()
     if auctionSellItemInfo == nil then
         return nil
     end
-    return unpack(auctionSellItemInfo)
+
+    local name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID = unpack(auctionSellItemInfo)
+
+    -- Only fetch itemID from GetItemInfo if it's missing (ignore gold and enchants)
+    if not itemID and name then
+        local itemLink = select(2, GetItemInfo(name))
+        itemID = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
+    end
+
+    return name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID
 end
 
 function OFGetCurrentSortParams(type)
@@ -698,7 +707,7 @@ function OFAuctionFrame_OnShow (self)
 	OFBrowseNoResultsText:SetText(BROWSE_SEARCH_TEXT);
 	PlaySound(SOUNDKIT.AUCTION_WINDOW_OPEN);
 
-	OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
+	--OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
     OFAuctionFrame_UpdateReviewsTabText()
     OFAuctionFrame_UpdateAtheneTab()
 end
@@ -738,7 +747,9 @@ local function AssignCreateOrderTextures()
     OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-TopLeft");
     OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Top");
     OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-TopRight");
-    OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft.png");
+    --TODO FIXME 3.3.5 cannot use the blp file from the folder, using blizzard one for now
+    --OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft.png");
+    OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-BotLeft");
     OFAuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot");
     OFAuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-BotRight");
 end
@@ -1689,7 +1700,14 @@ function OFAuctionFrameBrowse_Update()
         auctions = ns.GetBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
         if prevBrowseParams and not ns.IsDefaultBrowseParams(prevBrowseParams) then
             items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams))
-            items = ns.FilterItemsExtra(items, prevBrowseParams)
+            -- Filter out items that are in ns.itemsBoP
+            local filteredItems = {}
+            for _, item in ipairs(items) do
+                if item.id and not ns.itemsBoP[item.id] then
+                    table.insert(filteredItems, item)
+                end
+            end
+            items = ns.FilterItemsExtra(filteredItems, prevBrowseParams)
         else
             items = {}
         end
@@ -2219,6 +2237,25 @@ function OFAuctionFrameAuctions_OnLoad(self)
             end
         end
     end)
+
+    -- **Styling OFAuctionsItemButton using SetBackdrop:**
+    local button = OFAuctionsItemButton;
+
+    -- Set Backdrop Properties
+    button:SetBackdrop({
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", -- Border texture
+        edgeSize = 16,                                       -- Border size in pixels
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }, -- Insets for the content within the border
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", -- Background texture (optional, can also use color)
+    });
+
+    -- Set Backdrop Border Color
+    button:SetBackdropBorderColor(0, 0, 0);       -- Black border (R, G, B, Alpha - Alpha defaults to 1 if not specified)
+
+    -- Set Backdrop Background Color (optional, if you want a solid background color instead of bgFile texture)
+    button:SetBackdropColor(0.1, 0.1, 0.1, 0.8);  -- Dark grey background with some transparency (R, G, B, Alpha)
+
+    -- If you ONLY want a border and no background texture or color, you can comment out or remove `bgFile` and `SetBackdropColor`.
 end
 
 function OFAuctionFrameAuctions_OnEvent(self, event, ...)
