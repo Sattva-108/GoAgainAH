@@ -757,8 +757,8 @@ end
 local function AssignLFGTextures()
     AssignCreateOrderTextures()
 
-    OFAuctionFrameTopLeft:SetTexture("Interface\\AddOns\\"..addonName.."\\Media\\auctionframe-stream-together-topleft")
-    OFAuctionFrameBotRight:SetTexture("Interface\\AddOns\\"..addonName.."\\Media\\auctionframe-review-botright")
+    OFAuctionFrameTopLeft:SetTexture("Interface\\AddOns\\"..addonName.."\\Media\\auctionframe-stream-together-topleft.blp")
+    OFAuctionFrameBotRight:SetTexture("Interface\\AddOns\\"..addonName.."\\Media\\auctionframe-review-botright.blp")
 end
 
 function OFAuctionFrameSwitchTab(index)
