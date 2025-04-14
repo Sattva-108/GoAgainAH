@@ -337,7 +337,7 @@ function OFAuctionFrameReviews_OnLoad_Impl(self)
     InitializeLeftTabs(self, ns.REVIEW_TABS)
 
     -- Create the main scroll, for layout
-    local scrollFrame = CreateFrame("ScrollFrame", nil, self.container, "FauxScrollFrameTemplate")
+    local scrollFrame = CreateFrame("ScrollFrame", "hi", self.container, "FauxScrollFrameTemplate")
     scrollFrame:SetSize(605, 332)
     scrollFrame:SetPoint("TOPRIGHT", 52, -4)
 
