@@ -663,7 +663,7 @@
 					</OnLeave>
 
                     <OnLoad>
-                        self.icon:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icons\\Icn_Chat.png")
+                        self.icon:SetTexture("Interface\\Addons\\" .. OF_AH_ADDON_NAME .. "\\Media\\Icons\\Icn_Chat.tga")
                     </OnLoad>
                 </Scripts>
 			</Button>

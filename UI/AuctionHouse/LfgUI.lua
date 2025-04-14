@@ -323,7 +323,7 @@ local function UpdateEntry(i, offset, button, entry)
         else
             status = L["Offline"]
         end
-        local iconPath = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_" .. status .. ".png"
+        local iconPath = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_" .. status .. ".tga"
         button.onlineIcon:SetTexture(iconPath)
     end
 
@@ -566,7 +566,7 @@ local function OFLFG_Row_OnLeave(self)
 end
 
 function OFLFG_Row_OnLoad(self)
-    self.onlineIcon:SetTexture("Interface\\Addons\\" .. addonName .. "\\Media\\Icons\\Icn_Online.png")
+    self.onlineIcon:SetTexture("Interface\\Addons\\" .. addonName .. "\\Media\\Icons\\Icn_Online.tga")
 
     -- Hook our newly-created tooltip handlers:
     self:HookScript("OnEnter", OFLFG_Row_OnEnter)

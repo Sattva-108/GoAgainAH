@@ -52,7 +52,7 @@ local function CreateInfoContainer()
 
     -- Add arrow icon
     local swapArrows = AceGUI:Create("Icon")
-    swapArrows:SetImage("Interface/AddOns/" .. addonName .. "/Media/Icons/Icn_SwapArrow.png")
+    swapArrows:SetImage("Interface\\AddOns\\\" .. addonName .. \"\\Media\\Icons\\Icn_SwapArrow.tga")
     swapArrows:SetImageSize(22, 22)
 	swapArrows.image:ClearAllPoints()
 	swapArrows.image:SetPoint("TOP", 0, -8)

@@ -1,9 +1,9 @@
 local addonName, ns = ...
 local AceGUI = LibStub("AceGUI-3.0")
 
-local STAR_EMPTY = "Interface/AddOns/" .. addonName .. "/Media/Icons/Icn_StarEmpty.png"
-local STAR_GREY = "Interface/AddOns/" .. addonName .. "/Media/Icons/Icn_StarGrey.png"
-local STAR_FULL = "Interface/AddOns/" .. addonName .. "/Media/Icons/Icn_StarFull.png"
+local STAR_EMPTY = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_StarEmpty.tga"
+local STAR_GREY  = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_StarGrey.tga"
+local STAR_FULL  = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_StarFull.tga"
 
 local function CalculateOffset(i, config)
     local starSize = config.starSize or 18

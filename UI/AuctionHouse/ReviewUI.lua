@@ -494,7 +494,7 @@ local function CreateActionContainer(parent, anchorPanel, card, isRight)
     -- Create skull icon
     local skullIcon = container:CreateTexture(nil, "ARTWORK")
     skullIcon:SetSize(22, 22)
-    skullIcon:SetTexture("Interface/AddOns/" .. addonName .. "/Media/Icons/Icn_Skull.png")
+    skullIcon:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Media\\Icons\\Icn_Skull.tga")
     skullIcon:Hide() -- Hidden by default
 
     if isRight then

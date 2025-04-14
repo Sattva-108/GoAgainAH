@@ -43,10 +43,10 @@ function OFWhisperFrame_OnShow(self, userName)
     local iconName
     if ns.GuildRegister:IsMemberOnline(userName) then
         _G[self:GetName().."Button"]:Enable()
-        iconName = "Icn_Online.png"
+        iconName = "Icn_Online.tga"
     else
         _G[self:GetName().."Button"]:Disable()
-        iconName = "Icn_Offline.png"
+        iconName = "Icn_Offline.tga"
     end
     self.inputField.onlineIcon:SetTexture("Interface\\Addons\\" .. addonName .. "\\Media\\Icons\\" .. iconName)
 end
