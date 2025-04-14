@@ -627,7 +627,12 @@ function CreateReviewCard(parent, index)
     itemIcon:SetScript("OnEnter", function(self)
         if card.review.itemID then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetItemByID(card.review.itemID)
+            local name, link = GetItemInfo(card.review.itemID)
+            if link then
+                GameTooltip:SetHyperlink(link)
+            else
+                GameTooltip:SetHyperlink("item:" .. card.review.itemID)
+            end
             GameTooltip_ShowCompareItem()
 
             if IsModifiedClick("DRESSUP") then

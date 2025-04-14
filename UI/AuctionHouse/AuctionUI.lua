@@ -2673,7 +2673,10 @@ function OFAuctionFrameItem_OnEnter(self, type)
         GameTooltip_SetTitle(GameTooltip, title)
         GameTooltip_AddNormalLine(GameTooltip, description, true)
     elseif ns.IsSpellItem(button.itemID) then
-        GameTooltip:SetSpellByID(ns.ItemIDToSpellID(button.itemID))
+        local spellID = ns.ItemIDToSpellID(button.itemID)
+        if spellID then
+            GameTooltip:SetHyperlink("spell:" .. spellID)
+        end
     else
         GameTooltip:SetHyperlink("item:" .. button.itemID)
     end
