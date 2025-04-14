@@ -25,7 +25,7 @@ ns.ITEM_GOLD = {
     deliveryType = 0,
 }
 
-local ICN_FACTION_POINTS = "Interface\\Addons\\"..addonName.."\\Media\\icons\\Icn_FactionPoints.png"
+local ICN_FACTION_POINTS = "Interface\\Addons\\"..addonName.."\\Media\\icons\\Icn_FactionPoints.tga"
 
 ns.ITEM_ID_GUILD_POINTS = -2
 ns.GUILD_POINTS_ITEM_TOOLTIP = L["Points are earned by completing special quests in the guild"]

@@ -683,7 +683,7 @@ function AuctionFrame_UpdatePortrait()
     -- if ns.IsAtheneBlocked() then
     --     SetPortraitTexture(OFAuctionPortraitTexture, "player");
     -- else
-    OFAuctionPortraitTexture:SetTexture("Interface\\AddOns\\"..addonName.."\\Media\\icon_of_400px.png")
+    SetPortraitTexture(OFAuctionPortraitTexture, "player")
     -- end
 end
 
@@ -749,7 +749,7 @@ local function AssignCreateOrderTextures()
     OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Top");
     OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-TopRight");
     --TODO FIXME 3.3.5 cannot use the blp file from the folder, using blizzard one for now
-    --OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft.png");
+    --OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft.blp");
     OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-BotLeft");
     OFAuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot");
     OFAuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-BotRight");
