@@ -424,10 +424,9 @@ local function CreateContentPanel(parent, height)
     panel:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 0, -3)
     panel:SetPoint("TOPRIGHT", parent, "BOTTOMRIGHT", 0, -3)
 
-    -- Dark background texture
-    local bg = panel:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetVertexColor(0.051, 0.051, 0.051, 1)
+    -- Set background color directly using SetBackdropColor
+    panel:SetBackdrop({bgFile = "Interface/Buttons/WHITE8x8"}) -- You need a backdrop to use SetBackdropColor
+    panel:SetBackdropColor(0.051, 0.051, 0.051, 1)
 
     return panel
 end
@@ -536,10 +535,9 @@ function CreateReviewCard(parent, index)
     card:SetPoint("RIGHT", -10, 0)
 
     card:SetBackdrop({
-        bgFile = "Interface/AddOns/" .. addonName .. "/Media/Square_FullWhite.tga",
-        edgeFile = "Interface/AddOns/" .. addonName .. "/Media/Square_FullWhite.tga",
-        tile = true,
-        tileEdge = true,
+        bgFile = "Interface/Buttons/WHITE8x8",
+        edgeFile = "Interface/Buttons/WHITE8x8",
+        tile = false,
         edgeSize = 1,
         insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
