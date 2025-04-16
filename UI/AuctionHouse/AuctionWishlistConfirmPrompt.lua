@@ -405,7 +405,10 @@ local function CreateWishlistConfirmPrompt()
                     GameTooltip_SetTitle(GameTooltip, title)
                     GameTooltip_AddNormalLine(GameTooltip, description, true)
                 elseif ns.IsSpellItem(itemID) then
-                    GameTooltip:SetSpellByID(ns.ItemIDToSpellID(itemID))
+                    local spellID = ns.ItemIDToSpellID(itemID)
+                    if spellID then
+                        GameTooltip:SetHyperlink("spell:" .. spellID)
+                    end
                 else
                     local name, link = GetItemInfo(itemID)
                     if link then

@@ -86,14 +86,16 @@ local function CreateSpellScroll()
 
             -- Spell icon
             local icon = AceGUI:Create("Icon")
-            icon:SetImage(GetSpellTexture(spellID) or "Interface\\ICONS\\INV_Misc_QuestionMark")
+            icon:SetImage((select(3, GetSpellInfo(spellID))) or GetSpellTexture(spellID) or "Interface\\ICONS\\INV_Misc_QuestionMark")
             icon:SetImageSize(32, 32)
             icon:SetWidth(40)  -- Enough room for the icon
 
             -- Setup tooltip on hover
             icon:SetCallback("OnEnter", function(widget)
                 GameTooltip:SetOwner(widget.frame, "ANCHOR_RIGHT")
-                GameTooltip:SetSpellByID(spellID)
+                if spellID then
+                    GameTooltip:SetHyperlink("spell:" .. spellID)
+                end
                 GameTooltip:Show()
             end)
             icon:SetCallback("OnLeave", function()
