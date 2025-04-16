@@ -260,15 +260,15 @@ function TradeAPI:OnEvent(event, ...)
         end
 
     elseif event == "UI_INFO_MESSAGE" then
-        local _, arg2 = ...
-        if (arg2 == ERR_TRADE_CANCELLED) then
+        local arg1, arg2 = ...
+        if (arg1 == ERR_TRADE_CANCELLED) then
             -- print("[DEBUG] Trade cancelled")
             local timeSinceShow = GetTime() - self.lastTradeShowTime
             if timeSinceShow < 0.5 then
                 print(ChatPrefixError() .. L[" The Go Again addon requires that both players target each other before starting a trade."])
             end
             Reset("trade cancelled")
-        elseif (arg2 == ERR_TRADE_COMPLETE) then
+        elseif (arg1 == ERR_TRADE_COMPLETE) then
             HandleTradeOK()
         end
 
