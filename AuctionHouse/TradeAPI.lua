@@ -68,19 +68,38 @@ end
 --
 -- we have to use though, because Item:CreateItemFromItemID doesn't work here (we have a name, not itemID)
 -- not called often (on trade when someone puts in a previously unknown item), so should be fine
-local function GetItemInfoAsyncWithMemoryLeak(itemName, callback)
-    local name = GetItemInfo(itemName)
-    if name then
-        callback(GetItemInfo(itemName))
+-- this function leaks memory on cache miss because of CreateFrame
+-- we have to use though, because Item:CreateItemFromItemID doesn't work here (we have a name, not itemID)
+-- not called often (on trade when someone puts in a previously unknown item), so should be fine
+local function GetItemInfoAsyncWithMemoryLeak(itemName, callback, id) -- Added 'id' parameter
+    local itemNameResult, itemLink = GetItemInfo(itemName)
+    if itemNameResult then
+        if id == 1 then -- Check if slot is 1 before printing
+            print("[DEBUG] GetItemInfo ready immediately:", itemName)
+        end
+        callback(itemNameResult, itemLink)
     else
+        if id == 1 then -- Check if slot is 1 before printing
+            print("[DEBUG] Waiting for item info:", itemName)
+        end
         local frame = CreateFrame("FRAME")
-        frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+        frame:RegisterCustomEvent("GET_ITEM_INFO_RECEIVED");
         frame:SetScript("OnEvent", function(self, event, ...)
-            callback(GetItemInfo(itemName))
-            self:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
+            -- Decide if you want this event print conditional too
+            -- if id == 1 then print(event) end
+            local nameResult, link = GetItemInfo(itemName)
+            if nameResult then
+                if id == 1 then -- Check if slot is 1 before printing
+                    print("[DEBUG] Received item info:", itemName)
+                end
+                callback(nameResult, link)
+                self:UnregisterCustomEvent("GET_ITEM_INFO_RECEIVED")
+                -- The frame still leaks, this doesn't fix the leak itself.
+            end
         end)
     end
 end
+
 
 local function UpdateItemInfo(id, unit, items)
     local funcInfo = getglobal("GetTrade" .. unit .. "ItemInfo")
@@ -92,90 +111,246 @@ local function UpdateItemInfo(id, unit, items)
         name, texture, numItems, quality, enchantment = funcInfo(id)
     end
 
-    if (not name) then
+    if not name then
+        -- Only print if it's slot 1, but always clear the item entry
+        if id == 1 then
+            print(string.format("[DEBUG] No item name at slot %d for unit %s", id, unit))
+        end
         items[id] = nil
         return
     end
 
-    -- GetTradePlayerItemInfo annoyingly doesn't return the itemID, and there's not obvious way to get the itemID from a trade
-    -- in most cases itemID will be available instantly, so race conditions shouldn't be too common
-    GetItemInfoAsyncWithMemoryLeak(name, function (_, itemLink)
-        local itemID = tonumber(itemLink:match("item:(%d+):"))
+    -- Only print if it's slot 1
+    if id == 1 then
+        print(string.format("[DEBUG] Found trade item slot %d for %s: %s x%d", id, unit, name, numItems or 1))
+    end
 
+    -- Call the async function, passing the 'id' along
+    GetItemInfoAsyncWithMemoryLeak(name, function(itemNameResult, itemLink)
+        -- This callback function now executes potentially later.
+        -- It still needs to check the 'id' for its *own* prints.
+        if not itemLink then
+            if id == 1 then -- Check id before printing inside the callback
+                print("[DEBUG] itemLink is nil for", itemNameResult)
+            end
+            items[id] = nil -- Still update state regardless of print
+            return
+        end
+
+        local itemID = tonumber(itemLink:match("item:(%d+):"))
+        if not itemID then
+            if id == 1 then -- Check id before printing inside the callback
+                print("[DEBUG] Failed to extract itemID from link:", itemLink)
+            end
+            -- Keep the item name even if ID extraction fails
+            items[id] = {
+                itemID = nil,
+                name = itemNameResult,
+                numItems = numItems,
+            }
+            if id == 1 then -- Check id before printing inside the callback
+                print(string.format("[DEBUG] Stored item (no ID): name=%s, count=%d", itemNameResult, numItems or 1))
+            end
+            return
+        end
+
+        -- Always update the item info in the table
         items[id] = {
             itemID = itemID,
-            name = name,
+            name = itemNameResult,
             numItems = numItems,
         }
-    end)
+
+        -- Only print the stored item info if it's slot 1
+        if id == 1 then
+            print(string.format("[DEBUG] Stored item: id=%d, name=%s, count=%d", itemID or -1, itemNameResult, numItems or 1))
+        end
+    end, id) -- Pass the 'id' to GetItemInfoAsyncWithMemoryLeak
 end
+
 
 local function UpdateMoney()
     CurrentTrade().playerMoney = GetPlayerTradeMoney()
     CurrentTrade().targetMoney = GetTargetTradeMoney()
 end
 
-local function HandleTradeOK()
-    local t = CurrentTrade()
+-- No changes needed in UpdateItemInfo or GetItemInfoAsyncWithMemoryLeak for this fix
+-- No changes needed in the event handler section (OnEvent)
 
-    -- Get the items that were traded
-    --
-    -- both the buyer and seller mark the trade as 'complete',
-    -- they always should come to the same conclusion (so conflicting network updates shouldn't arise)
-    local playerItems = {}
-    local targetItems = {}
+local function HandleTradeOK()
+    -- print("[DEBUG] HandleTradeOK triggered") -- Optional: Add entry log
+
+    -- *** Start: Fetch final state synchronously ***
+    local finalState = {
+        playerName = UnitName("player"),
+        targetName = GetUnitName("target", true), -- Get target name again just in case
+        playerMoney = GetPlayerTradeMoney(),
+        targetMoney = GetTargetTradeMoney(),
+        playerItems = {}, -- Use temporary tables, indexed by slot
+        targetItems = {}, -- Use temporary tables, indexed by slot
+    }
+
+    if not finalState.targetName then
+        print(ChatPrefixError() .. " Failed to get target name in HandleTradeOK.")
+        Reset("HandleTradeOK - No Target")
+        return
+    end
+
+    -- Loop through all trade slots
+    for i = 1, 7 do -- Use NUM_TRADE_SLOTS (usually 7)
+        -- Player items
+        local pName, _, pNumItems = GetTradePlayerItemInfo(i)
+        if pName then
+            local _, pItemLink = GetItemInfo(pName) -- Try to get link (might be cached now)
+            local pItemID = pItemLink and tonumber(pItemLink:match("item:(%d+):")) or nil
+            if pItemID then
+                finalState.playerItems[i] = {
+                    itemID = pItemID,
+                    name = pName,
+                    numItems = pNumItems
+                }
+            else
+                -- Handle case where item ID couldn't be fetched synchronously
+                print(ChatPrefixError() .. string.format("Could not get ItemID for player item '%s' in slot %d at trade completion.", pName, i))
+                finalState.playerItems[i] = { itemID = nil, name = pName, numItems = pNumItems } -- Store with nil ID maybe? Or skip? Let's store for now.
+            end
+        end
+
+        -- Target items
+        local tName, _, tNumItems = GetTradeTargetItemInfo(i)
+        if tName then
+            local _, tItemLink = GetItemInfo(tName) -- Try to get link (might be cached now)
+            local tItemID = tItemLink and tonumber(tItemLink:match("item:(%d+):")) or nil
+            if tItemID then
+                finalState.targetItems[i] = {
+                    itemID = tItemID,
+                    name = tName,
+                    numItems = tNumItems
+                }
+            else
+                -- Handle case where item ID couldn't be fetched synchronously
+                print(ChatPrefixError() .. string.format("Could not get ItemID for target item '%s' in slot %d at trade completion.", tName, i))
+                finalState.targetItems[i] = { itemID = nil, name = tName, numItems = tNumItems } -- Store with nil ID
+            end
+        end
+    end
+    -- *** End: Fetch final state synchronously ***
+
+
+    -- Use the 'finalState' table from now on, instead of CurrentTrade()
+    local t = finalState -- Assign to 't' for consistency with the rest of the original function
+
+    -- Optional: Debug print the fetched final state
+    local function DebugPrintFinalState()
+        print("[DEBUG] Final Fetched Trade State:")
+        print("  Player:", t.playerName, "| Target:", t.targetName or "nil")
+        print("  Player Money:", t.playerMoney or 0, "| Target Money:", t.targetMoney or 0)
+
+        print("  Player Items:")
+        local hasPlayerItems = false
+        for slot, item in pairs(t.playerItems or {}) do
+            if item then
+                print(string.format("    [Slot %d] itemID: %s, Name: %s, Count: %s",
+                        slot, tostring(item.itemID or "N/A"), item.name or "?", tostring(item.numItems or "?")))
+                hasPlayerItems = true
+            end
+        end
+        if not hasPlayerItems then print("    (None)") end
+
+        print("  Target Items:")
+        local hasTargetItems = false
+        for slot, item in pairs(t.targetItems or {}) do
+            if item then
+                print(string.format("    [Slot %d] itemID: %s, Name: %s, Count: %s",
+                        slot, tostring(item.itemID or "N/A"), item.name or "?", tostring(item.numItems or "?")))
+                hasTargetItems = true
+            end
+        end
+        if not hasTargetItems then print("    (None)") end
+    end
+    DebugPrintFinalState() -- Call the debug print
+
+
+    -- Get the items that were traded (using the final fetched state 't')
+    local playerItemsArray = {}
+    local targetItemsArray = {}
+    local hasRealPlayerItem = false
+    local hasRealTargetItem = false
+
     for _, item in pairs(t.playerItems) do
-        table.insert(playerItems, {
-            itemID = item.itemID,
-            count = item.numItems
-        })
+        if item and item.itemID then -- Ensure item and itemID exist
+            table.insert(playerItemsArray, {
+                itemID = item.itemID,
+                count = item.numItems
+            })
+            hasRealPlayerItem = true
+        elseif item then
+            print(ChatPrefixError().." Player item had no ID in final processing: "..item.name)
+        end
     end
     for _, item in pairs(t.targetItems) do
-        table.insert(targetItems, {
-            itemID = item.itemID,
-            count = item.numItems
+        if item and item.itemID then -- Ensure item and itemID exist
+            table.insert(targetItemsArray, {
+                itemID = item.itemID,
+                count = item.numItems
+            })
+            hasRealTargetItem = true
+        elseif item then
+            print(ChatPrefixError().." Target item had no ID in final processing: "..item.name)
+        end
+    end
+
+    -- Insert gold as fake item only if no other *real* items are being traded by that side
+    if not hasRealPlayerItem and t.playerMoney > 0 then
+        table.insert(playerItemsArray, {
+            itemID = ns.ITEM_ID_GOLD,
+            count = t.playerMoney
+        })
+    end
+    if not hasRealTargetItem and t.targetMoney > 0 then
+        table.insert(targetItemsArray, {
+            itemID = ns.ITEM_ID_GOLD,
+            count = t.targetMoney
         })
     end
 
-    if #playerItems == 0 and #targetItems == 0 then
-        -- insert gold as fake item only if no other items are being traded
-        if t.playerMoney then
-            table.insert(playerItems, {
-                itemID = ns.ITEM_ID_GOLD,
-                count = t.playerMoney
-            })
-        end
-        if t.targetMoney then
-            table.insert(targetItems, {
-                itemID = ns.ITEM_ID_GOLD,
-                count = t.targetMoney
-            })
-        end
-    end
+    -- Debug prints for the arrays being passed to tryMatch
+    -- (Keep these concise)
+    local playerItemStr = ""
+    for _, pItem in ipairs(playerItemsArray) do playerItemStr = playerItemStr .. string.format(" [%d x%d]", pItem.itemID, pItem.count) end
+    local targetItemStr = ""
+    for _, tItem in ipairs(targetItemsArray) do targetItemStr = targetItemStr .. string.format(" [%d x%d]", tItem.itemID, tItem.count) end
+    ns.DebugLog(string.format("[DEBUG] Attempting Match: P:%s T:%s | P Items:%s | T Items:%s | P Money: %d | T Money: %d",
+            t.playerName, t.targetName, playerItemStr, targetItemStr, t.playerMoney, t.targetMoney))
 
-    -- Debug prints for items
-    for i, item in pairs(t.playerItems) do
-        ns.DebugLog("[DEBUG] HandleTradeOK Player Item", i, ":", item.itemID, "x", item.count)
-    end
-    for i, item in pairs(t.targetItems) do
-        ns.DebugLog("[DEBUG] HandleTradeOK Target Item", i, ":", item.itemID, "x", item.count)
-    end
-    ns.DebugLog(
-        "[DEBUG] HandleTradeOK",
-        t.playerName, t.targetName,
-        t.playerMoney, t.targetMoney,
-        #playerItems, #targetItems
-    )
 
     local function tryMatch(seller, buyer, items, money)
+        -- Make sure 'items' has at least one entry if matching is expected
+        if #items == 0 and money == 0 then
+            ns.DebugLog("[DEBUG] tryMatch skipped: Seller offering nothing.")
+            return false, false, "Seller offering nothing" -- No success, no candidates (trivial case), reason
+        end
+
+        -- Make sure itemIDs are valid before calling
+        for _, item in ipairs(items) do
+            if not item.itemID then
+                ns.DebugLog("[DEBUG] tryMatch aborted: Invalid itemID found in seller items.")
+                return false, false, "Invalid itemID detected" -- No success, no candidates, reason
+            end
+        end
+
+        ns.DebugLog(string.format("[DEBUG] Calling AuctionHouseAPI:TryCompleteItemTransfer | Seller: %s, Buyer: %s, Money: %d, Items: %s",
+                seller, buyer, money, playerItemStr)) -- Re-using playerItemStr for brevity, context implies seller's items
+
         local success, hadCandidates, err, trade = ns.AuctionHouseAPI:TryCompleteItemTransfer(
-            seller,
-            buyer,
-            items,
-            money,
-            ns.DELIVERY_TYPE_TRADE
+                seller,
+                buyer,
+                items, -- Seller's items
+                money, -- Buyer's money contribution
+                ns.DELIVERY_TYPE_TRADE
         )
 
+        -- (Rest of the tryMatch logic remains the same: StaticPopup, points transfer, return values)
         if success and trade then
             StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id })
 
@@ -195,47 +370,67 @@ local function HandleTradeOK()
                     print(ChatPrefixError() .. L[" Failed to transfer points:"], err)
                     -- NOTE: error here should not happen and will mean points aren't correctly charged.
                     -- we can't easily recover to a better state
-                    return
+                    return false, "Point transfer failed: "..tostring(err) -- Indicate failure reason
                 end
             end
 
-            return true, nil
+            return true, nil -- Success, no error message needed
         elseif err and hadCandidates then
-            local itemInfo = ""
-            if playerItems[1] then
-                itemInfo = itemInfo .. " (Player: " .. playerItems[1].itemID .. " x" .. playerItems[1].count .. ")"
-            end
-            if targetItems[1] then
-                itemInfo = itemInfo .. " (Target: " .. targetItems[1].itemID .. " x" .. targetItems[1].count .. ")"
-            end
+            -- Construct a more informative error message
+            local itemInfoSeller = ""
+            for i, item in ipairs(items) do itemInfoSeller = itemInfoSeller .. string.format(" [%s x%d]", item.itemID, item.count) end
+            local moneyInfoBuyer = GetCoinTextureString(money)
 
             local msg
             if err == "No matching auction found" then
-                msg = " Trade didn't match any guild auctions" .. itemInfo
+                msg = string.format(" Trade didn't match any guild auctions. Seller (%s) offered:%s, Buyer (%s) offered: %s",
+                        seller, itemInfoSeller, buyer, moneyInfoBuyer)
             else
-                msg = " Trade didn't match any guild auctions: " .. err .. itemInfo
+                msg = string.format(" Trade didn't match any guild auctions: %s. Seller (%s) offered:%s, Buyer (%s) offered: %s",
+                        err, seller, itemInfoSeller, buyer, moneyInfoBuyer)
             end
 
-            return false, msg
+            return false, msg -- No success, return the detailed message
+        elseif err then
+            -- Error occurred, but no specific auction candidates were even close
+            return false, "Trade matching error: " .. err -- No success, return the error
         end
-        return false
+
+        return false, "No matching auction found and no specific error." -- No success, generic message if no other condition met
     end
 
-    -- Try first direction (target as seller)
-    local success, message1 = tryMatch(t.targetName, t.playerName, targetItems, t.playerMoney or 0)
+    -- Try first direction (target as seller, player as buyer)
+    -- Seller = t.targetName, Buyer = t.playerName
+    -- Items = targetItemsArray (what target gives), Money = t.playerMoney (what player gives)
+    local success, message1 = tryMatch(t.targetName, t.playerName, targetItemsArray, t.playerMoney)
     local message2
 
-    -- If first attempt failed, try reverse direction
+    -- If first attempt failed, try reverse direction (player as seller, target as buyer)
+    -- Seller = t.playerName, Buyer = t.targetName
+    -- Items = playerItemsArray (what player gives), Money = t.targetMoney (what target gives)
     if not success then
-        _, message2 = tryMatch(t.playerName, t.targetName, playerItems, t.targetMoney or 0)
+        _, message2 = tryMatch(t.playerName, t.targetName, playerItemsArray, t.targetMoney)
     end
 
-    -- Print message if we got one
-    if message1 then
-        print(ChatPrefix() .. message1)
-    elseif message2 then
-        print(ChatPrefix() .. message2)
+    -- Print message if we got one from the failed attempts
+    if not success then
+        if message1 then
+            print(ChatPrefix() .. message1)
+        end
+        if message2 then
+            -- Only print message2 if message1 didn't exist or was different
+            if not message1 or message1 ~= message2 then
+                print(ChatPrefix() .. message2)
+            end
+        end
+        -- If neither attempt found a match or errored informatively, add a generic failure message.
+        if not message1 and not message2 then
+            print(ChatPrefix() .. " Trade completed but did not match any pending guild auctions.")
+        end
+    else
+        print(ChatPrefix() .. " Trade successfully matched with guild auction!") -- Add success confirmation
     end
+
     Reset("HandleTradeOK")
 end
 
@@ -260,15 +455,15 @@ function TradeAPI:OnEvent(event, ...)
         end
 
     elseif event == "UI_INFO_MESSAGE" then
-        local _, arg2 = ...
-        if (arg2 == ERR_TRADE_CANCELLED) then
+        local arg1, arg2 = ...
+        if (arg1 == ERR_TRADE_CANCELLED) then
             -- print("[DEBUG] Trade cancelled")
             local timeSinceShow = GetTime() - self.lastTradeShowTime
             if timeSinceShow < 0.5 then
                 print(ChatPrefixError() .. L[" The Go Again addon requires that both players target each other before starting a trade."])
             end
             Reset("trade cancelled")
-        elseif (arg2 == ERR_TRADE_COMPLETE) then
+        elseif (arg1 == ERR_TRADE_COMPLETE) then
             HandleTradeOK()
         end
 

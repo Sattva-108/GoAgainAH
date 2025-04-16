@@ -93,8 +93,8 @@ local ADMIN_USERS = {
 
 -- Constants
 local TEST_USERS = {
-    ["Lenkomag"] = "AtheneDev-lenkomag",
-    ["Lenkomage"] = "AtheneDev-lenkomage"
+    --["Lenkomag"] = "AtheneDev-lenkomag",
+    --["Lenkomage"] = "AtheneDev-lenkomage"
   --  ["Pencilbow"] = "AtheneDev-pencilbow",
    -- ["Onefingerjoe"] = "AtheneDev-jannysice",
   --  ["Flawlezzgg"] = "AtheneDev-flawlezzgg",
@@ -103,8 +103,8 @@ local TEST_USERS = {
 }
 ns.TEST_USERS = TEST_USERS
 local TEST_USERS_RACE = {
-    ["Lenkomag"] = "Troll",
-    ["Lenkomage"] = "Troll"
+--    ["Lenkomag"] = "Troll",
+--    ["Lenkomage"] = "Troll"
   --  ["Pencilbow"] = "Human",
    -- ["Onefingerjoe"] = "Human",
    -- ["Flawlezzgg"] = "Human",
