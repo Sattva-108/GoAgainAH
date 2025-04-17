@@ -55,6 +55,10 @@ function AuctionAlertWidget:ShowAlert(message)
     end)
 end
 
+-- Add this near the top of the file or in your core addon file where 'ns' is defined
+ns.lastCompleteMessageTime = ns.lastCompleteMessageTime or {}
+
+-- Modified CreateAlertMessage function
 local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, itemLink, payload)
     local me = UnitName("player")
 
@@ -212,77 +216,135 @@ local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, i
         end
 
     elseif payload.source == "complete" then
-        -- Don't show alert on complete (in most cases, you just did a UI action, so an extra banner is unexpected)
+        -- ***** START DEBOUNCE LOGIC *****
+        local now = GetTime()
+        local auctionId = auction.id
+        local threshold = 3 -- Only suppress duplicates within 3 seconds (adjustable)
+
+        -- Check if we recently generated a message for this auction completion
+        if ns.lastCompleteMessageTime[auctionId] and (now - ns.lastCompleteMessageTime[auctionId] < threshold) then
+            -- Optional: Log suppression for debugging if needed
+            -- ns.DebugLog("Suppressing duplicate 'complete' message for auction:", auctionId)
+            return nil, nil, nil -- Return nils to prevent message generation
+        end
+
+        -- Record the time we are generating this message
+        ns.lastCompleteMessageTime[auctionId] = now
+        -- ***** END DEBOUNCE LOGIC *****
+
+        -- Don't show alert banner on complete (original logic)
         msg = nil
+        -- Generate the chat messages (original logic)
         msgChat = string.format(L["%s |cffffcc00Transaction successful|r, %s%s with %s"],
-            ChatPrefix(), itemLink, quantityStr, otherUserLink)
+                ChatPrefix(), itemLink, quantityStr, otherUserLink)
         extraMsg = string.format(L["%s Write your review in the OnlyFangs AH Addon"],
-            ChatPrefix())
-    end
+                ChatPrefix())
+
+    end -- End of payload.source checks
 
     return msg, msgChat, extraMsg
 end
 
 local function OnAuctionAddOrUpdate(payload)
+    -- Ensure payload and auction data exist
+    if not payload or not payload.auction then
+        -- Optional: Log error if needed
+        -- ns.DebugLog("OnAuctionAddOrUpdate called with invalid payload")
+        return
+    end
     local auction = payload.auction
-    if not auction then
+
+    -- Only process specific event sources that should trigger alerts
+    if payload.source ~= "buy" and
+            payload.source ~= "buy_loan" and
+            payload.source ~= "status_update" and
+            payload.source ~= "complete" then
         return
     end
 
-    -- Only show alerts for specific events
-    if payload.source ~= "buy" and payload.source ~= "buy_loan" and payload.source ~= "status_update" and payload.source ~= "complete" then
-        return
-    end
+    local me = UnitName("player") -- Get current player name
 
-    local me = UnitName("player")
-
-    -- Different conditions based on source
+    -- Filter alerts based on player involvement and event source
+    local shouldShowAlert = false
     if payload.source == "buy" and auction.wish then
-        -- only trigger alert for the buyer of the auction
-        if auction.buyer ~= me then
-            return
+        -- Wish fulfillment alert: Only show to the buyer (recipient)
+        if auction.buyer == me then
+            shouldShowAlert = true
         end
     elseif payload.source == "status_update" then
-        if auction.buyer ~= me then
-            return
-        end
-        if auction.status ~= ns.AUCTION_STATUS_SENT_LOAN and auction.status ~= ns.AUCTION_STATUS_SENT_COD then
-            return
+        -- Mail sent alert: Only show to the buyer (recipient)
+        -- and only for specific statuses indicating mail was sent
+        if auction.buyer == me and
+                (auction.status == ns.AUCTION_STATUS_SENT_LOAN or auction.status == ns.AUCTION_STATUS_SENT_COD) then
+            shouldShowAlert = true
         end
     elseif payload.source == "complete" then
-        -- For complete, we want to show messages for both buyer and owner
-        if auction.buyer ~= me and auction.owner ~= me then
-            return
+        -- Completion alert: Show to both buyer and owner
+        if auction.buyer == me or auction.owner == me then
+            shouldShowAlert = true
         end
-    else
-        if auction.owner ~= me then
-            return
-        end
-        if not auction.buyer or auction.buyer == me then
-            return
+    else -- Covers "buy" (non-wish) and "buy_loan"
+        -- Purchase/Loan request alert: Only show to the owner
+        -- Ensure there *is* a buyer and it's not the owner themselves
+        if auction.owner == me and auction.buyer and auction.buyer ~= me then
+            shouldShowAlert = true
         end
     end
 
-    ns.GetItemInfoAsync(auction.itemID, function(...)
-        local _, itemLink = ...
+    -- If the filtering logic determines no alert should be shown for this player, exit early
+    if not shouldShowAlert then
+        return
+    end
 
-        -- Limit names to 40 characters
-        local buyerName = ns.GetDisplayName(auction.buyer, nil, 40)
-        local ownerName = ns.GetDisplayName(auction.owner, nil, 40)
+    -- Asynchronously get item info needed for the alert message
+    -- Pass auction.quantity to potentially handle item counts in GetItemInfoAsync if needed
+    ns.GetItemInfoAsync(auction.itemID, function(itemID, itemLink, ...) -- Assuming callback provides itemID and itemLink first
+        -- Re-check itemLink validity inside callback
+        if not itemLink then
+            itemLink = L["Unknown Item"] -- Fallback inside callback
+        end
 
+        -- Get display names, potentially truncated
+        local buyerName = ns.GetDisplayName(auction.buyer, nil, 40) -- Max 40 chars
+        local ownerName = ns.GetDisplayName(auction.owner, nil, 40) -- Max 40 chars
+
+        -- Generate the alert message components using the helper function
+        -- This function might return nils if the message is debounced/suppressed
         local msg, msgChat, extraMsg = CreateAlertMessage(auction, auction.buyer, buyerName, auction.owner, ownerName, itemLink, payload)
 
-        PlaySound(SOUNDKIT.LOOT_WINDOW_COIN_SOUND)
-        DEFAULT_CHAT_FRAME:AddMessage(msgChat)
-        if extraMsg then
-            DEFAULT_CHAT_FRAME:AddMessage(extraMsg)
-        end
+        -- *** Process generated messages only if they exist ***
+        if msgChat or extraMsg or msg then -- Check if at least one message component was generated
 
-        if msg then
-            AuctionAlertWidget:ShowAlert(msg)
-        end
-    end, auction.quantity)
-end
+            -- Play sound effect for the alert
+            PlaySound(SOUNDKIT.LOOT_WINDOW_COIN_SOUND)
+
+            -- Add primary chat message if it exists and is a string
+            if msgChat and type(msgChat) == "string" then
+                DEFAULT_CHAT_FRAME:AddMessage(msgChat)
+            end
+
+            -- Add secondary chat message if it exists and is a string
+            if extraMsg and type(extraMsg) == "string" then
+                DEFAULT_CHAT_FRAME:AddMessage(extraMsg)
+            end
+
+            -- Show the alert widget message if it exists and is a string
+            if msg and type(msg) == "string" then
+                -- Ensure the widget and its method exist before calling
+                if AuctionAlertWidget and AuctionAlertWidget.ShowAlert then
+                    AuctionAlertWidget:ShowAlert(msg)
+                else
+                    -- Optional: Log if widget is missing when expected
+                    -- ns.DebugLog("AuctionAlertWidget or ShowAlert method not found.")
+                end
+            end
+
+            -- else: No messages were generated (likely debounced), do nothing further.
+
+        end -- End of check if messages were generated
+
+    end, auction.quantity) -- End of ns.GetItemInfoAsync call
+end -- End of OnAuctionAddOrUpdate function
 
 function AuctionAlertWidget:OnInitialize()
     API:RegisterEvent(ns.T_AUCTION_ADD_OR_UPDATE, OnAuctionAddOrUpdate)
