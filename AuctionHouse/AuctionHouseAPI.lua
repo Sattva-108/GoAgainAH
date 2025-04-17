@@ -818,153 +818,255 @@ function AuctionHouseAPI:QueryAuctions(filter)
     return auctionList
 end
 
-function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, copper, deliveryType)
-    -- 1. Fetch things the recipient tried to buy/loan from the sender
-    local auctions = self:GetAuctionsWithBuyerAndStatus(
-        recipient,
-        -- allowed statusses
-        {
-            ns.AUCTION_STATUS_PENDING_TRADE,
-            ns.AUCTION_STATUS_PENDING_LOAN,
-            ns.AUCTION_STATUS_SENT_COD,
-            ns.AUCTION_STATUS_SENT_LOAN
-        }
-    )
+-- Add isDebug parameter (defaults to false)
+function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, copper, deliveryType, isDebug)
+    isDebug = isDebug or false -- Ensure boolean
 
-    -- 2. Define helper functions to decide if an auction matches the items
-    local function isExactMatch(auction, items, copper)
-        -- make sure we have the right person
+    if isDebug then
+        print("|cffffdd00[AH Debug] === Running TryCompleteItemTransfer (DEBUG MODE) ===|r")
+        print(string.format("|cffcccccc[AH Debug] Inputs: Sender='%s', Recipient='%s', Delivery=%s, Copper=%d|r",
+                sender or "NIL", recipient or "NIL", deliveryType or "NIL", copper or 0))
+        print("|cffcccccc[AH Debug] Items Received:|r", (items and #items or 0), "items")
+        if items and #items > 0 then
+            for i, item in ipairs(items) do
+                print(string.format("  - Item %d: ID=%s, Count=%s", i, tostring(item.itemID or "NIL"), tostring(item.count or "NIL")))
+            end
+        else
+            print("  (No items provided)")
+        end
+    end
+
+    -- 1. Fetch potential auctions
+    local possibleStatuses = {}
+    if deliveryType == ns.DELIVERY_TYPE_TRADE then
+        possibleStatuses = { ns.AUCTION_STATUS_PENDING_TRADE, ns.AUCTION_STATUS_PENDING_LOAN }
+    elseif deliveryType == ns.DELIVERY_TYPE_MAIL then
+        possibleStatuses = { ns.AUCTION_STATUS_SENT_COD, ns.AUCTION_STATUS_SENT_LOAN }
+    else -- Should not happen for trade/mail, but include for completeness
+        possibleStatuses = { ns.AUCTION_STATUS_PENDING_TRADE, ns.AUCTION_STATUS_PENDING_LOAN, ns.AUCTION_STATUS_SENT_COD, ns.AUCTION_STATUS_SENT_LOAN }
+    end
+
+    if isDebug then print("|cffcccccc[AH Debug] Fetching auctions for Recipient:", recipient, "with Statuses:", table.concat(possibleStatuses, ", ")) end
+
+    local auctions = self:GetAuctionsWithBuyerAndStatus(recipient, possibleStatuses)
+
+    if isDebug then
+        print(string.format("|cffcccccc[AH Debug] Found %d potential auctions.|r", auctions and #auctions or 0))
+        if auctions and #auctions > 0 then
+            for i, auction in ipairs(auctions) do
+                print(string.format("  - Candidate %d: ID=%s, Owner=%s, ItemID=%s, Qty=%s, Price=%d, Tip=%d, Status=%s, Delivery=%s",
+                        i, auction.id or "N/A", auction.owner or "N/A", auction.itemID or "N/A", auction.quantity or "N/A",
+                        auction.price or 0, auction.tip or 0, auction.status or "N/A", auction.deliveryType or "N/A"))
+            end
+        end
+    end
+
+    -- 2. Define helper functions (modified to include isDebug prints)
+    local function isExactMatch(auction, items, copper, isDebug)
+        if isDebug then print(string.format("|cffbbbbff[AH Debug] -> Checking Exact Match for Auction ID: %s", auction.id)) end
+
+        -- Check Owner
         if auction.owner ~= sender then
+            if isDebug then print("|cffffaaaa  - FAIL: Owner mismatch (AuctionOwner:", auction.owner or "nil", "!= ExpectedSender:", sender or "nil", ")") end
             return false
         end
-        -- Never match if recipient is the owner (taking their own returned mail)
+        if isDebug then print("|cffaaaaff  - OK: Owner matches.") end
+
+        -- Check Recipient not Owner (avoid matching self-returned mail/trades)
         if auction.owner == recipient then
+            if isDebug then print("|cffffaaaa  - FAIL: Recipient is the owner (Self-trade/return scenario)") end
             return false
         end
+        if isDebug then print("|cffaaaaff  - OK: Recipient is not owner.") end
+
+        -- Check Delivery Type
         if auction.deliveryType ~= ns.DELIVERY_TYPE_ANY and auction.deliveryType ~= deliveryType then
+            if isDebug then print("|cffffaaaa  - FAIL: Delivery type mismatch (AuctionDelivery:", auction.deliveryType or "nil", "!= ExpectedDelivery:", deliveryType or "nil", ")") end
             return false
         end
+        if isDebug then print("|cffaaaaff  - OK: Delivery type matches.") end
 
-        -- Validate status based on delivery type
+        -- Check Status based on delivery type
+        local statusMatch = false
         if deliveryType == ns.DELIVERY_TYPE_MAIL then
-            if auction.status ~= ns.AUCTION_STATUS_SENT_COD and auction.status ~= ns.AUCTION_STATUS_SENT_LOAN then
-                return false
-            end
+            statusMatch = (auction.status == ns.AUCTION_STATUS_SENT_COD or auction.status == ns.AUCTION_STATUS_SENT_LOAN)
         elseif deliveryType == ns.DELIVERY_TYPE_TRADE then
-            if auction.status ~= ns.AUCTION_STATUS_PENDING_TRADE and auction.status ~= ns.AUCTION_STATUS_PENDING_LOAN then
-                return false
-            end
+            statusMatch = (auction.status == ns.AUCTION_STATUS_PENDING_TRADE or auction.status == ns.AUCTION_STATUS_PENDING_LOAN)
         end
-
-        -- Find matching item
-        local matchingItem = nil
-        for _, item in ipairs(items) do
-            local isMatch
-            if auction.itemID == ns.ITEM_ID_GOLD then
-                isMatch = (auction.itemID == item.itemID) and (auction.quantity == item.count)
-            else
-                isMatch = auction.itemID == item.itemID
-            end
-
-            if isMatch then
-                matchingItem = item
-                break
-            end
-        end
-        if not matchingItem then
+        if not statusMatch then
+            if isDebug then print("|cffffaaaa  - FAIL: Status mismatch (AuctionStatus:", auction.status or "nil", "is not valid for DeliveryType:", deliveryType or "nil", ")") end
             return false
         end
+        if isDebug then print("|cffaaaaff  - OK: Status matches.") end
 
-        -- Check price only for non-loan auctions
-        if (
-            auction.status ~= ns.AUCTION_STATUS_PENDING_LOAN
-            and auction.status ~= ns.AUCTION_STATUS_SENT_LOAN
-            and auction.itemID ~= ns.ITEM_ID_GOLD
-        ) then
-            return copper == (auction.price + auction.tip)
+        -- Find matching item (CRITICAL CHECK)
+        local matchingItem = nil
+        local itemMatch = false
+        if isDebug then print("|cffaaaaff  - Checking item match...") end
+        for i, item in ipairs(items) do
+            local currentItemMatches = false
+            local auctionItemID = auction.itemID
+            local providedItemID = item.itemID
+            if isDebug then print(string.format("    - Comparing Auction ItemID '%s' (Qty %s) vs Provided Item %d: ID '%s' (Count %s)",
+                    tostring(auctionItemID), tostring(auction.quantity), i, tostring(providedItemID), tostring(item.count) )) end
+
+            -- Special handling for Gold "item"
+            if auctionItemID == ns.ITEM_ID_GOLD then
+                currentItemMatches = (auctionItemID == providedItemID) and (auction.quantity == item.count)
+                if isDebug and currentItemMatches then print("      -> Match: Gold item ID and quantity match.") end
+                if isDebug and not currentItemMatches then print("      -> No Match: Gold item ID or quantity differs.") end
+            else
+                -- Normal item check (only ItemID needs to match for 'isExactMatch' stage, quantity doesn't matter here, only price/tip does)
+                currentItemMatches = (auctionItemID == providedItemID)
+                if isDebug and currentItemMatches then print("      -> Match: Item IDs match.") end
+                if isDebug and not currentItemMatches then print("      -> No Match: Item IDs differ.") end
+            end
+
+            if currentItemMatches then
+                matchingItem = item -- Store the item from the input 'items' list that matched
+                itemMatch = true
+                break -- Found a matching item in the provided list, no need to check further
+            end
         end
+
+        if not itemMatch then
+            if isDebug then print("|cffffaaaa  - FAIL: No item provided in the 'items' list matched the Auction's ItemID:", auction.itemID) end
+            return false
+        end
+        if isDebug then print("|cffaaaaff  - OK: Found matching item in provided list (ItemID:", matchingItem.itemID, ")") end
+
+        -- Check price (ONLY if NOT a loan and NOT the Gold item itself)
+        local isLoan = (auction.status == ns.AUCTION_STATUS_PENDING_LOAN or auction.status == ns.AUCTION_STATUS_SENT_LOAN)
+        local isGoldItem = (auction.itemID == ns.ITEM_ID_GOLD)
+
+        if not isLoan and not isGoldItem then
+            local expectedPrice = (auction.price or 0) + (auction.tip or 0)
+            if isDebug then print(string.format("|cffaaaaff  - Checking price (AuctionPrice+Tip: %d vs ProvidedCopper: %d)", expectedPrice, copper)) end
+            if copper ~= expectedPrice then
+                if isDebug then print("|cffffaaaa  - FAIL: Price mismatch.") end
+                return false
+            end
+            if isDebug then print("|cffaaaaff  - OK: Price matches.") end
+        else
+            if isDebug then print("|cffaaaaff  - SKIPPING Price check (Loan or Gold Item)") end
+        end
+
+        -- All checks passed for Exact Match
+        if isDebug then print("|cff55ff55  -> SUCCESS: Exact Match found!") end
         return true
     end
 
-    local function isFlexibleMatch(auction, items, copper)
-        -- make sure we have the right person
+    -- NOTE: Flexible match is less strict, mainly used as a fallback. Keep its debugging simpler.
+    local function isFlexibleMatch(auction, items, copper, isDebug)
+        if isDebug then print(string.format("|cffbbbbff[AH Debug] -> Checking Flexible Match for Auction ID: %s", auction.id)) end
+
+        -- Check Owner
         if auction.owner ~= sender then
+            if isDebug then print("|cffffaaaa  - FAIL: Owner mismatch.") end
             return false
         end
-        -- Never match if recipient is the owner (taking their own returned mail)
+        -- Check Recipient not Owner
         if auction.owner == recipient then
+            if isDebug then print("|cffffaaaa  - FAIL: Recipient is owner.") end
             return false
         end
+        -- Check Delivery Type
         if auction.deliveryType ~= ns.DELIVERY_TYPE_ANY and auction.deliveryType ~= deliveryType then
+            if isDebug then print("|cffffaaaa  - FAIL: Delivery type mismatch.") end
             return false
         end
 
-        -- Find matching item
-        local matchingItem = nil
-        for _, item in ipairs(items) do
-            -- NOTE: by design, no quantity check: and auction.quantity == item.count 
+        -- Find matching item ID (no quantity/price check here for flexible)
+        local itemMatch = false
+        if isDebug then print("|cffaaaaff  - Checking flexible item ID match...") end
+        for i, item in ipairs(items) do
+            if isDebug then print(string.format("    - Comparing Auction ItemID '%s' vs Provided Item %d: ID '%s'", tostring(auction.itemID), i, tostring(item.itemID))) end
             if auction.itemID == item.itemID then
-                matchingItem = item
+                if isDebug then print("      -> Match: Item IDs match.") end
+                itemMatch = true
                 break
             end
+            if isDebug then print("      -> No Match.") end
         end
-        if not matchingItem then
+        if not itemMatch then
+            if isDebug then print("|cffffaaaa  - FAIL: No item provided matched auction ItemID.") end
             return false
         end
 
-        -- no strict status checking
-
-        -- NOTE: by design, no price check
+        if isDebug then print("|cff55ff55  -> SUCCESS: Flexible Match found (based on Owner, Delivery, ItemID only).") end
         return true
-
-        -- if auction.status == statusLoan then
-        --     return true  -- no price checking
-        -- end
-        -- return copper == (auction.price + auction.tip)
     end
 
     -- 3. Try to find an exact match first
     local matchedAuction = nil
-    local hasCandidates = false
-    for _, auction in ipairs(auctions or {}) do
-        hasCandidates = true
+    local hasCandidates = false -- Track if *any* auction from the initial fetch was relevant
 
-        if isExactMatch(auction, items, copper) then
+    if isDebug then print("|cffcccccc[AH Debug] --- Starting Exact Match Loop ---") end
+    for i, auction in ipairs(auctions or {}) do
+        hasCandidates = true -- If we are in this loop, there was at least one candidate
+        if isDebug then print(string.format("|cffcccccc[AH Debug] Checking Candidate %d (ID: %s) for exact match...", i, auction.id)) end
+        if isExactMatch(auction, items, copper, isDebug) then
+            if isDebug then print("|cff55ff55[AH Debug] Exact Match FOUND with Auction ID:", auction.id) end
             matchedAuction = auction
-            break
+            break -- Stop after first exact match
+        elseif isDebug then
+            print("|cffcccccc[AH Debug] Candidate %d did not exactly match.", i)
         end
     end
+    if isDebug then print("|cffcccccc[AH Debug] --- Finished Exact Match Loop ---") end
 
-    -- 4. If no exact match, try flexible matching
+    -- 4. If no exact match, try flexible matching (only if an exact wasn't found)
     if not matchedAuction then
-        for _, auction in ipairs(auctions or {}) do
-            if isFlexibleMatch(auction, items, copper) then
+        if isDebug then print("|cffcccccc[AH Debug] No exact match found. --- Starting Flexible Match Loop ---") end
+        for i, auction in ipairs(auctions or {}) do
+            if isDebug then print(string.format("|cffcccccc[AH Debug] Checking Candidate %d (ID: %s) for flexible match...", i, auction.id)) end
+            if isFlexibleMatch(auction, items, copper, isDebug) then
+                if isDebug then print("|cff55ff55[AH Debug] Flexible Match FOUND with Auction ID:", auction.id) end
                 matchedAuction = auction
-                break
+                break -- Stop after first flexible match
+            elseif isDebug then
+                print("|cffcccccc[AH Debug] Candidate %d did not flexibly match.", i)
             end
         end
+        if isDebug then print("|cffcccccc[AH Debug] --- Finished Flexible Match Loop ---") end
     end
 
+    -- 5. Process result
     if not matchedAuction then
-        -- items don't appear to be from the auctionhouse
-        return false, hasCandidates, L["No matching auction found"], nil
+        local reason = auctions and #auctions > 0 and L["No matching auction found"] or "No candidate auctions found for recipient/status"
+        if isDebug then print("|cffffaaaa[AH Debug] No Match Found. HasCandidates:", tostring(hasCandidates), "Reason:", reason) end
+        return false, hasCandidates, reason, nil
     end
 
-    -- we found a match, update the auction record
-    local err, trade
-    -- SPECIAL: Loan auctions stay pending until either
-    -- + the owner marks it as complete (loan paid)
-    -- + the buyer declares bankruptcy
-    -- + the loan expires (7 days) which results in bankruptcy
-    if matchedAuction.status == ns.AUCTION_STATUS_PENDING_LOAN then
-        _, err = self:UpdateAuctionStatus(matchedAuction.id, ns.AUCTION_STATUS_SENT_LOAN)
-    else
-        _, trade, err = self:CompleteAuction(matchedAuction.id)
+    -- We found a match, update the auction record (or simulate in debug)
+    if isDebug then
+        print(string.format("|cff55ff55[AH Debug] Match Found! Auction ID: %s (Status: %s)", matchedAuction.id, matchedAuction.status))
     end
+
+    local err, trade
+    local updateStatus = nil
+    if matchedAuction.status == ns.AUCTION_STATUS_PENDING_LOAN then
+        updateStatus = ns.AUCTION_STATUS_SENT_LOAN
+        if isDebug then print("|cffffdd00[AH Debug] --> Simulating UpdateAuctionStatus:", matchedAuction.id, "to", updateStatus) end
+        if not isDebug then
+            _, err = self:UpdateAuctionStatus(matchedAuction.id, updateStatus)
+        end
+    else
+        if isDebug then print("|cffffdd00[AH Debug] --> Simulating CompleteAuction:", matchedAuction.id) end
+        if not isDebug then
+            _, trade, err = self:CompleteAuction(matchedAuction.id)
+        end
+        -- In debug, create a dummy trade object if needed for return consistency testing
+        if isDebug and not err then trade = { id = matchedAuction.id .. "-debug", auction = matchedAuction } end
+    end
+
     if err then
+        if isDebug then print("|cffff0000[AH Debug] Error during simulated/actual auction update:", err) end
         return false, hasCandidates, string.format(L["failed to mark auction completed after transfer: %s"], err), nil
     end
 
+    if isDebug then print("|cff55ff55[AH Debug] Auction update successful (or simulated). Returning success.") end
+    if isDebug then print("|cffffdd00[AH Debug] === Finished TryCompleteItemTransfer (DEBUG MODE) ===|r") end
     return true, hasCandidates, nil, trade
 end
 

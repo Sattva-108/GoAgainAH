@@ -93,20 +93,54 @@ local function UpdateItemInfo(id, unit, items)
     end
 
     if (not name) then
+        -- If the trade slot is now empty, clear our record
         items[id] = nil
+        print("[DEBUG] UpdateItemInfo: Slot", id, unit, "cleared (no name).")
         return
     end
 
-    -- GetTradePlayerItemInfo annoyingly doesn't return the itemID, and there's not obvious way to get the itemID from a trade
-    -- in most cases itemID will be available instantly, so race conditions shouldn't be too common
-    GetItemInfoAsyncWithMemoryLeak(name, function (_, itemLink)
-        local itemID = tonumber(itemLink:match("item:(%d+):"))
+    -- Store basic info immediately, even before itemID is resolved
+    -- This prevents losing the item entirely if the async call messes up later
+    if not items[id] then items[id] = {} end -- Create entry if it doesn't exist
+    items[id].name = name
+    items[id].numItems = numItems
+    -- items[id].itemID = items[id].itemID or nil -- Keep existing itemID if already resolved
 
-        items[id] = {
-            itemID = itemID,
-            name = name,
-            numItems = numItems,
-        }
+    -- GetTradePlayerItemInfo annoyingly doesn't return the itemID...
+    GetItemInfoAsyncWithMemoryLeak(name, function (_, itemLink)
+        local currentItemEntry = items[id] -- Get the potentially existing entry
+
+        -- Safety check: If the slot was cleared while waiting for the callback, do nothing
+        if not currentItemEntry or currentItemEntry.name ~= name then
+            print("[DEBUG] UpdateItemInfo Callback: Slot", id, unit, "changed/cleared while waiting. Aborting update for", name)
+            return
+        end
+
+        local parsedItemID = nil
+        if itemLink and type(itemLink) == "string" then
+            -- Attempt to parse the itemID
+            local potentialID = itemLink:match("item:(%d+):")
+            if potentialID then
+                parsedItemID = tonumber(potentialID)
+            end
+        end
+
+        if parsedItemID then
+            -- Successfully parsed a valid itemID, update the entry
+            print("[DEBUG] UpdateItemInfo Callback: Slot", id, unit, "resolved ItemID", parsedItemID, "for", name)
+            currentItemEntry.itemID = parsedItemID
+            -- Keep name and numItems potentially updated from the outer scope if needed,
+            -- though they likely haven't changed since the async call started.
+            -- currentItemEntry.name = name
+            -- currentItemEntry.numItems = numItems
+        else
+            -- Failed to parse or get a valid itemLink
+            -- IMPORTANT: DO NOT set itemID to nil here if it was previously valid.
+            -- Only log the failure.
+            print("|cffffaa00[DEBUG] UpdateItemInfo Callback: Failed to resolve ItemID for Slot", id, unit, name, "(Link:", itemLink or "nil", ") - Keeping existing ItemID:", currentItemEntry.itemID or "nil")
+            -- We intentionally DO NOT do: currentItemEntry.itemID = nil
+            -- We keep whatever itemID might have been resolved previously.
+        end
     end)
 end
 
@@ -115,190 +149,420 @@ local function UpdateMoney()
     CurrentTrade().targetMoney = GetTargetTradeMoney()
 end
 
-local function HandleTradeOK()
-    local t = CurrentTrade()
+-- Add isDebug parameter (defaults to false if not provided)
+--[[ =========================================================================
+     Helper Function Dependency: ns.Serialize
+     Ensure this function exists in your addon namespace (ns)
+     or provide a basic fallback if needed for the debug prints.
+     Example fallback:
+========================================================================= ]]
+if not ns.Serialize then
+    ns.Serialize = function(tbl)
+        if type(tbl) ~= "table" then return tostring(tbl) end
+        local parts = {}
+        -- Simple serialization for debug prints in chat
+        for k, v in pairs(tbl) do
+            local valStr
+            if type(v) == "table" then valStr = "{...}" -- Keep it short for chat
+            elseif type(v) == "string" then valStr = string.format("%q", v)
+            else valStr = tostring(v) end
+            table.insert(parts, string.format("[%s]=%s", tostring(k), valStr))
+        end
+        return "{ " .. table.concat(parts, ", ") .. " }"
+    end
+end
 
-    -- Get the items that were traded
-    --
-    -- both the buyer and seller mark the trade as 'complete',
-    -- they always should come to the same conclusion (so conflicting network updates shouldn't arise)
+--[[ =========================================================================
+     HandleTradeOK Function Definition
+     Processes the completed trade, attempts to match it with addon auctions,
+     and handles side effects like popups and point transfers.
+     Includes an isDebug parameter for detailed logging without side effects.
+========================================================================= ]]
+local function HandleTradeOK(isDebug)
+    isDebug = isDebug or false -- Ensure it's boolean, default to false
+
+    if isDebug then
+        print("|cffffaa00[Trade Debug] === Running HandleTradeOK (DEBUG MODE) ===|r")
+    end
+
+    -- Check if CURRENT_TRADE even exists when called
+    if not CURRENT_TRADE then
+        print("|cffff5555[Trade Debug] HandleTradeOK called but CURRENT_TRADE is nil! (Debug:", tostring(isDebug), ")|r")
+        -- In normal mode, Reset might still be appropriate. In debug, just return.
+        if not isDebug then Reset("HandleTradeOK - No Current Trade") end
+        return
+    end
+
+    local t = CurrentTrade()
+    print("|cffcccccc[Trade Debug] HandleTradeOK: Initial Trade Data:|r")
+    -- Basic printout using GetCoinTextureString for money
+    print(string.format("  Player: %s, Target: %s", t.playerName or "N/A", t.targetName or "N/A"))
+    print(string.format("  Player $: %s, Target $: %s", GetCoinTextureString(t.playerMoney or 0), GetCoinTextureString(t.targetMoney or 0)))
+    print("  Player Items (Raw):", ns.Serialize(t.playerItems)) -- Use Serialize helper
+    print("  Target Items (Raw):", ns.Serialize(t.targetItems)) -- Use Serialize helper
+
+
+    -- Get the items that were traded, filtering out items where itemID lookup might have failed
     local playerItems = {}
     local targetItems = {}
-    for _, item in pairs(t.playerItems) do
-        table.insert(playerItems, {
-            itemID = item.itemID,
-            count = item.numItems
-        })
-    end
-    for _, item in pairs(t.targetItems) do
-        table.insert(targetItems, {
-            itemID = item.itemID,
-            count = item.numItems
-        })
+
+    print("|cffcccccc[Trade Debug] HandleTradeOK: Processing Player Items:|r")
+    if t.playerItems then
+        for id, item in pairs(t.playerItems) do
+            if item and type(item) == "table" then -- Basic check if item exists and is a table
+                local itemIDStr = item.itemID and tostring(item.itemID) or "|cffff7777pending/missing ID|r"
+                local itemName = item.name or "|cffff7777Unknown Name|r"
+                local numItems = item.numItems or 0
+                print(string.format("  - Slot %d: %s x%d (ID: %s)", id, itemName, numItems, itemIDStr))
+                if item.itemID then -- Only add if itemID is resolved and valid
+                    table.insert(playerItems, {
+                        itemID = item.itemID,
+                        count = numItems
+                    })
+                else
+                    print("|cffffaa00    -> Warning: ItemID missing/invalid for slot", id, ", will not be included in final list for matching.|r")
+                end
+            elseif item then
+                print(string.format("  - Slot %d: |cffff5555Invalid item data (not a table?)|r", id))
+                -- else: slot might be empty, which is normal
+            end
+        end
+    else
+        print("  (No player items table in CURRENT_TRADE)")
     end
 
+
+    print("|cffcccccc[Trade Debug] HandleTradeOK: Processing Target Items:|r")
+    if t.targetItems then
+        for id, item in pairs(t.targetItems) do
+            if item and type(item) == "table" then
+                local itemIDStr = item.itemID and tostring(item.itemID) or "|cffff7777pending/missing ID|r"
+                local itemName = item.name or "|cffff7777Unknown Name|r"
+                local numItems = item.numItems or 0
+                print(string.format("  - Slot %d: %s x%d (ID: %s)", id, itemName, numItems, itemIDStr))
+                if item.itemID then
+                    table.insert(targetItems, {
+                        itemID = item.itemID,
+                        count = numItems
+                    })
+                else
+                    print("|cffffaa00    -> Warning: ItemID missing/invalid for slot", id, ", will not be included in final list for matching.|r")
+                end
+            elseif item then
+                print(string.format("  - Slot %d: |cffff5555Invalid item data (not a table?)|r", id))
+                -- else: slot might be empty
+            end
+        end
+    else
+        print("  (No target items table in CURRENT_TRADE)")
+    end
+
+    -- Add gold as fake item logic if no actual items were successfully processed
     if #playerItems == 0 and #targetItems == 0 then
-        -- insert gold as fake item only if no other items are being traded
-        if t.playerMoney then
+        print("|cffcccccc[Trade Debug] HandleTradeOK: No valid items found in formatted lists, checking gold.|r")
+        if t.playerMoney and t.playerMoney > 0 then
+            print("  - Adding Player Gold as Item:", t.playerMoney)
             table.insert(playerItems, {
-                itemID = ns.ITEM_ID_GOLD,
+                itemID = ns.ITEM_ID_GOLD, -- Ensure ns.ITEM_ID_GOLD is defined
                 count = t.playerMoney
             })
         end
-        if t.targetMoney then
+        if t.targetMoney and t.targetMoney > 0 then
+            print("  - Adding Target Gold as Item:", t.targetMoney)
             table.insert(targetItems, {
-                itemID = ns.ITEM_ID_GOLD,
+                itemID = ns.ITEM_ID_GOLD, -- Ensure ns.ITEM_ID_GOLD is defined
                 count = t.targetMoney
             })
         end
     end
 
-    -- Debug prints for items
-    for i, item in pairs(t.playerItems) do
-        ns.DebugLog("[DEBUG] HandleTradeOK Player Item", i, ":", item.itemID, "x", item.count)
-    end
-    for i, item in pairs(t.targetItems) do
-        ns.DebugLog("[DEBUG] HandleTradeOK Target Item", i, ":", item.itemID, "x", item.count)
-    end
-    ns.DebugLog(
-        "[DEBUG] HandleTradeOK",
-        t.playerName, t.targetName,
-        t.playerMoney, t.targetMoney,
-        #playerItems, #targetItems
-    )
+    print("|cffcccccc[Trade Debug] HandleTradeOK: Final Formatted Lists for Matching:|r")
+    print("  - Final Player Items:", ns.Serialize(playerItems))
+    print("  - Final Target Items:", ns.Serialize(targetItems))
+    print(string.format("  - Player Money for Matching: %d", t.playerMoney or 0))
+    print(string.format("  - Target Money for Matching: %d", t.targetMoney or 0))
 
+    -- Inner function to attempt matching and handle side effects based on isDebug
+    -- Returns: success (boolean), message (string or nil)
     local function tryMatch(seller, buyer, items, money)
+        print(string.format("|cffaaaaff[Trade Debug] tryMatch (Seller=%s, Buyer=%s, Money=%d). Debug=%s|r",
+                seller or "nil", buyer or "nil", money or 0, tostring(isDebug)))
+        print("  - Items to Match:", ns.Serialize(items))
+
+        --[[ =============================================================
+             DEPENDENCY: ns.AuctionHouseAPI:TryCompleteItemTransfer
+             Make sure this function exists and accepts the isDebug flag.
+        ============================================================= ]]
         local success, hadCandidates, err, trade = ns.AuctionHouseAPI:TryCompleteItemTransfer(
-            seller,
-            buyer,
-            items,
-            money,
-            ns.DELIVERY_TYPE_TRADE
+                seller,
+                buyer,
+                items,
+                money,
+                ns.DELIVERY_TYPE_TRADE, -- Ensure ns.DELIVERY_TYPE_TRADE is defined
+                isDebug -- Pass the flag here
         )
 
-        if success and trade then
-            StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id })
+        print("|cffaaaaff[Trade Debug] tryMatch Result: Success=", tostring(success), "HadCandidates=", tostring(hadCandidates), "Err=", err or "nil", "TradeID=", (trade and trade.id or "nil"))
 
-            -- success, subtract points
-            if trade.auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
-                local tx, err = ns.PendingTxAPI:AddPendingTransaction({
-                    type = ns.PRICE_TYPE_GUILD_POINTS,
-                    amount = trade.auction.points,
-                    from = trade.auction.buyer,
-                    to = trade.auction.owner,
-                    id = trade.auction.id,
-                })
-                if tx then
-                    -- immediately handle locally for fast/correct apply
-                    ns.PendingTxAPI:HandlePendingTransactionChange(tx)
-                else
-                    print(ChatPrefixError() .. L[" Failed to transfer points:"], err)
-                    -- NOTE: error here should not happen and will mean points aren't correctly charged.
-                    -- we can't easily recover to a better state
-                    return
+        if success and trade then
+            print("|cff55ff55[Trade Debug]   -> Match SUCCESSFUL (Trade ID:", trade.id, ")|r")
+            if isDebug then
+                print("|cffffaa00    --> SKIPPING StaticPopup_Show in debug mode.|r")
+                print("|cffffaa00    --> SKIPPING PendingTxAPI calls in debug mode.|r")
+            else
+                -- Only show popup and handle points if not in debug mode
+                StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id }) -- Ensure OF_LEAVE_REVIEW popup exists
+
+                -- Example: Handle points transfer (ensure required ns constants/APIs exist)
+                if trade.auction and trade.auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
+                    print("|cff00ccff[Trade Info] Handling Guild Points transfer for auction:", trade.auction.id) -- Normal log
+                    --[[ =============================================================
+                         DEPENDENCY: ns.PendingTxAPI
+                         Make sure AddPendingTransaction and HandlePendingTransactionChange exist.
+                    ============================================================= ]]
+                    local tx, txErr = ns.PendingTxAPI:AddPendingTransaction({
+                        type = ns.PRICE_TYPE_GUILD_POINTS,
+                        amount = trade.auction.points or 0,
+                        from = trade.auction.buyer,
+                        to = trade.auction.owner,
+                        id = trade.auction.id,
+                    })
+                    if tx then
+                        print("|cff00ccff[Trade Info] Added Pending Points Tx. Applying locally.|r") -- Normal log
+                        ns.PendingTxAPI:HandlePendingTransactionChange(tx)
+                    else
+                        -- Use ChatPrefixError and L for user-facing errors
+                        print(ChatPrefixError() .. (L[" Failed to transfer points:"] or " Failed to transfer points:") .. " " .. (txErr or "Unknown error"))
+                    end
                 end
             end
-
+            -- Return success, no error message needed
             return true, nil
-        elseif err and hadCandidates then
-            local itemInfo = ""
-            if playerItems[1] then
-                itemInfo = itemInfo .. " (Player: " .. playerItems[1].itemID .. " x" .. playerItems[1].count .. ")"
-            end
-            if targetItems[1] then
-                itemInfo = itemInfo .. " (Target: " .. targetItems[1].itemID .. " x" .. targetItems[1].count .. ")"
-            end
+        elseif err then -- If there was an error message returned (even if candidates existed)
+            print("|cffffaaaa[Trade Debug]   -> Match FAILED. Error:", err, "|r")
+            local itemInfoStr = "" -- Simplified item info for error message
+            if items and items[1] then itemInfoStr = itemInfoStr .. " (" .. (seller == t.playerName and "P" or "T") .. ":" .. items[1].itemID .. "x" .. items[1].count .. ")" end
 
-            local msg
-            if err == "No matching auction found" then
-                msg = " Trade didn't match any guild auctions" .. itemInfo
+            local fullErrMsg
+            -- Use localization (L) if available, otherwise use defaults
+            local noMatchStr = L["No matching auction found"] or "No matching auction found"
+            if err == noMatchStr then
+                fullErrMsg = L[" Trade didn't match any guild auctions"] or " Trade didn't match any guild auctions"
             else
-                msg = " Trade didn't match any guild auctions: " .. err .. itemInfo
+                fullErrMsg = (L[" Trade failed: "] or " Trade failed: ") .. err
             end
-
-            return false, msg
+            fullErrMsg = fullErrMsg .. itemInfoStr
+            return false, fullErrMsg -- Failure, return the constructed error message
+        else -- No success, but no specific error message (likely hadCandidates was false)
+            print("|cffffaaaa[Trade Debug]   -> Match FAILED (No specific error returned, likely no candidates).|r")
+            local genericMsg = L[" Trade didn't match any guild auctions"] or " Trade didn't match any guild auctions"
+            return false, genericMsg -- Return generic failure message
         end
-        return false
     end
 
     -- Try first direction (target as seller)
-    local success, message1 = tryMatch(t.targetName, t.playerName, targetItems, t.playerMoney or 0)
-    local message2
+    print("|cffcccccc[Trade Debug] HandleTradeOK: Attempting match 1 (Target selling to Player)|r")
+    local success1, message1 = tryMatch(t.targetName, t.playerName, targetItems, t.playerMoney or 0)
+    local success2, message2
 
     -- If first attempt failed, try reverse direction
-    if not success then
-        _, message2 = tryMatch(t.playerName, t.targetName, playerItems, t.targetMoney or 0)
+    if not success1 then
+        print("|cffcccccc[Trade Debug] HandleTradeOK: Attempting match 2 (Player selling to Target)|r")
+        success2, message2 = tryMatch(t.playerName, t.targetName, playerItems, t.targetMoney or 0)
     end
 
-    -- Print message if we got one
-    if message1 then
-        print(ChatPrefix() .. message1)
-    elseif message2 then
-        print(ChatPrefix() .. message2)
+    -- Decide which message to show (if any), only if not in debug mode and both attempts failed
+    local finalMessage = nil
+    if not success1 and not success2 then -- Both attempts failed
+        -- Prioritize the message from the first attempt if it exists, otherwise use the second, or a default.
+        finalMessage = message1 or message2 or (L["Trade failed for unknown reason."] or "Trade failed for unknown reason.")
+        -- If either attempt succeeded, the success handling (popups etc) was done inside tryMatch.
+        -- No additional message needed here for success cases.
     end
-    Reset("HandleTradeOK")
+
+    if isDebug then
+        print("|cffffaa00  --> SKIPPING final print message in debug mode (Simulated Final Message:", finalMessage or "nil", ")|r")
+    elseif finalMessage then
+        -- Use ChatPrefixError for failure messages
+        print(ChatPrefixError() .. finalMessage)
+    end
+
+    -- Reset the trade state (ONLY if not in debug mode)
+    if isDebug then
+        print("|cffffaa00[Trade Debug] === SKIPPING Reset() in debug mode ===|r")
+    else
+        print("|cffcccccc[Trade Info] HandleTradeOK: Calling Reset() (Normal Mode)|r") -- Use Info level for normal operation
+        --[[ =============================================================
+             DEPENDENCY: Reset()
+             Ensure this function exists to clear the CURRENT_TRADE state.
+        ============================================================= ]]
+        Reset("HandleTradeOK") -- Pass source for logging in Reset if it supports it
+    end
+
+    print("|cffcccccc[Trade Debug] HandleTradeOK: Exiting (Debug:", tostring(isDebug), ")|r")
+
 end
 
+-- Add near CURRENT_TRADE definition
+local isTradeFinalizing = false
+
+-- Update Reset function
+local function Reset(source)
+    ns.DebugLog("[DEBUG] Reset Trade " .. (source or ""))
+    CURRENT_TRADE = nil
+    isTradeFinalizing = false -- Reset the flag
+end
+
+
 -- Single event handler function
+--[[ =========================================================================
+     Prerequisites:
+     - Assumes 'local addonName, ns = ...' and 'local TradeAPI = {}' etc. are defined above.
+     - Assumes 'CURRENT_TRADE', 'CurrentTrade()', 'CreateNewTrade()' are defined.
+     - Assumes 'Reset(source)' function exists and clears CURRENT_TRADE.
+     - Assumes 'UpdateItemInfo(id, unit, items)' function exists.
+     - Assumes 'UpdateMoney()' function exists.
+     - Assumes 'HandleTradeOK(isDebug)' function exists.
+     - Assumes 'ns.DebugLog', 'print', 'ChatPrefix', 'ChatPrefixError', 'L' (localization) exist.
+     - Assumes WoW API functions like GetTime, GetUnitName, etc. are available.
+========================================================================= ]]
+
+-- Flag to lock the trade state once acceptance starts
+local isTradeFinalizing = false
+
+-- Ensure the Reset function clears the flag
+local originalReset = Reset -- Keep a reference if Reset is defined elsewhere
+Reset = function(source)
+    ns.DebugLog("[DEBUG] Resetting Trade (" .. (source or "Unknown") .. ") and clearing finalizing flag.")
+    if originalReset then originalReset(source) end -- Call the original Reset logic
+    CURRENT_TRADE = nil -- Explicitly ensure CURRENT_TRADE is nil
+    isTradeFinalizing = false -- <<< Reset the flag here >>>
+end
+
+-- Single event handler function for TradeAPI
 function TradeAPI:OnEvent(event, ...)
+    -- Early exit if event is irrelevant or state is locked inappropriately
+    -- (Add more checks here if needed based on addon structure)
+
     if event == "MAIL_SHOW" then
-        -- print("[DEBUG] MAIL_SHOW")
+        -- Potentially reset trade state if opening mail invalidates a trade? (Optional)
+        -- Reset("MAIL_SHOW")
+        ns.DebugLog("[DEBUG] MAIL_SHOW")
 
     elseif event == "MAIL_CLOSED" then
-        -- print("[DEBUG] MAIL_CLOSED")
+        ns.DebugLog("[DEBUG] MAIL_CLOSED")
 
     elseif event == "UI_ERROR_MESSAGE" then
         local _, arg2 = ...
         if (arg2 == ERR_TRADE_BAG_FULL or
-            arg2 == ERR_TRADE_TARGET_BAG_FULL or
-            arg2 == ERR_TRADE_MAX_COUNT_EXCEEDED or
-            arg2 == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED or
-            arg2 == ERR_TRADE_TARGET_DEAD or
-            arg2 == ERR_TRADE_TOO_FAR) then
-            -- print("[DEBUG] Trade failed")
-            Reset("trade failed "..arg2)  -- trade failed
+                arg2 == ERR_TRADE_TARGET_BAG_FULL or
+                arg2 == ERR_TRADE_MAX_COUNT_EXCEEDED or
+                arg2 == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED or
+                arg2 == ERR_TRADE_TARGET_DEAD or
+                arg2 == ERR_TRADE_TOO_FAR) then
+            ns.DebugLog("[DEBUG] Trade failed due to error:", arg2)
+            Reset("trade failed error: " .. arg2)  -- trade failed, reset state and flag
         end
 
     elseif event == "UI_INFO_MESSAGE" then
         local arg1, arg2 = ...
         if (arg1 == ERR_TRADE_CANCELLED) then
-            -- print("[DEBUG] Trade cancelled")
-            local timeSinceShow = GetTime() - self.lastTradeShowTime
+            ns.DebugLog("[DEBUG] Trade cancelled.")
+            -- Check for potential targeting issue hint
+            local timeSinceShow = GetTime() - (self.lastTradeShowTime or 0)
             if timeSinceShow < 0.5 then
                 print(ChatPrefixError() .. L[" The Go Again addon requires that both players target each other before starting a trade."])
             end
-            Reset("trade cancelled")
+            Reset("trade cancelled") -- Trade cancelled, reset state and flag
+
         elseif (arg1 == ERR_TRADE_COMPLETE) then
-            HandleTradeOK()
+            -- Trade completed successfully
+            print("|cff00ff00[Trade Info] TRADE_COMPLETE received. Running HandleTradeOK (Normal Mode).|r")
+            -- The isTradeFinalizing flag should be true here from TRADE_ACCEPT_UPDATE.
+            -- HandleTradeOK(false) will use the frozen state and then call Reset() internally.
+            HandleTradeOK(false) -- Execute the normal completion logic
+            -- Note: HandleTradeOK(false) MUST call Reset() internally to clear the flag.
         end
 
     elseif event == "TRADE_SHOW" then
-        CurrentTrade().targetName = GetUnitName("NPC", true)
-        self.lastTradeShowTime = GetTime()
+        ns.DebugLog("[DEBUG] TRADE_SHOW received. Resetting trade state.")
+        Reset("TRADE_SHOW") -- Start of a new trade, reset everything including flag
+        CurrentTrade().targetName = GetUnitName("NPC", true) -- Get target name for the new trade
+        self.lastTradeShowTime = GetTime() -- Track show time for cancel message logic
 
     elseif event == "TRADE_PLAYER_ITEM_CHANGED" then
+        if isTradeFinalizing then
+            ns.DebugLog("[DEBUG] Player ITEM_CHANGED ignored (finalizing).")
+            return -- <<<<< GUARD: Do not update state after acceptance starts
+        end
         local arg1 = ...
+        ns.DebugLog("[DEBUG] Player ITEM_CHANGED", arg1, "- Updating...")
         UpdateItemInfo(arg1, "Player", CurrentTrade().playerItems)
-        ns.DebugLog("[DEBUG] Player ITEM_CHANGED", arg1)
 
     elseif event == "TRADE_TARGET_ITEM_CHANGED" then
+        if isTradeFinalizing then
+            ns.DebugLog("[DEBUG] Target ITEM_CHANGED ignored (finalizing).")
+            return -- <<<<< GUARD: Do not update state after acceptance starts
+        end
         local arg1 = ...
+        ns.DebugLog("[DEBUG] Target ITEM_CHANGED", arg1, "- Updating...")
         UpdateItemInfo(arg1, "Target", CurrentTrade().targetItems)
-        ns.DebugLog("[DEBUG] Target ITEM_CHANGED", arg1)
 
     elseif event == "TRADE_MONEY_CHANGED" then
+        if isTradeFinalizing then
+            ns.DebugLog("[DEBUG] TRADE_MONEY_CHANGED ignored (finalizing).")
+            return -- <<<<< GUARD: Do not update state after acceptance starts
+        end
+        ns.DebugLog("[DEBUG] TRADE_MONEY_CHANGED - Updating...")
         UpdateMoney()
-        -- print("[DEBUG] TRADE_MONEY_CHANGED")
 
     elseif event == "TRADE_ACCEPT_UPDATE" then
-        for i = 1, 7 do
-            UpdateItemInfo(i, "Player", CurrentTrade().playerItems)
-            UpdateItemInfo(i, "Target", CurrentTrade().targetItems)
+        print("|cffcccc00[Trade Debug] TRADE_ACCEPT_UPDATE received.|r")
+
+        -- Prevent running updates/debug call multiple times if both players accept very quickly
+        -- or if the event fires multiple times for one acceptance.
+        if isTradeFinalizing then
+            print("|cffcccc00[Trade Debug] Already finalizing, skipping redundant update/debug call.|r")
+            return
         end
-        UpdateMoney()
-        -- print("[DEBUG] TRADE_ACCEPT_UPDATE")
-    end
-end
+
+        -- Set the flag *before* the final update to lock the state
+        isTradeFinalizing = true
+        print("|cffcccc00[Trade Debug] Setting isTradeFinalizing = true. State frozen.|r")
+
+        -- Perform one last data update *right now* to capture the state at acceptance
+        print("|cffcccc00[Trade Debug] Performing final data update...|r")
+        local trade = CurrentTrade() -- Get current trade object
+        if not trade then
+            print("|cffff0000[Trade Debug] Error: CURRENT_TRADE is nil during TRADE_ACCEPT_UPDATE final update!|r")
+            -- Attempt to reset to handle error state
+            Reset("Error - nil trade on accept update")
+            return
+        end
+        -- Update using the existing trade object's tables
+        for i = 1, 7 do -- Use appropriate max trade slot number (e.g., 7 for Retail, 6 for Classic?)
+            UpdateItemInfo(i, "Player", trade.playerItems)
+            UpdateItemInfo(i, "Target", trade.targetItems)
+        end
+        UpdateMoney() -- Ensure money is also captured
+
+        -- Optional: Short delay to allow async ItemInfo lookups triggered above a tiny bit more time.
+        -- Might help resolve itemIDs, but isn't guaranteed. The robust UpdateItemInfo is more important.
+        -- C_Timer.After(0.1, function() -- Very short delay
+
+        -- Run the debug check with the *now frozen* state
+        print("|cffcccc00[Trade Debug] Final data updated. Calling HandleTradeOK in DEBUG mode...|r")
+        -- Use pcall for safety, especially during debugging phases
+        local success, err = pcall(HandleTradeOK, true) -- Pass true for isDebug
+        if not success then
+            print("|cffff0000[Trade Debug] Error during HandleTradeOK (DEBUG) execution:|r", err)
+        end
+        print("|cffcccc00[Trade Debug] Finished HandleTradeOK (DEBUG) execution. State is now locked.|r")
+
+        -- end) -- End of optional C_Timer.After
+
+    end -- End of event type checks
+end -- End of TradeAPI:OnEvent
 
 -- findMatchingAuction picks the last-created auction that involves 'me' and targetName
 -- we pick the last-created auction so both parties agree on which one should be prefilled
