@@ -257,15 +257,16 @@ function TradeAPI:OnEvent(event, ...)
         -- print("[DEBUG] MAIL_CLOSED")
 
     elseif event == "UI_ERROR_MESSAGE" then
-        local _, arg2 = ...
-        if (arg2 == ERR_TRADE_BAG_FULL or
-                arg2 == ERR_TRADE_TARGET_BAG_FULL or
-                arg2 == ERR_TRADE_MAX_COUNT_EXCEEDED or
-                arg2 == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED or
-                arg2 == ERR_TRADE_TARGET_DEAD or
-                arg2 == ERR_TRADE_TOO_FAR) then
+        local arg1, arg2 = ...
+        print(arg1)
+        if (arg1 == ERR_TRADE_BAG_FULL or
+                arg1 == ERR_TRADE_TARGET_BAG_FULL or
+                arg1 == ERR_TRADE_MAX_COUNT_EXCEEDED or
+                arg1 == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED or
+                arg1 == ERR_TRADE_TARGET_DEAD or
+                arg1 == ERR_TRADE_TOO_FAR) then
             -- Original logic (likely called Reset)
-            Reset("trade failed error: " .. arg2) -- Call original Reset
+            Reset("trade failed error: " .. arg1) -- Call original Reset
             self.isTradeFinalizing = false        -- <<< Manually reset flag >>>
         end
 
