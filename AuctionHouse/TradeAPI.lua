@@ -13,10 +13,13 @@ function TradeAPI:OnInitialize()
     -- Add trade show timestamp tracking
     self.lastTradeShowTime = 0
 
+    -- Initialize the state locking flag <<< ADD THIS LINE >>>
+    self.isTradeFinalizing = false
+
     -- Register events
     self.eventFrame:RegisterEvent("MAIL_SHOW")
     self.eventFrame:RegisterEvent("MAIL_CLOSED")
-    self.eventFrame:RegisterEvent("UI_INFO_MESSAGE") 
+    self.eventFrame:RegisterEvent("UI_INFO_MESSAGE")
     self.eventFrame:RegisterEvent("UI_ERROR_MESSAGE")
     self.eventFrame:RegisterEvent("TRADE_SHOW")
     self.eventFrame:RegisterEvent("TRADE_MONEY_CHANGED")
@@ -31,7 +34,10 @@ function TradeAPI:OnInitialize()
         if event == "TRADE_SHOW" and targetName then
             -- Delay slightly, workaround for items sometimes not getting tracked
             C_Timer:After(1, function()
-                self:TryPrefillTradeWindow(targetName)
+                -- Ensure TryPrefillTradeWindow exists on self if called like this
+                if self.TryPrefillTradeWindow then
+                    self:TryPrefillTradeWindow(targetName)
+                end
             end)
         end
     end)
@@ -241,64 +247,95 @@ end
 
 -- Single event handler function
 function TradeAPI:OnEvent(event, ...)
+
     if event == "MAIL_SHOW" then
-        -- print("[DEBUG] MAIL_SHOW")
+        -- Original logic (potentially includes Reset)
+        -- If original Reset was called here, the flag needs manual reset too
+        if self.isTradeFinalizing then self.isTradeFinalizing = false end -- Reset flag if needed
 
     elseif event == "MAIL_CLOSED" then
         -- print("[DEBUG] MAIL_CLOSED")
 
     elseif event == "UI_ERROR_MESSAGE" then
-        local _, arg2 = ...
-        if (arg2 == ERR_TRADE_BAG_FULL or
-            arg2 == ERR_TRADE_TARGET_BAG_FULL or
-            arg2 == ERR_TRADE_MAX_COUNT_EXCEEDED or
-            arg2 == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED or
-            arg2 == ERR_TRADE_TARGET_DEAD or
-            arg2 == ERR_TRADE_TOO_FAR) then
-            -- print("[DEBUG] Trade failed")
-            Reset("trade failed "..arg2)  -- trade failed
+        local arg1, arg2 = ...
+        print(arg1)
+        if (arg1 == ERR_TRADE_BAG_FULL or
+                arg1 == ERR_TRADE_TARGET_BAG_FULL or
+                arg1 == ERR_TRADE_MAX_COUNT_EXCEEDED or
+                arg1 == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED or
+                arg1 == ERR_TRADE_TARGET_DEAD or
+                arg1 == ERR_TRADE_TOO_FAR) then
+            -- Original logic (likely called Reset)
+            Reset("trade failed error: " .. arg1) -- Call original Reset
+            self.isTradeFinalizing = false        -- <<< Manually reset flag >>>
         end
 
     elseif event == "UI_INFO_MESSAGE" then
-        local _, arg2 = ...
-        if (arg2 == ERR_TRADE_CANCELLED) then
-            -- print("[DEBUG] Trade cancelled")
-            local timeSinceShow = GetTime() - self.lastTradeShowTime
+        local arg1, arg2 = ...
+        if (arg1 == ERR_TRADE_CANCELLED) then
+            -- Original logic (likely called Reset and printed messages)
+            local timeSinceShow = GetTime() - (self.lastTradeShowTime or 0)
             if timeSinceShow < 0.5 then
                 print(ChatPrefixError() .. L[" The Go Again addon requires that both players target each other before starting a trade."])
             end
-            Reset("trade cancelled")
-        elseif (arg2 == ERR_TRADE_COMPLETE) then
-            HandleTradeOK()
+            Reset("trade cancelled")          -- Call original Reset
+            self.isTradeFinalizing = false    -- <<< Manually reset flag >>>
+
+        elseif (arg1 == ERR_TRADE_COMPLETE) then
+            -- Trade completed successfully
+            -- Call original HandleTradeOK. It operates on the state frozen by TRADE_ACCEPT_UPDATE.
+            HandleTradeOK()                   -- Call original HandleTradeOK
+            -- Assume original HandleTradeOK calls Reset internally OR we reset here
+            self.isTradeFinalizing = false    -- <<< Manually reset flag AFTER HandleTradeOK >>>
+            -- If HandleTradeOK doesn't call Reset, you might need Reset("TRADE_COMPLETE") here too.
         end
 
     elseif event == "TRADE_SHOW" then
+        -- Original logic (likely called Reset and set targetName/time)
+        Reset("TRADE_SHOW")               -- Call original Reset
+        self.isTradeFinalizing = false    -- <<< Manually reset flag >>>
         CurrentTrade().targetName = GetUnitName("NPC", true)
         self.lastTradeShowTime = GetTime()
 
     elseif event == "TRADE_PLAYER_ITEM_CHANGED" then
+        if self.isTradeFinalizing then return end -- <<< ADD GUARD: Check flag >>>
+        -- Original logic below
         local arg1 = ...
         UpdateItemInfo(arg1, "Player", CurrentTrade().playerItems)
         ns.DebugLog("[DEBUG] Player ITEM_CHANGED", arg1)
 
     elseif event == "TRADE_TARGET_ITEM_CHANGED" then
+        if self.isTradeFinalizing then return end -- <<< ADD GUARD: Check flag >>>
+        -- Original logic below
         local arg1 = ...
         UpdateItemInfo(arg1, "Target", CurrentTrade().targetItems)
         ns.DebugLog("[DEBUG] Target ITEM_CHANGED", arg1)
 
     elseif event == "TRADE_MONEY_CHANGED" then
+        if self.isTradeFinalizing then return end -- <<< ADD GUARD: Check flag >>>
+        -- Original logic below
         UpdateMoney()
-        -- print("[DEBUG] TRADE_MONEY_CHANGED")
+        -- Original print("[DEBUG] TRADE_MONEY_CHANGED")
 
     elseif event == "TRADE_ACCEPT_UPDATE" then
-        for i = 1, 7 do
-            UpdateItemInfo(i, "Player", CurrentTrade().playerItems)
-            UpdateItemInfo(i, "Target", CurrentTrade().targetItems)
+        -- Prevent redundant runs if event fires multiple times
+        if self.isTradeFinalizing then return end -- <<< ADD GUARD: Check flag >>>
+
+        -- Set the flag to lock the state *before* the final update
+        self.isTradeFinalizing = true        -- <<< SET FLAG >>>
+        -- Optional: print("Trade state finalizing...")
+
+        -- Perform one last data update *right now* using original functions
+        local trade = CurrentTrade()
+        if not trade then self.isTradeFinalizing = false; Reset("Error - nil trade on accept update"); return end
+        for i = 1, 7 do -- Adjust slot count if needed
+            UpdateItemInfo(i, "Player", trade.playerItems)
+            UpdateItemInfo(i, "Target", trade.targetItems)
         end
         UpdateMoney()
         -- print("[DEBUG] TRADE_ACCEPT_UPDATE")
-    end
-end
+    end -- End of event type checks
+end -- End of TradeAPI:OnEvent
 
 -- findMatchingAuction picks the last-created auction that involves 'me' and targetName
 -- we pick the last-created auction so both parties agree on which one should be prefilled

@@ -223,6 +223,7 @@ local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, i
     return msg, msgChat, extraMsg
 end
 
+local lastCompleteShown = {}
 local function OnAuctionAddOrUpdate(payload)
     local auction = payload.auction
     if not auction then
@@ -250,10 +251,11 @@ local function OnAuctionAddOrUpdate(payload)
             return
         end
     elseif payload.source == "complete" then
-        -- For complete, we want to show messages for both buyer and owner
-        if auction.buyer ~= me and auction.owner ~= me then
+        local id = auction.id or (auction.itemID .. ":" .. (auction.buyer or "") .. ":" .. (auction.owner or ""))
+        if lastCompleteShown[id] then
             return
         end
+        lastCompleteShown[id] = true
     else
         if auction.owner ~= me then
             return
