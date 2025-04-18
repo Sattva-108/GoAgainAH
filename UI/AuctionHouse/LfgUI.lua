@@ -304,7 +304,7 @@ local function UpdateEntry(i, offset, button, entry)
     -- Set position of livestreamContainer dynamically via Lua
     if button.livestreamContainer then
         -- Set point for livestreamContainer relative to the roleContainer
-        button.livestreamContainer:SetPoint("LEFT", button.roleContainer, "RIGHT", 32, 0)
+        button.livestreamContainer:SetPoint("LEFT", button.roleContainer, "RIGHT", 32, 3)
     end
 
     -- Set position of raidContainer relative to livestreamContainer
@@ -315,6 +315,16 @@ local function UpdateEntry(i, offset, button, entry)
     -- Raid command
     button.raidContainer.editBox:SetText(raid)
     button.raidContainer.editBox:SetCursorPosition(0)
+
+    local raidEditBox = button.raidContainer.editBox
+
+    -- Create and set the middle border texture
+    local middleTexture = raidEditBox:CreateTexture(nil, "BORDER")
+    middleTexture:SetTexture("Interface\\Common\\Common-Input-Border")
+    middleTexture:SetSize(10, 20)
+    middleTexture:SetPoint("LEFT", raidEditBox, "LEFT", 3, 0)  -- Positioning between the left and right
+    middleTexture:SetPoint("RIGHT", raidEditBox, "RIGHT", -3, 0)  -- Positioning between the left and right
+    middleTexture:SetTexCoord(0.0625, 0.9375, 0, 0.625)
 
     -- Add OnClick handler for whisper button
     button.whisperButton:SetScript("OnClick", function()
