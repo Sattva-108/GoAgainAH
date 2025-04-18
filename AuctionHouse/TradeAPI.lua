@@ -258,7 +258,6 @@ function TradeAPI:OnEvent(event, ...)
 
     elseif event == "UI_ERROR_MESSAGE" then
         local arg1, arg2 = ...
-        print(arg1)
         if (arg1 == ERR_TRADE_BAG_FULL or
                 arg1 == ERR_TRADE_TARGET_BAG_FULL or
                 arg1 == ERR_TRADE_MAX_COUNT_EXCEEDED or
