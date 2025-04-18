@@ -421,54 +421,51 @@
                         </Anchor>
                     </Anchors>
                 </Texture>
-                
-                <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-					<Size>
-						<AbsDimension x="10" y="32" />
-					</Size>
-					<Anchors>
-						<Anchor point="LEFT">
-							<Offset>
-								<AbsDimension x="34" y="2" />
-							</Offset>
-						</Anchor>
-					</Anchors>
-					<TexCoords left="0" right="0.078125" top="0" bottom="1" />
-				</Texture>
-				<Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-					<Size>
-						<AbsDimension x="10" y="32" />
-					</Size>
-					<Anchors>
-						<Anchor point="RIGHT">
-							<Offset>
-								<AbsDimension x="0" y="2" />
-							</Offset>
-						</Anchor>
-					</Anchors>
-					<TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
-				</Texture>
-				<Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-					<Size>
-						<AbsDimension x="10" y="32" />
-					</Size>
-					<Anchors>
-						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
-							<Offset>
-								<AbsDimension x="0" y="0" />
-							</Offset>
-						</Anchor>
-						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
-							<Offset>
-								<AbsDimension x="0" y="0" />
-							</Offset>
-						</Anchor>
-					</Anchors>
-					<TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
-				</Texture>
+
+                <!-- Left Cap -->
+                <Texture name="ItemNameFrameLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                    <Size>
+                        <AbsDimension x="10" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT">
+                            <Offset>
+                                <AbsDimension x="34" y="2" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <TexCoords left="0" right="0.078125" top="0" bottom="1" />
+                </Texture>
+
+                <!-- Right Cap -->
+                <Texture name="ItemNameFrameRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                    <Size>
+                        <AbsDimension x="10" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="RIGHT">
+                            <Offset>
+                                <AbsDimension x="0" y="2" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+                </Texture>
+
+                <!-- Middle Stretchable Part -->
+                <Texture name="ItemNameFrameMiddle" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                    <Size>
+                        <AbsDimension x="510" y="32" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="ItemNameFrameLeft" relativePoint="RIGHT" />
+                        <Anchor point="RIGHT" relativeTo="ItemNameFrameRight" relativePoint="LEFT" />
+                    </Anchors>
+                    <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+                </Texture>
 
 
-				<!-- row contents -->
+                <!-- row contents -->
                 <Texture parentKey="onlineIcon">
                     <Size>
                         <AbsDimension x="9" y="9"/>
@@ -496,79 +493,101 @@
 
 				<!-- whisper button -->
 
-                <FontString parentKey="level" text="60" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                <FontString parentKey="level" name="$parentLevel" text="60" inherits="GameFontHighlightSmall" justifyH="LEFT">
                     <Size>
                         <AbsDimension x="16" y="32" />
                     </Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.name" relativePoint="RIGHT" x="30" y="0" />
+                        <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="28" y="0"/>
+                            </Offset>
+                        </Anchor>
                     </Anchors>
                 </FontString>
-				<FontString parentKey="colab" text="Ragefire Chasm" inherits="GameFontHighlightSmall" justifyH="LEFT">
-					<Size>
-						<AbsDimension x="135" y="32" />
-					</Size>
+
+
+                <FontString parentKey="colab" name="$parentColab" text="Ragefire Chasm" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="135" y="32" />
+                    </Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.level" relativePoint="RIGHT" x="4" y="0" />
+                        <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="8" y="0"/>
+                            </Offset>
+                        </Anchor>
                     </Anchors>
-				</FontString>
-				<FontString parentKey="viewers" text="15 645" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-					<Size>
-						<AbsDimension x="35" y="32" />
-					</Size>
+                </FontString>
+
+
+                <FontString parentKey="viewers" text="15 645" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                    <Size>
+                        <AbsDimension x="35" y="32" />
+                    </Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.colab" relativePoint="RIGHT" x="24" y="0" />
+                        <Anchor point="LEFT" relativeTo="$parentColab" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="15" y="0"/>
+                            </Offset>
+                        </Anchor>
                     </Anchors>
-				</FontString>
-			</Layer>
+                </FontString>
+
+
+            </Layer>
 		</Layers>
 		<Frames>
-			<Frame parentKey="roleContainer" inherits="LfgDungeonRoleSelectionMiniTemplate">
+            <Frame parentKey="roleContainer" inherits="LfgDungeonRoleSelectionMiniTemplate">
                 <Anchors>
-                    <Anchor point="RIGHT" relativeKey="$parent.colab" relativePoint="RIGHT" x="45" y="0" />
-                </Anchors>
-			</Frame>
+                    <Anchor point="LEFT">
+                        <Offset>
+                            <AbsDimension x="300" y="0" />
+                        </Offset>
+                    </Anchor>
 
-			<Frame parentKey="livestreamContainer">
-				<Size>
-					<AbsDimension x="74" y="32" />
-				</Size>
-                <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.viewers" relativePoint="RIGHT" x="12" y="0" />
                 </Anchors>
-				<Frames>
-					<EditBox parentKey="editBox" inherits="InputBoxTemplate" autoFocus="false">
-						<Size>
-							<AbsDimension x="74" y="20" />
-						</Size>
-						<Anchors>
-							<Anchor point="CENTER" />
-						</Anchors>
-						<FontString inherits="GameFontHighlightSmall" />
-					</EditBox>
-				</Frames>
-			</Frame>
-			<Frame parentKey="raidContainer">
-				<Size>
-					<AbsDimension x="74" y="32" />
-				</Size>
-                <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.livestreamContainer" relativePoint="RIGHT" x="5" y="0" />
-                </Anchors>
-				<Frames>
-					<EditBox parentKey="editBox" inherits="InputBoxTemplate" autoFocus="false">
-						<Size>
-							<AbsDimension x="74" y="20" />
-						</Size>
-						<Anchors>
-							<Anchor point="CENTER" />
-						</Anchors>
-						<FontString inherits="GameFontHighlightSmall" />
-					</EditBox>
-				</Frames>
-			</Frame>
+            </Frame>
 
-			<Button parentKey="item">
+
+            <Frame parentKey="livestreamContainer">
+                <Size>
+                    <AbsDimension x="74" y="32" />
+                </Size>
+                <Frames>
+                    <EditBox parentKey="editBox" inherits="InputBoxTemplate" autoFocus="false">
+                        <Size>
+                            <AbsDimension x="74" y="20" />
+                        </Size>
+                        <Anchors>
+                            <Anchor point="CENTER" />
+                        </Anchors>
+                        <FontString inherits="GameFontHighlightSmall" />
+                    </EditBox>
+                </Frames>
+            </Frame>
+            <Frame parentKey="raidContainer">
+                <Size>
+                    <AbsDimension x="74" y="32" />
+                </Size>
+                <Anchors>
+                    <!-- No anchors here since we're handling positioning dynamically with Lua -->
+                    <Anchor point="LEFT" />
+                </Anchors>
+                <Frames>
+                    <EditBox parentKey="editBox" inherits="InputBoxTemplate" autoFocus="false">
+                        <Size>
+                            <AbsDimension x="74" y="20" />
+                        </Size>
+                        <Anchors>
+                            <Anchor point="CENTER" />
+                        </Anchors>
+                        <FontString inherits="GameFontHighlightSmall" />
+                    </EditBox>
+                </Frames>
+            </Frame>
+
+            <Button parentKey="item">
 				<Size>
 					<AbsDimension x="32" y="32" />
 				</Size>

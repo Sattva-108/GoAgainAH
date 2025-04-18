@@ -301,6 +301,17 @@ local function UpdateEntry(i, offset, button, entry)
     button.livestreamContainer.editBox:SetText(livestream)
     button.livestreamContainer.editBox:SetCursorPosition(0)
 
+    -- Set position of livestreamContainer dynamically via Lua
+    if button.livestreamContainer then
+        -- Set point for livestreamContainer relative to the roleContainer
+        button.livestreamContainer:SetPoint("LEFT", button.roleContainer, "RIGHT", 32, 0)
+    end
+
+    -- Set position of raidContainer relative to livestreamContainer
+    if button.raidContainer then
+        button.raidContainer:SetPoint("LEFT", button.livestreamContainer, "RIGHT", 5, 0)  -- Adjusted offset
+    end
+
     -- Raid command
     button.raidContainer.editBox:SetText(raid)
     button.raidContainer.editBox:SetCursorPosition(0)
