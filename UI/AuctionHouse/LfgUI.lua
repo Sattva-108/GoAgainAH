@@ -57,12 +57,14 @@ end
 
 local function AddPartyMemberToTooltip(unit)
     local name = UnitName(unit)
-    if not name then
-        return
-    end
+    if not name then return end
 
     local role = UnitGroupRolesAssigned(unit)
-    local roleName = _G[role]
+    if not role or role == "NONE" then
+        return -- Do nothing if no role assigned
+    end
+
+    local roleName = ""
     if role == "DAMAGER" then
         roleName = L["Dps"]
     elseif role == "TANK" then
@@ -70,8 +72,10 @@ local function AddPartyMemberToTooltip(unit)
     elseif role == "HEALER" then
         roleName = L["Healer"]
     end
-    GameTooltip:AddLine(name .. " " .. roleName, 1, 1, 1)
+
+    GameTooltip:AddLine(name .. " - " .. roleName, 1, 1, 1)
 end
+
 
 local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, copy)
     GameTooltip:ClearLines()
@@ -115,10 +119,10 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
         if entry then
             -- Gather party members first
             local partyMembers = {}
-            if IsInGroup() and UnitInParty(entry.name) then
+            if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) and UnitInParty(entry.name) then
                 table.insert(partyMembers, {unit = "player", name = UnitName("player")})
 
-                for i = 1, GetNumGroupMembers() do
+                for i = 1, GetNumPartyMembers() do
                     local unit = "party" .. i
                     local name = UnitName(unit)
                     if name then

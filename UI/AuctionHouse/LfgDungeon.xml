@@ -20,7 +20,7 @@
                 parentArray="roleButtons"
                 inherits="LfgDungeonRoleButtonTemplate">
                 <Anchors>
-                    <Anchor point="RIGHT" relativeKey="$parent.healButton" relativePoint="LEFT" x="-20" y="0" />
+                    <Anchor point="RIGHT" relativeKey="$parent.healButton" relativePoint="LEFT" x="30" y="0" />
                 </Anchors>
                 <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
                     <TexCoords left="0" right="0.26171875" top="0.26171875" bottom="0.5234375" />
@@ -30,13 +30,18 @@
                 parentArray="roleButtons"
                 inherits="LfgDungeonRoleButtonTemplate">
                 <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.healButton" relativePoint="RIGHT" x="20" y="0" />
+                    <Anchor point="LEFT" relativeKey="$parent.healButton" relativePoint="RIGHT" x="-30" y="0" />
                 </Anchors>
                 <NormalTexture file="Interface\LFGFrame\UI-LFG-ICON-ROLES">
                     <TexCoords left="0.26171875" right="0.5234375" top="0.26171875" bottom="0.5234375" />
                 </NormalTexture>
             </Button>
         </Frames>
+        <Scripts>
+            <OnLoad>
+                self.roleButtons = { self.tankButton, self.healButton, self.dpsButton };
+            </OnLoad>
+        </Scripts>
     </Frame>
 
     <Button name="LfgDungeonRoleButtonTemplate" virtual="true" motionScriptsWhileDisabled="true">
@@ -104,6 +109,11 @@
                 </NormalTexture>
             </Button>
         </Frames>
+        <Scripts>
+            <OnLoad>
+                self.roleButtons = { self.tankButton, self.healButton, self.dpsButton };
+            </OnLoad>
+        </Scripts>
     </Frame>
 
     <Button name="LfgDungeonRoleMiniButtonTemplate" virtual="true" motionScriptsWhileDisabled="true">

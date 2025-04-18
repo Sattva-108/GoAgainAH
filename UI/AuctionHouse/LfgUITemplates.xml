@@ -388,7 +388,7 @@
                 <FontString name="OFLFG_ColabDescription" inherits="GameFontHighlightSmall" wordwrap="true" justifyH="LEFT" text="L_COLAB_SET_REQUIREMENTS">
                     <Size x="170" y="0"/>
                     <Anchors>
-                        <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="6" y="-5" />
+                        <Anchor x="115" y="-115" point="TOP" relativePoint="TOPLEFT" />
                     </Anchors>
                 </FontString>
             </Layer>
