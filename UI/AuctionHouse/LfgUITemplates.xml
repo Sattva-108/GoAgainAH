@@ -491,8 +491,6 @@
 					</Anchors>
 				</FontString>
 
-				<!-- whisper button -->
-
                 <FontString parentKey="level" name="$parentLevel" text="60" inherits="GameFontHighlightSmall" justifyH="LEFT">
                     <Size>
                         <AbsDimension x="16" y="32" />
