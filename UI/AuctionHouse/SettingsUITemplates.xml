@@ -393,19 +393,13 @@
 			</Layer>
 		</Layers>
 		<Scripts>
-			<OnLoad>
-				self:SetPushedTextOffset(0, 0);
-			</OnLoad>
-			<OnClick>
-				OFAuctionFrameFilter_OnClick(self, button, down);
+            <OnLoad>
+                self:SetPushedTextOffset(1, -1);
+            </OnLoad>
+            <OnClick>
+                OFAuctionFrameFilter_OnClick(self, button, down);
                 OFAuctionFrameBrowse_Search()
-			</OnClick>
-			<OnMouseDown>
-				self.Text:AdjustPointsOffset(1, -1);
-			</OnMouseDown>
-			<OnMouseUp>
-				self.Text:AdjustPointsOffset(-1, 1);
-			</OnMouseUp>
+            </OnClick>
 		</Scripts>
 		<NormalTexture name="$parentNormalTexture" file="Interface\AuctionFrame\UI-AuctionFrame-FilterBg">
 			<TexCoords left="0" right="0.53125" top="0" bottom="0.625" />
