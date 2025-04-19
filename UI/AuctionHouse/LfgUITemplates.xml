@@ -173,7 +173,7 @@
             <CheckButton name="OFLFG_RPTogetherCheck" inherits="UICheckButtonTemplate">
                 <Size x="24" y="24" />
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="0" y="-55" />
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="0" y="-50" />
                 </Anchors>
                 <Scripts>
                     <OnLoad>
@@ -202,7 +202,7 @@
             <Button name="OFLFG_DungeonTypeButton" inherits="UIPanelButtonTemplate" text="L_SELECT_DUNGEONS">
                 <Size x="130" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonCheck" relativePoint="BOTTOMLEFT" x="10" y="-4"/>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonCheck" relativePoint="BOTTOMLEFT" x="25" y="-10"/>
                 </Anchors>
                 <Scripts>
                     <OnClick function="OFLFG_DungeonTypeButton_OnClick"/>
@@ -211,7 +211,7 @@
 
             <Frame name="OFLFG_RoleSelection" inherits="LfgDungeonRoleSelectionTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonTypeButton" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_DungeonTypeButton" relativePoint="BOTTOMLEFT" x="-10" y="-8"/>
                 </Anchors>
             </Frame>
 
@@ -311,9 +311,15 @@
 
             <!-- Block Users Button -->
             <Button name="OFLFG_BlockUsersButton" inherits="UIPanelButtonTemplate" text="L_BLOCK_USERS">
-                <Size x="120" y="18" />
+                <Size>
+                    <AbsDimension x="191" y="20" />
+                </Size>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFLFG_NoMinViewersCheck" relativePoint="BOTTOMLEFT" x="0" y="-5" />
+                    <Anchor point="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="18" y="65" />
+                        </Offset>
+                    </Anchor>
                 </Anchors>
             </Button>
 
