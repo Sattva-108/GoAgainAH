@@ -586,64 +586,78 @@
             </Frame>
 
             <Button parentKey="item">
-				<Size>
-					<AbsDimension x="32" y="32" />
-				</Size>
-				<Anchors>
-					<Anchor point="TOPLEFT">
-					</Anchor>
-				</Anchors>
-				<Layers>
-					<Layer level="OVERLAY">
-						<Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
-							<Size x="32" y="32" />
-							<Anchors>
-								<Anchor point="CENTER" />
-							</Anchors>
-						</Texture>
-					</Layer>
-				</Layers>
-				<Scripts>
-					<OnEnter>
-						self:GetParent():LockHighlight();
-						OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
-					</OnEnter>
-					<OnLeave>
-						OFAuctionBrowseFrame_CheckUnlockHighlight(self, "owner", GetEffectiveAuctionsScrollFrameOffset());
-						OFLFGSquare_OnLeave();
-					</OnLeave>
-					<OnUpdate>
-						if ( GameTooltip:IsOwned(self) ) then
-							OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
-						end
-					</OnUpdate>
-				</Scripts>
-				<NormalTexture parentKey="normalTexture" file="Interface\Buttons\UI-Quickslot2">
-					<Size>
-						<AbsDimension x="60" y="60" />
-					</Size>
-					<Anchors>
-						<Anchor point="CENTER">
-							<Offset>
-								<AbsDimension x="0" y="0" />
-							</Offset>
-						</Anchor>
-					</Anchors>
-				</NormalTexture>
-				<NormalTexture parentKey="raceTexture" alphaMode="BLEND">
-					<Size>
-						<AbsDimension x="32" y="32" />
-					</Size>
-					<Anchors>
-						<Anchor point="CENTER">
-							<Offset>
-								<AbsDimension x="0" y="0" />
-							</Offset>
-						</Anchor>
-					</Anchors>
-				</NormalTexture>
-				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
-			</Button>
+                <Size>
+                    <AbsDimension x="32" y="32" />
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <!-- This is your border texture, currently hidden -->
+                        <Texture parentKey="IconBorder" hidden="true" file="Interface\Common\WhiteIconFrame">
+                            <Size x="32" y="32" />
+                            <Anchors>
+                                <Anchor point="CENTER" />
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        -- 'self' here refers to the Button frame.
+                        -- 'self.IconBorder' refers to the Texture with parentKey="IconBorder".
+
+                        -- Make the border texture visible
+                        self.IconBorder:Show();
+
+                        local grayLevel = 0.6; -- Value between 0 (black) and 1 (white)
+                        self.IconBorder:SetVertexColor(grayLevel, grayLevel, grayLevel);
+
+                        -- Optional: If you wanted to change the texture file dynamically:
+                        -- self.IconBorder:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Border");
+                    </OnLoad>
+                    <OnEnter>
+                        self:GetParent():LockHighlight();
+                        OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+                    </OnEnter>
+                    <OnLeave>
+                        OFAuctionBrowseFrame_CheckUnlockHighlight(self, "owner", GetEffectiveAuctionsScrollFrameOffset());
+                        OFLFGSquare_OnLeave();
+                    </OnLeave>
+                    <OnUpdate>
+                        if ( GameTooltip:IsOwned(self) ) then
+                        OFLFGSquare_OnEnter(self, "owner", self:GetParent():GetID() + GetEffectiveAuctionsScrollFrameOffset());
+                        end
+                    </OnUpdate>
+                </Scripts>
+                <NormalTexture parentKey="normalTexture" file="Interface\Buttons\UI-Quickslot2">
+                    <Size>
+                        <AbsDimension x="60" y="60" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="CENTER">
+                            <Offset>
+                                <AbsDimension x="0" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </NormalTexture>
+                <NormalTexture parentKey="raceTexture" alphaMode="BLEND">
+                    <Size>
+                        <AbsDimension x="27" y="27" />
+                    </Size>
+                    <Anchors>
+                        <Anchor point="CENTER">
+                            <Offset>
+                                <AbsDimension x="0" y="0" />
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </NormalTexture>
+                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+            </Button>
 			
 			<!-- Whisper button -->
 			<Button parentKey="whisperButton" text="" inherits="UIPanelButtonTemplate">

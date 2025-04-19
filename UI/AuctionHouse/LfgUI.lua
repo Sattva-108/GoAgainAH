@@ -331,11 +331,11 @@ local function UpdateEntry(i, offset, button, entry)
         ChatFrame_SendTell(entry.name)
     end)
 
-    -- Use built-in race texture with texcoords
-    if entry.race then
-        local texture = string.format("Interface\\Icons\\Achievement_Character_%s_Male", entry.race)
-        button.item.raceTexture:SetTexture(texture)
+    if entry.class and CLASS_ICON_TCOORDS[entry.class] then
+        button.item.raceTexture:SetTexture("Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES")
+        button.item.raceTexture:SetTexCoord(unpack(CLASS_ICON_TCOORDS[entry.class]))
     else
+        ns.DebugLog("Invalid class or missing texcoords for:", entry.class)
         button.item.raceTexture:SetTexture(nil)
     end
     button.item.raceTexture:SetAlpha(entry.meetsRequirements and 1.0 or 0.6)
