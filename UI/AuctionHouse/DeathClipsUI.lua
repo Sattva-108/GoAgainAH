@@ -1,6 +1,14 @@
 local _, ns = ...
 local L = ns.L
 
+-- Example hardcoded entries (now with deathCause instead of clip)
+ns.HardcodedDeathClips = {
+    {ts=1736517526, streamer="Neeko2lo", race="орк", level=38, class="HUNTER", where="Unknown", deathCause="Падение"},
+    {ts=1736485126, streamer="ThatSelm", race="нежить", level=26, class="PRIEST", where="Unknown", deathCause="Утопление"},
+    -- ... other entries ...
+}
+
+
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
 local CLIPS_BUTTON_HEIGHT = 37
@@ -88,14 +96,11 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     ResizeEntry(button, numBatchClips, totalClips)
 
     local name = _G[buttonName.."Name"]
-    if clip.characterName and clip.streamer then
-        name:SetText(string.format("%s (%s)", clip.characterName, clip.streamer))
-    elseif clip.streamer then
-        name:SetText(clip.streamer)
-    elseif clip.characterName then
-        name:SetText(clip.characterName)
+    -- To this:
+    if clip.characterName then
+        name:SetText(clip.characterName)  -- Just show character name
     else
-        name:SetText(L["Unknown"])
+        name:SetText("Неизвестно")
     end
 
     local race = _G[buttonName.."Race"]
@@ -138,18 +143,8 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
     where:SetText(whereStr or L["Unknown"])
 
-    local clipText = _G[buttonName.."Clip"]
-    local clipUrl
-    if clip.id == nil then
-        -- hardcoded clip
-        clipUrl = clip.clip
-    else
-        -- live clip, admin can override the clip url
-        clipUrl = clip.clip or ns.GetClipUrl(clip.streamer, clip.ts)
-    end
-    clipUrl = clipUrl or L["No Clip"]
-    clipText:SetText(clipUrl)
-    clipText:SetCursorPosition(0)
+    local clipText = _G[buttonName.."ClipText"]
+    clipText:SetText(clip.deathCause or "Неизвестно")
 
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
     local offlineText = _G[buttonName.."RatingOfflineText"]
@@ -202,6 +197,9 @@ function OFAuctionFrameDeathClips_Update()
     local clips = {}
     for _, clip in pairs(ns.GetLiveDeathClips()) do
         table.insert(clips, clip)
+    end
+    for i = 1, #ns.HardcodedDeathClips do
+        table.insert(clips, ns.HardcodedDeathClips[i])
     end
     local state = ns.GetDeathClipReviewState()
 

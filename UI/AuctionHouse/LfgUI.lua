@@ -618,6 +618,7 @@ end
 
 function OFAuctionFrameLFG_OnLoad()
     OFAuctionFrame_SetSort("lfg", "colab", false)
+    -- TODO this button in LFG is not functional at all.
     OFLFG_BlockUsersButton:Disable()
 
     -- Create the dungeon scroll list

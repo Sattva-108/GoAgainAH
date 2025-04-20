@@ -1,5 +1,59 @@
 local _, ns = ...
 
+local races = {
+    [1] = "человек",
+    [2] = "орк",
+    [3] = "дворф",
+    [4] = "ночной эльф",
+    [5] = "нежить",
+    [6] = "таурен",
+    [7] = "гном",
+    [8] = "тролль",
+    [9] = "гоблин",
+    [10] = "син'дорей",
+    [11] = "дреней",
+    [12] = "ворген",
+    [13] = "нага",
+    [14] = "пандарен (альянс)",
+    [15] = "высший эльф",
+    [16] = "пандарен (орда)",
+    [17] = "ночнорожденный", -- Placeholder for completeness
+    [18] = "эльф бездны",
+    [19] = "вульпера (альянс)",
+    [20] = "вульпера (орда)",
+    [21] = "вульпера (нейтрал)",
+    --[21] = "эльф крови",
+    [22] = "пандарен (нейтрал?)",
+    [23] = "зандалар",
+    [24] = "озаренный дреней",
+    [25] = "эредар",
+    [26] = "дворф Черного Железа",
+    [27] = "драктир"
+}
+
+
+
+-- Define class mappings
+local classes = {
+    [8] = "MAGE",
+    [7] = "SHAMAN",
+    [2] = "PALADIN",
+    [3] = "HUNTER",
+    [1] = "WARRIOR",
+    [4] = "ROGUE",
+    [5] = "PRIEST",
+    [11] = "DRUID",
+    [9] = "WARLOCK" -- Corrected class ID for Warlock
+}
+
+-- Death cause mappings
+local deathCauses = {
+    [1] = "Утопление",
+    [2] = "Падение",
+    [3] = "Лава",
+    [7] = "существом"
+}
+
 ns.GetLiveDeathClips = function()
     if LiveDeathClips == nil then
         LiveDeathClips = {}
@@ -98,4 +152,46 @@ ns.GameEventHandler:On("PLAYER_DEAD", function()
         ns.AuctionHouse:BroadcastDeathClipAdded(clip)
     end)
 
+end)
+
+-- Only keep the ASMSG_HARDCORE_DEATH handler
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("CHAT_MSG_ADDON")
+frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
+    if event == "CHAT_MSG_ADDON" and prefix == "ASMSG_HARDCORE_DEATH" then
+        local parts = {}
+        for part in string.gmatch(message, "([^:]+)") do
+            table.insert(parts, part)
+        end
+
+        local name = parts[1]
+        local raceId = tonumber(parts[2])
+        local classId = tonumber(parts[4])
+        local level = tonumber(parts[5])
+        local zone = parts[6]
+        local deathCauseId = tonumber(parts[7])
+        local mobName = parts[8] or ""
+
+        -- Process death cause
+        local deathCause = deathCauses[deathCauseId] or "Неизвестно"
+        if deathCauseId == 7 and mobName ~= "" then
+            deathCause = mobName  -- Just show the mob name directly
+        end
+
+        -- Create the death clip entry
+        local clip = {
+            id = string.format("%d-%s", GetServerTime(), name),
+            ts = GetServerTime(),
+            streamer = ns.GetTwitchName(name) or name,
+            characterName = name,
+            race = races[raceId] or "Неизвестно",
+            class = classes[classId] or "Неизвестно",
+            level = level,
+            where = zone,
+            deathCause = deathCause,
+        }
+
+        ns.AddNewDeathClips({clip})
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+    end
 end)

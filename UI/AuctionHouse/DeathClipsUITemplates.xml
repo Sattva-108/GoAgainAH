@@ -172,57 +172,30 @@
                     <OnLoad function="OFDeathClipsRatingWidget_OnLoad" />
                 </Scripts>
             </Frame>
-            <EditBox name="$parentClip" autoFocus="false">
-                <Size x="90" y="20" />
+            <Frame name="$parentClip">
+                <Size>
+                    <AbsDimension x="90" y="32" />
+                </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentRating" relativePoint="RIGHT" />
                 </Anchors>
                 <Layers>
-                </Layers>
-                <Frames>
-                </Frames>
-                <Scripts>
-                    <OnEscapePressed function="EditBox_ClearFocus"/>
-                    <OnEditFocusLost>
-                        EditBox_ClearHighlight(self)
-                        self:SetText(self:GetParent().clipUrl)
-                    </OnEditFocusLost>
-                    <OnEditFocusGained>
-                        self:SetText(self:GetParent().clipUrl)
-                        C_Timer:After(0.2, function()
-                            self:SetCursorPosition(0)
-                            self:HighlightText()
-                        end)
-                    </OnEditFocusGained>
-                </Scripts>
-                <FontString inherits="ChatFontSmall" />
-                <Layers>
-                    <Layer level="BACKGROUND">
-                        <Texture name="$parentLeft" file="Interface\Common\Common-Input-Border">
-                            <Size x="8" y="20"/>
+                    <Layer>
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                            <Size>
+                                <AbsDimension x="90" y="32" />
+                            </Size>
                             <Anchors>
-                                <Anchor point="TOPLEFT" x="-5" y="0"/>
+                                <Anchor point="TOPLEFT">
+                                    <Offset>
+                                        <AbsDimension x="0" y="0" />
+                                    </Offset>
+                                </Anchor>
                             </Anchors>
-                            <TexCoords left="0" right="0.0625" top="0" bottom="0.625"/>
-                        </Texture>
-                        <Texture name="$parentRight" file="Interface\Common\Common-Input-Border">
-                            <Size x="8" y="20"/>
-                            <Anchors>
-                                <Anchor point="RIGHT" x="5" y="0"/>
-                            </Anchors>
-                            <TexCoords left="0.9375" right="1.0" top="0" bottom="0.625"/>
-                        </Texture>
-                        <Texture name="$parentMiddle" file="Interface\Common\Common-Input-Border">
-                            <Size x="10" y="20"/>
-                            <Anchors>
-                                <Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT"/>
-                                <Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT"/>
-                            </Anchors>
-                            <TexCoords left="0.0625" right="0.9375" top="0" bottom="0.625"/>
-                        </Texture>
+                        </FontString>
                     </Layer>
                 </Layers>
-            </EditBox>
+            </Frame>
             <Button name="$parentRate" inherits="UIPanelButtonTemplate" text="L_RATE_CLIP">
                 <Size>
                     <AbsDimension x="80" y="20" />
@@ -236,9 +209,9 @@
             </Button>
         </Frames>
         <Scripts>
-            <OnClick>
-                _G[self:GetName().."Clip"]:SetFocus()
-            </OnClick>
+<!--            <OnClick>-->
+<!--                TODO Some OnClick action-->
+<!--            </OnClick>-->
         </Scripts>
         <HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD">
             <Size>
