@@ -117,43 +117,6 @@ ns.RemoveDeathClip = function(clipID)
     existingClips[clipID] = nil
 end
 
-ns.GameEventHandler:On("PLAYER_DEAD", function()
-    if ns.CharacterPrefs:Get("diedAtLeastOnce") then
-        return
-    end
-    ns.CharacterPrefs:Set("diedAtLeastOnce", true)
-
-    local ts = GetServerTime()
-    local me = UnitName("player")
-    local twitchName = ns.GetTwitchName(me)
-    local clipId = string.format("%d-%s", ts, me)
-    local raceId = select(3, UnitRace("player"))
-    local classId = select(3, UnitClass("player"))
-    local mapId = C_Map.GetBestMapForUnit("player")
-    local mapInfo = C_Map.GetMapInfo(mapId)
-    local zone = mapInfo and mapInfo.name or nil
-    local level = UnitLevel("player")
-    local clip = {
-        id = clipId,
-        ts = ts,
-        streamer = twitchName,
-        characterName = me,
-        race = ns.id_to_race[raceId],
-        class = ns.id_to_class[classId],
-        level = level,
-        where = zone,
-        mapId = mapId,
-    }
-
-    ns.AddNewDeathClips({clip})
-    ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
-    ns.AuctionHouse:BroadcastDeathClipAdded(clip)
-    C_Timer:After(2, function()
-        ns.AuctionHouse:BroadcastDeathClipAdded(clip)
-    end)
-
-end)
-
 -- Only keep the ASMSG_HARDCORE_DEATH handler
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("CHAT_MSG_ADDON")
@@ -195,3 +158,40 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
         ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
     end
 end)
+
+--ns.GameEventHandler:On("PLAYER_DEAD", function()
+--    if ns.CharacterPrefs:Get("diedAtLeastOnce") then
+--        return
+--    end
+--    ns.CharacterPrefs:Set("diedAtLeastOnce", true)
+--
+--    local ts = GetServerTime()
+--    local me = UnitName("player")
+--    local twitchName = ns.GetTwitchName(me)
+--    local clipId = string.format("%d-%s", ts, me)
+--    local raceId = select(3, UnitRace("player"))
+--    local classId = select(3, UnitClass("player"))
+--    local mapId = C_Map.GetBestMapForUnit("player")
+--    local mapInfo = C_Map.GetMapInfo(mapId)
+--    local zone = mapInfo and mapInfo.name or nil
+--    local level = UnitLevel("player")
+--    local clip = {
+--        id = clipId,
+--        ts = ts,
+--        streamer = twitchName,
+--        characterName = me,
+--        race = ns.id_to_race[raceId],
+--        class = ns.id_to_class[classId],
+--        level = level,
+--        where = zone,
+--        mapId = mapId,
+--    }
+--
+--    ns.AddNewDeathClips({clip})
+--    ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+--    ns.AuctionHouse:BroadcastDeathClipAdded(clip)
+--    C_Timer:After(2, function()
+--        ns.AuctionHouse:BroadcastDeathClipAdded(clip)
+--    end)
+--
+--end)
