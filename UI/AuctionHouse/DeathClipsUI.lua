@@ -60,7 +60,18 @@ local function formatWhen(clip)
     if clip.ts == nil then
         return L["Unknown"]
     end
-    return ns.GetPrettyTimeAgoString(time() - clip.ts)
+    local serverTime = GetServerTime()
+    local timeDiff = serverTime - clip.ts
+
+    if timeDiff < 0 then
+        --print(string.format(
+        --        "Time sync issue - Server: %d, Clip: %d, Diff: %d (Clip ID: %s)",
+        --        serverTime, clip.ts, timeDiff, clip.id or "nil"
+        --))
+        timeDiff = 0  -- Ensure we never show negative time
+    end
+
+    return ns.GetPrettyTimeAgoString(timeDiff)
 end
 
 local function ResizeEntry(button, numBatchAuctions, totalAuctions)

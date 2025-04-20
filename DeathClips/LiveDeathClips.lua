@@ -134,11 +134,16 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
         local zone = parts[6]
         local deathCauseId = tonumber(parts[7])
         local mobName = parts[8] or ""
+        local mobLevel = parts[9] or ""
 
         -- Process death cause
         local deathCause = deathCauses[deathCauseId] or "Неизвестно"
         if deathCauseId == 7 and mobName ~= "" then
-            deathCause = mobName  -- Just show the mob name directly
+            if mobLevel ~= "" then
+                deathCause = string.format("%s, %s уровня", mobName, mobLevel)
+            else
+                deathCause = mobName
+            end
         end
 
         -- Create the death clip entry
