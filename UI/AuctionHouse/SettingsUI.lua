@@ -72,6 +72,19 @@ StaticPopupDialogs[STATIC_POPUP_NAME] = {
     OnHide = function(self)
         self.editBox:SetText("")
     end,
+    EditBoxOnEnterPressed = function(self) -- 'self' here is the editBox
+        local dialog = self:GetParent()
+        -- Ensure the dialog and its button1 exist and are valid objects
+        if dialog and dialog.button1 and type(dialog.button1.IsEnabled) == "function" and type(dialog.button1.Click) == "function" then
+            -- Check if the accept button (button1) is enabled (respecting validation)
+            if dialog.button1:IsEnabled() then
+                -- Simulate clicking the accept button.
+                -- The StaticPopup system's handler for button clicks will then
+                -- call the appropriate OnAccept function and hide the dialog.
+                dialog.button1:Click()
+            end
+        end
+    end,
     EditBoxOnTextChanged = function(self)
         local text = ToPascalCase(self:GetText())
         local dialog = self:GetParent()
@@ -82,6 +95,10 @@ StaticPopupDialogs[STATIC_POPUP_NAME] = {
         else
             button1:Disable()
         end
+    end,
+    EditBoxOnEscapePressed = function(self)
+        StaticPopup_StandardEditBoxOnEscapePressed(self)
+        ClearCursor()
     end,
     timeout = 0,
     hasEditBox = true,
