@@ -140,7 +140,27 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
         local deathCause = deathCauses[deathCauseId] or "Неизвестно"
         if deathCauseId == 7 and mobName ~= "" then
             if mobLevel ~= "" then
-                deathCause = string.format("%s, %s уровня", mobName, mobLevel)
+                -- Calculate level difference
+                local levelDiff = tonumber(mobLevel) - (level or 0)  -- Use player's level (default to 0 if nil)
+
+                -- Determine color based on level difference (WoW standard colors)
+                local color
+                if levelDiff >= 5 then       -- Red (very dangerous)
+                    color = "|cFFFF0000"
+                elseif levelDiff >= 3 then    -- Orange
+                    color = "|cFFFF7F00"
+                elseif levelDiff >= -2 then   -- Yellow
+                    color = "|cFFFFFF00"
+                elseif levelDiff >= -6 then   -- Green
+                    color = "|cFF00FF00"
+                else                          -- Gray (trivial)
+                    color = "|cFF808080"
+                end
+
+                --deathCause = string.format("%s%s (%s ур.)|r", color, mobName, mobLevel)
+                -- Alternative version with brackets
+                deathCause = string.format("%s[|r%s%s (%s ур.)%s]|r",
+                        color, color, mobName, mobLevel, color)
             else
                 deathCause = mobName
             end
