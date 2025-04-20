@@ -313,6 +313,19 @@
 					</Layer>
 				</Layers>
 				<Scripts>
+                    <OnLoad>
+                        -- 'self' here refers to the Button frame.
+                        -- 'self.IconBorder' refers to the Texture with parentKey="IconBorder".
+
+                        -- Make the border texture visible
+                        self.IconBorder:Show();
+
+                        local grayLevel = 0.6; -- Value between 0 (black) and 1 (white)
+                        self.IconBorder:SetVertexColor(grayLevel, grayLevel, grayLevel);
+
+                        -- Optional: If you wanted to change the texture file dynamically:
+                        -- self.IconBorder:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Border");
+                    </OnLoad>
                     <OnClick function="OFSettingsRow_OnClick" />
 					<OnEnter>
 						self:GetParent():LockHighlight();
@@ -335,7 +348,7 @@
 				</NormalTexture>
 				<NormalTexture parentKey="raceTexture" file="Interface\Icons\Achievement_Character_Dwarf_Male" alphaMode="BLEND">
 					<Size>
-						<AbsDimension x="32" y="32" />
+						<AbsDimension x="27" y="27" />
 					</Size>
 					<Anchors>
 						<Anchor point="CENTER">

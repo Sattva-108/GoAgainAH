@@ -169,10 +169,12 @@ local function UpdateEntry(i, offset, button, entry)
     -- Name
     button.name:SetText(entry.displayName)
 
-    -- Use built-in race texture with texcoords
-    if entry.race then
-        local texture = string.format("Interface\\Icons\\Achievement_Character_%s_Male", entry.race)
-        button.item.raceTexture:SetTexture(texture)
+    if entry.class and CLASS_ICON_TCOORDS[entry.class] then
+        button.item.raceTexture:SetTexture("Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES")
+        button.item.raceTexture:SetTexCoord(unpack(CLASS_ICON_TCOORDS[entry.class]))
+    else
+        print("Invalid class or missing texcoords for:", entry.class)
+        button.item.raceTexture:SetTexture(nil)
     end
     button.item.raceTexture:SetAlpha(entry.meetsRequirements and 1.0 or 0.6)
 
@@ -265,34 +267,40 @@ local function GetBlacklistEntries()
     local playerName = UnitName("player")
     local blType = GetBlacklistTypeFromTab(selectedTab)
 
+    -- Helper function to process a list of names
+    local function processNames(nameList)
+        for _, name in ipairs(nameList or {}) do
+            -- Call the new function to get class info
+            local class, localizedClass = ns.GetUserClass(name)
+
+            -- Decide on fallbacks if needed (optional, nil might be better)
+            -- local displayClass = localizedClass or "?" -- Example fallback for display
+            -- local iconClass = classToken or "UNKNOWN" -- Example fallback for icons
+
+            table.insert(entries, {
+                displayName = name,
+                name = name,
+                -- Removed race key
+                class = class,         -- Store the English token (e.g., "WARRIOR")
+                localizedClass = localizedClass, -- Store the localized name (e.g., "Warrior", "Шаман")
+                meetsRequirements = true         -- Assuming this is still relevant
+            })
+        end
+    end
+
     -- Handle "Who blacklisted me?" tabs
     if selectedTab == TAB_ORDERS_OTHER_BLACKLIST or selectedTab == TAB_REVIEW_OTHER_BLACKLIST then
         -- Get list of players who have blacklisted the current player
         local blacklisters = ns.BlacklistAPI:GetBlacklisters(playerName, blType)
-        for _, name in ipairs(blacklisters or {}) do
-            local race = ns.GetUserRace(name) or "Orc"
-            table.insert(entries, {
-                displayName = name,
-                name = name,
-                race = race,
-                meetsRequirements = true
-            })
-        end
+        processNames(blacklisters) -- Use the helper function
     else
-        -- Handle "My blacklist" tabs (existing logic)
+        -- Handle "My blacklist" tabs
         local blacklist = ns.BlacklistAPI:GetBlacklist(playerName)
         if blacklist and blacklist.namesByType and blacklist.namesByType[blType] then
-            for _, name in ipairs(blacklist.namesByType[blType]) do
-                local race = ns.GetUserRace(name) or "Orc"
-                table.insert(entries, {
-                    displayName = name,
-                    name = name,
-                    race = race,
-                    meetsRequirements = true
-                })
-            end
+            processNames(blacklist.namesByType[blType]) -- Use the helper function
         end
     end
+
     return entries
 end
 

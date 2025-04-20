@@ -184,6 +184,50 @@ ns.GetUserRace = function(owner)
     return nil
 end
 
+--- Gets the class of a specified player name by searching the guild roster.
+--- Uses GetGuildRosterInfo.
+---@param owner string The exact name of the player (character name).
+---@return string? classToken The English class token (e.g., "WARRIOR", "SHAMAN") if found, otherwise nil.
+---@return string? localizedClass The localized class name (e.g., "Warrior", "Шаман") if found, otherwise nil.
+ns.GetUserClass = function(owner)
+    if not owner or type(owner) ~= "string" or owner == "" then
+        return nil
+    end
+
+    if IsInGuild() then
+        local numMembers = GetNumGuildMembers(true) -- Include offline members
+
+        for i = 1, numMembers do
+            -- Get roster info according to the signature:
+            -- name (1), ..., localizedClass (5), ..., classToken (11)
+            local name, _, _, _, localizedClass, _, _, _, _, _, classToken = GetGuildRosterInfo(i)
+
+            -- Check if we got a valid name and if it matches the owner
+            if name and name == owner then
+                -- Found the player. Return the English class token first, then the localized name.
+                -- Both should generally be available if the player entry is valid.
+                if classToken and localizedClass then
+                    return classToken, localizedClass -- e.g., "SHAMAN", "Шаман"
+                elseif classToken then
+                    -- Should ideally have localizedClass too, but handle just in case
+                    return classToken, nil
+                elseif localizedClass then
+                    -- Fallback if only localizedClass is available (less likely on modern API)
+                    return nil, localizedClass
+                else
+                    -- Unlikely case where name matches but no class info is found
+                    return nil, nil
+                end
+            end
+        end
+    end
+
+    -- Player not found in the guild roster or not in a guild
+    return nil
+end
+
+
+
 -- Converts a price in copper to gold, silver, and copper components
 local function GetGoldSilverCopper(price)
     local gold = math.floor(price / 10000)
