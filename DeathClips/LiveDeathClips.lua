@@ -145,14 +145,24 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
         local deathCause = deathCauses[deathCauseId] or "Неизвестно"
         if deathCauseId == 7 and mobName ~= "" then
             if mobLevel ~= "" then
-                -- Calculate level difference between mob and player
+                -- Calculate level difference
                 local levelDiff = tonumber(mobLevel) - (level or 0)  -- Use player's level (default to 0 if nil)
 
-                -- Get the color based on the level difference using GetQuestDifficultyColor
-                local color = GetQuestDifficultyColor(levelDiff)
+                -- Determine color based on level difference (WoW standard colors)
+                local color
+                if levelDiff >= 5 then       -- Red (very dangerous)
+                    color = "|cFFFF0000"
+                elseif levelDiff >= 3 then    -- Orange
+                    color = "|cFFFF7F00"
+                elseif levelDiff >= -2 then   -- Yellow
+                    color = "|cFFFFFF00"
+                elseif levelDiff >= -6 then   -- Green
+                    color = "|cFF00FF00"
+                else                          -- Gray (trivial)
+                    color = "|cFF808080"
+                end
 
-                -- Format the death cause with the determined color
-                deathCause = string.format("|cFF%.2X%.2X%.2X%s\n%s ур.|r", color.r * 255, color.g * 255, color.b * 255, mobName, mobLevel)
+                deathCause = string.format("%s%s\n%s ур.|r", color, mobName, mobLevel)
             else
                 deathCause = mobName
             end

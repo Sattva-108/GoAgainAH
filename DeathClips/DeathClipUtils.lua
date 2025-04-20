@@ -69,7 +69,33 @@ local function CreateClipsSorter(sortParams)
         elseif k == "race" then
             addSorter(desc, function(l, r) return stringCompare(l, r, "race") end)
         elseif k == "level" then
-            addSorter(desc, function(l, r) return (l.level or 0) - (r.level or 0) end)
+            addSorter(desc, function(l, r)
+                -- Convert to numbers (with default -1 for invalid data, to handle the "unknown" level case)
+                local levelL = tonumber(l.level) or -1
+                local levelR = tonumber(r.level) or -1
+
+                -- If both are invalid (-1), treat them as equal (no sorting needed)
+                if levelL == -1 and levelR == -1 then
+                    return 0
+                end
+
+                -- If one of them is invalid, place it at the bottom
+                if levelL == -1 then
+                    return 1  -- 'l' is invalid, place it below 'r'
+                elseif levelR == -1 then
+                    return -1 -- 'r' is invalid, place it below 'l'
+                end
+
+                -- Now that both levels are valid, do the comparison
+                local result = levelL - levelR
+
+                -- Print the result for debugging purposes
+                print(string.format("Comparing levels: %s (%d) vs %s (%d)", l.characterName, levelL, r.characterName, levelR))
+                print(string.format("Result of comparison: %d", result))
+
+                return result
+            end)
+
         elseif k == "class" then
             addSorter(desc, function(l, r) return stringCompare(l, r, "class") end)
         elseif k == "when" then
