@@ -429,7 +429,7 @@
                 </Texture>
 
                 <!-- Left Cap -->
-                <Texture name="ItemNameFrameLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                <Texture name="$parentItemNameFrameLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
                     <Size>
                         <AbsDimension x="10" y="32" />
                     </Size>
@@ -444,7 +444,7 @@
                 </Texture>
 
                 <!-- Right Cap -->
-                <Texture name="ItemNameFrameRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                <Texture name="$parentItemNameFrameRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
                     <Size>
                         <AbsDimension x="10" y="32" />
                     </Size>
@@ -459,13 +459,13 @@
                 </Texture>
 
                 <!-- Middle Stretchable Part -->
-                <Texture name="ItemNameFrameMiddle" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
+                <Texture name="$parentItemNameFrameMiddle" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
                     <Size>
                         <AbsDimension x="510" y="32" />
                     </Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeTo="ItemNameFrameLeft" relativePoint="RIGHT" />
-                        <Anchor point="RIGHT" relativeTo="ItemNameFrameRight" relativePoint="LEFT" />
+                        <Anchor point="LEFT" relativeTo="$parentItemNameFrameLeft" relativePoint="RIGHT" />
+                        <Anchor point="RIGHT" relativeTo="$parentItemNameFrameRight" relativePoint="LEFT" />
                     </Anchors>
                     <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
                 </Texture>
