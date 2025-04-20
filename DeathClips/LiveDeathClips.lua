@@ -168,15 +168,18 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             end
         end
 
+        -- Keep the original numeric level for sorting
         local localPlayerLevel = ns.GetPlayerLevel() or 0
         local levelDiff = level - localPlayerLevel
 
         -- Get the color based on the level difference using GetQuestDifficultyColor
         local color = GetQuestDifficultyColor(levelDiff)
 
-        -- Format the level text with the determined color
-        level = string.format("|cFF%.2X%.2X%.2X%d|r", color.r * 255, color.g * 255, color.b * 255, level)
+        -- Store numeric level separately
+        local rawLevel = level
 
+        -- Format the level text with the determined color
+        local levelText = string.format("|cFF%.2X%.2X%.2X%d|r", color.r * 255, color.g * 255, color.b * 255, level)
 
         -- Create the death clip entry
         local clip = {
@@ -186,7 +189,8 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             characterName = name,
             race = races[raceId] or "Неизвестно",
             class = classes[classId] or "Неизвестно",
-            level = level,
+            level = rawLevel,          -- Keep numeric for sorting
+            levelText = levelText,     -- Display colorized version in UI
             where = zone,
             deathCause = deathCause,
         }

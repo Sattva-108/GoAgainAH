@@ -1,13 +1,6 @@
 local _, ns = ...
 local L = ns.L
 
--- Example hardcoded entries (now with deathCause instead of clip)
-ns.HardcodedDeathClips = {
-    {ts=1736517526, streamer="Neeko2lo", race="орк", level=38, class="HUNTER", where="Unknown", deathCause="Падение"},
-    {ts=1736485126, streamer="ThatSelm", race="нежить", level=26, class="PRIEST", where="Unknown", deathCause="Утопление"},
-    -- ... other entries ...
-}
-
 
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
@@ -130,7 +123,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 
     local level = _G[buttonName.."Level"]
-    level:SetText(clip.level or 1)
+    level:SetText(clip.levelText or 1)
 
     local class = _G[buttonName.."Class"]
     if clip.class and ns.CLASS_COLORS[clip.class] then
@@ -208,9 +201,6 @@ function OFAuctionFrameDeathClips_Update()
     local clips = {}
     for _, clip in pairs(ns.GetLiveDeathClips()) do
         table.insert(clips, clip)
-    end
-    for i = 1, #ns.HardcodedDeathClips do
-        table.insert(clips, ns.HardcodedDeathClips[i])
     end
     local state = ns.GetDeathClipReviewState()
 
