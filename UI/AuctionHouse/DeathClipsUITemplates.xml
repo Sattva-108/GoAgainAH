@@ -5,9 +5,10 @@
         </Size>
         <Layers>
             <Layer level="BACKGROUND">
+                <!-- Streamer Name (reduced to 90px) -->
                 <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
                     <Size>
-                        <AbsDimension x="162" y="32" />
+                        <AbsDimension x="90" y="32" />
                     </Size>
                     <Anchors>
                         <Anchor point="TOPLEFT">
@@ -17,6 +18,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
+                <!-- Race (55px) -->
                 <FontString name="$parentRace" inherits="GameFontHighlightSmall">
                     <Size>
                         <AbsDimension x="55" y="32" />
@@ -25,15 +27,17 @@
                         <Anchor x="0" point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" />
                     </Anchors>
                 </FontString>
+                <!-- Level (increased to 50px) -->
                 <FontString name="$parentLevel" inherits="GameFontHighlightSmall">
                     <Size>
-                        <AbsDimension x="40" y="32" />
+                        <AbsDimension x="50" y="32" />
                     </Size>
                     <Anchors>
                         <Anchor x="0" point="LEFT" relativeTo="$parentRace" relativePoint="RIGHT" />
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass" inherits="GameFontHighlightSmall" >
+                <!-- Class (55px) -->
+                <FontString name="$parentClass" inherits="GameFontHighlightSmall">
                     <Size>
                         <AbsDimension x="55" y="32" />
                     </Size>
@@ -41,7 +45,8 @@
                         <Anchor x="0" point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" />
                     </Anchors>
                 </FontString>
-                <FontString name="$parentWhen" inherits="GameFontHighlightSmall" >
+                <!-- When (55px) -->
+                <FontString name="$parentWhen" inherits="GameFontHighlightSmall">
                     <Size>
                         <AbsDimension x="55" y="32" />
                     </Size>
@@ -49,9 +54,10 @@
                         <Anchor x="-5" point="LEFT" relativeTo="$parentClass" relativePoint="RIGHT" />
                     </Anchors>
                 </FontString>
-                <FontString name="$parentWhere" inherits="GameFontHighlightSmall" >
+                <!-- Where/Zone (increased to 95px) -->
+                <FontString name="$parentWhere" inherits="GameFontHighlightSmall">
                     <Size>
-                        <AbsDimension x="90" y="32" />
+                        <AbsDimension x="95" y="32" />
                     </Size>
                     <Anchors>
                         <Anchor x="-5" point="LEFT" relativeTo="$parentWhen" relativePoint="RIGHT" />
@@ -145,12 +151,36 @@
                 <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
                 <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
             </Button>
-            <Frame name="$parentRating">
+            <Frame name="$parentClip">
                 <Size>
-                    <AbsDimension x="90" y="32" />
+                    <AbsDimension x="160" y="32" /> <!-- Increased from 90 to 147 -->
                 </Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentWhere" relativePoint="RIGHT" />
+                    <Anchor point="LEFT" relativeTo="$parentWhere" relativePoint="RIGHT" x="15" />
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                            <Size>
+                                <AbsDimension x="147" y="32" />
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset>
+                                        <AbsDimension x="0" y="0" />
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+            <Frame name="$parentRating">
+                <Size>
+                    <AbsDimension x="80" y="32" /> <!-- Reduced from 90 to 80 -->
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" />
                 </Anchors>
                 <Layers>
                     <Layer>
@@ -172,36 +202,12 @@
                     <OnLoad function="OFDeathClipsRatingWidget_OnLoad" />
                 </Scripts>
             </Frame>
-            <Frame name="$parentClip">
-                <Size>
-                    <AbsDimension x="90" y="32" />
-                </Size>
-                <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentRating" relativePoint="RIGHT" />
-                </Anchors>
-                <Layers>
-                    <Layer>
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                            <Size>
-                                <AbsDimension x="90" y="32" />
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOPLEFT">
-                                    <Offset>
-                                        <AbsDimension x="0" y="0" />
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                    </Layer>
-                </Layers>
-            </Frame>
             <Button name="$parentRate" inherits="UIPanelButtonTemplate" text="L_RATE_CLIP">
                 <Size>
                     <AbsDimension x="80" y="20" />
                 </Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="15" />
+                    <Anchor point="LEFT" relativeTo="$parentRating" relativePoint="RIGHT" x="0" /> <!-- Fixed anchor -->
                 </Anchors>
                 <NormalFont style="GameFontNormalSmall"/>
                 <HighlightFont style="GameFontNormalSmall"/>

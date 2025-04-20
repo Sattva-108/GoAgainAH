@@ -176,7 +176,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         rateButton:Enable()
     end
 
-    rateButton:GetFontString():SetText(string.format(L["Ratings (%d)"], #ratings))
+    rateButton:GetFontString():SetText(string.format(L["Рейтинг [%d]"], #ratings))
 
     rateButton:SetScript("OnClick", function()
         ns.DebugLog("clip id:", clip.id)

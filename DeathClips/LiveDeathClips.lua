@@ -131,40 +131,42 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
         local raceId = tonumber(parts[2])
         local classId = tonumber(parts[4])
         local level = tonumber(parts[5])
-        local zone = parts[6]
+        local rawZone = parts[6]
         local deathCauseId = tonumber(parts[7])
         local mobName = parts[8] or ""
         local mobLevel = parts[9] or ""
+
+        -- Always wrap after first zone word
+        local firstWord, rest = string.match(rawZone or "", "^(%S+)%s*(.*)$")
+        local zone = rest and rest ~= "" and firstWord .. "\n" .. rest or firstWord
+
 
         -- Process death cause
         local deathCause = deathCauses[deathCauseId] or "Неизвестно"
         if deathCauseId == 7 and mobName ~= "" then
             if mobLevel ~= "" then
-                -- Calculate level difference
+                -- Calculate level difference between mob and player
                 local levelDiff = tonumber(mobLevel) - (level or 0)  -- Use player's level (default to 0 if nil)
 
-                -- Determine color based on level difference (WoW standard colors)
-                local color
-                if levelDiff >= 5 then       -- Red (very dangerous)
-                    color = "|cFFFF0000"
-                elseif levelDiff >= 3 then    -- Orange
-                    color = "|cFFFF7F00"
-                elseif levelDiff >= -2 then   -- Yellow
-                    color = "|cFFFFFF00"
-                elseif levelDiff >= -6 then   -- Green
-                    color = "|cFF00FF00"
-                else                          -- Gray (trivial)
-                    color = "|cFF808080"
-                end
+                -- Get the color based on the level difference using GetQuestDifficultyColor
+                local color = GetQuestDifficultyColor(levelDiff)
 
-                --deathCause = string.format("%s%s (%s ур.)|r", color, mobName, mobLevel)
-                -- Alternative version with brackets
-                deathCause = string.format("%s[|r%s%s (%s ур.)%s]|r",
-                        color, color, mobName, mobLevel, color)
+                -- Format the death cause with the determined color
+                deathCause = string.format("|cFF%.2X%.2X%.2X%s\n%s ур.|r", color.r * 255, color.g * 255, color.b * 255, mobName, mobLevel)
             else
                 deathCause = mobName
             end
         end
+
+        local localPlayerLevel = ns.GetPlayerLevel() or 0
+        local levelDiff = level - localPlayerLevel
+
+        -- Get the color based on the level difference using GetQuestDifficultyColor
+        local color = GetQuestDifficultyColor(levelDiff)
+
+        -- Format the level text with the determined color
+        level = string.format("|cFF%.2X%.2X%.2X%d|r", color.r * 255, color.g * 255, color.b * 255, level)
+
 
         -- Create the death clip entry
         local clip = {

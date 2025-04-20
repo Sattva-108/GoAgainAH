@@ -356,15 +356,15 @@ local function UpdateEntry(i, offset, button, entry)
     OFLFG_Row_SetEnabled(button, enabled, entry.requirementsReason, entry.isOnline or false)
 
     if enabled then
-        -- Level with color based on difference
+        -- Get player's level
         local localPlayerLevel = ns.GetPlayerLevel()
-        local levelDiff = math.abs(localPlayerLevel - entry.level)
+        local levelDiff = entry.level - localPlayerLevel  -- Calculate the difference in levels
 
-        if levelDiff > 6 then
-            button.level:SetTextColor(1, 0.1, 0.1) -- Red
-        else
-            button.level:SetTextColor(1, 1, 1) -- White
-        end
+        -- Get the color based on the level difference using GetQuestDifficultyColor
+        local color = GetQuestDifficultyColor(levelDiff)
+
+        -- Apply the color to the level text
+        button.level:SetTextColor(color.r, color.g, color.b)
     end
 
     -- Add tooltip handlers for both input boxes
