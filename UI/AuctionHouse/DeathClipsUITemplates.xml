@@ -127,7 +127,7 @@
                             <Size><AbsDimension x="95" y="32"/></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                    <Offset><AbsDimension x="5" y="0"/></Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
@@ -183,7 +183,7 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                        <FontString name="$parentText" inherits="GameFontNormalLarge">
                             <Size><AbsDimension x="55" y="32"/></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">

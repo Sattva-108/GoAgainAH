@@ -64,7 +64,7 @@ local function formatWhen(clip)
         timeDiff = 0  -- Ensure we never show negative time
     end
 
-    return ns.GetPrettyTimeAgoString(timeDiff)
+    return ns.PrettyDuration(timeDiff)
 end
 
 local function ResizeEntry(button, numBatchAuctions, totalAuctions)
@@ -182,6 +182,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     clipText:SetText(clip.deathCause or "Неизвестно")
     mobLevelText:SetText(clip.mobLevelText or "")
+    mobLevelText:SetJustifyH("CENTER")
 
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
     local offlineText = _G[buttonName.."RatingOfflineText"]
