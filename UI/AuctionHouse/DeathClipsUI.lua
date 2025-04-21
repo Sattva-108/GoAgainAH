@@ -324,6 +324,7 @@ function OFDeathClipsRatingWidget_OnLoad(self)
         marginBetweenStarsX = 2,
         textWidth = 22,
         leftMargin = 1,
+        disableMouse = true
     })
     self.ratingWidget = starRating
     starRating.frame:SetParent(self)

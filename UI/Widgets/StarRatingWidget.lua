@@ -59,6 +59,9 @@ local function CreateStarRatingWidget(config)
                 end
             end)
         end
+        if config.disableMouse then
+            starButton:EnableMouse(false)
+        end
     end
 
     -- Add method to update rating
