@@ -213,6 +213,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     clipButton:SetScript("OnClick", function()
         ns.DebugLog("clip id:", clip.id)
+        ns.HideDeathClipRatePrompt()
         ns.ShowDeathClipReviewsPrompt(clip)
     end)
 

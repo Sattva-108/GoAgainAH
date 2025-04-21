@@ -2,6 +2,8 @@ local addonName, ns = ...
 local AceGUI = LibStub("AceGUI-3.0")
 local L = ns.L
 
+local reviewPrompt
+
 local PaneBackdrop  = {
     bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -247,7 +249,6 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
         local finalText = text == REVIEW_PLACEHOLDER and "" or text
         state:UpdateReview(reviewID, me, clip.id, rating, finalText)
         prompt:Hide()
-        ns.ShowDeathClipReviewsPrompt(clip)
     end)
 
     prompt:OnCancel(function()
@@ -255,4 +256,11 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
     end)
 
     prompt:Show()
+    reviewPrompt = prompt
+end
+-- Add this function with the other ns functions
+ns.HideDeathClipRatePrompt = function()
+    if reviewPrompt and reviewPrompt.frame:IsShown() then
+        reviewPrompt:Hide()
+    end
 end

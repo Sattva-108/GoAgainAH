@@ -127,7 +127,29 @@ end
 local deathClipReviewsPrompt
 
 ns.ShowDeathClipReviewsPrompt = function(clip)
-    if deathClipReviewsPrompt == nil then
+    local state = ns.GetDeathClipReviewState()
+    local playerName = UnitName("player") -- Current player
+    local hasRated = false
+
+    -- Check if player already rated this clip
+    for _, review in pairs(state.persisted.state) do
+        if review.clipID == clip.id and review.owner == playerName then
+            hasRated = true
+            break
+        end
+    end
+
+    -- If NOT rated, show RATE PROMPT (hide reviews frame if it exists)
+    if not hasRated then
+        if deathClipReviewsPrompt then
+            deathClipReviewsPrompt.frame:Hide() -- Force-hide reviews frame
+        end
+        ns.ShowDeathClipRatePrompt(clip)       -- Show rate prompt
+        return -- Exit early
+    end
+
+    -- If already rated, SHOW REVIEWS FRAME
+    if not deathClipReviewsPrompt then
         deathClipReviewsPrompt = CreateDeathClipReviewsPrompt()
     end
     deathClipReviewsPrompt:Setup(clip)
