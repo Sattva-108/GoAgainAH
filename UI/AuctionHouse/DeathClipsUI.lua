@@ -319,8 +319,8 @@ end
 
 function OFDeathClipsRatingWidget_OnLoad(self)
     local starRating = ns.CreateStarRatingWidget({
-        starSize = 9,
-        panelHeight = 9,
+        starSize = 12,
+        panelHeight = 12,
         marginBetweenStarsX = 2,
         textWidth = 22,
         leftMargin = 1,
