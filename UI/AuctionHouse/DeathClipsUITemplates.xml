@@ -215,17 +215,6 @@
                     <OnLoad function="OFDeathClipsRatingWidget_OnLoad" />
                 </Scripts>
             </Frame>
-
-            <!-- Rate Button -->
-            <Button name="$parentRate" inherits="UIPanelButtonTemplate" text="L_RATE_CLIP">
-                <Size><AbsDimension x="80" y="20" /></Size>
-                <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentRating" relativePoint="RIGHT" x="0" />
-                </Anchors>
-                <NormalFont style="GameFontNormalSmall" />
-                <HighlightFont style="GameFontNormalSmall" />
-                <DisabledFont style="GameFontDisable" />
-            </Button>
         </Frames>
 
         <Scripts>

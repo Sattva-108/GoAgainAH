@@ -1461,17 +1461,6 @@
 						</Scripts>
 					</Button>
 
-					<!-- RATE -->
-					<Button name="OFDeathClipsRateClipSort" inherits="OFAuctionSortButtonTemplate" text="L_RATE_CLIP">
-						<Size><AbsDimension x="90" y="19" /></Size>
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsRatingSort" relativePoint="RIGHT" />
-						</Anchors>
-						<Scripts>
-							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "rate")</OnClick>
-						</Scripts>
-					</Button>
-
 					<!-- Scroll frame unchanged -->
 					<ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate">
 						<Size><AbsDimension x="775" y="335" /></Size>

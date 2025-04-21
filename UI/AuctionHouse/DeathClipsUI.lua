@@ -16,7 +16,6 @@ local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsRatingSort, "clips", "rating")
     OFSortButton_UpdateArrow(OFDeathClipsWhereSort, "clips", "where")
     OFSortButton_UpdateArrow(OFDeathClipsClipSort, "clips", "clip")
-    OFSortButton_UpdateArrow(OFDeathClipsRateClipSort, "clips", "rate")
 end
 
 function OFAuctionFrameDeathClips_OnLoad()
@@ -198,32 +197,24 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
     local offlineText = _G[buttonName.."RatingOfflineText"]
-    local rateButton = _G[buttonName.."Rate"]
+    local clipButton = _G[buttonName]
     if clip.id == nil then
         ratingWidget:Show()
         ratingWidget:SetRating(0)
-        rateButton:Disable()
         offlineText:Hide()
     elseif #ratings == 0 and clip.id and state:IsClipOffline(clip.id) then
         offlineText:Show()
         ratingWidget:Hide()
-        rateButton:Enable()
     else
         ratingWidget:Show()
         offlineText:Hide()
         ratingWidget:SetRating(ns.GetRatingAverage(ratings))
-        rateButton:Enable()
     end
 
-    rateButton:GetFontString():SetText(string.format(L["Рейтинг [%d]"], #ratings))
-
-    rateButton:SetScript("OnClick", function()
+    clipButton:SetScript("OnClick", function()
         ns.DebugLog("clip id:", clip.id)
         ns.ShowDeathClipReviewsPrompt(clip)
     end)
-
-    button.clipUrl = clipUrl
-    button.clipID = clip.id
 
     if ( selectedClip and selectedClip == offset + i) then
         button:LockHighlight()
