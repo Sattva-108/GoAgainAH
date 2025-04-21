@@ -64,7 +64,7 @@
         <Frames>
             <!-- Icon Button -->
             <Button name="$parentItem">
-                <Size><AbsDimension x="32" y="32" /></Size>
+                <Size><AbsDimension x="30" y="30" /></Size>
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset><AbsDimension x="0" y="0" /></Offset>
@@ -72,22 +72,40 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BORDER">
-                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.75" />
+                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.60" />
+                    </Layer>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentGlowBorder" file="Interface\Buttons\UI-ActionButton-Border" alphaMode="ADD">
+                            <Size><AbsDimension x="62" y="62" /></Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="1" g="0" b="0" a="0.5"/>  <!-- Bright red with almost full opacity -->
+                        </Texture>
                     </Layer>
                 </Layers>
                 <Scripts>
                     <OnEnter>self:GetParent():LockHighlight()</OnEnter>
                     <OnLeave>self:GetParent():UnlockHighlight()</OnLeave>
                 </Scripts>
-                <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+                <PushedTexture file="Interface\Buttons\UI-ActionButton-Border" alphaMode="ADD">
                     <Size><AbsDimension x="60" y="60" /></Size>
                     <Anchors>
-                        <Anchor point="CENTER"><Offset><AbsDimension x="0" y="0" /></Offset></Anchor>
+                        <Anchor point="CENTER" />
                     </Anchors>
-                </NormalTexture>
-                <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
-                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+                    <Color r="1" g="0" b="0" a="0.5" />  <!-- Optional: same color as the overlay -->
+                </PushedTexture>
+
+                <HighlightTexture file="Interface\Buttons\UI-ActionButton-Border" alphaMode="ADD">
+                    <Size><AbsDimension x="60" y="60" /></Size>
+                    <Anchors>
+                        <Anchor point="CENTER" />
+                    </Anchors>
+                    <Color r="1" g="1" b="0" a="0.75" /> <!-- Optional: different color for highlight effect -->
+                </HighlightTexture>
+
             </Button>
+
 
             <!-- Clip Link -->
             <Frame name="$parentClip">

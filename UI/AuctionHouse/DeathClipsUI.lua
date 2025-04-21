@@ -99,13 +99,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     local name = _G[buttonName.."Name"]
     if clip.characterName then
-        -- Set faction-based color for the name with softened tones
-        if clip.faction == "Horde" then
-            name:SetTextColor(0.8, 0.3, 0.3)  -- Soft red
-        elseif clip.faction == "Alliance" then
-            name:SetTextColor(0.4, 0.6, 1)    -- Soft blue
+        -- Get the class color using the player's class
+        local classColor = RAID_CLASS_COLORS[clip.class] -- 'clip.class' should be the player's class (e.g., "WARRIOR", "MAGE", etc.)
+
+        if classColor then
+            -- Set class color for the name
+            name:SetTextColor(classColor.r, classColor.g, classColor.b)
         else
-            name:SetTextColor(0.9, 0.9, 0.4)  -- Soft yellow
+            -- Fallback to a default color (light gray) if the class color is not found
+            name:SetTextColor(0.85, 0.85, 0.85)
         end
 
         name:SetText(clip.characterName)
@@ -130,6 +132,26 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         iconTexture:SetTexture("interface/icons/inv_misc_questionmark")
         iconTexture:SetTexCoord(0, 1, 0, 1)  -- reset tex coords
     end
+
+
+    local glow = _G[buttonName.."ItemGlowBorder"]
+
+    if glow then
+        -- Get the class color using RAID_CLASS_COLORS
+        local classColor = RAID_CLASS_COLORS[clip.class]
+
+        -- If the class color is valid, apply it to the glow
+        if classColor then
+            glow:SetVertexColor(classColor.r, classColor.g, classColor.b, 0.75)  -- Using class color with a soft alpha
+        else
+            -- Fallback for when the class is not found (default to yellow for unknown)
+            glow:SetVertexColor(0.9, 0.9, 0.2, 0.75)  -- Soft yellow glow for unknown
+        end
+    end
+
+
+
+
 
     local level = _G[buttonName.."Level"]
     local lvl = clip.level or 1
