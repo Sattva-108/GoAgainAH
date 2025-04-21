@@ -178,7 +178,10 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     where:SetText(whereStr or L["Unknown"])
 
     local clipText = _G[buttonName.."ClipText"]
+    local mobLevelText = _G[buttonName.."ClipMobLevel"]
+
     clipText:SetText(clip.deathCause or "Неизвестно")
+    mobLevelText:SetText(clip.mobLevelText or "")
 
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
     local offlineText = _G[buttonName.."RatingOfflineText"]

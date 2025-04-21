@@ -16,7 +16,7 @@
                 </FontString>
 
                 <!-- Level -->
-                <FontString name="$parentLevel" inherits="GameFontHighlightSmall">
+                <FontString name="$parentLevel" inherits="GameFontNormalLarge">
                     <Size><AbsDimension x="50" y="32" /></Size>
                     <Anchors>
                         <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" x="-10" />
@@ -98,11 +98,17 @@
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                            <Size><AbsDimension x="147" y="32" /></Size>
+                            <Size><AbsDimension x="125" y="32" /></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
                                     <Offset><AbsDimension x="0" y="0" /></Offset>
                                 </Anchor>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="$parentMobLevel" inherits="GameFontNormalLarge" justifyH="LEFT">
+                            <Size><AbsDimension x="25" y="32" /></Size>
+                            <Anchors>
+                                <Anchor point="LEFT" relativeTo="$parentText" relativePoint="RIGHT" x="5" y="0"/>
                             </Anchors>
                         </FontString>
                     </Layer>

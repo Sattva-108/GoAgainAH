@@ -54,9 +54,9 @@ local deathCauses = {
     [3] = "Лава",
     [4] = "Слизь",
     [5] = "Огонь",
-    [6] = "Падение",
+    [6] = "Падение в бездну",
     [7] = "существом",
-    [8] = "PVP",
+    [8] = "Умер в PVP схватке",
     [9] = "Погиб от действий союзника",
     [10] = "Погиб от собственных действий",
 }
@@ -150,14 +150,23 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
         -- Process death cause
         local deathCause = deathCauses[deathCauseId] or "Неизвестно"
+        local mobLevelText = ""  -- Default empty
+
+        -- Check if the death was caused by a creature and we have its name
         if deathCauseId == 7 and mobName ~= "" then
+            -- Initially set deathCause to the mob name (uncolored)
+            deathCause = mobName
+
+            -- Check if we also have the mob's level
             if mobLevel ~= "" then
                 -- Calculate level difference
-                local levelDiff = tonumber(mobLevel) - (level or 0)  -- Use player's level (default to 0 if nil)
+                local playerLevel = level or 0 -- Ensure player level is a number
+                local mobLevelNum = tonumber(mobLevel)
+                local levelDiff = mobLevelNum - playerLevel
 
-                -- Determine color based on level difference (WoW standard colors)
+                -- Determine color based on level difference
                 local color
-                if levelDiff >= 5 then       -- Red (very dangerous)
+                if levelDiff >= 5 then       -- Red
                     color = "|cFFFF0000"
                 elseif levelDiff >= 3 then    -- Orange
                     color = "|cFFFF7F00"
@@ -165,13 +174,16 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                     color = "|cFFFFFF00"
                 elseif levelDiff >= -6 then   -- Green
                     color = "|cFF00FF00"
-                else                          -- Gray (trivial)
+                else                          -- Gray
                     color = "|cFF808080"
                 end
 
-                deathCause = string.format("%s%s\n%s ур.|r", color, mobName, mobLevel)
-            else
-                deathCause = mobName
+                -- Format mob level text with color and " ур." suffix
+                mobLevelText = string.format("%s%s|r", color, mobLevel)
+
+                -- Format death cause (mob name) with the same color
+                deathCause = string.format("%s%s|r", color, mobName)
+                -- else: mobLevel is empty, so keep deathCause as plain mobName and mobLevelText as empty
             end
         end
 
@@ -184,10 +196,10 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             race = (races[raceId] and races[raceId].name) or "Неизвестно",
             faction = (races[raceId] and races[raceId].faction) or "Неизвестно",
             class = classes[classId] or "Неизвестно",
-            level = level,          -- Keep numeric for sorting
-            levelText = levelText,     -- Display colorized version in UI
+            level = level,
             where = zone,
             deathCause = deathCause,
+            mobLevelText = mobLevelText
         }
 
         ns.AddNewDeathClips({clip})
