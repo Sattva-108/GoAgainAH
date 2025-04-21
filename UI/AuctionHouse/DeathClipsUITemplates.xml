@@ -5,94 +5,45 @@
         </Size>
         <Layers>
             <Layer level="BACKGROUND">
-                <!-- Streamer Name (reduced to 90px) -->
+                <!-- Name -->
                 <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
-                    <Size>
-                        <AbsDimension x="90" y="32" />
-                    </Size>
+                    <Size><AbsDimension x="90" y="32" /></Size>
                     <Anchors>
                         <Anchor point="TOPLEFT">
-                            <Offset>
-                                <AbsDimension x="41" y="0" />
-                            </Offset>
+                            <Offset><AbsDimension x="41" y="0" /></Offset>
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <!-- Race (55px) -->
-                <FontString name="$parentRace" inherits="GameFontHighlightSmall">
-                    <Size>
-                        <AbsDimension x="55" y="32" />
-                    </Size>
-                    <Anchors>
-                        <Anchor x="0" point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" />
-                    </Anchors>
-                </FontString>
-                <!-- Level (increased to 50px) -->
+
+                <!-- Level -->
                 <FontString name="$parentLevel" inherits="GameFontHighlightSmall">
-                    <Size>
-                        <AbsDimension x="50" y="32" />
-                    </Size>
+                    <Size><AbsDimension x="50" y="32" /></Size>
                     <Anchors>
-                        <Anchor x="0" point="LEFT" relativeTo="$parentRace" relativePoint="RIGHT" />
+                        <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" />
                     </Anchors>
                 </FontString>
-                <!-- Class (55px) -->
-                <FontString name="$parentClass" inherits="GameFontHighlightSmall">
-                    <Size>
-                        <AbsDimension x="55" y="32" />
-                    </Size>
-                    <Anchors>
-                        <Anchor x="0" point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" />
-                    </Anchors>
-                </FontString>
-                <!-- When (55px) -->
-                <FontString name="$parentWhen" inherits="GameFontHighlightSmall">
-                    <Size>
-                        <AbsDimension x="55" y="32" />
-                    </Size>
-                    <Anchors>
-                        <Anchor x="-5" point="LEFT" relativeTo="$parentClass" relativePoint="RIGHT" />
-                    </Anchors>
-                </FontString>
-                <!-- Where/Zone (increased to 95px) -->
-                <FontString name="$parentWhere" inherits="GameFontHighlightSmall">
-                    <Size>
-                        <AbsDimension x="95" y="32" />
-                    </Size>
-                    <Anchors>
-                        <Anchor x="-5" point="LEFT" relativeTo="$parentWhen" relativePoint="RIGHT" />
-                    </Anchors>
-                </FontString>
+
+                <!-- Decorative Textures -->
                 <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-                    <Size>
-                        <AbsDimension x="10" y="32" />
-                    </Size>
+                    <Size><AbsDimension x="10" y="32" /></Size>
                     <Anchors>
                         <Anchor point="LEFT">
-                            <Offset>
-                                <AbsDimension x="34" y="2" />
-                            </Offset>
+                            <Offset><AbsDimension x="34" y="2" /></Offset>
                         </Anchor>
                     </Anchors>
                     <TexCoords left="0" right="0.078125" top="0" bottom="1" />
                 </Texture>
                 <Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-                    <Size>
-                        <AbsDimension x="10" y="32" />
-                    </Size>
+                    <Size><AbsDimension x="10" y="32" /></Size>
                     <Anchors>
                         <Anchor point="RIGHT">
-                            <Offset>
-                                <AbsDimension x="0" y="2" />
-                            </Offset>
+                            <Offset><AbsDimension x="0" y="2" /></Offset>
                         </Anchor>
                     </Anchors>
                     <TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
                 </Texture>
                 <Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-                    <Size>
-                        <AbsDimension x="10" y="32" />
-                    </Size>
+                    <Size><AbsDimension x="10" y="32" /></Size>
                     <Anchors>
                         <Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
                             <Offset>
@@ -108,92 +59,148 @@
                     <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
                 </Texture>
             </Layer>
-
         </Layers>
+
         <Frames>
+            <!-- Icon Button -->
             <Button name="$parentItem">
-                <Size>
-                    <AbsDimension x="32" y="32" />
-                </Size>
+                <Size><AbsDimension x="32" y="32" /></Size>
                 <Anchors>
                     <Anchor point="TOPLEFT">
-                        <Offset>
-                            <AbsDimension x="0" y="0" />
-                        </Offset>
+                        <Offset><AbsDimension x="0" y="0" /></Offset>
                     </Anchor>
                 </Anchors>
                 <Layers>
                     <Layer level="BORDER">
-                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.75"/>
+                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.75" />
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnEnter>
-                        self:GetParent():LockHighlight()
-                    </OnEnter>
-                    <OnLeave>
-                        self:GetParent():UnlockHighlight()
-                    </OnLeave>
+                    <OnEnter>self:GetParent():LockHighlight()</OnEnter>
+                    <OnLeave>self:GetParent():UnlockHighlight()</OnLeave>
                 </Scripts>
-
                 <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
-                    <Size>
-                        <AbsDimension x="60" y="60" />
-                    </Size>
+                    <Size><AbsDimension x="60" y="60" /></Size>
                     <Anchors>
-                        <Anchor point="CENTER">
-                            <Offset>
-                                <AbsDimension x="0" y="0" />
-                            </Offset>
-                        </Anchor>
+                        <Anchor point="CENTER"><Offset><AbsDimension x="0" y="0" /></Offset></Anchor>
                     </Anchors>
                 </NormalTexture>
                 <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
                 <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
             </Button>
+
+            <!-- Clip Link -->
             <Frame name="$parentClip">
-                <Size>
-                    <AbsDimension x="160" y="32" /> <!-- Increased from 90 to 147 -->
-                </Size>
+                <Size><AbsDimension x="160" y="32" /></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentWhere" relativePoint="RIGHT" x="15" />
+                    <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="5" />
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                            <Size>
-                                <AbsDimension x="147" y="32" />
-                            </Size>
+                            <Size><AbsDimension x="147" y="32" /></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset>
-                                        <AbsDimension x="0" y="0" />
-                                    </Offset>
+                                    <Offset><AbsDimension x="0" y="0" /></Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
             </Frame>
-            <Frame name="$parentRating">
-                <Size>
-                    <AbsDimension x="80" y="32" /> <!-- Reduced from 90 to 80 -->
-                </Size>
+
+            <!-- Where -->
+            <Frame name="$parentWhere">
+                <Size><AbsDimension x="95" y="32"/></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" />
+                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="-5"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                            <Size><AbsDimension x="95" y="32"/></Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- Class -->
+            <Frame name="$parentClass">
+                <Size><AbsDimension x="55" y="32"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentWhere" relativePoint="RIGHT" x="-10"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                            <Size><AbsDimension x="55" y="32"/></Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- Race -->
+            <Frame name="$parentRace">
+                <Size><AbsDimension x="55" y="32"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentClass" relativePoint="RIGHT" x="5"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                            <Size><AbsDimension x="55" y="32"/></Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- When -->
+            <Frame name="$parentWhen">
+                <Size><AbsDimension x="55" y="32"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentRace" relativePoint="RIGHT" x="0"/>
+                </Anchors>
+                <Layers>
+                    <Layer>
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                            <Size><AbsDimension x="55" y="32"/></Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+
+            <!-- Rating Frame -->
+            <Frame name="$parentRating">
+                <Size><AbsDimension x="80" y="32" /></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentWhen" relativePoint="RIGHT" x="5"/>
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentOfflineText" inherits="GameFontHighlightSmall" text="L_OFFLINE_DEATH" justifyH="LEFT">
-                            <Size>
-                                <AbsDimension x="90" y="32" />
-                            </Size>
+                            <Size><AbsDimension x="90" y="32" /></Size>
                             <Anchors>
-                                <Anchor point="TOPLEFT">
-                                    <Offset>
-                                        <AbsDimension x="0" y="0" />
-                                    </Offset>
-                                </Anchor>
+                                <Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="0" /></Offset></Anchor>
                             </Anchors>
                         </FontString>
                     </Layer>
@@ -202,22 +209,23 @@
                     <OnLoad function="OFDeathClipsRatingWidget_OnLoad" />
                 </Scripts>
             </Frame>
+
+            <!-- Rate Button -->
             <Button name="$parentRate" inherits="UIPanelButtonTemplate" text="L_RATE_CLIP">
-                <Size>
-                    <AbsDimension x="80" y="20" />
-                </Size>
+                <Size><AbsDimension x="80" y="20" /></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentRating" relativePoint="RIGHT" x="0" /> <!-- Fixed anchor -->
+                    <Anchor point="LEFT" relativeTo="$parentRating" relativePoint="RIGHT" x="0" />
                 </Anchors>
-                <NormalFont style="GameFontNormalSmall"/>
-                <HighlightFont style="GameFontNormalSmall"/>
-                <DisabledFont style="GameFontDisable"/>
+                <NormalFont style="GameFontNormalSmall" />
+                <HighlightFont style="GameFontNormalSmall" />
+                <DisabledFont style="GameFontDisable" />
             </Button>
         </Frames>
+
         <Scripts>
-<!--            <OnClick>-->
-<!--                TODO Some OnClick action-->
-<!--            </OnClick>-->
+            <!--            <OnClick>-->
+            <!--                TODO Some OnClick action-->
+            <!--            </OnClick>-->
         </Scripts>
         <HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD">
             <Size>
@@ -233,6 +241,7 @@
             <TexCoords left="0" right="1" top="0" bottom="0.578125" />
         </HighlightTexture>
     </Button>
+
     <Frame name="OFDeathClipReviewEntryTemplate" virtual="true" hidden="true">
         <Size>
             <AbsDimension x="350" y="80" />

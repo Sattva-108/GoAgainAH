@@ -107,7 +107,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         name:SetText("Неизвестно")
     end
 
-    local race = _G[buttonName.."Race"]
+    local race = _G[buttonName.."RaceText"]
     race:SetText(L[clip.race:lower()] or L["Unknown"])
     if clip.race and ns.RACE_COLORS[clip.race] then
         race:SetTextColor(ns.HexToRGG(ns.RACE_COLORS[clip.race]))
@@ -125,7 +125,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     local level = _G[buttonName.."Level"]
     level:SetText(clip.levelText or 1)
 
-    local class = _G[buttonName.."Class"]
+    local class = _G[buttonName.."ClassText"]
     if clip.class and ns.CLASS_COLORS[clip.class] then
         local classColor = ns.CLASS_COLORS[clip.class]
         class:SetTextColor(classColor.r, classColor.g, classColor.b)
@@ -134,10 +134,12 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
     class:SetText(L[clip.class:lower()] or L["Unknown"])
 
-    local when = _G[buttonName.."When"]
+    local when = _G[buttonName.."WhenText"]
     when:SetText(formatWhen(clip))
 
-    local where = _G[buttonName.."Where"]
+    local where = _G[buttonName.."WhereText"]
+    where:SetJustifyH("LEFT")  -- Align text to the left
+
     local whereStr
     if clip.mapId then
         whereStr = C_Map.GetMapInfo(clip.mapId).name

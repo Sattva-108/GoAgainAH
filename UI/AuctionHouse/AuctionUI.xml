@@ -1371,181 +1371,144 @@
                     </Layer>
                 </Layers>
                 <Frames>
-					<Button name="OFDeathClipsStreamerSort" inherits="OFAuctionSortButtonTemplate" text="L_STREAMER">
-						<Size>
-							<AbsDimension x="90" y="19" /> <!-- Reduced from 170 -->
-						</Size>
+					<!-- Streamer sort remains first -->
+					<Button name="OFDeathClipsStreamerSort" inherits="OFAuctionSortButtonTemplate" text="Имя">
+						<Size><AbsDimension x="90" y="19" /></Size>
 						<Anchors>
 							<Anchor point="TOPLEFT">
-								<Offset>
-                                    <AbsDimension x="65" y="-52" />
-								</Offset>
+								<Offset><AbsDimension x="65" y="-52" /></Offset>
 							</Anchor>
 						</Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("clips", "streamer")
-                            </OnClick>
-                        </Scripts>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "streamer")</OnClick>
+						</Scripts>
 					</Button>
-					<Button name="OFDeathClipsRaceSort" inherits="OFAuctionSortButtonTemplate" text="RACE">
-						<Size x="55" y="19" /> <!-- Unchanged -->
+
+					<!-- LEVEL -->
+					<Button name="OFDeathClipsLevelSort" inherits="OFAuctionSortButtonTemplate" text="Level">
+						<Size><AbsDimension x="50" y="19" /></Size>
 						<Anchors>
-							<Anchor x="0" point="LEFT" relativeTo="OFDeathClipsStreamerSort" relativePoint="RIGHT" /> <!-- Removed -2 offset -->
+							<Anchor point="LEFT" relativeTo="OFDeathClipsStreamerSort" relativePoint="RIGHT" />
 						</Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("clips", "race")
-                            </OnClick>
-                        </Scripts>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "level")</OnClick>
+						</Scripts>
 					</Button>
-					<Button name="OFDeathClipsLevelSort" inherits="OFAuctionSortButtonTemplate" text="LEVEL">
-						<Size>
-							<AbsDimension x="53" y="19" /> <!-- Increased from 40 -->
-						</Size>
+
+					<!-- CLIP LINK -->
+					<Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="Причина смерти">
+						<Size><AbsDimension x="157" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsRaceSort" relativePoint="RIGHT" x="0" /> <!-- Removed -2 offset -->
+							<Anchor point="LEFT" relativeTo="OFDeathClipsLevelSort" relativePoint="RIGHT" />
 						</Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("clips", "level")
-                            </OnClick>
-                        </Scripts>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "clip")</OnClick>
+						</Scripts>
 					</Button>
+
+					<!-- WHERE -->
+					<Button name="OFDeathClipsWhereSort" inherits="OFAuctionSortButtonTemplate" text="Где умер">
+						<Size><AbsDimension x="95" y="19" /></Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFDeathClipsClipSort" relativePoint="RIGHT" />
+						</Anchors>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "where")</OnClick>
+						</Scripts>
+					</Button>
+
+					<!-- CLASS -->
 					<Button name="OFDeathClipsClassSort" inherits="OFAuctionSortButtonTemplate" text="CLASS">
-						<Size>
-							<AbsDimension x="55" y="19" /> <!-- Unchanged -->
-						</Size>
+						<Size><AbsDimension x="55" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsLevelSort" relativePoint="RIGHT" x="0" /> <!-- Removed -2 offset -->
+							<Anchor point="LEFT" relativeTo="OFDeathClipsWhereSort" relativePoint="RIGHT" />
 						</Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("clips", "class")
-                            </OnClick>
-                        </Scripts>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "class")</OnClick>
+						</Scripts>
 					</Button>
+
+					<!-- RACE -->
+					<Button name="OFDeathClipsRaceSort" inherits="OFAuctionSortButtonTemplate" text="RACE">
+						<Size><AbsDimension x="55" y="19" /></Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFDeathClipsClassSort" relativePoint="RIGHT" />
+						</Anchors>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "race")</OnClick>
+						</Scripts>
+					</Button>
+
+					<!-- WHEN -->
 					<Button name="OFDeathClipsWhenSort" inherits="OFAuctionSortButtonTemplate" text="L_WHEN">
-						<Size>
-							<AbsDimension x="55" y="19" /> <!-- Unchanged -->
-						</Size>
+						<Size><AbsDimension x="55" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsClassSort" relativePoint="RIGHT" x="0" /> <!-- Removed -2 offset -->
-						</Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("clips", "when")
-                            </OnClick>
-                        </Scripts>
-					</Button>
-					<Button name="OFDeathClipsWhereSort" inherits="OFAuctionSortButtonTemplate" text="L_WHERE">
-						<Size>
-							<AbsDimension x="95" y="19" /> <!-- Increased from 80 -->
-						</Size>
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsWhenSort" relativePoint="RIGHT" x="0" /> <!-- Removed -2 offset -->
-						</Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("clips", "where")
-                            </OnClick>
-                        </Scripts>
-					</Button>
-					<Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="L_CLIP_LINK">
-						<Size>
-							<AbsDimension x="157" y="19" />
-						</Size>
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsWhereSort" relativePoint="RIGHT" x="0" /> <!-- First in chain -->
+							<Anchor point="LEFT" relativeTo="OFDeathClipsRaceSort" relativePoint="RIGHT" />
 						</Anchors>
 						<Scripts>
-							<OnClick>
-								OFAuctionFrame_OnClickSortColumn("clips", "clip")
-							</OnClick>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "when")</OnClick>
 						</Scripts>
 					</Button>
+
+					<!-- RATING -->
 					<Button name="OFDeathClipsRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
-						<Size>
-							<AbsDimension x="83" y="19" />
-						</Size>
+						<Size><AbsDimension x="83" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsClipSort" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-2" y="0" />
-								</Offset>
-							</Anchor>
+							<Anchor point="LEFT" relativeTo="OFDeathClipsWhenSort" relativePoint="RIGHT" />
 						</Anchors>
 						<Scripts>
-							<OnClick>
-								OFAuctionFrame_OnClickSortColumn("clips", "rating")
-							</OnClick>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "rating")</OnClick>
 						</Scripts>
 					</Button>
+
+					<!-- RATE -->
 					<Button name="OFDeathClipsRateClipSort" inherits="OFAuctionSortButtonTemplate" text="L_RATE_CLIP">
-						<Size>
-							<AbsDimension x="90" y="19" />
-						</Size>
+						<Size><AbsDimension x="90" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsRatingSort" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="-2" y="0" />
-								</Offset>
-							</Anchor>
+							<Anchor point="LEFT" relativeTo="OFDeathClipsRatingSort" relativePoint="RIGHT" />
 						</Anchors>
 						<Scripts>
-							<OnClick>
-								OFAuctionFrame_OnClickSortColumn("clips", "rate")
-							</OnClick>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "rate")</OnClick>
 						</Scripts>
 					</Button>
-                    <ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate">
-                        <Size>
-                            <AbsDimension x="775" y="335" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="TOPRIGHT">
-                                <Offset>
-                                    <AbsDimension x="40" y="-74" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer>
-                                <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
-                                    <Size>
-                                        <AbsDimension x="31" y="256" />
-                                    </Size>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
-                                            <Offset>
-                                                <AbsDimension x="-2" y="5" />
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                    <TexCoords left="0" right="0.484375" top="0" bottom="1" />
-                                </Texture>
-                                <Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
-                                    <Size>
-                                        <AbsDimension x="31" y="106" />
-                                    </Size>
-                                    <Anchors>
-                                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
-                                            <Offset>
-                                                <AbsDimension x="-2" y="-2" />
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                    <TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />
-                                </Texture>
-                            </Layer>
-                        </Layers>
-                        <Scripts>
-                            <OnVerticalScroll>
-                                FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)
-                            </OnVerticalScroll>
-                        </Scripts>
-                    </ScrollFrame>
-                    <Button name="OFDeathClipsButton1" inherits="OFDeathClipsButtonTemplate" id="1">
+
+					<!-- Scroll frame unchanged -->
+					<ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate">
+						<Size><AbsDimension x="775" y="335" /></Size>
+						<Anchors>
+							<Anchor point="TOPRIGHT">
+								<Offset><AbsDimension x="40" y="-74" /></Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer>
+								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+									<Size><AbsDimension x="31" y="256" /></Size>
+									<Anchors>
+										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
+											<Offset><AbsDimension x="-2" y="5" /></Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.484375" top="0" bottom="1" />
+								</Texture>
+								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
+									<Size><AbsDimension x="31" y="106" /></Size>
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
+											<Offset><AbsDimension x="-2" y="-2" /></Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnVerticalScroll>
+								FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)
+							</OnVerticalScroll>
+						</Scripts>
+					</ScrollFrame>
+					<Button name="OFDeathClipsButton1" inherits="OFDeathClipsButtonTemplate" id="1">
                         <Anchors>
                             <Anchor point="TOPLEFT">
                                 <Offset>
