@@ -9,9 +9,9 @@ local function CalculateOffset(i, config)
     local starSize = config.starSize or 18
     local spaceBetweenStars = config.marginBetweenStarsX or 8
     local leftMargin = config.leftMargin or 6
+    local textWidth = (not config.hideText) and (config.textWidth or 18) or 0  -- Only include text width if not hiding text
 
-    -- Removed textWidth from the calculation
-    return leftMargin + (i - 1) * (starSize + spaceBetweenStars)
+    return leftMargin + textWidth + (i - 1) * (starSize + spaceBetweenStars)
 end
 
 local function ShouldShowFullStar(starIndex, rating)
@@ -30,6 +30,14 @@ local function CreateStarRatingWidget(config)
     end
 
     local starSize = config.starSize or 18
+
+    -- Create text label unless hideText is true
+    if not config.hideText then
+        local label = starGroup.frame:CreateFontString(nil, "OVERLAY", config.labelFont or "GameFontNormal")
+        label:SetPoint("LEFT", 0, 0)
+        label:SetText(string.format("%d", starGroup.rating))
+        starGroup.label = label
+    end
 
     local stars = {}
     for i = 1, 5 do
@@ -69,6 +77,18 @@ local function CreateStarRatingWidget(config)
         self.rating = rating
         for i = 1, 5 do
             stars[i].texture:SetTexture(ShouldShowFullStar(i, rating) and STAR_FULL or empty)
+        end
+
+        if self.label then  -- Only update text if label exists
+            local ratingText = string.format("%.1f", self.rating)
+            self.label:SetText(ratingText)
+
+            -- Set text color based on rating
+            if not self.rating or self.rating == 0 then
+                self.label:SetTextColor(0.5, 0.5, 0.5, 1) -- Grey
+            else
+                self.label:SetTextColor(1, 0.82, 0, 1) -- Gold
+            end
         end
     end
 
