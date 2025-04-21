@@ -101,18 +101,18 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     local name = _G[buttonName.."Name"]
     if clip.characterName then
-        -- Set faction-based color for the name
+        -- Set faction-based color for the name with softened tones
         if clip.faction == "Horde" then
-            name:SetTextColor(1, 0.1, 0.1)  -- Red for Horde
+            name:SetTextColor(0.8, 0.3, 0.3)  -- Soft red
         elseif clip.faction == "Alliance" then
-            name:SetTextColor(0.2, 0.4, 1)  -- Blue for Alliance
+            name:SetTextColor(0.4, 0.6, 1)    -- Soft blue
         else
-            name:SetTextColor(1, 1, 0)      -- Yellow for neutral
+            name:SetTextColor(0.9, 0.9, 0.4)  -- Soft yellow
         end
 
         name:SetText(clip.characterName)
     else
-        name:SetTextColor(1, 1, 1)  -- White if no name
+        name:SetTextColor(0.85, 0.85, 0.85)   -- Light grayish white for unknown
         name:SetText(L["Unknown"])
     end
 
@@ -125,10 +125,12 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 
     local iconTexture = _G[buttonName.."ItemIconTexture"]
-    if clip.race then
-        iconTexture:SetTexture(string.format("Interface\\Icons\\Achievement_Character_%s_Male", string.gsub(clip.race, " ", "")))
+    if clip.class and CLASS_ICON_TCOORDS[clip.class] then
+        iconTexture:SetTexture("Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES")
+        iconTexture:SetTexCoord(unpack(CLASS_ICON_TCOORDS[clip.class]))
     else
-        iconTexture:SetTexture("interface/icons/inv_misc_bone_humanskull_01")
+        iconTexture:SetTexture("interface/icons/inv_misc_questionmark")
+        iconTexture:SetTexCoord(0, 1, 0, 1)  -- reset tex coords
     end
 
     local level = _G[buttonName.."Level"]

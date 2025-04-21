@@ -190,7 +190,7 @@ local function UpdateEntry(i, offset, button, entry)
         button.item.raceTexture:SetTexture("Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES")
         button.item.raceTexture:SetTexCoord(unpack(CLASS_ICON_TCOORDS[entry.class]))
     else
-        print("Invalid class or missing texcoords for:", entry.class)
+        ns.DebugLog("Invalid class or missing texcoords for:", entry.class)
         button.item.raceTexture:SetTexture(nil)
     end
     button.item.raceTexture:SetAlpha(entry.meetsRequirements and 1.0 or 0.6)
