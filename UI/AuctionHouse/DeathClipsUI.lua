@@ -126,13 +126,32 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     level:SetText(clip.level or 1)
 
     local class = _G[buttonName.."ClassText"]
-    if clip.class and ns.CLASS_COLORS[clip.class] then
-        local classColor = ns.CLASS_COLORS[clip.class]
-        class:SetTextColor(classColor.r, classColor.g, classColor.b)
+    if clip.class then
+        -- Convert to uppercase for consistent lookups
+        local classKey = string.upper(clip.class)
+
+        -- Get localized full name
+        local localizedName = LOCALIZED_CLASS_NAMES_MALE[classKey] or clip.class
+
+        -- Only shorten Warlock for Russian clients
+        if GetLocale() == "ruRU" and classKey == "WARLOCK" then
+            localizedName = "Чернокниж."
+        end
+
+        -- Set class color from RAID_CLASS_COLORS
+        local classColor = RAID_CLASS_COLORS[classKey]
+        if classColor then
+            class:SetTextColor(classColor.r, classColor.g, classColor.b)
+        else
+            class:SetTextColor(1, 1, 1) -- Fallback to white
+        end
+
+        class:SetText(localizedName)
     else
+        -- Unknown class handling
         class:SetTextColor(1, 1, 1)
+        class:SetText(L["Unknown"])
     end
-    class:SetText(L[clip.class:lower()] or L["Unknown"])
 
     local when = _G[buttonName.."WhenText"]
     when:SetText(formatWhen(clip))
