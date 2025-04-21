@@ -11,6 +11,23 @@ local function CreateDeathClipReviewsPrompt()
     frame.title:EnableMouse(false)
     frame:SetWidth(410)
     frame:SetHeight(475)
+    -- Add background to the AceGUI frame
+    frame.frame:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true, tileSize = 32, edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 }
+    })
+    frame.frame:SetBackdropColor(0, 0, 0, 0.8)
+
+    -- Remove the red drag rectangle by finding and hiding the texture
+    for i = 1, frame.frame:GetNumRegions() do
+        local region = select(i, frame.frame:GetRegions())
+        if region:GetObjectType() == "Texture" and region:GetTexture() and strfind(region:GetTexture():lower(), "solid") then
+            region:Hide()
+            break
+        end
+    end
 
     local closeButton = CreateFrame("Button", "ExitButton", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7,7)

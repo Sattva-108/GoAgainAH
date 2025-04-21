@@ -307,6 +307,17 @@
                     </Anchors>
                 </FontString>
             </Layer>
+            <Layer level="BACKGROUND">
+                <!-- Simple dark background with border -->
+                <Texture file="Interface\FrameGeneral\UI-Background-Rock">
+                    <Size x="350" y="370"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="0" y="0"/>
+                        <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+                    </Anchors>
+                    <Color r="0.2" g="0.2" b="0.2" a="0.9"/>
+                </Texture>
+            </Layer>
         </Layers>
 
         <!-- Scroll Frame -->
