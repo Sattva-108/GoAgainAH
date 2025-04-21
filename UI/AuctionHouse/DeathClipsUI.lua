@@ -99,13 +99,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     local name = _G[buttonName.."Name"]
     if clip.characterName then
-        -- Set faction-based color for the name with softened tones
-        if clip.faction == "Horde" then
-            name:SetTextColor(0.8, 0.3, 0.3)  -- Soft red
-        elseif clip.faction == "Alliance" then
-            name:SetTextColor(0.4, 0.6, 1)    -- Soft blue
+        -- Get the class color using the player's class
+        local classColor = RAID_CLASS_COLORS[clip.class] -- 'clip.class' should be the player's class (e.g., "WARRIOR", "MAGE", etc.)
+
+        if classColor then
+            -- Set class color for the name
+            name:SetTextColor(classColor.r, classColor.g, classColor.b)
         else
-            name:SetTextColor(0.9, 0.9, 0.4)  -- Soft yellow
+            -- Fallback to a default color (light gray) if the class color is not found
+            name:SetTextColor(0.85, 0.85, 0.85)
         end
 
         name:SetText(clip.characterName)
