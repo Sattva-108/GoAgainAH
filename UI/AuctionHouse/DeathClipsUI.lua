@@ -123,7 +123,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 
     local level = _G[buttonName.."Level"]
-    level:SetText(clip.levelText or 1)
+    level:SetText(clip.level or 1)
 
     local class = _G[buttonName.."ClassText"]
     if clip.class and ns.CLASS_COLORS[clip.class] then
