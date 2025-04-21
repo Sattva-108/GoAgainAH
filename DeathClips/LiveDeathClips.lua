@@ -18,18 +18,16 @@ local races = {
     [15] = { name = "Высший эльф", faction = "Alliance" },
     [16] = { name = "Пандарен", faction = "Horde" },
     [17] = { name = "Ночнорожденный", faction = "Horde" },
-    [18] = { name = "Озаренный дреней", faction = "Alliance" },
+    [18] = { name = "Эльф Бездны", faction = "Alliance" },
     [19] = { name = "Вульпера", faction = "Alliance" },
     [20] = { name = "Вульпера", faction = "Horde" },
     [21] = { name = "Вульпера", faction = "Neutral" },
     [22] = { name = "Пандарен", faction = "Neutral" },
     [23] = { name = "Зандалар", faction = "Horde" },
-    [24] = { name = "Эльф Бездны", faction = "Alliance" },
+    [24] = { name = "Оз. дреней", faction = "Alliance" },
     [25] = { name = "Эредар", faction = "Horde" },
-    [26] = { name = "Дворф Черного Железа", faction = "Alliance" },
-    [27] = { name = "Драктир", faction = "Neutral" },
-    [28] = { name = "Драктир", faction = "Horde" },
-    [29] = { name = "Драктир", faction = "Alliance" }
+    [26] = { name = "Дворф ЧЖ", faction = "Alliance" },
+    [27] = { name = "Драктир", faction = "Horde" }
 }
 
 
