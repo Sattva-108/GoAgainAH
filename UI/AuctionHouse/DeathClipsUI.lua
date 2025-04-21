@@ -126,6 +126,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         race:SetTextColor(0.4, 0.6, 1)    -- Soft blue for Alliance
     else
         race:SetTextColor(0.9, 0.9, 0.4)  -- Soft yellow for Neutral or unknown faction
+    end
 
 
     local iconTexture = _G[buttonName.."ItemIconTexture"]
