@@ -134,7 +134,17 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 
     local level = _G[buttonName.."Level"]
-    level:SetText(clip.level or 1)
+    local lvl = clip.level or 1
+
+    -- Получаем цвет по уровню сложности
+    local color = GetQuestDifficultyColor(lvl)
+
+    -- Переводим RGB в шестнадцатеричный код
+    local hex = string.format("|cff%02x%02x%02x", color.r * 255, color.g * 255, color.b * 255)
+
+    -- Устанавливаем цветной текст
+    level:SetText(hex .. lvl .. "|r")
+
 
     local class = _G[buttonName.."ClassText"]
     if clip.class then
