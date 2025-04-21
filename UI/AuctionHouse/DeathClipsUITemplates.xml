@@ -91,14 +91,14 @@
 
             <!-- Clip Link -->
             <Frame name="$parentClip">
-                <Size><AbsDimension x="150" y="32" /></Size>
+                <Size><AbsDimension x="240" y="32" /></Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="0" />
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                            <Size><AbsDimension x="125" y="32" /></Size>
+                        <FontString name="$parentText" inherits="GameFontNormal" justifyH="LEFT">
+                            <Size><AbsDimension x="215" y="32" /></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
                                     <Offset><AbsDimension x="0" y="0" /></Offset>
