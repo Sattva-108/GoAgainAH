@@ -201,16 +201,6 @@
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentWhen" relativePoint="RIGHT" x="5"/>
                 </Anchors>
-                <Layers>
-                    <Layer>
-                        <FontString name="$parentOfflineText" inherits="GameFontHighlightSmall" text="L_OFFLINE_DEATH" justifyH="LEFT">
-                            <Size><AbsDimension x="90" y="32" /></Size>
-                            <Anchors>
-                                <Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="0" /></Offset></Anchor>
-                            </Anchors>
-                        </FontString>
-                    </Layer>
-                </Layers>
                 <Scripts>
                     <OnLoad function="OFDeathClipsRatingWidget_OnLoad" />
                 </Scripts>
@@ -367,14 +357,6 @@
                     <Anchor point="TOPLEFT" relativeTo="$parentEntry3" relativePoint="BOTTOMLEFT" y="-3"/>
                 </Anchors>
             </Frame>
-            <Button parentKey="markOfflineButton" inherits="UIPanelButtonTemplate" text="L_OFFLINE_DEATH">
-                <Size>
-                    <AbsDimension x="380" y="40" />
-                </Size>
-                <Anchors>
-                    <Anchor point="BOTTOM" x="15" y="-5" />
-                </Anchors>
-            </Button>
             <Button parentKey="writeReviewButton" inherits="UIPanelButtonTemplate" text="L_WRITE_REVIEW">
                 <Size>
                     <AbsDimension x="380" y="40" />

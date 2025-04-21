@@ -2,7 +2,6 @@ local addonName, ns = ...
 
 ns.EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE = "EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE"
 ns.EV_DEATH_CLIP_REVIEW_STATE_SYNCED = "EV_DEATH_CLIP_REVIEW_STATE_SYNCED"
-ns.EV_DEATH_CLIP_MARKED_OFFLINE = "EV_DEATH_CLIP_MARKED_OFFLINE"
 ns.EV_DEATH_CLIP_OVERRIDE_UPDATED = "EV_DEATH_CLIP_OVERRIDE_UPDATED"
 
 
@@ -171,17 +170,6 @@ local function CreateDeathClipReviewState()
         return reviews
     end
 
-    function state:MarkClipOffline(clipID, fromNetwork)
-        local overrides = self.persisted.clipOverrides[clipID] or {}
-        if overrides.offline then
-            return
-        end
-        overrides.offline = true
-        self.persisted.clipOverrides[clipID] = overrides
-        self:MarkDirty()
-        self:FireEvent(ns.EV_DEATH_CLIP_MARKED_OFFLINE, {clipID=clipID, fromNetwork=fromNetwork})
-    end
-
     function state:UpdateClipOverrides(clipID, overrides, fromNetwork)
         self.persisted.clipOverrides[clipID] = overrides
         self:MarkDirty()
@@ -192,10 +180,6 @@ local function CreateDeathClipReviewState()
         return self.persisted.clipOverrides[clipID] or {}
     end
 
-    function state:IsClipOffline(clipID)
-        local overrides = self:GetClipOverrides(clipID)
-        return overrides.offline or false
-    end
     return state
 end
 

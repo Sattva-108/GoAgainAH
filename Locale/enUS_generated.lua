@@ -238,7 +238,6 @@ L["No trade ID provided"] = true
 L["Note"] = true
 L["Notes"] = true
 L["Offline"] = true
-L["Offline Death"] = true
 L["Online"] = true
 L["Online Only"] = true
 L["Onyxia's Lair"] = true

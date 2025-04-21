@@ -146,7 +146,6 @@ ns.T_RATING_STATE = "RATING_STATE"
 ns.T_DEATH_CLIPS_STATE_REQUEST = "DEATH_CLIPS_STATE_REQUEST"
 ns.T_DEATH_CLIPS_STATE = "DEATH_CLIPS_STATE"
 ns.T_ADMIN_REMOVE_CLIP = "ADMIN_REMOVE_CLIP"
-ns.T_DEATH_CLIPS_MARK_OFFLINE = "DEATH_CLIPS_MARK_OFFLINE"
 ns.EV_DEATH_CLIPS_CHANGED = "DEATH_CLIPS_CHANGED"
 ns.T_ADMIN_UPDATE_CLIP_OVERRIDES = "ADMIN_UPDATE_CLIP_OVERRIDES"
 ns.T_DEATH_CLIP_ADDED = "DEATH_CLIP_ADDED"
@@ -347,12 +346,6 @@ function AuctionHouse:Initialize()
             return
         end
         self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_UPDATED,  {review=payload.review}}))
-    end)
-    clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_MARKED_OFFLINE, function(payload)
-        if payload.fromNetwork then
-            return
-        end
-        self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIPS_MARK_OFFLINE,  {clipID=payload.clipID}}))
     end)
     clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, function(payload)
         if payload.fromNetwork then
@@ -796,9 +789,6 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ns.AddNewDeathClips(newClips)
             API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
-    elseif dataType == ns.T_DEATH_CLIPS_MARK_OFFLINE then
-        local reviewState = ns.GetDeathClipReviewState()
-        reviewState:MarkClipOffline(payload.clipID, true)
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
         local rev = payload.rev
         local state = ns.GetDeathClipReviewState()

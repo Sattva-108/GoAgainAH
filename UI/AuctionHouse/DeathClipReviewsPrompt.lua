@@ -53,7 +53,6 @@ local function CreateDeathClipReviewsPrompt()
     local ENTRY_HEIGHT = 80
     frame.scrollFrame = scrollFrame
     frame.reviewButton = reviewsContent.writeReviewButton
-    frame.markOfflineButton = reviewsContent.markOfflineButton
     frame.noReviewsText = reviewsContent.noReviewsText
     function frame:Setup(clip)
         self.clip = clip
@@ -69,15 +68,6 @@ local function CreateDeathClipReviewsPrompt()
             self.noReviewsText:Hide()
         else
             self.noReviewsText:Show()
-        end
-        if state:IsClipOffline(clip.id) then
-            self.markOfflineButton:Hide()
-        else
-            self.markOfflineButton:Show()
-            self.markOfflineButton:SetScript("OnClick", function()
-                state:MarkClipOffline(clip.id, false)
-                self:Hide()
-            end)
         end
 
         self:Update()

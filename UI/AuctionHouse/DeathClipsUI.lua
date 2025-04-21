@@ -43,7 +43,6 @@ function OFAuctionFrameDeathClips_OnShow()
 
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE, update)
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_STATE_SYNCED, update)
-        state:RegisterEvent(ns.EV_DEATH_CLIP_MARKED_OFFLINE, update)
         state:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, update)
     end
 end
@@ -196,18 +195,12 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     mobLevelText:SetJustifyH("CENTER")
 
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
-    local offlineText = _G[buttonName.."RatingOfflineText"]
     local clipButton = _G[buttonName]
     if clip.id == nil then
         ratingWidget:Show()
         ratingWidget:SetRating(0)
-        offlineText:Hide()
-    elseif #ratings == 0 and clip.id and state:IsClipOffline(clip.id) then
-        offlineText:Show()
-        ratingWidget:Hide()
     else
         ratingWidget:Show()
-        offlineText:Hide()
         ratingWidget:SetRating(ns.GetRatingAverage(ratings))
     end
 
