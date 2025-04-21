@@ -100,11 +100,20 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     ResizeEntry(button, numBatchClips, totalClips)
 
     local name = _G[buttonName.."Name"]
-    -- To this:
     if clip.characterName then
-        name:SetText(clip.characterName)  -- Just show character name
+        -- Set faction-based color for the name
+        if clip.faction == "Horde" then
+            name:SetTextColor(1, 0.1, 0.1)  -- Red for Horde
+        elseif clip.faction == "Alliance" then
+            name:SetTextColor(0.2, 0.4, 1)  -- Blue for Alliance
+        else
+            name:SetTextColor(1, 1, 0)      -- Yellow for neutral
+        end
+
+        name:SetText(clip.characterName)
     else
-        name:SetText("Неизвестно")
+        name:SetTextColor(1, 1, 1)  -- White if no name
+        name:SetText(L["Unknown"])
     end
 
     local race = _G[buttonName.."RaceText"]

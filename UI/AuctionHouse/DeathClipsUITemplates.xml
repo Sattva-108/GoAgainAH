@@ -7,7 +7,7 @@
             <Layer level="BACKGROUND">
                 <!-- Name -->
                 <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
-                    <Size><AbsDimension x="90" y="32" /></Size>
+                    <Size><AbsDimension x="100" y="32" /></Size>
                     <Anchors>
                         <Anchor point="TOPLEFT">
                             <Offset><AbsDimension x="41" y="0" /></Offset>
@@ -19,7 +19,7 @@
                 <FontString name="$parentLevel" inherits="GameFontHighlightSmall">
                     <Size><AbsDimension x="50" y="32" /></Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" />
+                        <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" x="-10" />
                     </Anchors>
                 </FontString>
 
@@ -91,9 +91,9 @@
 
             <!-- Clip Link -->
             <Frame name="$parentClip">
-                <Size><AbsDimension x="160" y="32" /></Size>
+                <Size><AbsDimension x="150" y="32" /></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="5" />
+                    <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="0" />
                 </Anchors>
                 <Layers>
                     <Layer>
@@ -113,7 +113,7 @@
             <Frame name="$parentWhere">
                 <Size><AbsDimension x="95" y="32"/></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="-5"/>
+                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="10"/>
                 </Anchors>
                 <Layers>
                     <Layer>

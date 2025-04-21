@@ -1,36 +1,36 @@
 local _, ns = ...
 
 local races = {
-    [1] = "человек",
-    [2] = "орк",
-    [3] = "дворф",
-    [4] = "ночной эльф",
-    [5] = "нежить",
-    [6] = "таурен",
-    [7] = "гном",
-    [8] = "тролль",
-    [9] = "гоблин",
-    [10] = "син'дорей",
-    [11] = "дреней",
-    [12] = "ворген",
-    [13] = "нага",
-    [14] = "пандарен (альянс)",
-    [15] = "высший эльф",
-    [16] = "пандарен (орда)",
-    [17] = "ночнорожденный", -- Placeholder for completeness
-    [18] = "эльф бездны",
-    [19] = "вульпера (альянс)",
-    [20] = "вульпера (орда)",
-    [21] = "вульпера (нейтрал)",
-    --[21] = "эльф крови",
-    [22] = "пандарен (нейтрал?)",
-    [23] = "зандалар",
-    [24] = "озаренный дреней",
-    [25] = "эредар",
-    [26] = "дворф Черного Железа",
-    [27] = "драктир"
+    [1] = { name = "Человек", faction = "Alliance" },
+    [2] = { name = "Орк", faction = "Horde" },
+    [3] = { name = "Дворф", faction = "Alliance" },
+    [4] = { name = "Ночной эльф", faction = "Alliance" },
+    [5] = { name = "Нежить", faction = "Horde" },
+    [6] = { name = "Таурен", faction = "Horde" },
+    [7] = { name = "Гном", faction = "Alliance" },
+    [8] = { name = "Тролль", faction = "Horde" },
+    [9] = { name = "Гоблин", faction = "Horde" },
+    [10] = { name = "Син'Дорей", faction = "Horde" },
+    [11] = { name = "Дреней", faction = "Alliance" },
+    [12] = { name = "Ворген", faction = "Alliance" },
+    [13] = { name = "Нага", faction = "Horde" },
+    [14] = { name = "Пандарен", faction = "Alliance" },
+    [15] = { name = "Высший эльф", faction = "Alliance" },
+    [16] = { name = "Пандарен", faction = "Horde" },
+    [17] = { name = "Ночнорожденный", faction = "Horde" },
+    [18] = { name = "Озаренный дреней", faction = "Alliance" },
+    [19] = { name = "Вульпера", faction = "Alliance" },
+    [20] = { name = "Вульпера", faction = "Horde" },
+    [21] = { name = "Вульпера", faction = "Neutral" },
+    [22] = { name = "Пандарен", faction = "Neutral" },
+    [23] = { name = "Зандалар", faction = "Horde" },
+    [24] = { name = "Эльф Бездны", faction = "Alliance" },
+    [25] = { name = "Эредар", faction = "Horde" },
+    [26] = { name = "Дворф Черного Железа", faction = "Alliance" },
+    [27] = { name = "Драктир", faction = "Neutral" },
+    [28] = { name = "Драктир", faction = "Horde" },
+    [29] = { name = "Драктир", faction = "Alliance" }
 }
-
 
 
 -- Define class mappings
@@ -174,7 +174,8 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             ts = GetServerTime(),
             streamer = ns.GetTwitchName(name) or name,
             characterName = name,
-            race = races[raceId] or "Неизвестно",
+            race = (races[raceId] and races[raceId].name) or "Неизвестно",
+            faction = (races[raceId] and races[raceId].faction) or "Неизвестно",
             class = classes[classId] or "Неизвестно",
             level = level,          -- Keep numeric for sorting
             levelText = levelText,     -- Display colorized version in UI
