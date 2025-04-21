@@ -101,7 +101,7 @@
                     </Anchor>
                 </Anchors>
             </Button>
-            <Button name="OFAuctionFrameTab6" inherits="OFAuctionTabTemplate" id="6" text="Журнал смертей">
+            <Button name="OFAuctionFrameTab6" inherits="OFAuctionTabTemplate" id="6" text="Не Вывезли">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab5" relativePoint="TOPRIGHT">
                         <Offset>

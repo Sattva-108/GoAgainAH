@@ -38,10 +38,24 @@ local function GetBlacklistTypeFromTab(tabID)
         or ns.BLACKLIST_TYPE_ORDERS
 end
 
+-- Had to re-write this for 3.3.5 working bad with Russian characters
 local function ToPascalCase(str)
     if not str then return "" end
-    -- Convert first character to uppercase and the rest to lowercase
-    return str:sub(1,1):upper() .. str:lower():sub(2)
+
+    -- Получаем первый символ (UTF-8)
+    local firstChar = str:match("^[%z\1-\127\194-\244][\128-\191]*")
+    if not firstChar then return "" end
+
+    -- Получаем оставшуюся часть строки
+    local rest = str:sub(#firstChar + 1)
+
+    -- Делаем первую букву заглавной, а остальные строчными через `string.upper`/`string.lower`
+    -- Преобразуем всю строку в нижний регистр, затем первую букву в верхний
+    local lowerStr = string.lower(str)
+    local firstCharLowered = lowerStr:match("^[%z\1-\127\194-\244][\128-\191]*")
+    local firstCharUpper = string.upper(firstCharLowered or "")
+
+    return firstCharUpper .. lowerStr:sub(#firstCharLowered + 1)
 end
 
 StaticPopupDialogs[STATIC_POPUP_NAME] = {
