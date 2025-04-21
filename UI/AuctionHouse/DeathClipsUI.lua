@@ -198,19 +198,43 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
     local offlineText = _G[buttonName.."RatingOfflineText"]
     local clipButton = _G[buttonName]
+
+    -- Create or reuse our transparent overlay button
+    local overlayName = buttonName.."RatingOverlay"
+    local overlay = _G[overlayName] or CreateFrame("Button", overlayName, button)
+
+    -- Configure the overlay (only needs to be done once)
+    if not overlay.initialized then
+        overlay:SetFrameLevel(button:GetFrameLevel() + 5) -- Make sure it's above other elements
+        overlay:SetAllPoints(_G[buttonName.."Rating"]) -- Match rating widget position
+        overlay:EnableMouse(true)
+        overlay:SetAlpha(0) -- Make completely transparent
+        overlay.initialized = true
+    end
+
+    -- Set the click handler on the overlay
+    overlay:SetScript("OnClick", function()
+        ns.DebugLog("clip id:", clip.id)
+        ns.HideDeathClipRatePrompt()
+        ns.ShowDeathClipReviewsPrompt(clip)
+    end)
+
+    -- Existing rating visibility logic
     if clip.id == nil then
         ratingWidget:Show()
         ratingWidget:SetRating(0)
         offlineText:Hide()
+        overlay:Show()
     elseif #ratings == 0 and clip.id and state:IsClipOffline(clip.id) then
         offlineText:Show()
         ratingWidget:Hide()
+        overlay:Hide()
     else
         ratingWidget:Show()
         offlineText:Hide()
         ratingWidget:SetRating(ns.GetRatingAverage(ratings))
+        overlay:Show()
     end
-
     clipButton:SetScript("OnClick", function()
         ns.DebugLog("clip id:", clip.id)
         ns.HideDeathClipRatePrompt()
