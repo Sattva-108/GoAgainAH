@@ -91,14 +91,14 @@
 
             <!-- Clip Link -->
             <Frame name="$parentClip">
-                <Size><AbsDimension x="240" y="32" /></Size>
+                <Size><AbsDimension x="200" y="32" /></Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="0" />
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontNormal" justifyH="LEFT">
-                            <Size><AbsDimension x="215" y="32" /></Size>
+                            <Size><AbsDimension x="175" y="32" /></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
                                     <Offset><AbsDimension x="0" y="0" /></Offset>
@@ -117,14 +117,14 @@
 
             <!-- Where -->
             <Frame name="$parentWhere">
-                <Size><AbsDimension x="95" y="32"/></Size>
+                <Size><AbsDimension x="135" y="32"/></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="10"/>
+                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="15"/>
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
-                            <Size><AbsDimension x="95" y="32"/></Size>
+                        <FontString name="$parentText" inherits="GameFontNormal">
+                            <Size><AbsDimension x="135" y="32"/></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
                                     <Offset><AbsDimension x="5" y="0"/></Offset>

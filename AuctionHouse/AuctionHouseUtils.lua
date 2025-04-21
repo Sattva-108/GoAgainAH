@@ -764,13 +764,13 @@ end
 
 ns.PrettyDuration = function(duration)
     if duration > 86400 then
-        return string.format("%dd", math.floor(duration / 86400))
+        return string.format("%dд", math.floor(duration / 86400))
     elseif duration > 3600 then
-        return string.format("%dh", math.floor(duration / 3600))
+        return string.format("%dч", math.floor(duration / 3600))
     elseif duration > 60 then
-        return string.format("%dm", math.floor(duration / 60))
+        return string.format("%dм", math.floor(duration / 60))
     else
-        return string.format("%ds", duration)
+        return string.format("%dс", duration)
     end
 end
 
