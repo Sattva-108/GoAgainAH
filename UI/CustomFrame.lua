@@ -158,15 +158,15 @@ local methods = {
 Constructor
 -------------------------------------------------------------------------------]]
 local FrameBackdrop = {
-    bgFile = "Interface/AddOns/" .. addonName .. "/Media/Square_FullWhite",
-    tile = true,
+	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
 	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    edgeSize = 24,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 }
+	tile = true,
+	edgeSize = 24,
+	insets = { left = 4, right = 4, top = 4, bottom = 4 }
 }
 
 local PaneBackdrop  = {
-    bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+	bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
 	tile = true, tileSize = 16, edgeSize = 16,
 	insets = { left = 3, right = 3, top = 5, bottom = 3 }
@@ -188,9 +188,9 @@ local function Constructor()
 	frame:SetFrameStrata("FULLSCREEN_DIALOG")
 	frame:SetFrameLevel(100) -- Lots of room to draw under it
 	frame:SetBackdrop(FrameBackdrop)
+	frame:SetBackdropColor(0.06, 0.06, 0.06, 0.9)
+	frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
 
-    frame:SetBackdropColor(0.106, 0.098, 0.086, 0.98)
-    frame:SetBackdropBorderColor(0.298, 0.294, 0.298, 1)
 	if frame.SetResizeBounds then -- WoW 10.0
 		frame:SetResizeBounds(400, 200)
 	else
@@ -202,7 +202,7 @@ local function Constructor()
 	frame:SetScript("OnMouseDown", Frame_OnMouseDown)
 
 	local titlebg = frame:CreateTexture(nil, "OVERLAY")
-	titlebg:SetTexture(131080) -- Interface\\DialogFrame\\UI-DialogBox-Header
+	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg:SetTexCoord(0.31, 0.67, 0, 0.63)
 	titlebg:SetPoint("TOP", 0, 12)
 	titlebg:SetWidth(100)
@@ -218,14 +218,14 @@ local function Constructor()
 	titletext:SetPoint("TOP", titlebg, "TOP", 0, -14)
 
 	local titlebg_l = frame:CreateTexture(nil, "OVERLAY")
-	titlebg_l:SetTexture(131080) -- Interface\\DialogFrame\\UI-DialogBox-Header
+	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg_l:SetTexCoord(0.21, 0.31, 0, 0.63)
 	titlebg_l:SetPoint("RIGHT", titlebg, "LEFT")
 	titlebg_l:SetWidth(30)
 	titlebg_l:SetHeight(40)
 
 	local titlebg_r = frame:CreateTexture(nil, "OVERLAY")
-	titlebg_r:SetTexture(131080) -- Interface\\DialogFrame\\UI-DialogBox-Header
+	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg_r:SetTexCoord(0.67, 0.77, 0, 0.63)
 	titlebg_r:SetPoint("LEFT", titlebg, "RIGHT")
 	titlebg_r:SetWidth(30)
