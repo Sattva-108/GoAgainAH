@@ -117,12 +117,16 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 
     local race = _G[buttonName.."RaceText"]
-    race:SetText(L[clip.race:lower()] or L["Unknown"])
-    if clip.race and ns.RACE_COLORS[clip.race] then
-        race:SetTextColor(ns.HexToRGG(ns.RACE_COLORS[clip.race]))
+    race:SetText(L[clip.race] or L["Unknown"])
+
+    -- Faction-based color logic for the race text
+    if clip.faction == "Horde" then
+        race:SetTextColor(0.8, 0.3, 0.3)  -- Soft red for Horde
+    elseif clip.faction == "Alliance" then
+        race:SetTextColor(0.4, 0.6, 1)    -- Soft blue for Alliance
     else
-        race:SetTextColor(1, 1, 1)
-    end
+        race:SetTextColor(0.9, 0.9, 0.4)  -- Soft yellow for Neutral or unknown faction
+
 
     local iconTexture = _G[buttonName.."ItemIconTexture"]
     if clip.class and CLASS_ICON_TCOORDS[clip.class] then

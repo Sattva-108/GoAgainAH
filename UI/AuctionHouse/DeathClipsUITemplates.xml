@@ -72,7 +72,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BORDER">
-                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.75" />
+                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.60" />
                     </Layer>
                 </Layers>
                 <Scripts>
@@ -143,7 +143,7 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
                             <Size><AbsDimension x="55" y="32"/></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
@@ -163,7 +163,7 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
                             <Size><AbsDimension x="55" y="32"/></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
