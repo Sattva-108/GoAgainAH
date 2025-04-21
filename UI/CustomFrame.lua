@@ -145,7 +145,11 @@ local methods = {
 		self:SetWidth(status.width or 700)
 		self:SetHeight(status.height or 500)
 		frame:ClearAllPoints()
-		if status.top and status.left then
+
+		local anchor = _G["OFAuctionFrame"]
+		if anchor and anchor:IsVisible() then
+			frame:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 5, -14)
+		elseif status.top and status.left then
 			frame:SetPoint("TOP", UIParent, "BOTTOM", 0, status.top)
 			frame:SetPoint("LEFT", UIParent, "LEFT", status.left, 0)
 		else
