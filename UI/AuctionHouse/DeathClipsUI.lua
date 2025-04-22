@@ -274,9 +274,13 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         -- Get localized full name
         local localizedName = LOCALIZED_CLASS_NAMES_MALE[classKey] or clip.class
 
-        -- Only shorten Warlock for Russian clients
-        if GetLocale() == "ruRU" and classKey == "WARLOCK" then
-            localizedName = "Чернокниж."
+        -- Only shorten Warlock and Rogue for Russian clients
+        if GetLocale() == "ruRU" then
+            if classKey == "WARLOCK" then
+                localizedName = "Черно-\nкнижник"
+            elseif classKey == "ROGUE" then
+                localizedName = "Разбой-\nник"
+            end
         end
 
         -- Set class color from RAID_CLASS_COLORS

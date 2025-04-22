@@ -94,141 +94,6 @@ ns.SortDeathClips = function(clips, sortParams)
     return clips
 end
 
-function GOAHClearDBName(targetName)
-    if not targetName then
-        print(addonName .. ": GOAHClearDBName requires a targetName in brackets ''.")
-        return {}
-    end
-
-    local allClips = ns.GetLiveDeathClips()
-
-    if not allClips or type(allClips) ~= "table" then
-        print(addonName .. ": LiveDeathClips table not found or not a table.")
-        return {}
-    end
-
-    local removedClips = {}
-    local clipKeysToRemove = {}
-    local removedClipIDs = {} -- Store the IDs of the clips being removed { ["clipID1"] = true, ... }
-
-    -- Pass 1: Identify clips to remove and collect their keys and IDs
-    for key, clip in pairs(allClips) do
-        if clip and type(clip) == "table" and clip.characterName and clip.characterName == targetName then
-            local clipCopy = {}
-            for k, v in pairs(clip) do clipCopy[k] = v end
-            table.insert(removedClips, clipCopy)
-            table.insert(clipKeysToRemove, key)
-            -- Store the clip ID if it exists
-            if clip.id then
-                removedClipIDs[clip.id] = true
-            end
-        end
-    end
-
-    -- Remove the identified clips from LiveDeathClips
-    if #clipKeysToRemove > 0 then
-        print(string.format("%s: Found %d clips for '%s'. Removing them from LiveDeathClips.", addonName, #clipKeysToRemove, targetName))
-        for _, key in ipairs(clipKeysToRemove) do
-            allClips[key] = nil
-        end
-    else
-        print(string.format("%s: No clips found for '%s' in LiveDeathClips.", addonName, targetName))
-        -- If no clips found, no need to check reviews/overrides
-        return {}
-    end
-
-    -- Now, remove associated reviews and overrides
-    local reviewState = ns.GetDeathClipReviewState()
-    local allReviews = reviewState.persisted.state
-    local allOverrides = reviewState.persisted.clipOverrides
-    local reviewIDsToRemove = {}
-    local overrideClipIDsToRemove = {}
-    local reviewsRemovedCount = 0
-    local overridesRemovedCount = 0
-
-    -- Check if there are any clip IDs to actually search for in reviews/overrides
-    local hasRemovedClipIDs = false
-    for _ in pairs(removedClipIDs) do
-        hasRemovedClipIDs = true
-        break
-    end
-
-    if hasRemovedClipIDs then
-        -- Identify reviews associated with the removed clip IDs
-        if allReviews and type(allReviews) == "table" then
-            for reviewId, review in pairs(allReviews) do
-                if review and review.clipID and removedClipIDs[review.clipID] then
-                    table.insert(reviewIDsToRemove, reviewId)
-                end
-            end
-        end
-
-        -- Identify overrides associated with the removed clip IDs
-        if allOverrides and type(allOverrides) == "table" then
-            for clipID, _ in pairs(allOverrides) do
-                if removedClipIDs[clipID] then
-                    table.insert(overrideClipIDsToRemove, clipID)
-                end
-            end
-        end
-
-        -- Remove the identified reviews
-        if #reviewIDsToRemove > 0 then
-            reviewsRemovedCount = #reviewIDsToRemove
-            print(string.format("%s: Removing %d associated reviews from DeathClipReviewsSaved.", addonName, reviewsRemovedCount))
-            for _, reviewId in ipairs(reviewIDsToRemove) do
-                allReviews[reviewId] = nil
-            end
-        end
-
-        -- Remove the identified overrides
-        if #overrideClipIDsToRemove > 0 then
-            overridesRemovedCount = #overrideClipIDsToRemove
-            print(string.format("%s: Removing %d associated clip overrides from DeathClipReviewsSaved.", addonName, overridesRemovedCount))
-            for _, clipID in ipairs(overrideClipIDsToRemove) do
-                allOverrides[clipID] = nil
-            end
-        end
-
-        -- Mark the review state as dirty if anything was removed from it
-        if reviewsRemovedCount > 0 or overridesRemovedCount > 0 then
-            reviewState:MarkDirty()
-        end
-    else
-        print(string.format("%s: No clip IDs found for removed clips of '%s' to check reviews/overrides.", addonName, targetName))
-    end
-
-    -- Update the UI if necessary
-    if #clipKeysToRemove > 0 or reviewsRemovedCount > 0 or overridesRemovedCount > 0 then
-        OFAuctionFrameDeathClips_Update()
-    end
-
-    return removedClips
-end
-
--- Example Usage Comment: Needs updating to reflect the new function name.
--- /run GOAHClearDBName("Grommash")
-
-
--- TODO FIXME before release 3.3.5
--- a little hack to not get warning when running testing script:
--- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:15:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
-
-hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
-    if which == "DANGEROUS_SCRIPTS_WARNING" then
-        C_Timer:After(0.01, function()
-            local dialog = StaticPopup_Visible(which)
-            if dialog then
-                local frame = _G[dialog]
-                if frame and frame.data then
-                    RunScript(frame.data)
-                    StaticPopup_Hide(which)
-                end
-            end
-        end)
-    end
-end)
-
 local races = {
     [1] = { name = "Человек", faction = "Alliance" }, [2] = { name = "Орк", faction = "Horde" },
     [3] = { name = "Дворф", faction = "Alliance" }, [4] = { name = "Ночной эльф", faction = "Alliance" },
@@ -552,10 +417,27 @@ function GOAHClearDBName(targetName)
     end
     print(string.format("%s: Cleared %d clips, %d reviews, %d overrides for %s.", addonName, #clipKeysToRemove, reviewsRemovedCount, overridesRemovedCount, namesTargetedStr))
 
-    OFAuctionFrameDeathClips_Update()
-
     return allRemovedClipsCopies
 end
 
 -- Example Usage Comment: Needs updating to reflect the new function name.
 -- /run GOAHClearDBName("Grommash")
+
+-- TODO FIXME before release 3.3.5
+-- a little hack to not get warning when running testing script:
+-- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
+
+hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
+    if which == "DANGEROUS_SCRIPTS_WARNING" then
+        C_Timer:After(0.01, function()
+            local dialog = StaticPopup_Visible(which)
+            if dialog then
+                local frame = _G[dialog]
+                if frame and frame.data then
+                    RunScript(frame.data)
+                    StaticPopup_Hide(which)
+                end
+            end
+        end)
+    end
+end)
