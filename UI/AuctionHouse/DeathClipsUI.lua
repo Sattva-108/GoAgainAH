@@ -1,4 +1,4 @@
-local _, ns = ...
+local addonName, ns = ...
 local L = ns.L
 
 
@@ -27,6 +27,7 @@ function OFAuctionFrameDeathClips_OnLoad()
     end)
     -- Initialize the state variable to track which clip's prompt is open
     OFAuctionFrameDeathClips.openedPromptClipID = nil
+    OFAuctionFrameDeathClips._highlightedClips = OFAuctionFrameDeathClips._highlightedClips or {}
 end
 
 local function formatWhen(clip)
@@ -55,7 +56,7 @@ function SetupClipHighlight(button)
         glow:SetPoint('CENTER', button, 'CENTER')
         glow:SetWidth(400 / 300 * button:GetWidth())
         glow:SetHeight(171 / 70 * button:GetHeight())
-        glow:SetTexture([[Interface\AddOns\unitscan\assets\UI-Achievement-Alert-Glow]])
+        glow:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Media\\UI-Achievement-Alert-Glow")
         glow:SetBlendMode('ADD')
         glow:SetTexCoord(0, .78125, 0, .66796875)
         glow:SetAlpha(0)
@@ -86,7 +87,7 @@ function SetupClipHighlight(button)
         shine:SetPoint('TOPLEFT', button, 0, 8)
         shine:SetWidth(67 / 300 * button:GetWidth())
         shine:SetHeight(1.28 * button:GetHeight())
-        shine:SetTexture([[Interface\AddOns\unitscan\assets\UI-Achievement-Alert-Glow]])
+        shine:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Media\\UI-Achievement-Alert-Glow")
         shine:SetBlendMode('ADD')
         shine:SetTexCoord(.78125, .912109375, 0, .28125)
         shine:SetAlpha(0)
@@ -158,9 +159,10 @@ function OFAuctionFrameDeathClips_OnShow()
                         local age = GetServerTime() - clip.ts
                         when:SetText(formatWhen(clip))
 
-                        -- One-time animation when under 60s
-                        if age < 60 and not button.didHighlight then
-                            button.didHighlight = true
+                        local highlighted = OFAuctionFrameDeathClips._highlightedClips
+
+                        if age < 3 and not highlighted[clip.id] then
+                            highlighted[clip.id] = true
 
                             if button.glow then
                                 button.glow.animation:Play()
@@ -476,7 +478,6 @@ end
 
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then
-        print("cancelling ticker")
         OFAuctionFrameDeathClips._whenUpdateTicker:Cancel()
         OFAuctionFrameDeathClips._whenUpdateTicker = nil
     end
