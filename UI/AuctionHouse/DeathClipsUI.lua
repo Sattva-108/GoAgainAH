@@ -20,14 +20,27 @@ end
 function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.page = 0
     OFAuctionFrame_SetSort("clips", "when", false)
+
+    -- Initialize state
+    OFAuctionFrameDeathClips.openedPromptClipID = nil
+    OFAuctionFrameDeathClips._highlightedClips = {}
+
+    -- Initialize last seen timestamp
+    if not OFAuctionFrameDeathClips.lastSeenTimestamp then
+        OFAuctionFrameDeathClips.lastSeenTimestamp = 0
+        -- Find newest clip timestamp to initialize
+        for _, clip in pairs(ns.GetLiveDeathClips()) do
+            if clip.ts and clip.ts > OFAuctionFrameDeathClips.lastSeenTimestamp then
+                OFAuctionFrameDeathClips.lastSeenTimestamp = clip.ts
+            end
+        end
+    end
+
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()
         end
     end)
-    -- Initialize the state variable to track which clip's prompt is open
-    OFAuctionFrameDeathClips.openedPromptClipID = nil
-    OFAuctionFrameDeathClips._highlightedClips = OFAuctionFrameDeathClips._highlightedClips or {}
 end
 
 local function formatWhen(clip)
@@ -125,6 +138,24 @@ end
 local initialized = false
 function OFAuctionFrameDeathClips_OnShow()
     OFAuctionFrameDeathClips_Update()
+
+    ---- ✅ Only set lastSeenTimestamp on very first show
+    --if OFAuctionFrameDeathClips.lastSeenTimestamp == 0 then
+    --    local latestTimestamp = 0
+    --    for _, clip in ipairs(ns.GetLiveDeathClips()) do
+    --        if clip.ts and clip.ts > latestTimestamp then
+    --            latestTimestamp = clip.ts
+    --        end
+    --    end
+    --    OFAuctionFrameDeathClips.lastSeenTimestamp = latestTimestamp
+    --end
+    ---- Mark all existing clips as seen on first run
+    --for _, clip in pairs(ns.GetLiveDeathClips()) do
+    --    if clip.ts and clip.ts <= OFAuctionFrameDeathClips.lastSeenTimestamp then
+    --        clip.seen = true
+    --    end
+    --end
+
     if not initialized then
         initialized = true
         local state = ns.GetDeathClipReviewState()
@@ -156,21 +187,27 @@ function OFAuctionFrameDeathClips_OnShow()
                 if button and button:IsShown() and clip then
                     local when = _G[button:GetName() .. "WhenText"]
                     if when and clip.ts then
-                        local age = GetServerTime() - clip.ts
-                        when:SetText(formatWhen(clip))
+                        --local age = GetServerTime() - clip.ts
+                        --when:SetText(formatWhen(clip))
+                        --
+                        --local highlighted = OFAuctionFrameDeathClips._highlightedClips
+                        --
+                        --local seen = OFAuctionFrameDeathClips._seenClipIDs[clip.id]
+                        --if not seen and not highlighted[clip.id] then
+                        --
+                        --
+                        --    highlighted[clip.id] = true
+                        --
+                        --    if button.glow then
+                        --        button.glow.animation:Play()
+                        --    end
+                        --    if button.shine then
+                        --        button.shine.animation:Play()
+                        --    end
+                        --    OFAuctionFrameDeathClips._highlightedClips[clip.id] = true
+                        --    OFAuctionFrameDeathClips._seenClipIDs[clip.id] = true
 
-                        local highlighted = OFAuctionFrameDeathClips._highlightedClips
-
-                        if age < 60 and not highlighted[clip.id] then
-                            highlighted[clip.id] = true
-
-                            if button.glow then
-                                button.glow.animation:Play()
-                            end
-                            if button.shine then
-                                button.shine.animation:Play()
-                            end
-                        end
+                        --end
 
                     end
                 end
@@ -211,6 +248,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     clip = copy
 
     ResizeEntry(button, numBatchClips, totalClips)
+
+    -- Highlight logic - only for new clips since last close
+    if not clip.seen and clip.ts and clip.ts > OFAuctionFrameDeathClips.lastSeenTimestamp then
+        clip.seen = true
+        OFAuctionFrameDeathClips._highlightedClips[clip.id] = true
+
+        if button.glow then button.glow.animation:Play() end
+        if button.shine then button.shine.animation:Play() end
+    end
 
     local name = _G[buttonName.."Name"]
     if clip.characterName then
@@ -476,9 +522,19 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     starRating.frame:Show()
 end
 
+-- Fix the OnHide function (typo in GetLiveDeathClips)
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then
         OFAuctionFrameDeathClips._whenUpdateTicker:Cancel()
         OFAuctionFrameDeathClips._whenUpdateTicker = nil
     end
+
+    -- Update last seen timestamp to the newest clip
+    local latestTimestamp = OFAuctionFrameDeathClips.lastSeenTimestamp
+    for _, clip in pairs(ns.GetLiveDeathClips()) do  -- Fixed typo here
+        if clip.ts and clip.ts > latestTimestamp then
+            latestTimestamp = clip.ts
+        end
+    end
+    OFAuctionFrameDeathClips.lastSeenTimestamp = latestTimestamp
 end
