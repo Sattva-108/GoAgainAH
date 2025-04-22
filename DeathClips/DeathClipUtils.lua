@@ -95,9 +95,8 @@ ns.SortDeathClips = function(clips, sortParams)
 end
 
 function GOAHClearDBName(targetName)
-    -- Input Validation: Good. Checks if targetName is provided.
     if not targetName then
-        print(addonName .. ": GOAHClearDBName requires a targetName.") -- Changed function name in message
+        print(addonName .. ": GOAHClearDBName requires a targetName in brackets ''.")
         return {}
     end
 
@@ -109,24 +108,99 @@ function GOAHClearDBName(targetName)
     end
 
     local removedClips = {}
-    local keysToRemove = {}
+    local clipKeysToRemove = {}
+    local removedClipIDs = {} -- Store the IDs of the clips being removed { ["clipID1"] = true, ... }
 
+    -- Pass 1: Identify clips to remove and collect their keys and IDs
     for key, clip in pairs(allClips) do
         if clip and type(clip) == "table" and clip.characterName and clip.characterName == targetName then
-            -- Storing Copy: Correctly creates a shallow copy to return. Avoids returning direct references.
             local clipCopy = {}
             for k, v in pairs(clip) do clipCopy[k] = v end
             table.insert(removedClips, clipCopy)
-            table.insert(keysToRemove, key)
+            table.insert(clipKeysToRemove, key)
+            -- Store the clip ID if it exists
+            if clip.id then
+                removedClipIDs[clip.id] = true
+            end
         end
     end
 
-    if #keysToRemove > 0 then
-        print(string.format("%s: Found %d clips for '%s'. Removing them.", addonName, #keysToRemove, targetName))
-        for _, key in ipairs(keysToRemove) do
+    -- Remove the identified clips from LiveDeathClips
+    if #clipKeysToRemove > 0 then
+        print(string.format("%s: Found %d clips for '%s'. Removing them from LiveDeathClips.", addonName, #clipKeysToRemove, targetName))
+        for _, key in ipairs(clipKeysToRemove) do
             allClips[key] = nil
         end
     else
+        print(string.format("%s: No clips found for '%s' in LiveDeathClips.", addonName, targetName))
+        -- If no clips found, no need to check reviews/overrides
+        return {}
+    end
+
+    -- Now, remove associated reviews and overrides
+    local reviewState = ns.GetDeathClipReviewState()
+    local allReviews = reviewState.persisted.state
+    local allOverrides = reviewState.persisted.clipOverrides
+    local reviewIDsToRemove = {}
+    local overrideClipIDsToRemove = {}
+    local reviewsRemovedCount = 0
+    local overridesRemovedCount = 0
+
+    -- Check if there are any clip IDs to actually search for in reviews/overrides
+    local hasRemovedClipIDs = false
+    for _ in pairs(removedClipIDs) do
+        hasRemovedClipIDs = true
+        break
+    end
+
+    if hasRemovedClipIDs then
+        -- Identify reviews associated with the removed clip IDs
+        if allReviews and type(allReviews) == "table" then
+            for reviewId, review in pairs(allReviews) do
+                if review and review.clipID and removedClipIDs[review.clipID] then
+                    table.insert(reviewIDsToRemove, reviewId)
+                end
+            end
+        end
+
+        -- Identify overrides associated with the removed clip IDs
+        if allOverrides and type(allOverrides) == "table" then
+            for clipID, _ in pairs(allOverrides) do
+                if removedClipIDs[clipID] then
+                    table.insert(overrideClipIDsToRemove, clipID)
+                end
+            end
+        end
+
+        -- Remove the identified reviews
+        if #reviewIDsToRemove > 0 then
+            reviewsRemovedCount = #reviewIDsToRemove
+            print(string.format("%s: Removing %d associated reviews from DeathClipReviewsSaved.", addonName, reviewsRemovedCount))
+            for _, reviewId in ipairs(reviewIDsToRemove) do
+                allReviews[reviewId] = nil
+            end
+        end
+
+        -- Remove the identified overrides
+        if #overrideClipIDsToRemove > 0 then
+            overridesRemovedCount = #overrideClipIDsToRemove
+            print(string.format("%s: Removing %d associated clip overrides from DeathClipReviewsSaved.", addonName, overridesRemovedCount))
+            for _, clipID in ipairs(overrideClipIDsToRemove) do
+                allOverrides[clipID] = nil
+            end
+        end
+
+        -- Mark the review state as dirty if anything was removed from it
+        if reviewsRemovedCount > 0 or overridesRemovedCount > 0 then
+            reviewState:MarkDirty()
+        end
+    else
+        print(string.format("%s: No clip IDs found for removed clips of '%s' to check reviews/overrides.", addonName, targetName))
+    end
+
+    -- Update the UI if necessary
+    if #clipKeysToRemove > 0 or reviewsRemovedCount > 0 or overridesRemovedCount > 0 then
+        OFAuctionFrameDeathClips_Update()
     end
 
     return removedClips

@@ -161,7 +161,7 @@ function OFAuctionFrameDeathClips_OnShow()
 
                         local highlighted = OFAuctionFrameDeathClips._highlightedClips
 
-                        if age < 3 and not highlighted[clip.id] then
+                        if age < 60 and not highlighted[clip.id] then
                             highlighted[clip.id] = true
 
                             if button.glow then
