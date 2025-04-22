@@ -273,86 +273,83 @@ local function FilterHiddenClips(state, clips)
 end
 
 function OFAuctionFrameDeathClips_Update()
+    local state = ns.GetDeathClipReviewState()
+    local ratingsByClip = state:GetRatingsByClip()
+
+    local allClips = ns.GetLiveDeathClips()
     local clips = {}
-    for _, clip in pairs(ns.GetLiveDeathClips()) do
+    for _, clip in pairs(allClips) do
         table.insert(clips, clip)
     end
-    local state = ns.GetDeathClipReviewState()
 
     clips = ns.SortDeathClips(clips, OFGetCurrentSortParams("clips"))
     clips = FilterHiddenClips(state, clips)
-    local ratingsByClip = state:GetRatingsByClip()
+
     local totalClips = #clips
-    local numBatchClips = min(totalClips, NUM_CLIPS_PER_PAGE)
-    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
     local page = OFAuctionFrameDeathClips.page or 0
-    local index, isLastSlotEmpty
+    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+    local startIdx = offset + 1 + (page * NUM_CLIPS_PER_PAGE)
+    local endIdx = startIdx + NUM_CLIPS_TO_DISPLAY - 1
+    local numBatchClips = min(totalClips - page * NUM_CLIPS_PER_PAGE, NUM_CLIPS_PER_PAGE)
+    local isLastSlotEmpty
 
     updateSortArrows()
 
-    for i=1, NUM_CLIPS_TO_DISPLAY do
-        index = offset + i + (page * NUM_CLIPS_PER_PAGE)
+    -- Pre-fetch visible clips
+    local visibleClips = {}
+    for i = startIdx, endIdx do
+        visibleClips[i - startIdx + 1] = clips[i]
+    end
+
+    for i = 1, NUM_CLIPS_TO_DISPLAY do
         local button = _G["OFDeathClipsButton"..i]
-        local clip = clips[index]
+        local clip = visibleClips[i]
         button.clip = clip
-        if ( clip == nil or index > (numBatchClips + page * NUM_CLIPS_PER_PAGE)) then
+
+        if not clip then
             button:Hide()
             isLastSlotEmpty = (i == NUM_CLIPS_TO_DISPLAY)
         else
             button:Show()
+            local ratings = (clip.id and ratingsByClip[clip.id]) or {}
+
             ns.TryExcept(
                     function()
-                        local ratings
-                        if clip.id == nil then
-                            ratings = {}
-                        else
-                            ratings = ratingsByClip[clip.id] or {}
-                        end
                         UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
                     end,
                     function(err)
                         button:Hide()
                         ns.DebugLog("Error updating clip entry: " .. err)
-                    end)
+                    end
+            )
         end
     end
 
+    -- Pagination logic
+    if totalClips > NUM_CLIPS_PER_PAGE then
+        local totalPages = max(0, ceil(totalClips / NUM_CLIPS_PER_PAGE) - 1)
+        OFDeathClipsPrevPageButton:SetEnabled(page > 0)
+        OFDeathClipsNextPageButton:SetEnabled(page < totalPages)
 
-    if ( totalClips > NUM_CLIPS_PER_PAGE ) then
-
-        local totalPages = (ceil(totalClips / NUM_CLIPS_PER_PAGE) - 1)
-        totalPages = max(0, totalPages)
-        if ( page <= 0) then
-            OFDeathClipsPrevPageButton:Disable()
-        else
-            OFDeathClipsPrevPageButton:Enable()
-        end
-        if page >= totalPages then
-            OFDeathClipsNextPageButton:Disable()
-        else
-            OFDeathClipsNextPageButton:Enable()
-        end
-        if ( isLastSlotEmpty ) then
+        if isLastSlotEmpty then
             OFDeathClipsSearchCountText:Show()
-            local itemsMin = page * NUM_CLIPS_PER_PAGE + 1;
-            local itemsMax = itemsMin + numBatchClips - 1;
+            local itemsMin = page * NUM_CLIPS_PER_PAGE + 1
+            local itemsMax = itemsMin + numBatchClips - 1
             OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
         else
             OFDeathClipsSearchCountText:Hide()
         end
 
-        -- Artifically inflate the number of results so the scrollbar scrolls one extra row
-        numBatchClips = numBatchClips + 1
+        -- Force scrollbar to allow one more scroll row
+        FauxScrollFrame_Update(OFDeathClipsScroll, numBatchClips + 1, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
     else
-        OFDeathClipsPrevPageButton.isEnabled = false
-        OFDeathClipsNextPageButton.isEnabled = false
+        OFDeathClipsPrevPageButton:Disable()
+        OFDeathClipsNextPageButton:Disable()
         OFDeathClipsSearchCountText:Hide()
+        FauxScrollFrame_Update(OFDeathClipsScroll, numBatchClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
     end
-
-
-    -- Update scrollFrame
-    FauxScrollFrame_Update(OFDeathClipsScroll, numBatchClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
 end
+
 
 function OFDeathClipsRatingWidget_OnLoad(self)
     local starRating = ns.CreateStarRatingWidget({
