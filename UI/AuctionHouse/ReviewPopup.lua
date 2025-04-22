@@ -88,7 +88,7 @@ local function CreateReviewPrompt()
     frame:SetHeight(400)
 
     -- Close button
-    local closeButton = CreateFrame("Button", "ExitButton", frame.frame, "UIPanelCloseButton")
+    local closeButton = CreateFrame("Button", "GoAHExitButton", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7, 7)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()

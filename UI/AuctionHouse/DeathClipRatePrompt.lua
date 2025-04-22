@@ -40,10 +40,14 @@ local function CreateReviewPrompt()
     frame:SetHeight(330)
 
     -- Close button
-    local closeButton = CreateFrame("Button", "ExitButton", frame.frame, "UIPanelCloseButton")
+    local closeButton = CreateFrame("Button", "GoAHExitButtonDeathRate", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7, 7)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()
+        OFAuctionFrameDeathClips.openedPromptClipID = nil
+        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+            OFAuctionFrameDeathClips_Update() -- Refresh highlights
+        end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
     end)
 
@@ -186,6 +190,10 @@ local function CreateReviewPrompt()
     function prompt:OnCancel(callback)
         self.closeButton:SetScript("OnClick", function()
             self.frame:Hide()
+            OFAuctionFrameDeathClips.openedPromptClipID = nil
+            if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+                OFAuctionFrameDeathClips_Update() -- Refresh highlights
+            end
             PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
             callback()
         end)
@@ -249,6 +257,10 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
         local finalText = text == REVIEW_PLACEHOLDER and "" or text
         state:UpdateReview(reviewID, me, clip.id, rating, finalText)
         prompt:Hide()
+        OFAuctionFrameDeathClips.openedPromptClipID = nil
+        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+            OFAuctionFrameDeathClips_Update() -- Refresh highlights
+        end
     end)
 
     prompt:OnCancel(function()

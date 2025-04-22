@@ -11,7 +11,7 @@ local function CreateSpellScroll()
     frame:SetHeight(450)
 
 	frame.content:SetPoint("BOTTOMRIGHT", -17, 20)
-    local closeButton = CreateFrame("Button", "ExitButton", frame.frame, "UIPanelCloseButton")
+    local closeButton = CreateFrame("Button", "GoAHExitButton", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7,7)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()

@@ -17,7 +17,7 @@ local function CreateWishlistConfirmPrompt()
     frame:SetWidth(400)
     frame:SetHeight(430)
 
-    local closeButton = CreateFrame("Button", "ExitButton", frame.frame, "UIPanelCloseButton")
+    local closeButton = CreateFrame("Button", "GoAHExitButton", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7,7)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()

@@ -12,10 +12,14 @@ local function CreateDeathClipReviewsPrompt()
     frame:SetWidth(410)
     frame:SetHeight(475)
 
-    local closeButton = CreateFrame("Button", "ExitButton", frame.frame, "UIPanelCloseButton")
+    local closeButton = CreateFrame("Button", "GoAHExitButtonDeathReview", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7,7)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()
+        OFAuctionFrameDeathClips.openedPromptClipID = nil
+        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+            OFAuctionFrameDeathClips_Update() -- Refresh highlights
+        end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
     end)
 
