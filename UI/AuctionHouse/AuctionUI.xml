@@ -1655,6 +1655,7 @@
                 <Scripts>
                     <OnLoad function="OFAuctionFrameDeathClips_OnLoad"/>
                     <OnShow function="OFAuctionFrameDeathClips_OnShow"/>
+                    <OnHide function="OFAuctionFrameDeathClips_OnHide"/>
                 </Scripts>
             </Frame>
 			<Frame name="OFAuctionFrameReviews" hidden="true">
@@ -1662,7 +1663,7 @@
 				<Anchors>
 					<Anchor point="TOPLEFT" />
 				</Anchors>
-				
+
 				<Layers>
 					<Layer level="BACKGROUND">
 						<FontString name="AHReviewsTitle" inherits="GameFontNormal" text="L_REVIEWS">

@@ -29,6 +29,98 @@ function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.openedPromptClipID = nil
 end
 
+local function formatWhen(clip)
+    if clip.ts == nil then
+        return L["Unknown"]
+    end
+    local serverTime = GetServerTime()
+    local timeDiff = serverTime - clip.ts
+
+    if timeDiff < 0 then
+        --print(string.format(
+        --        "Time sync issue - Server: %d, Clip: %d, Diff: %d (Clip ID: %s)",
+        --        serverTime, clip.ts, timeDiff, clip.id or "nil"
+        --))
+        timeDiff = 0  -- Ensure we never show negative time
+    end
+
+    return ns.PrettyDuration(timeDiff)
+end
+
+function SetupClipHighlight(button)
+    if not button.glow then
+        -- ✨ Glow
+        local glow = button:CreateTexture(nil, 'OVERLAY')
+        button.glow = glow
+        glow:SetPoint('CENTER', button, 'CENTER')
+        glow:SetWidth(400 / 300 * button:GetWidth())
+        glow:SetHeight(171 / 70 * button:GetHeight())
+        glow:SetTexture([[Interface\AddOns\unitscan\assets\UI-Achievement-Alert-Glow]])
+        glow:SetBlendMode('ADD')
+        glow:SetTexCoord(0, .78125, 0, .66796875)
+        glow:SetAlpha(0)
+
+        glow.animation = CreateFrame('Frame')
+        glow.animation:Hide()
+        glow.animation:SetScript('OnUpdate', function(self)
+            local t = GetTime() - self.t0
+            if t <= .2 then
+                glow:SetAlpha(t * 5)
+            elseif t <= .7 then
+                glow:SetAlpha(1 - (t - .2) * 2)
+            else
+                glow:SetAlpha(0)
+                self:Hide()
+            end
+        end)
+        function glow.animation:Play()
+            self.t0 = GetTime()
+            self:Show()
+        end
+    end
+
+    if not button.shine then
+        -- ✨ Shine
+        local shine = button:CreateTexture(nil, 'ARTWORK')
+        button.shine = shine
+        shine:SetPoint('TOPLEFT', button, 0, 8)
+        shine:SetWidth(67 / 300 * button:GetWidth())
+        shine:SetHeight(1.28 * button:GetHeight())
+        shine:SetTexture([[Interface\AddOns\unitscan\assets\UI-Achievement-Alert-Glow]])
+        shine:SetBlendMode('ADD')
+        shine:SetTexCoord(.78125, .912109375, 0, .28125)
+        shine:SetAlpha(0)
+
+        shine.animation = CreateFrame('Frame')
+        shine.animation:Hide()
+        shine.animation:SetScript('OnUpdate', function(self)
+            local t = GetTime() - self.t0
+            if t <= .3 then
+                shine:SetPoint('TOPLEFT', button, 0, 8)
+            elseif t <= .7 then
+                shine:SetPoint('TOPLEFT', button, (t - .3) * 2.5 * self.distance, 8)
+            end
+            if t <= .3 then
+                shine:SetAlpha(0)
+            elseif t <= .5 then
+                shine:SetAlpha(1)
+            elseif t <= .7 then
+                shine:SetAlpha(1 - (t - .5) * 5)
+            else
+                shine:SetAlpha(0)
+                self:Hide()
+            end
+        end)
+        function shine.animation:Play()
+            self.t0 = GetTime()
+            self.distance = button:GetWidth() - shine:GetWidth() + 8
+            self:Show()
+            button:SetAlpha(1)
+        end
+    end
+end
+
+
 local initialized = false
 function OFAuctionFrameDeathClips_OnShow()
     OFAuctionFrameDeathClips_Update()
@@ -55,24 +147,35 @@ function OFAuctionFrameDeathClips_OnShow()
             end
         end)
     end
-end
+    OFAuctionFrameDeathClips._whenUpdateTicker = C_Timer:NewTicker(1, function()
+        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+            for i = 1, NUM_CLIPS_TO_DISPLAY do
+                local button = _G["OFDeathClipsButton" .. i]
+                local clip = button and button.clip
+                if button and button:IsShown() and clip then
+                    local when = _G[button:GetName() .. "WhenText"]
+                    if when and clip.ts then
+                        local age = GetServerTime() - clip.ts
+                        when:SetText(formatWhen(clip))
 
-local function formatWhen(clip)
-    if clip.ts == nil then
-        return L["Unknown"]
-    end
-    local serverTime = GetServerTime()
-    local timeDiff = serverTime - clip.ts
+                        -- One-time animation when under 60s
+                        if age < 60 and not button.didHighlight then
+                            button.didHighlight = true
 
-    if timeDiff < 0 then
-        --print(string.format(
-        --        "Time sync issue - Server: %d, Clip: %d, Diff: %d (Clip ID: %s)",
-        --        serverTime, clip.ts, timeDiff, clip.id or "nil"
-        --))
-        timeDiff = 0  -- Ensure we never show negative time
-    end
+                            if button.glow then
+                                button.glow.animation:Play()
+                            end
+                            if button.shine then
+                                button.shine.animation:Play()
+                            end
+                        end
 
-    return ns.PrettyDuration(timeDiff)
+                    end
+                end
+            end
+        end
+    end)
+
 end
 
 local function ResizeEntry(button, numBatchAuctions, totalAuctions)
@@ -306,6 +409,9 @@ function OFAuctionFrameDeathClips_Update()
         local clip = visibleClips[i]
         button.clip = clip
 
+        -- 🔥 Add highlight support
+        SetupClipHighlight(button)
+
         if not clip then
             button:Hide()
             isLastSlotEmpty = (i == NUM_CLIPS_TO_DISPLAY)
@@ -366,4 +472,12 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     starRating.frame:SetPoint("LEFT", self, "LEFT", -2, 0)
     starRating:SetRating(3.5)
     starRating.frame:Show()
+end
+
+function OFAuctionFrameDeathClips_OnHide()
+    if OFAuctionFrameDeathClips._whenUpdateTicker then
+        print("cancelling ticker")
+        OFAuctionFrameDeathClips._whenUpdateTicker:Cancel()
+        OFAuctionFrameDeathClips._whenUpdateTicker = nil
+    end
 end
