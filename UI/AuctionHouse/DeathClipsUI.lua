@@ -1,6 +1,8 @@
 local addonName, ns = ...
 local L = ns.L
 
+-- Keep track if the sort hook has been applied to avoid duplicates
+local sortHookApplied = false
 
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
@@ -28,6 +30,27 @@ function OFAuctionFrameDeathClips_OnLoad()
     -- Initialize the state variable to track which clip's prompt is open
     OFAuctionFrameDeathClips.openedPromptClipID = nil
     OFAuctionFrameDeathClips._highlightedClips = OFAuctionFrameDeathClips._highlightedClips or {}
+
+    -- Hook the sort function ONCE to reset page and scroll on sort change
+    if not sortHookApplied then
+        -- Ensure the function exists before hooking
+        if type(OFAuctionFrame_SetSort) == "function" then
+            hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
+                -- Reset the page number
+                OFAuctionFrameDeathClips.page = 0
+                -- Always reset the scroll frame offset (important for data loading)
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+                if OFDeathClipsScrollScrollBar then
+                    OFDeathClipsScrollScrollBar:SetValue(0)
+                end
+
+            end)
+            sortHookApplied = true -- Mark as applied
+        else
+            -- Log an error or warning if the function can't be found
+            ns.DebugLog(addonName .. ": Error - Could not find OFAuctionFrame_SetSort to hook for clip sorting.")
+        end
+    end
 end
 
 local function formatWhen(clip)
