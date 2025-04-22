@@ -1,4 +1,4 @@
-local _, ns = ...
+local addonName, ns = ...
 
 local CLIP_URL_TEMPLATE = "https://deathclips.athenegpt.ai/deathclip?streamerName=%s&deathTimestamp=%d"
 
@@ -93,3 +93,64 @@ ns.SortDeathClips = function(clips, sortParams)
     table.sort(clips, sorter)
     return clips
 end
+
+function GOAHClearDBName(targetName)
+    -- Input Validation: Good. Checks if targetName is provided.
+    if not targetName then
+        print(addonName .. ": GOAHClearDBName requires a targetName.") -- Changed function name in message
+        return {}
+    end
+
+    local allClips = ns.GetLiveDeathClips()
+
+    if not allClips or type(allClips) ~= "table" then
+        print(addonName .. ": LiveDeathClips table not found or not a table.")
+        return {}
+    end
+
+    local removedClips = {}
+    local keysToRemove = {}
+
+    for key, clip in pairs(allClips) do
+        if clip and type(clip) == "table" and clip.characterName and clip.characterName == targetName then
+            -- Storing Copy: Correctly creates a shallow copy to return. Avoids returning direct references.
+            local clipCopy = {}
+            for k, v in pairs(clip) do clipCopy[k] = v end
+            table.insert(removedClips, clipCopy)
+            table.insert(keysToRemove, key)
+        end
+    end
+
+    if #keysToRemove > 0 then
+        print(string.format("%s: Found %d clips for '%s'. Removing them.", addonName, #keysToRemove, targetName))
+        for _, key in ipairs(keysToRemove) do
+            allClips[key] = nil
+        end
+    else
+    end
+
+    return removedClips
+end
+
+-- Example Usage Comment: Needs updating to reflect the new function name.
+-- /run GOAHClearDBName("Grommash")
+
+
+-- TODO FIXME before release 3.3.5
+-- a little hack to not get warning when running testing script:
+-- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:15:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
+
+hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
+    if which == "DANGEROUS_SCRIPTS_WARNING" then
+        C_Timer:After(0.01, function()
+            local dialog = StaticPopup_Visible(which)
+            if dialog then
+                local frame = _G[dialog]
+                if frame and frame.data then
+                    RunScript(frame.data)
+                    StaticPopup_Hide(which)
+                end
+            end
+        end)
+    end
+end)
