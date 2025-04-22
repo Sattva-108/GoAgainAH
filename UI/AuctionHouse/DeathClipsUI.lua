@@ -5,7 +5,6 @@ local L = ns.L
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
 local CLIPS_BUTTON_HEIGHT = 37
-local selectedClip
 
 local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsStreamerSort, "clips", "streamer")
@@ -26,6 +25,8 @@ function OFAuctionFrameDeathClips_OnLoad()
             OFAuctionFrameDeathClips_Update()
         end
     end)
+    -- Initialize the state variable to track which clip's prompt is open
+    OFAuctionFrameDeathClips.openedPromptClipID = nil
 end
 
 local initialized = false
@@ -44,6 +45,15 @@ function OFAuctionFrameDeathClips_OnShow()
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE, update)
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_STATE_SYNCED, update)
         state:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, update)
+
+        -- Hook HideAllClipPrompts ONCE to reset our state tracker
+        hooksecurefunc(ns, "HideAllClipPrompts", function()
+            OFAuctionFrameDeathClips.openedPromptClipID = nil
+            -- Also explicitly update the highlight state of buttons when prompts are closed externally
+            if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+                OFAuctionFrameDeathClips_Update() -- Refresh highlights
+            end
+        end)
     end
 end
 
@@ -201,8 +211,8 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     mobLevelText:SetText(clip.mobLevelText or "")
     mobLevelText:SetJustifyH("CENTER")
 
+    -- Update Rating Widget
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
-    local clipButton = _G[buttonName]
     if clip.id == nil then
         ratingWidget:Show()
         ratingWidget:SetRating(0)
@@ -211,49 +221,40 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         ratingWidget:SetRating(ns.GetRatingAverage(ratings))
     end
 
-    local currentClipID = nil
-    local isPromptOpen = false
+    local clipButton = _G[buttonName] -- Get the button itself
 
+    -- === OPTIMIZED OnClick ===
     clipButton:SetScript("OnClick", function()
-        -- If clicking the same clip while a prompt is open, hide it
-        if currentClipID == clip.id and isPromptOpen then
-            ns.HideAllClipPrompts()
-            currentClipID = nil
-            isPromptOpen = false
-            return
-        end
+        -- Ensure we have a valid clip and ID to work with
+        if not clip or not clip.id then return end
 
-        -- Otherwise show the appropriate prompt
-        ns.HideAllClipPrompts()
+        local clickedClipId = clip.id
+        local wasOpen = OFAuctionFrameDeathClips.openedPromptClipID and OFAuctionFrameDeathClips.openedPromptClipID == clickedClipId
 
-        local isRated = false
-        local state = ns.GetDeathClipReviewState()
-        local playerName = UnitName("player")
+        -- Always hide any potentially open prompt first.
+        -- This simplifies logic - we hide regardless, and then decide whether to show again.
+        ns.HideAllClipPrompts() -- The hook will set openedPromptClipID to nil
 
-        for _, review in pairs(state.persisted.state) do
-            if review.clipID == clip.id and review.owner == playerName then
-                isRated = true
-                break
-            end
-        end
-
-        if isRated then
+        -- If the clicked clip's prompt was NOT the one open, show the appropriate prompt.
+        if not wasOpen then
+            -- Let ShowDeathClipReviewsPrompt handle the logic:
+            -- It checks if the player has rated and shows either the
+            -- reviews prompt or calls ShowDeathClipRatePrompt itself.
             ns.ShowDeathClipReviewsPrompt(clip)
-        else
-            ns.ShowDeathClipRatePrompt(clip)
+
+            -- Mark this clip's prompt as the one that is now open
+            OFAuctionFrameDeathClips.openedPromptClipID = clickedClipId
         end
+        -- If it *was* open, HideAllClipPrompts already closed it, and openedPromptClipID is nil,
+        -- so we don't re-open it, achieving the toggle-off behavior.
 
-        currentClipID = clip.id
-        isPromptOpen = true
+        -- Update highlights immediately after click logic
+        OFAuctionFrameDeathClips_Update()
     end)
 
-    -- Clean up state if prompts are closed externally
-    hooksecurefunc(ns, "HideAllClipPrompts", function()
-        currentClipID = nil
-        isPromptOpen = false
-    end)
 
-    if ( selectedClip and selectedClip == offset + i) then
+    -- Update button highlight based on whether its prompt is open
+    if OFAuctionFrameDeathClips.openedPromptClipID and OFAuctionFrameDeathClips.openedPromptClipID == clip.id then
         button:LockHighlight()
     else
         button:UnlockHighlight()
@@ -300,19 +301,19 @@ function OFAuctionFrameDeathClips_Update()
         else
             button:Show()
             ns.TryExcept(
-                function()
-                    local ratings
-                    if clip.id == nil then
-                        ratings = {}
-                    else
-                        ratings = ratingsByClip[clip.id] or {}
-                    end
-                    UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
-                end,
-                function(err)
-                    button:Hide()
-                    ns.DebugLog("Error updating clip entry: " .. err)
-                end)
+                    function()
+                        local ratings
+                        if clip.id == nil then
+                            ratings = {}
+                        else
+                            ratings = ratingsByClip[clip.id] or {}
+                        end
+                        UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
+                    end,
+                    function(err)
+                        button:Hide()
+                        ns.DebugLog("Error updating clip entry: " .. err)
+                    end)
         end
     end
 
