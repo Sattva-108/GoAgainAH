@@ -211,10 +211,46 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         ratingWidget:SetRating(ns.GetRatingAverage(ratings))
     end
 
+    local currentClipID = nil
+    local isPromptOpen = false
+
     clipButton:SetScript("OnClick", function()
-        ns.DebugLog("clip id:", clip.id)
-        ns.HideDeathClipRatePrompt()
-        ns.ShowDeathClipReviewsPrompt(clip)
+        -- If clicking the same clip while a prompt is open, hide it
+        if currentClipID == clip.id and isPromptOpen then
+            ns.HideAllClipPrompts()
+            currentClipID = nil
+            isPromptOpen = false
+            return
+        end
+
+        -- Otherwise show the appropriate prompt
+        ns.HideAllClipPrompts()
+
+        local isRated = false
+        local state = ns.GetDeathClipReviewState()
+        local playerName = UnitName("player")
+
+        for _, review in pairs(state.persisted.state) do
+            if review.clipID == clip.id and review.owner == playerName then
+                isRated = true
+                break
+            end
+        end
+
+        if isRated then
+            ns.ShowDeathClipReviewsPrompt(clip)
+        else
+            ns.ShowDeathClipRatePrompt(clip)
+        end
+
+        currentClipID = clip.id
+        isPromptOpen = true
+    end)
+
+    -- Clean up state if prompts are closed externally
+    hooksecurefunc(ns, "HideAllClipPrompts", function()
+        currentClipID = nil
+        isPromptOpen = false
     end)
 
     if ( selectedClip and selectedClip == offset + i) then

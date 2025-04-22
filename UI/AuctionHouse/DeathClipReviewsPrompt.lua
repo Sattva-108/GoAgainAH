@@ -145,3 +145,17 @@ ns.ShowDeathClipReviewsPrompt = function(clip)
     deathClipReviewsPrompt:Setup(clip)
     deathClipReviewsPrompt:Show()
 end
+
+-- Add this function to your ns table (can be placed in either file, but probably better in DeathClipReviewsPrompt.lua)
+ns.HideAllClipPrompts = function()
+    -- Hide the rate prompt if it exists
+    if ns.HideDeathClipRatePrompt then
+        ns.HideDeathClipRatePrompt()
+    end
+
+    -- Hide the reviews prompt if it exists
+    if deathClipReviewsPrompt and deathClipReviewsPrompt.frame then
+        deathClipReviewsPrompt.frame:Hide()
+        PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
+    end
+end
