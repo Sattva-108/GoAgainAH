@@ -17,7 +17,7 @@ local races = {
     [14] = { name = "Пандарен", faction = "Alliance" },
     [15] = { name = "Высший эльф", faction = "Alliance" },
     [16] = { name = "Пандарен", faction = "Horde" },
-    [17] = { name = "Ночно-\nрожденный", faction = "Horde" },
+    [17] = { name = "Ночноро\nждённый", faction = "Horde" },
     [18] = { name = "Эльф Бездны", faction = "Alliance" },
     [19] = { name = "Вульпера", faction = "Alliance" },
     [20] = { name = "Вульпера", faction = "Horde" },

@@ -300,9 +300,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         -- Only shorten Warlock and Rogue for Russian clients
         if GetLocale() == "ruRU" then
             if classKey == "WARLOCK" then
-                localizedName = "Черно-\nкнижник"
+                localizedName = "Черно\nкнижник"
             elseif classKey == "ROGUE" then
-                localizedName = "Разбой-\nник"
+                localizedName = "Разбой\nник"
             end
         end
 
