@@ -110,12 +110,20 @@ ns.GetNewDeathClips = function(since, existing)
     return newClips
 end
 
-local function ClipIsDuplicate(existingClips, newClip)
+-- Build a “who|where|cause” signature
+local function ClipSignature(clip)
+    return clip.characterName
+            .. "|" .. (clip.where or "")
+            .. "|" .. (clip.deathCause or "")
+end
+
+-- Return true if there’s an existing clip with the same signature
+-- and timestamp within `maxDelta` seconds
+local function IsDuplicate(existingClips, newClip, maxDelta)
+    local sig = ClipSignature(newClip)
     for _, clip in pairs(existingClips) do
-        if clip.characterName == newClip.characterName
-                and clip.where         == newClip.where
-                and clip.deathCause    == newClip.deathCause
-                and math.abs((clip.ts or 0) - (newClip.ts or 0)) < 5
+        if ClipSignature(clip) == sig
+                and math.abs((clip.ts or 0) - (newClip.ts or 0)) < maxDelta
         then
             return true
         end
@@ -123,14 +131,16 @@ local function ClipIsDuplicate(existingClips, newClip)
     return false
 end
 
--- replace the existing ns.AddNewDeathClips with this:
+-- Merge function with Δ-time dedupe
 ns.AddNewDeathClips = function(newClips)
-    local existingClips = ns.GetLiveDeathClips()
+    local existing = ns.GetLiveDeathClips()
+    local DUPLICATE_WINDOW = 1800  -- 30 minutes
+
     for _, clip in ipairs(newClips) do
-        if ClipIsDuplicate(existingClips, clip) then
-            print("GoAgainAH: suppressed duplicate death clip:", clip.characterName, clip.ts)
+        if IsDuplicate(existing, clip, DUPLICATE_WINDOW) then
+            ns.DebugLog("GoAgainAH: dropped duplicate clip:", clip.characterName, clip.ts)
         else
-            existingClips[clip.id] = clip
+            existing[clip.id] = clip
         end
     end
 end
