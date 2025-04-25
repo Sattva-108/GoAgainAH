@@ -282,57 +282,79 @@ SlashCmdList["CHECKHC"] = function()
 end
 
 
---===== FULL PAYLOAD DUMP DEBUGGER =====--
-local f = CreateFrame("Frame", "HardcoreDeathLadderDump")
+--===== Hardcore Death → Ladder (with '|' splitting) =====--
+local f = CreateFrame("Frame", "HardcoreDeathThenLadder")
 local deathName, listening = nil, false
 local ladderBuffer = {}
 
--- 1) Start listening 3s after PLAYER_ENTERING_WORLD
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
-f:SetScript("OnEvent", function(self, event, prefix, msg)
+
+f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
     if event == "PLAYER_ENTERING_WORLD" then
+        -- start listening 3s after login/zone
         C_Timer:After(3, function() listening = true end)
         return
     end
     if not listening then return end
 
-    -- 2) Catch your death name
     if prefix == "ASMSG_HARDCORE_DEATH" then
+        -- store your character’s death name
         deathName = msg:match("^([^:]+)")
-        print("|cffff0000[Hardcore] Death stored:|r", deathName or "<unknown>")
+        print("|cffff0000[Hardcore] Death detected:|r", deathName or "<unknown>")
         ladderBuffer = {}
 
-        -- 3) Buffer ladder fragments
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
-        local id, chunk = msg:match("^(%d+):(.*)")
-        if not id or not chunk then return end
-        ladderBuffer[id] = (ladderBuffer[id] or "") .. chunk
-
-        -- 4) On final fragment (no trailing “;”), dump the full payload
-        if not chunk:match(";$") then
-            local full = ladderBuffer[id]
-            ladderBuffer[id] = nil
-
-            print(("|cff00ff00[DEBUG]|r Full ladder payload for challenge %s, %d chars:"):format(id, #full))
-            -- print in 200-char slices so chat doesn’t truncate
-            for i = 1, #full, 200 do
-                print(full:sub(i, i+199))
-            end
-
-            -- 5) Check if your deathName is anywhere in it
-            if deathName then
-                if full:find(deathName, 1, true) then
-                    print(("|cff00ff00[DEBUG]|r Your death name “%s” *does* appear in the payload."):format(deathName))
-                else
-                    print(("|cffffff00[DEBUG]|r Your death name “%s” *NOT* found in payload."):format(deathName))
-                end
+        -- split out each <challengeID>:<fragment> block
+        for block in msg:gmatch("([^|]+)") do
+            local id, data = block:match("^(%d+):(.*)")
+            if not id or not data then
+                print("|cffff0000[DEBUG]|r malformed block:", block)
             else
-                print("|cffffff00[DEBUG]|r<no deathName stored>")
+                -- accumulate per challenge
+                ladderBuffer[id] = (ladderBuffer[id] or "") .. data
+
+                -- if this block doesn’t end in ";" it's the last fragment
+                if not data:match(";$") then
+                    local full = ladderBuffer[id]
+                    ladderBuffer[id] = nil
+
+                    local found = false
+                    -- parse each semicolon-delimited entry
+                    for entry in full:gmatch("([^;]+)") do
+                        -- strict 7-field pattern:
+                        -- status:name:class:race:gender:level:time
+                        local s,n,cls,r,g,lvl,tm = entry:match(
+                                "^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$"
+                        )
+                        if not s then
+                            print(("|cffff0000[DEBUG]|r failed to parse entry: %s"):format(entry))
+                        elseif n == deathName then
+                            s   = tonumber(s)
+                            lvl = tonumber(lvl) or 0
+                            tm  = tonumber(tm)  or 0
+                            local statusText = (s==3 and "COMPLETED")
+                                    or (s==2 and "IN PROGRESS")
+                                    or "FAILED"
+                            print((
+                                    "|cff00ff00[Hardcore Ladder]|r %s → %s, Lv%d, %s"
+                            ):format(n, statusText, lvl, SecondsToTime(tm)))
+                            found = true
+                            deathName = nil
+                            break
+                        end
+                    end
+
+                    if not found then
+                        print(("|cffffff00[Warning]|r no ladder entry found for death: %s")
+                                :format(deathName or "<unknown>"))
+                    end
+                end
             end
         end
     end
 end)
+
 
 
 
