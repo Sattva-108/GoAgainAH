@@ -110,28 +110,10 @@ ns.GetNewDeathClips = function(since, existing)
     return newClips
 end
 
-local function ClipIsDuplicate(existingClips, newClip)
-    for _, clip in pairs(existingClips) do
-        if clip.characterName == newClip.characterName
-                and clip.where         == newClip.where
-                and clip.deathCause    == newClip.deathCause
-                and math.abs((clip.ts or 0) - (newClip.ts or 0)) < 5
-        then
-            return true
-        end
-    end
-    return false
-end
-
--- replace the existing ns.AddNewDeathClips with this:
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        if ClipIsDuplicate(existingClips, clip) then
-            print("GoAgainAH: suppressed duplicate death clip:", clip.characterName, clip.ts)
-        else
-            existingClips[clip.id] = clip
-        end
+        existingClips[clip.id] = clip
     end
 end
 
@@ -301,66 +283,77 @@ end
 
 
 --===== Hardcore Death → Ladder (with '|' splitting) =====--
-local f = CreateFrame("Frame", "HardcoreDeathTimerReporter")
-local listening = false
-local nextUpdateDeadline = nil
-local ladderBuffer = {}
-local deathQueue = {}
+local f = CreateFrame("Frame", "HardcoreDeathThenLadder")
+local deathName, listening = nil, false
+local ladderBuffer           = {}
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
 
-f:SetScript("OnEvent", function(self, event, prefix, msg)
+f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
     if event == "PLAYER_ENTERING_WORLD" then
-        -- skip auto-refresh on login/reload
+        -- start listening 3s after login/zone
         C_Timer:After(3, function() listening = true end)
         return
     end
     if not listening then return end
 
     if prefix == "ASMSG_HARDCORE_DEATH" then
-        PlaySoundFile("Sound\\interface\\MapPing.wav")
-        local name = msg:match("^([^:]+)")
-        if name then
-            deathQueue[name] = true
-            if nextUpdateDeadline then
-                local left = nextUpdateDeadline - GetTime()
-                if left < 0 then left = 0 end
-                print(("%s died — next ladder in %s"):format(name, SecondsToTime(left)))
-            end
-        end
+        -- store your character’s death name
+        deathName = msg:match("^([^:]+)")
+        print("|cffff0000[Hardcore] Death detected:|r", deathName or "<unknown>")
+        ladderBuffer = {}
 
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
-        -- handle one or more <challengeID>:<chunk> blocks
+        -- split out each <challengeID>:<fragment> block
         for block in msg:gmatch("([^|]+)") do
             local id, data = block:match("^(%d+):(.*)")
-            if id and data then
+            if not id or not data then
+                print("|cffff0000[DEBUG]|r malformed block:", block)
+            else
+                -- accumulate per challenge
                 ladderBuffer[id] = (ladderBuffer[id] or "") .. data
 
-                -- final fragment if no trailing semicolon
+                -- if this block doesn’t end in ";" it's the last fragment
                 if not data:match(";$") then
                     local full = ladderBuffer[id]
                     ladderBuffer[id] = nil
 
-                    -- for every death in queue, find and print run time
+                    local found = false
+                    -- parse each semicolon-delimited entry
                     for entry in full:gmatch("([^;]+)") do
-                        local _, n, _, _, _, _, tm = entry:match(
+                        -- strict 7-field pattern:
+                        -- status:name:class:race:gender:level:time
+                        local s,n,cls,r,g,lvl,tm = entry:match(
                                 "^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$"
                         )
-                        if n and deathQueue[n] then
-                            print(("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)))
-                            deathQueue[n] = nil
-                        end
+                        if not s then
+                            print(("|cffff0000[DEBUG]|r failed to parse entry: %s"):format(entry))
+                        elseif n == deathName then
+                            s   = tonumber(s)
+                            lvl = tonumber(lvl) or 0
+                            tm  = tonumber(tm)  or 0
+                            local statusText = (s==3 and "COMPLETED")
+                                    or (s==2 and "IN PROGRESS")
+                                    or "FAILED"
+                            print((
+                                    "|cff00ff00[Hardcore Ladder]|r %s → %s, Lv%d, %s"
+                            ):format(n, statusText, lvl, SecondsToTime(tm)))
+                            found = true
+                            deathName = nil
+                            break
                     end
-
-                    -- restart 10-minute timer
-                    nextUpdateDeadline = GetTime() + 600
                 end
+
+                    if not found then
+                        print(("|cffffff00[Warning]|r no ladder entry found for death: %s")
+                                :format(deathName or "<unknown>"))
+        end
+    end
             end
         end
     end
 end)
-
 
 
 
