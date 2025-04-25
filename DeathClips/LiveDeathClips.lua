@@ -282,22 +282,21 @@ SlashCmdList["CHECKHC"] = function()
 end
 
 
--- one frame to catch death → wait for ladder → report that character’s leaderboard entry
+-- one frame to catch death → wait for ladder → report only the just-died character’s entry
 local f = CreateFrame("Frame", "HardcoreDeathThenLadder")
-local deathName         -- name of the character who just died
-local ladderBuffer = {} -- buffers per-challengeID fragments
+local deathName          -- stores the name from ASMSG_HARDCORE_DEATH
+local ladderBuffer = {}  -- buffers ASMSG_HARDCORE_LADDER_LIST fragments per challenge
 
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
     if prefix == "ASMSG_HARDCORE_DEATH" then
-        -- fire when someone dies; msg = "name:race:gender:class:level:zone:reason[:npc[:npcLevel]]"
-        deathName = msg:match("^([^:]+)") or nil
-        if deathName then
-            print("|cffff0000[Hardcore] Death detected:|r", deathName)
-            ladderBuffer = {}  -- reset any in-flight ladder data
-        end
+        -- msg = "name:race:gender:class:level:zone:reason[:npc[:npcLevel]]"
+        deathName = msg:match("^([^:]+)")
+        print("|cffff0000[Hardcore] Death detected:|r", deathName or "<unknown>")
+        -- clear any previous ladder data
+        ladderBuffer = {}
 
-    elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" and deathName then
+    elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
         -- msg = "challengeID:dataFragment"
         local challengeID, data = msg:match("^(%d+):(.*)")
         if not challengeID or not data then return end
@@ -310,24 +309,37 @@ f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
             local full = ladderBuffer[challengeID]
             ladderBuffer[challengeID] = nil
 
-            -- split each "status:name:class:race:gender:level:time"
+            local found = false
+            -- each entry: "status:name:class:race:gender:level:time"
             for entry in full:gmatch("([^;]+)") do
-                local s,n,cls,r,g,lvl,tm = entry:match("^(%d+):([^:]+):%d+:%d+:%d+:(%d+):(%d+)$")
-                if n == deathName then
+                local s,n,cls,r,g,lvl,tm = entry:match(
+                        "^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$"
+                )
+                if not s then
+                    -- log parse failures
+                    print("|cffff0000[DEBUG]|r failed to parse entry:", entry)
+                elseif n == deathName then
                     s   = tonumber(s)
-                    lvl = tonumber(lvl)
-                    tm  = tonumber(tm)
-                    -- status 3 = Completed, 2 = InProgress, 1 = Failed
-                    local statusText = (s==3 and "COMPLETED") or (s==2 and "IN PROGRESS") or "FAILED"
+                    lvl = tonumber(lvl) or 0
+                    tm  = tonumber(tm)  or 0
+                    local statusText = (s == Enum.Hardcore.Status.Completed    and "COMPLETED")
+                            or (s == Enum.Hardcore.Status.InProgress   and "IN PROGRESS")
+                            or "FAILED"
                     print((
-                            "|cff00ff00[Hardcore Ladder]|r %s died → Status: %s, Level: %d, Time: %s"
+                            "|cff00ff00[Hardcore Ladder]|r %s → %s, Lv%d, %s"
                     ):format(n, statusText, lvl, SecondsToTime(tm)))
-                    deathName = nil  -- stop watching until next death
+                    found = true
+                    deathName = nil
                     break
                 end
+            end
+
+            if not found then
+                print(("|cffffff00[Warning]|r no ladder entry found for death: %s"):format(deathName or "<unknown>"))
             end
         end
     end
 end)
+
 
 
