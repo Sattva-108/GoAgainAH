@@ -241,3 +241,93 @@ end)
 --    end)
 --
 --end)
+
+
+SLASH_CHECKHC1 = "/checkhc"
+SlashCmdList["CHECKHC"] = function()
+    print("|cff00ffff[Hardcore]|r Checking leaderboard entries...")
+    local challengeID = C_Hardcore.GetSelectedChallenge()
+    if not challengeID then
+        print("No active challenge selected.")
+        return
+    end
+
+    local numEntries = C_Hardcore.GetNumLeaderboardEntries(challengeID)
+    if numEntries == 0 then
+        print("No entries found.")
+        return
+    end
+
+    for i = 1, numEntries do
+        local entry = C_Hardcore.GetLeaderboardEntry(challengeID, i)
+        if entry then
+            local statusText
+            if entry.status == Enum.Hardcore.Status.Failed then
+                statusText = "FAILED"
+            elseif entry.status == Enum.Hardcore.Status.Completed then
+                statusText = "COMPLETED"
+            else
+                statusText = "IN PROGRESS"
+            end
+
+            local timeText = ""
+            if entry.time and entry.time > 0 then
+                timeText = string.format(" - Time: %s", SecondsToTime(entry.time))
+            end
+
+            print(string.format(" - %s (Lv %d) [%s]%s", entry.name, entry.level, statusText, timeText))
+        end
+    end
+
+end
+
+
+-- one frame to catch death → wait for ladder → report that character’s leaderboard entry
+local f = CreateFrame("Frame", "HardcoreDeathThenLadder")
+local deathName         -- name of the character who just died
+local ladderBuffer = {} -- buffers per-challengeID fragments
+
+f:RegisterEvent("CHAT_MSG_ADDON")
+f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
+    if prefix == "ASMSG_HARDCORE_DEATH" then
+        -- fire when someone dies; msg = "name:race:gender:class:level:zone:reason[:npc[:npcLevel]]"
+        deathName = msg:match("^([^:]+)") or nil
+        if deathName then
+            print("|cffff0000[Hardcore] Death detected:|r", deathName)
+            ladderBuffer = {}  -- reset any in-flight ladder data
+        end
+
+    elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" and deathName then
+        -- msg = "challengeID:dataFragment"
+        local challengeID, data = msg:match("^(%d+):(.*)")
+        if not challengeID or not data then return end
+
+        -- accumulate fragments
+        ladderBuffer[challengeID] = (ladderBuffer[challengeID] or "") .. data
+
+        -- final fragment has no trailing ";"
+        if not data:match(";$") then
+            local full = ladderBuffer[challengeID]
+            ladderBuffer[challengeID] = nil
+
+            -- split each "status:name:class:race:gender:level:time"
+            for entry in full:gmatch("([^;]+)") do
+                local s,n,cls,r,g,lvl,tm = entry:match("^(%d+):([^:]+):%d+:%d+:%d+:(%d+):(%d+)$")
+                if n == deathName then
+                    s   = tonumber(s)
+                    lvl = tonumber(lvl)
+                    tm  = tonumber(tm)
+                    -- status 3 = Completed, 2 = InProgress, 1 = Failed
+                    local statusText = (s==3 and "COMPLETED") or (s==2 and "IN PROGRESS") or "FAILED"
+                    print((
+                            "|cff00ff00[Hardcore Ladder]|r %s died → Status: %s, Level: %d, Time: %s"
+                    ):format(n, statusText, lvl, SecondsToTime(tm)))
+                    deathName = nil  -- stop watching until next death
+                    break
+                end
+            end
+        end
+    end
+end)
+
+

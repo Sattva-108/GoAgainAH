@@ -119,7 +119,7 @@
             <Frame name="$parentWhere">
                 <Size><AbsDimension x="135" y="32"/></Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="15"/>
+                    <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="10"/>
                 </Anchors>
                 <Layers>
                     <Layer>
