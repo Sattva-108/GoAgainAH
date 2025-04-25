@@ -2,85 +2,102 @@
 local addonName, ns = ...
 local L = ns.L
 
--- 1. Create the two sub-tab buttons when the frame loads:
+-- 1) Helper: what to do when the sub-tab changes
+local function OnSubTabChanged(frame, newTab)
+    if newTab == "completed" then
+        -- pull or prepare your completed data
+        -- e.g. ns.LoadCompletedDeathClips()
+        print("Switched to Completed — time to load/refresh your completed clips")
+    else
+        -- (optional) tear down or reset anything from completed mode
+        print("Back to Live — nothing special to do here")
+    end
+end
+
+-- 2) Create the two sub-tab buttons once, on first show
 hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     local frame = OFAuctionFrameDeathClips
+    if frame._hasSubtabs then return end
+    frame._hasSubtabs = true
 
     local liveBtn = CreateFrame("Button", "OFDeathClipsTabLive", frame, "UIPanelButtonTemplate")
-
     local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", frame, "UIPanelButtonTemplate")
 
+    -- size & positioning
+    liveBtn:SetSize(80,22)
+    liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 60, -10)
+    liveBtn:SetText(L["Live"])
+    compBtn:SetSize(80,22)
+    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 10, 0)
+    compBtn:SetText(L["Completed"])
 
-    -- Simple style toggle
-    function updateTabStyles()
+    -- style toggle
+    local function updateTabStyles()
         if frame.currentSubTab == "live" then
             liveBtn:Disable(); compBtn:Enable()
         else
             compBtn:Disable(); liveBtn:Enable()
         end
     end
-    if frame._hasSubtabs then return end
-    frame._hasSubtabs = true
 
-    -- Live tab
-    liveBtn:SetSize(80, 22)
-    liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 60, -10)
-    liveBtn:SetText(L["Live"])
+    -- 3) Hook Live button: only set state & run Update
     liveBtn:SetScript("OnClick", function()
         frame.currentSubTab = "live"
         updateTabStyles()
+        OnSubTabChanged(frame, "live")
         OFAuctionFrameDeathClips_Update()
     end)
 
-    -- Completed tab
-    compBtn:SetSize(80, 22)
-    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 10, 0)
-    compBtn:SetText(L["Completed"])
+    -- 4) Hook Completed button: set state, run your logic, then Update
     compBtn:SetScript("OnClick", function()
         frame.currentSubTab = "completed"
         updateTabStyles()
+        OnSubTabChanged(frame, "completed")
         OFAuctionFrameDeathClips_Update()
     end)
 
-    -- Initialize
+    -- initialize
     frame.currentSubTab = frame.currentSubTab or "live"
     updateTabStyles()
+    OnSubTabChanged(frame, frame.currentSubTab)
 end)
 
--- 2. Override the data‐fetch in the main update:
+-- 5) Drive which clips get displayed; leave the “live” path as-is
 hooksecurefunc("OFAuctionFrameDeathClips_Update", function()
     local frame = OFAuctionFrameDeathClips
-    local clips
-    if frame.currentSubTab and frame.currentSubTab == "live" then
-        clips = ns.GetLiveDeathClips()
-    elseif frame.currentSubTab and frame.currentSubTab == "completed" then
-    print("123")
-        -- your new API to pull “completed” data
-        --clips = ns.GetCompletedDeathClips()  -- you’ll implement this
+    if frame.currentSubTab == "live" then
+        frame._displayClips = ns.GetLiveDeathClips()
+    else
+        -- your new API to pull “completed” data; e.g.
+        --frame._displayClips = ns.GetCompletedDeathClips()
     end
-
-    -- stash it so UpdateClipEntry can see which mode we’re in
-    frame._displayClips = clips
 end)
 
--- 3. Tweak each row after it’s set up:
-local orig_UpdateEntry = _G["UpdateClipEntry"]
-_G["UpdateClipEntry"] = function(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
-    local frame = OFAuctionFrameDeathClips
-    -- first, let the original do its work:
-    orig_UpdateEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
+-- after your existing hooksecurefuncs in DeathClipsTabs.lua:
 
-    if frame.currentSubTab == "completed" then
-        -- hide the “deathCause” and “where” frames:
-        _G[button:GetName().."Clip"]:Hide()
-        _G[button:GetName().."Where"]:Hide()
-        -- show your new fields, e.g. “completedBy” and “completedAt”:
-        _G[button:GetName().."YourNewField"]:SetText( clip.completedBy )
-        _G[button:GetName().."YourNewField"]:Show()
-    else
-        -- live mode: ensure defaults are visible
-        _G[button:GetName().."Clip"]:Show()
-        _G[button:GetName().."Where"]:Show()
-        _G[button:GetName().."YourNewField"]:Hide()
+hooksecurefunc("OFAuctionFrameDeathClips_Update", function()
+    local frame = OFAuctionFrameDeathClips
+    -- How many buttons you show per page:
+    local maxButtons = 1000
+
+    for i = 1, maxButtons do
+        local btn = _G["OFDeathClipsButton"..i]
+        if not (btn and btn.clip) then break end
+
+        local name  = btn:GetName()
+        local clipF = _G[name.."Clip"]
+        local where = _G[name.."Where"]
+
+        if frame.currentSubTab == "completed" then
+            -- hide the two columns you don't want on the completed view:
+            if clipF then clipF:Hide() end
+            if where then where:Hide() end
+        else
+            -- on live, make sure they’re visible again:
+            if clipF then clipF:Show() end
+            if where then where:Show() end
+        end
     end
-end
+end)
+
+
