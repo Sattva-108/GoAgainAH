@@ -110,10 +110,28 @@ ns.GetNewDeathClips = function(since, existing)
     return newClips
 end
 
+local function ClipIsDuplicate(existingClips, newClip)
+    for _, clip in pairs(existingClips) do
+        if clip.characterName == newClip.characterName
+                and clip.where         == newClip.where
+                and clip.deathCause    == newClip.deathCause
+                and math.abs((clip.ts or 0) - (newClip.ts or 0)) < 5
+        then
+            return true
+        end
+    end
+    return false
+end
+
+-- replace the existing ns.AddNewDeathClips with this:
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        existingClips[clip.id] = clip
+        if ClipIsDuplicate(existingClips, clip) then
+            print("GoAgainAH: suppressed duplicate death clip:", clip.characterName, clip.ts)
+        else
+            existingClips[clip.id] = clip
+        end
     end
 end
 
@@ -285,7 +303,7 @@ end
 --===== Hardcore Death → Ladder (with '|' splitting) =====--
 local f = CreateFrame("Frame", "HardcoreDeathThenLadder")
 local deathName, listening = nil, false
-local ladderBuffer = {}
+local ladderBuffer           = {}
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
@@ -342,14 +360,14 @@ f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
                             found = true
                             deathName = nil
                             break
-                        end
                     end
+                end
 
                     if not found then
                         print(("|cffffff00[Warning]|r no ladder entry found for death: %s")
                                 :format(deathName or "<unknown>"))
-                    end
-                end
+        end
+    end
             end
         end
     end
