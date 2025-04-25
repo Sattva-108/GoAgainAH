@@ -75,6 +75,7 @@ UI\AuctionHouse\DeathClipReviewsPrompt.lua
 UI\AuctionHouse\DeathClipRatePrompt.lua
 LFG\Dungeons.lua
 UI\AuctionHouse\DeathClipsUI.lua
+UI\AuctionHouse\DeathClipsTabs.lua
 UI\AuctionHouse\DeathClipsUITemplates.xml
 UI\LFG\DungeonScrollList.lua
 UI\AuctionHouse\LfgUI.lua
