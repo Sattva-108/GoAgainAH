@@ -329,6 +329,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
     if not listening then return end
 
     if prefix == "ASMSG_HARDCORE_DEATH" then
+        PlaySoundFile("Sound\\interface\\MapPing.wav")
         local name = msg:match("^([^:]+)")
         if name then
             deathQueue[name] = true

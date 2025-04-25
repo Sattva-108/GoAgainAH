@@ -423,6 +423,51 @@ end
 -- Example Usage Comment: Needs updating to reflect the new function name.
 -- /run GOAHClearDBName("Grommash")
 
+
+-- LiveDeathClips.lua (append at the end)
+
+-- Helper: remove duplicates occurring within 30 minutes
+local function CleanDuplicateDeathClips()
+    local clipsById = ns.GetLiveDeathClips()                       -- get all clips :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+    local list = {}
+    for id, clip in pairs(clipsById) do
+        table.insert(list, clip)
+    end
+    -- sort oldest → newest
+    table.sort(list, function(a,b) return a.ts < b.ts end)
+
+    local seen = {}   -- key → lastTimestamp
+    local removed = 0
+
+    for _, clip in ipairs(list) do
+        -- build identity key
+        local key = table.concat({
+            clip.characterName or "",
+            clip.race or "",
+            clip.class or "",
+            tostring(clip.level or 0),
+            clip.where or "",
+            clip.deathCause or "",
+        }, "|")
+        local lastTs = seen[key]
+        if lastTs and (clip.ts - lastTs) <= 1800 then
+            ns.RemoveDeathClip(clip.id)                             -- remove duplicate :contentReference[oaicite:2]{index=2}&#8203;:contentReference[oaicite:3]{index=3}
+            removed = removed + 1
+        else
+            seen[key] = clip.ts
+        end
+    end
+
+    print(("Cleaned up %d duplicate death-clips found within 30 minutes."):format(removed))
+end
+
+-- Register a slash-command
+SLASH_CLEANDEATHCLIPS1 = "/cleandeathclips"
+SlashCmdList["CLEANDEATHCLIPS"] = function()
+    CleanDuplicateDeathClips()
+end
+
+
 -- TODO FIXME before release 3.3.5
 -- a little hack to not get warning when running testing script:
 -- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))

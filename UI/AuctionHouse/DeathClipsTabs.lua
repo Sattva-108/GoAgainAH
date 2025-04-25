@@ -7,10 +7,10 @@ local function OnSubTabChanged(frame, newTab)
     if newTab == "completed" then
         -- pull or prepare your completed data
         -- e.g. ns.LoadCompletedDeathClips()
-        print("Switched to Completed — time to load/refresh your completed clips")
+        --print("Switched to Completed — time to load/refresh your completed clips")
     else
         -- (optional) tear down or reset anything from completed mode
-        print("Back to Live — nothing special to do here")
+--        print("Back to Live — nothing special to do here")
     end
 end
 
