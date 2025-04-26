@@ -118,6 +118,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     liveBtn:SetScript("OnClick", function()
         frame.currentSubTab = "live"
         updateTabStyles()
+        ns.isCompletedTabActive = false
         OnSubTabChanged(frame, "live")
         OFAuctionFrameDeathClips_Update()
     end)
@@ -126,6 +127,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     compBtn:SetScript("OnClick", function()
         frame.currentSubTab = "completed"
         updateTabStyles()
+        ns.isCompletedTabActive = true
         OnSubTabChanged(frame, "completed")
         OFAuctionFrameDeathClips_Update()
     end)
