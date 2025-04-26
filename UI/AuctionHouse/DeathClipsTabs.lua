@@ -5,12 +5,14 @@ local L = ns.L
 -- Create the flag in the shared namespace
 ns.isCompletedTabActive = false
 
--- Update the layout based on the current tab
 local function UpdateDeathClipsLayout()
     local frame = OFAuctionFrameDeathClips
     local streamerSort = _G["OFDeathClipsStreamerSort"]
     local levelSort = _G["OFDeathClipsLevelSort"]
     local clipSort = _G["OFDeathClipsClipSort"]
+    local whereSort = _G["OFDeathClipsWhereSort"]
+    local classSort = _G["OFDeathClipsClassSort"]
+    local raceSort = _G["OFDeathClipsRaceSort"]
 
     if ns.isCompletedTabActive then
         -- When completed tab is active, hide the level sort button
@@ -18,22 +20,50 @@ local function UpdateDeathClipsLayout()
 
         -- Adjust the width of StreamerSort and move ClipSort to the right
         streamerSort:SetWidth(streamerSort:GetWidth() + levelSort:GetWidth())  -- Expand StreamerSort to fill the space
-
-        -- Re-anchor the ClipSort button to the left of the StreamerSort button (to prevent the gap)
         clipSort:ClearAllPoints()  -- Clear any existing anchors
         clipSort:SetPoint("LEFT", streamerSort, "RIGHT", 2, 0)  -- Position it immediately to the right of StreamerSort
+
+        -- Hide WhereSort button
+        whereSort:Hide()
+
+        -- Get half the width of WhereSort to distribute between ClassSort and RaceSort
+        local whereWidth = whereSort:GetWidth()
+        local halfWhereWidth = whereWidth / 2
+
+        -- Increase the width of ClassSort and RaceSort by half of WhereSort's width
+        classSort:SetWidth(classSort:GetWidth() + halfWhereWidth)
+        raceSort:SetWidth(raceSort:GetWidth() + halfWhereWidth)
+
+        -- Re-anchor the ClassSort and RaceSort buttons to slide them to the right of ClipSort
+        classSort:ClearAllPoints()
+        raceSort:ClearAllPoints()
+        classSort:SetPoint("LEFT", clipSort, "RIGHT", 2, 0)  -- Position it immediately to the right of ClipSort
+        raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)   -- Position it immediately to the right of ClassSort
+
     else
         -- If live tab is active, show the level sort button again
         levelSort:Show()
 
         -- Reset StreamerSort width and re-anchor ClipSort to its original position
         streamerSort:SetWidth(90)  -- Reset to original width (adjust if needed)
-
-        -- Re-anchor the ClipSort button to the right of LevelSort
-        clipSort:ClearAllPoints()  -- Clear any existing anchors
+        clipSort:ClearAllPoints()
         clipSort:SetPoint("LEFT", levelSort, "RIGHT", 2, 0)  -- Position it immediately to the right of LevelSort
+
+        -- Show the WhereSort button again
+        whereSort:Show()
+
+        -- Reset the width of ClassSort and RaceSort
+        classSort:SetWidth(55)  -- Reset to original width (adjust if needed)
+        raceSort:SetWidth(60)   -- Reset to original width (adjust if needed)
+
+        -- Re-anchor the ClassSort and RaceSort buttons back to the right of WhereSort
+        classSort:ClearAllPoints()
+        raceSort:ClearAllPoints()
+        classSort:SetPoint("LEFT", whereSort, "RIGHT", 2, 0)  -- Position it immediately to the right of WhereSort
+        raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)   -- Position it immediately to the right of ClassSort
     end
 end
+
 
 -- 1) Helper: what to do when the sub-tab changes
 local function OnSubTabChanged(frame, newTab)
