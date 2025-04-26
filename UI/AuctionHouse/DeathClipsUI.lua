@@ -3,6 +3,7 @@ local L = ns.L
 
 -- Keep track if the sort hook has been applied to avoid duplicates
 local sortHookApplied = false
+ns.updatedButtons = {}
 
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
@@ -217,6 +218,73 @@ local function ResizeEntry(button, numBatchAuctions, totalAuctions)
     end
 end
 
+local function UpdateLayout(buttonName)
+    -- Fetch elements for Name, Level, Clip, ClassText, WhereText, and RaceText
+    local name = _G[buttonName.."Name"]
+    local level = _G[buttonName.."Level"]
+    local clipFrame = _G[buttonName.."Clip"]
+    local classText = _G[buttonName.."ClassText"]
+    local whereText = _G[buttonName.."WhereText"]
+    local raceText = _G[buttonName.."RaceText"]
+
+    if ns.isCompletedTabActive then
+        -- When completed tab is active, hide the level and expand the name
+        level:Hide()
+        name:SetWidth(name:GetWidth() + level:GetWidth())  -- Expand name to take up the space of level
+
+        -- Re-anchor the clip to the right of name
+        clipFrame:ClearAllPoints()
+        clipFrame:SetPoint("LEFT", name, "RIGHT", -8, 0)  -- Position Clip immediately to the right of Name
+
+        -- Hide WhereText and adjust ClassText and RaceText
+        whereText:Hide()
+
+        -- Get half the width of WhereText to distribute between ClassText and RaceText
+        local whereWidth = whereText:GetWidth()
+        local halfWhereWidth = whereWidth / 2
+
+        -- Increase the width of ClassText and RaceText by half of WhereText's width
+        classText:SetWidth(classText:GetWidth() + halfWhereWidth)
+        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth)
+
+        -- Re-anchor the ClassText and RaceText to slide them to the right of Clip
+        classText:ClearAllPoints()
+        raceText:ClearAllPoints()
+
+        -- Anchor ClassText immediately to the right of Clip
+        classText:SetPoint("LEFT", clipFrame, "RIGHT", 2, 0)
+
+        -- Anchor RaceText immediately to the right of ClassText
+        raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
+
+    else
+        -- If live tab is active, show the level again and reset the name width
+        level:Show()
+        name:SetWidth(100)  -- Reset to original width (adjust if needed)
+
+        -- Re-anchor the clip to the right of level
+        clipFrame:ClearAllPoints()
+        clipFrame:SetPoint("LEFT", level, "RIGHT", 2, 0)  -- Position Clip to the right of Level
+
+        -- Show WhereText again
+        whereText:Show()
+
+        -- Reset the width of ClassText and RaceText to original sizes (adjust as needed)
+        classText:SetWidth(55)  -- Adjust to original width as needed
+        raceText:SetWidth(55)   -- Adjust to original width as needed
+
+        -- Re-anchor the ClassText and RaceText buttons back to the right of WhereText
+        classText:ClearAllPoints()
+        raceText:ClearAllPoints()
+
+        -- Anchor ClassText immediately to the right of WhereText
+        classText:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
+
+        -- Anchor RaceText immediately to the right of ClassText
+        raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
+    end
+end
+
 local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
     if clip.streamer == nil or clip.streamer == "" then
         clip.streamer = ns.GetTwitchName(clip.characterName)
@@ -391,6 +459,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     else
         button:UnlockHighlight()
     end
+    -- Check if the button has already been updated
+    if ns.updatedButtons[buttonName] then
+        return -- Skip if this button has already been updated
+    end
+
+    UpdateLayout(buttonName)
+
+    -- Mark this button as updated
+    ns.updatedButtons[buttonName] = true
 end
 
 local function FilterHiddenClips(state, clips)

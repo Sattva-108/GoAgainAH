@@ -67,12 +67,23 @@ end
 
 -- 1) Helper: what to do when the sub-tab changes
 local function OnSubTabChanged(frame, newTab)
+
+    ns.updatedButtons = {}
+    -- Reset the page number
+    OFAuctionFrameDeathClips.page = 0
+    -- Always reset the scroll frame offset (important for data loading)
+    FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+    if OFDeathClipsScrollScrollBar then
+        OFDeathClipsScrollScrollBar:SetValue(0)
+    end
+
+
     if newTab == "completed" then
         ns.isCompletedTabActive = true
         UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
     else
         ns.isCompletedTabActive = false
-        UpdateDeathClipsLayout()  -- Re-update the layout when switching back to "live"
+        UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
     end
 end
 
