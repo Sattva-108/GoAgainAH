@@ -122,11 +122,33 @@ ns.RemoveDeathClip = function(clipID)
     existingClips[clipID] = nil
 end
 
--- Only keep the ASMSG_HARDCORE_DEATH handler
+-- Get the rounded server time to the nearest hour with a grace period of 60 seconds
+local function GetRoundedServerTimeWithGracePeriod()
+    local serverTime = GetServerTime()
+    local roundedTime = serverTime - (serverTime % 3600)  -- Round down to the hour
+    local gracePeriod = 60  -- Grace period in seconds (1 minute before the hour)
+
+    -- If the time is within the last minute before the hour, round to the previous hour
+    if serverTime - roundedTime <= gracePeriod then
+        roundedTime = roundedTime - 3600  -- Round down to the previous hour
+    end
+
+    return roundedTime
+end
+
+-- Function to generate the unique clip ID
+local function BuildSimpleClipID(clip)
+    local t = GetRoundedServerTimeWithGracePeriod()  -- Get time rounded to the nearest hour with grace period
+    return string.format("%d-%s-%d-%s-%s", t, clip.characterName, clip.level, clip.where, clip.faction)
+end
+
+
+-- Create the frame to listen for addon messages
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" and prefix == "ASMSG_HARDCORE_DEATH" then
+        -- Parsing the message (like before)
         local parts = {}
         for part in string.gmatch(message, "([^:]+)") do
             table.insert(parts, part)
@@ -141,12 +163,10 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
         local mobName = parts[8] or ""
         local mobLevel = parts[9] or ""
 
-        -- Always wrap after first zone word
+        -- Process the zone and death cause
         local firstWord, rest = string.match(rawZone or "", "^(%S+)%s*(.*)$")
         local zone = rest and rest ~= "" and firstWord .. "\n" .. rest or firstWord
 
-
-        -- Process death cause
         local deathCause = deathCauses[deathCauseId] or "Неизвестно"
         local mobLevelText = ""  -- Default empty
 
@@ -157,7 +177,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
             -- Check if we also have the mob's level
             if mobLevel ~= "" then
-                -- Calculate level difference
+                -- Calculate level difference and color logic
                 local playerLevel = level or 0 -- Ensure player level is a number
                 local mobLevelNum = tonumber(mobLevel)
                 local levelDiff = mobLevelNum - playerLevel
@@ -181,13 +201,17 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
                 -- Format death cause (mob name) with the same color
                 deathCause = string.format("%s%s|r", color, mobName)
-                -- else: mobLevel is empty, so keep deathCause as plain mobName and mobLevelText as empty
             end
         end
 
         -- Create the death clip entry
         local clip = {
-            id = string.format("%d-%s", GetServerTime(), name),
+            id = BuildSimpleClipID({
+                characterName = name,
+                level = level,
+                where = zone,
+                faction = (races[raceId] and races[raceId].faction) or "Неизвестно"
+            }),
             ts = GetServerTime(),
             streamer = ns.GetTwitchName(name) or name,
             characterName = name,
@@ -197,9 +221,10 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             level = level,
             where = zone,
             deathCause = deathCause,
-            mobLevelText = mobLevelText
+            mobLevelText = mobLevelText,
         }
 
+        -- Add the clip (no duplicate check since the IDs are simplified)
         ns.AddNewDeathClips({clip})
         ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
     end
@@ -283,78 +308,67 @@ end
 
 
 --===== Hardcore Death → Ladder (with '|' splitting) =====--
-local f = CreateFrame("Frame", "HardcoreDeathThenLadder")
-local deathName, listening = nil, false
+local f = CreateFrame("Frame", "HardcoreDeathTimerReporter")
+local listening = false
+local nextUpdateDeadline = nil
 local ladderBuffer           = {}
+local deathQueue = {}
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
 
-f:SetScript("OnEvent", function(self, event, prefix, msg, channel, sender)
+f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
-        -- start listening 3s after login/zone
+        -- skip auto-refresh on login/reload
         C_Timer:After(3, function() listening = true end)
         return
     end
     if not listening then return end
 
     if prefix == "ASMSG_HARDCORE_DEATH" then
-        -- store your character’s death name
-        deathName = msg:match("^([^:]+)")
-        print("|cffff0000[Hardcore] Death detected:|r", deathName or "<unknown>")
-        ladderBuffer = {}
+        local admin = UnitName("player")
+        if admin == "Lenkomag" then
+            PlaySoundFile("Sound\\interface\\MapPing.wav")
+        end
+        local name = msg:match("^([^:]+)")
+        if name then
+            deathQueue[name] = true
+            if nextUpdateDeadline then
+                local left = nextUpdateDeadline - GetTime()
+                if left < 0 then left = 0 end
+                print(("%s died — next ladder in %s"):format(name, SecondsToTime(left)))
+            end
+        end
 
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
-        -- split out each <challengeID>:<fragment> block
+        -- handle one or more <challengeID>:<chunk> blocks
         for block in msg:gmatch("([^|]+)") do
             local id, data = block:match("^(%d+):(.*)")
-            if not id or not data then
-                print("|cffff0000[DEBUG]|r malformed block:", block)
-            else
-                -- accumulate per challenge
+            if id and data then
                 ladderBuffer[id] = (ladderBuffer[id] or "") .. data
 
-                -- if this block doesn’t end in ";" it's the last fragment
+                -- final fragment if no trailing semicolon
                 if not data:match(";$") then
                     local full = ladderBuffer[id]
                     ladderBuffer[id] = nil
 
-                    local found = false
-                    -- parse each semicolon-delimited entry
+                    -- for every death in queue, find and print run time
                     for entry in full:gmatch("([^;]+)") do
-                        -- strict 7-field pattern:
-                        -- status:name:class:race:gender:level:time
-                        local s,n,cls,r,g,lvl,tm = entry:match(
+                        local _, n, _, _, _, _, tm = entry:match(
                                 "^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$"
                         )
-                        if not s then
-                            print(("|cffff0000[DEBUG]|r failed to parse entry: %s"):format(entry))
-                        elseif n == deathName then
-                            s   = tonumber(s)
-                            lvl = tonumber(lvl) or 0
-                            tm  = tonumber(tm)  or 0
-                            local statusText = (s==3 and "COMPLETED")
-                                    or (s==2 and "IN PROGRESS")
-                                    or "FAILED"
-                            print((
-                                    "|cff00ff00[Hardcore Ladder]|r %s → %s, Lv%d, %s"
-                            ):format(n, statusText, lvl, SecondsToTime(tm)))
-                            found = true
-                            deathName = nil
-                            break
+                        if n and deathQueue[n] then
+                            print(("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)))
+                            deathQueue[n] = nil
                     end
                 end
 
-                    if not found then
-                        print(("|cffffff00[Warning]|r no ladder entry found for death: %s")
-                                :format(deathName or "<unknown>"))
-        end
+                    -- restart 10-minute timer
+                    nextUpdateDeadline = GetTime() + 600
     end
             end
         end
     end
 end)
-
-
 
 

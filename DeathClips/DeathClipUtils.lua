@@ -468,6 +468,21 @@ SlashCmdList["CLEANDEATHCLIPS"] = function()
 end
 
 
+---- Helper function to print current time in minutes:seconds format every second
+--local function PrintCurrentTime()
+--    C_Timer:NewTicker(1, function()
+--        local timeInSeconds = GetServerTime()
+--        local minutes = math.floor(timeInSeconds / 60)
+--        local seconds = timeInSeconds % 60
+--        -- Print time in minutes:seconds format
+--        print(string.format("%02d:%02d", minutes, seconds))
+--    end)
+--end
+--
+---- Call the function to start printing time
+--PrintCurrentTime()
+
+
 -- TODO FIXME before release 3.3.5
 -- a little hack to not get warning when running testing script:
 -- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
