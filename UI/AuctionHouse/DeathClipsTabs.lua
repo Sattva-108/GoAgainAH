@@ -87,14 +87,6 @@ local function OnSubTabChanged(frame, newTab)
     end
 end
 
--- Hook this function to the sub-tab change logic
-hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
-    -- Call to update the layout when the frame shows
-    UpdateDeathClipsLayout()
-end)
-
--- Optionally, handle other logic when the sub-tab changes.
-
 
 -- 2) Create the two sub-tab buttons once, on first show
 hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()

@@ -252,10 +252,16 @@ local function UpdateLayout(buttonName)
         raceText:ClearAllPoints()
 
         -- Anchor ClassText immediately to the right of Clip
-        classText:SetPoint("LEFT", clipFrame, "RIGHT", 2, 0)
+        classText:SetPoint("LEFT", clipFrame, "RIGHT", 15, 0)
 
         -- Anchor RaceText immediately to the right of ClassText
         raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
+
+        -- Set font for ClassText and RaceText in the live tab (fallback font)
+        classText:SetFontObject("GameFontNormal")  -- Fallback font for live tab
+        raceText:SetFontObject("GameFontNormal")   -- Fallback font for live tab
+        classText:SetJustifyH("CENTER")
+        raceText:SetJustifyH("CENTER")
 
     else
         -- If live tab is active, show the level again and reset the name width
@@ -282,6 +288,12 @@ local function UpdateLayout(buttonName)
 
         -- Anchor RaceText immediately to the right of ClassText
         raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
+        -- Set font for ClassText and RaceText in the completed tab
+        classText:SetFontObject("GameFontHighlightSmall")  -- Example font for completed tab
+        raceText:SetFontObject("GameFontHighlightSmall")   -- Example font for completed tab
+        classText:SetJustifyH("RIGHT")
+        raceText:SetJustifyH("LEFT")
+
     end
 end
 
@@ -323,7 +335,21 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
 
     local race = _G[buttonName.."RaceText"]
-    race:SetText(L[clip.race] or L["Unknown"])
+
+    -- Only shorten Warlock and Rogue for Russian clients
+    if GetLocale() == "ruRU" then
+        if ns.isCompletedTabActive then
+            if clip.race == "Ночноро\nждённый" then
+                clip.race = "Ночнорождённый"
+            elseif clip.race == "Озарён. дреней" then
+                clip.race = "Озарённый дреней"
+            end
+        else
+
+        end
+    end
+
+    race:SetText(clip.race or L["Unknown"])
 
     -- Faction-based color logic for the race text
     if clip.faction == "Horde" then
@@ -367,10 +393,13 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
         -- Only shorten Warlock and Rogue for Russian clients
         if GetLocale() == "ruRU" then
-            if classKey == "WARLOCK" then
-                localizedName = "Черно\nкнижник"
-            elseif classKey == "ROGUE" then
-                localizedName = "Разбой\nник"
+            if ns.isCompletedTabActive then
+            else
+                if classKey == "WARLOCK" then
+                    localizedName = "Черно\nкнижник"
+                elseif classKey == "ROGUE" then
+                    localizedName = "Разбой\nник"
+                end
             end
         end
 
