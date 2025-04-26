@@ -114,13 +114,24 @@ ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
         existingClips[clip.id] = clip
+        end
     end
-end
 
 ns.RemoveDeathClip = function(clipID)
     local existingClips = ns.GetLiveDeathClips()
     existingClips[clipID] = nil
 end
+
+ns.GetCompletedDeathClips = function()
+    local completedClips = {}
+    for _, clip in pairs(ns.GetLiveDeathClips()) do
+        if clip.completed then
+            table.insert(completedClips, clip)
+        end
+    end
+    return completedClips
+end
+
 
 -- Get the rounded server time to the nearest hour with a grace period of 60 seconds
 local function GetRoundedServerTimeWithGracePeriod()
@@ -222,6 +233,43 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             where = zone,
             deathCause = deathCause,
             mobLevelText = mobLevelText,
+        }
+
+        -- Add the clip (no duplicate check since the IDs are simplified)
+        ns.AddNewDeathClips({clip})
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+    elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
+        local parts = {strsplit(":", message)}
+        local name = parts[1]
+        local raceId = tonumber(parts[2])
+        local genderId = tonumber(parts[3])
+        local classId = tonumber(parts[4])
+
+        -- Default values (because these are missing in the message)
+        local level = 80   -- Default level
+        local zone = "Неизвестно"  -- Default zone
+        local deathCause = "Неизвестно"  -- Default death cause (for consistency)
+        local mobLevelText = ""  -- Default mob level text (empty)
+
+        -- Create the completed challenge clip (use default "Неизвестно" for missing data)
+        local clip = {
+            id = BuildSimpleClipID({
+                characterName = name,
+                level = level,
+                where = zone,
+                faction = (races[raceId] and races[raceId].faction) or "Неизвестно"
+            }),
+            ts = GetServerTime(),
+            streamer = ns.GetTwitchName(name) or name,
+            characterName = name,
+            race = (races[raceId] and races[raceId].name) or "Неизвестно",
+            faction = (races[raceId] and races[raceId].faction) or "Неизвестно",
+            class = classes[classId] or "Неизвестно",
+            level = level,
+            where = zone,
+            deathCause = deathCause,
+            mobLevelText = mobLevelText,
+            completed = true
         }
 
         -- Add the clip (no duplicate check since the IDs are simplified)

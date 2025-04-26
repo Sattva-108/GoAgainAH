@@ -197,6 +197,38 @@ for k in pairs(deathCauses or {}) do -- Use (deathCauses or {}) to prevent error
     end
 end
 
+function GOAHSendRandomCompleteMessage()
+    -- Generate random data
+    local name = randomNames[math.random(#randomNames)]
+    local raceId = getRandomKey(races)
+    local genderId = 0 -- Keeping this fixed as 0 from the example (Male)
+    local classId = getRandomKey(classes)
+    local challengeID = 1  -- Only 1 challenge, so we just use challengeID = 1
+
+    local messageParts = {
+        name,
+        tostring(raceId),
+        tostring(genderId),
+        tostring(classId),
+        tostring(challengeID)
+    }
+    local message = table.concat(messageParts, ":")
+
+    -- Send the addon message
+    local target = UnitName("player")
+    if not target then
+        print(addonName .. ": Cannot send message, player unit not found.")
+        return
+    end
+
+    -- Send the message for completion
+    SendAddonMessage("ASMSG_HARDCORE_COMPLETE", message, "WHISPER", target)
+end
+
+-- Example of how to call it:
+-- /run GOAHSendRandomCompleteMessage()
+
+
 
 -- The modified helper function
 function GOAHSendRandomDeathMessage()

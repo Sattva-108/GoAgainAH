@@ -404,35 +404,53 @@ local function FilterHiddenClips(state, clips)
     return filtered
 end
 
+-- Updates clip entries based on which tab is active
 function OFAuctionFrameDeathClips_Update()
+    local frame = OFAuctionFrameDeathClips
     local state = ns.GetDeathClipReviewState()
     local ratingsByClip = state:GetRatingsByClip()
 
+    -- Get all live clips
     local allClips = ns.GetLiveDeathClips()
     local clips = {}
-    for _, clip in pairs(allClips) do
-        table.insert(clips, clip)
+
+    -- Filter clips based on the active tab
+    if frame.currentSubTab == "completed" then
+        -- Show only completed clips
+        for _, clip in pairs(allClips) do
+            if clip.completed then
+                table.insert(clips, clip)
+            end
+        end
+    else
+        -- Show only live clips (not completed)
+        for _, clip in pairs(allClips) do
+            if not clip.completed then
+                table.insert(clips, clip)
+            end
+        end
     end
 
     clips = ns.SortDeathClips(clips, OFGetCurrentSortParams("clips"))
     clips = FilterHiddenClips(state, clips)
 
+    -- Proceed with pagination and displaying the clips
     local totalClips = #clips
     local page = OFAuctionFrameDeathClips.page or 0
     local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
     local startIdx = offset + 1 + (page * NUM_CLIPS_PER_PAGE)
     local endIdx = startIdx + NUM_CLIPS_TO_DISPLAY - 1
-    local numBatchClips = min(totalClips - page * NUM_CLIPS_PER_PAGE, NUM_CLIPS_PER_PAGE)
+    local numBatchClips = math.min(totalClips - page * NUM_CLIPS_PER_PAGE, NUM_CLIPS_PER_PAGE)
     local isLastSlotEmpty
 
     updateSortArrows()
-
     -- Pre-fetch visible clips
     local visibleClips = {}
     for i = startIdx, endIdx do
         visibleClips[i - startIdx + 1] = clips[i]
     end
 
+    -- Update the displayed buttons for each clip
     for i = 1, NUM_CLIPS_TO_DISPLAY do
         local button = _G["OFDeathClipsButton"..i]
         local clip = visibleClips[i]
@@ -447,7 +465,6 @@ function OFAuctionFrameDeathClips_Update()
         else
             button:Show()
             local ratings = (clip.id and ratingsByClip[clip.id]) or {}
-
             ns.TryExcept(
                     function()
                         UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
