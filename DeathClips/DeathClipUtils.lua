@@ -500,25 +500,25 @@ SlashCmdList["CLEANDEATHCLIPS"] = function()
 end
 
 
--- Function to format and print the current time
-local function PrintCurrentTime()
-    local serverTime = GetServerTime()
-
-    -- Assuming GetServerTime() returns seconds since a reference time (like Unix epoch)
-    -- Convert serverTime from seconds to a human-readable format (HH:MM:SS)
-    local hours = math.floor(serverTime / 3600) -- Convert to hours
-    local minutes = math.floor((serverTime % 3600) / 60) -- Convert remaining seconds to minutes
-    local seconds = serverTime % 60 -- Remaining seconds
-
-    -- Format it into a human-readable format with a space after the first two digits (HH MM:SS)
-    local formattedTime = string.format("Current time: %02d %02d:%02d", hours, minutes, seconds)
-    print(formattedTime)  -- Prints the current time with a gap after the hours
-end
-
--- Set up a ticker to print the current time every second
-C_Timer:NewTicker(1, function()
-    PrintCurrentTime()
-end)
+---- Function to format and print the current time
+--local function PrintCurrentTime()
+--    local serverTime = GetServerTime()
+--
+--    -- Assuming GetServerTime() returns seconds since a reference time (like Unix epoch)
+--    -- Convert serverTime from seconds to a human-readable format (HH:MM:SS)
+--    local hours = math.floor(serverTime / 3600) -- Convert to hours
+--    local minutes = math.floor((serverTime % 3600) / 60) -- Convert remaining seconds to minutes
+--    local seconds = serverTime % 60 -- Remaining seconds
+--
+--    -- Format it into a human-readable format with a space after the first two digits (HH MM:SS)
+--    local formattedTime = string.format("Current time: %02d %02d:%02d", hours, minutes, seconds)
+--    print(formattedTime)  -- Prints the current time with a gap after the hours
+--end
+--
+---- Set up a ticker to print the current time every second
+--C_Timer:NewTicker(1, function()
+--    PrintCurrentTime()
+--end)
 
 -- TODO FIXME before release 3.3.5
 -- a little hack to not get warning when running testing script:

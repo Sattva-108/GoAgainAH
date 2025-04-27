@@ -113,9 +113,14 @@ end
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        existingClips[clip.id] = clip
+        -- Ensure that the clip has a valid ID before attempting to add it to existingClips
+        if clip.id then
+            existingClips[clip.id] = clip
+        else
+            print("Error: Clip ID is nil for character:", clip.characterName)
         end
     end
+end
 
 ns.RemoveDeathClip = function(clipID)
     local existingClips = ns.GetLiveDeathClips()
@@ -133,68 +138,47 @@ ns.GetCompletedDeathClips = function()
 end
 
 
-local roundToMinutes = 60 -- Time to round to in minutes (e.g., 60 for the hour, 15 for a quarter of an hour)
-local gracePeriodMinutesBefore = 1 -- Grace period in minutes before the defined point (e.g., 1 minute before)
-local gracePeriodMinutesAfter = 1  -- Grace period in minutes after the defined point (e.g., 1 minute after)
-local graceMinuteTarget = 30 -- The specific minute to set the grace period (e.g., 16th minute)
+-- Store clips and their timestamps
+local clips = {}
 
--- Store the last seen clip's timestamp for each character and zone within the grace period
-local lastClipTimestamps = {}
+-- Get the rounded server time to the nearest minute with a grace period of 30 seconds
+local function GetRoundedServerTimeWithGracePeriod()
+    local serverTime = GetServerTime()  -- Use GetServerTime for ID generation
+    local roundedTime = serverTime - (serverTime % 60)  -- Round down to the minute
+    local gracePeriod = 30  -- Grace period in seconds (30 seconds before the minute)
 
--- Get the rounded server time to the nearest hour with a grace period
-local function GetRoundedServerTimeWithGracePeriod(clip)
-    local serverTime = GetServerTime()
-    local roundToSeconds = roundToMinutes * 60 -- Convert the minutes to seconds
-    local gracePeriodBeforeSeconds = gracePeriodMinutesBefore * 60 -- Convert the grace period before the target time to seconds
-    local gracePeriodAfterSeconds = gracePeriodMinutesAfter * 60  -- Convert the grace period after the target time to seconds
-
-    -- Get the current hour and minute
-    local currentHour = math.floor(serverTime / 3600)
-    local currentMinute = math.floor((serverTime % 3600) / 60)
-    local currentTimeRoundedToHour = currentHour * 3600  -- This is the time rounded to the start of the current hour
-
-    -- Define the target grace period time in seconds (e.g., 16 minutes past the hour)
-    local gracePeriodTime = currentTimeRoundedToHour + graceMinuteTarget * 60  -- For example, 16 minutes past the hour
-
-    -- Debugging grace period check
-    print("Current time: " .. serverTime .. " (" .. currentHour .. ":" .. currentMinute .. ")")
-    print("Grace period target time: " .. gracePeriodTime)
-
-    -- Check if we're within the grace period of ±1 minute around the target grace period time
-    local gracePeriodStart = gracePeriodTime - gracePeriodBeforeSeconds
-    local gracePeriodEnd = gracePeriodTime + gracePeriodAfterSeconds
-
-    print("Grace Period Start: " .. gracePeriodStart)
-    print("Grace Period End: " .. gracePeriodEnd)
-
-    -- Check if this clip has been seen within the grace period already
-    local clipKey = clip.characterName .. "-" .. clip.where
-    print("Clip Key: " .. clipKey)
-
-    -- Debugging existing timestamp checks
-    if lastClipTimestamps[clipKey] then
-        print("Last timestamp for this character and zone: " .. lastClipTimestamps[clipKey])
+    -- If the time is within the grace period, round to the previous minute
+    if serverTime - roundedTime <= gracePeriod then
+        roundedTime = roundedTime - 60  -- Round down to the previous minute
     end
 
-    -- Check if the current time is within the grace period window
-    if lastClipTimestamps[clipKey] and serverTime >= gracePeriodStart and serverTime <= gracePeriodEnd then
-        -- If the clip was seen within the grace period, return the same timestamp as the previous one
-        print("Duplicate detected within grace period. Reusing timestamp: " .. lastClipTimestamps[clipKey])
-        return lastClipTimestamps[clipKey]
-    else
-        -- Otherwise, save the current timestamp for future checks
-        lastClipTimestamps[clipKey] = gracePeriodTime
-        print("New timestamp generated: " .. gracePeriodTime)
-        return gracePeriodTime
-    end
+    return roundedTime
 end
 
--- Function to generate the unique clip ID based on the rounded server time with grace period
+-- Function to generate the unique clip ID with cooldown check
 local function BuildSimpleClipID(clip)
-    local t = GetRoundedServerTimeWithGracePeriod(clip)  -- Get the time rounded to the nearest hour with grace period
-    print("Generated Clip ID Timestamp: " .. t)
+    local currentTime = GetTime()  -- Use GetTime for cooldown calculation
+    local t = GetRoundedServerTimeWithGracePeriod()  -- Get time rounded to the nearest minute with grace period
+
+    -- Check if the clip already exists in the clips table for the character name
+    if clips[clip.characterName] then
+        -- Calculate the cooldown time
+        local lastClipTime = clips[clip.characterName]
+        local cooldown = 180 - (currentTime - lastClipTime)  -- 60 seconds cooldown
+        if cooldown > 0 then
+            print(string.format("Cooldown is %.0f seconds remaining for %s", cooldown, clip.characterName))
+            print("returning nil for: "..clip.characterName)
+            return nil  -- Return nil if the cooldown is still active
+        end
+    end
+
+    -- If no cooldown or cooldown expired, store the clip's timestamp
+    clips[clip.characterName] = currentTime
+
+    -- Return the formatted clip ID
     return string.format("%d-%s-%d-%s-%s", t, clip.characterName, clip.level, clip.where, clip.faction)
 end
+
 
 
 -- Create the frame to listen for addon messages
@@ -277,6 +261,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             deathCause = deathCause,
             mobLevelText = mobLevelText,
         }
+        if not clip.id then return end
 
         -- Add the clip (no duplicate check since the IDs are simplified)
         ns.AddNewDeathClips({clip})
@@ -314,6 +299,9 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             mobLevelText = mobLevelText,
             completed = true
         }
+
+        print("no clip id for: "..name)
+        if not clip.id then return end
 
         -- Add the clip (no duplicate check since the IDs are simplified)
         ns.AddNewDeathClips({clip})
