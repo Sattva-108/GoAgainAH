@@ -138,46 +138,14 @@ ns.GetCompletedDeathClips = function()
 end
 
 
--- Store clips and their timestamps
-local clips = {}
-
--- Get the rounded server time to the nearest minute with a grace period of 30 seconds
-local function GetRoundedServerTimeWithGracePeriod()
-    local serverTime = GetServerTime()  -- Use GetServerTime for ID generation
-    local roundedTime = serverTime - (serverTime % 60)  -- Round down to the minute
-    local gracePeriod = 30  -- Grace period in seconds (30 seconds before the minute)
-
-    -- If the time is within the grace period, round to the previous minute
-    if serverTime - roundedTime <= gracePeriod then
-        roundedTime = roundedTime - 60  -- Round down to the previous minute
-    end
-
-    return roundedTime
-end
-
--- Function to generate the unique clip ID with cooldown check
 local function BuildSimpleClipID(clip)
-    local currentTime = GetTime()  -- Use GetTime for cooldown calculation
-    local t = GetRoundedServerTimeWithGracePeriod()  -- Get time rounded to the nearest minute with grace period
+    -- Use the full message as the ID to avoid duplicates
+    local clipID = string.format("%s-%s-%d-%s-%s", clip.characterName, clip.level, clip.where, clip.faction, clip.deathCause)
 
-    -- Check if the clip already exists in the clips table for the character name
-    if clips[clip.characterName] then
-        -- Calculate the cooldown time
-        local lastClipTime = clips[clip.characterName]
-        local cooldown = 180 - (currentTime - lastClipTime)  -- 60 seconds cooldown
-        if cooldown > 0 then
-            print(string.format("Cooldown is %.0f seconds remaining for %s", cooldown, clip.characterName))
-            print("returning nil for: "..clip.characterName)
-            return nil  -- Return nil if the cooldown is still active
-        end
-    end
-
-    -- If no cooldown or cooldown expired, store the clip's timestamp
-    clips[clip.characterName] = currentTime
-
-    -- Return the formatted clip ID
-    return string.format("%d-%s-%d-%s-%s", t, clip.characterName, clip.level, clip.where, clip.faction)
+    -- Return the formatted clip ID based on the message details
+    return clipID
 end
+
 
 
 
@@ -185,129 +153,163 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "ASMSG_HARDCORE_DEATH" then
-        -- Parsing the message (like before)
-        local parts = {}
-        for part in string.gmatch(message, "([^:]+)") do
-            table.insert(parts, part)
-        end
-
-        local name = parts[1]
-        local raceId = tonumber(parts[2])
-        local classId = tonumber(parts[4])
-        local level = tonumber(parts[5])
-        local rawZone = parts[6]
-        local deathCauseId = tonumber(parts[7])
-        local mobName = parts[8] or ""
-        local mobLevel = parts[9] or ""
-
-        -- Process the zone and death cause
-        local firstWord, rest = string.match(rawZone or "", "^(%S+)%s*(.*)$")
-        local zone = rest and rest ~= "" and firstWord .. "\n" .. rest or firstWord
-
-        local deathCause = deathCauses[deathCauseId] or "Неизвестно"
-        local mobLevelText = ""  -- Default empty
-
-        -- Check if the death was caused by a creature and we have its name
-        if deathCauseId == 7 and mobName ~= "" then
-            -- Initially set deathCause to the mob name (uncolored)
-            deathCause = mobName
-
-            -- Check if we also have the mob's level
-            if mobLevel ~= "" then
-                -- Calculate level difference and color logic
-                local playerLevel = level or 0 -- Ensure player level is a number
-                local mobLevelNum = tonumber(mobLevel)
-                local levelDiff = mobLevelNum - playerLevel
-
-                -- Determine color based on level difference
-                local color
-                if levelDiff >= 5 then       -- Red
-                    color = "|cFFFF0000"
-                elseif levelDiff >= 3 then    -- Orange
-                    color = "|cFFFF7F00"
-                elseif levelDiff >= -2 then   -- Yellow
-                    color = "|cFFFFFF00"
-                elseif levelDiff >= -6 then   -- Green
-                    color = "|cFF00FF00"
-                else                          -- Gray
-                    color = "|cFF808080"
-                end
-
-                -- Format mob level text with color and " ур." suffix
-                mobLevelText = string.format("%s%s|r", color, mobLevel)
-
-                -- Format death cause (mob name) with the same color
-                deathCause = string.format("%s%s|r", color, mobName)
+    if event == "CHAT_MSG_ADDON" then
+        if prefix == "ASMSG_HARDCORE_DEATH" then
+            -- Parsing the message (like before)
+            local parts = {}
+            for part in string.gmatch(message, "([^:]+)") do
+                table.insert(parts, part)
             end
+
+            local name = parts[1]
+            local raceId = tonumber(parts[2])
+            local classId = tonumber(parts[4])
+            local level = tonumber(parts[5])
+            local rawZone = parts[6]
+            local deathCauseId = tonumber(parts[7])
+            local mobName = parts[8] or ""
+            local mobLevel = parts[9] or ""
+
+            -- Process the zone and death cause
+            local firstWord, rest = string.match(rawZone or "", "^(%S+)%s*(.*)$")
+            local zone = rest and rest ~= "" and firstWord .. "\n" .. rest or firstWord
+
+            local deathCause = deathCauses[deathCauseId] or "Неизвестно"
+            local mobLevelText = ""  -- Default empty
+
+            -- Check if the death was caused by a creature and we have its name
+            if deathCauseId == 7 and mobName ~= "" then
+                -- Initially set deathCause to the mob name (uncolored)
+                deathCause = mobName
+
+                -- Check if we also have the mob's level
+                if mobLevel ~= "" then
+                    -- Calculate level difference and color logic
+                    local playerLevel = level or 0 -- Ensure player level is a number
+                    local mobLevelNum = tonumber(mobLevel)
+                    local levelDiff = mobLevelNum - playerLevel
+
+                    -- Determine color based on level difference
+                    local color
+                    if levelDiff >= 5 then       -- Red
+                        color = "|cFFFF0000"
+                    elseif levelDiff >= 3 then    -- Orange
+                        color = "|cFFFF7F00"
+                    elseif levelDiff >= -2 then   -- Yellow
+                        color = "|cFFFFFF00"
+                    elseif levelDiff >= -6 then   -- Green
+                        color = "|cFF00FF00"
+                    else                          -- Gray
+                        color = "|cFF808080"
+                    end
+
+                    -- Format mob level text with color and " ур." suffix
+                    mobLevelText = string.format("%s%s|r", color, mobLevel)
+
+                    -- Format death cause (mob name) with the same color
+                    deathCause = string.format("%s%s|r", color, mobName)
+                end
+            end
+
+            -- Directly build the clip ID here
+            local deathCauseStr = deathCause and deathCause ~= "" and deathCause or "Unknown"
+            local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
+            local zoneStr = zone and zone ~= "" and zone or "Unknown"
+
+            -- Replace newlines in 'zone' with spaces
+            zoneStr = zoneStr:gsub("\n", " ")
+
+            -- Build the ID using the full message (without BuildSimpleClipID)
+            local clipID = string.format("%s-%d-%s-%s-%s", name, level, zoneStr, factionStr, deathCauseStr)
+
+            -- Create the death clip entry
+            local clip = {
+                id = clipID,
+                ts = GetServerTime(),
+                streamer = ns.GetTwitchName(name) or name,
+                characterName = name,
+                race = (races[raceId] and races[raceId].name) or "Неизвестно",
+                faction = factionStr,
+                class = classes[classId] or "Неизвестно",
+                level = level,
+                where = zoneStr,
+                deathCause = deathCauseStr,
+                mobLevelText = mobLevelText,
+            }
+
+            if not clip.id then return end
+
+            -- Check if the clip ID already exists
+            local existingClips = ns.GetLiveDeathClips()
+            if existingClips[clip.id] then
+                print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
+                return  -- Return early to prevent adding the duplicate clip
+            end
+
+            -- If no duplicate, add the clip
+            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+
+            ns.AddNewDeathClips({clip})
+            ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+
+        elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
+            local parts = {strsplit(":", message)}
+            local name = parts[1]
+            local raceId = tonumber(parts[2])
+            local genderId = tonumber(parts[3])
+            local classId = tonumber(parts[4])
+
+            -- Default values (because these are missing in the message)
+            local level = 80   -- Default level
+            local zone = "Неизвестно"  -- Default zone
+            local deathCause = "Неизвестно"  -- Default death cause (for consistency)
+            local mobLevelText = ""  -- Default mob level text (empty)
+
+            -- Directly build the clip ID here
+            local deathCauseStr = deathCause and deathCause ~= "" and deathCause or "Unknown"
+            local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
+            local zoneStr = zone and zone ~= "" and zone or "Unknown"
+
+            -- Replace newlines in 'zone' with spaces
+            zoneStr = zoneStr:gsub("\n", " ")
+
+            -- Build the ID using the full message (without BuildSimpleClipID)
+            local clipID = string.format("%s-%d-%s-%s-%s", name, level, zoneStr, factionStr, deathCauseStr)
+
+            -- Create the completed challenge clip
+            local clip = {
+                id = clipID,
+                ts = GetServerTime(),
+                streamer = ns.GetTwitchName(name) or name,
+                characterName = name,
+                race = (races[raceId] and races[raceId].name) or "Неизвестно",
+                faction = factionStr,
+                class = classes[classId] or "Неизвестно",
+                level = level,
+                where = zoneStr,
+                deathCause = deathCauseStr,
+                mobLevelText = mobLevelText,
+                completed = true
+            }
+
+            if not clip.id then return end
+
+            -- Check if the clip ID already exists
+            local existingClips = ns.GetLiveDeathClips()
+            if existingClips[clip.id] then
+                print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
+                return  -- Return early to prevent adding the duplicate clip
+            end
+
+            -- If no duplicate, add the clip
+            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+
+            ns.AddNewDeathClips({clip})
+            ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
-
-        -- Create the death clip entry
-        local clip = {
-            id = BuildSimpleClipID({
-                characterName = name,
-                level = level,
-                where = zone,
-                faction = (races[raceId] and races[raceId].faction) or "Неизвестно"
-            }),
-            ts = GetServerTime(),
-            streamer = ns.GetTwitchName(name) or name,
-            characterName = name,
-            race = (races[raceId] and races[raceId].name) or "Неизвестно",
-            faction = (races[raceId] and races[raceId].faction) or "Неизвестно",
-            class = classes[classId] or "Неизвестно",
-            level = level,
-            where = zone,
-            deathCause = deathCause,
-            mobLevelText = mobLevelText,
-        }
-        if not clip.id then return end
-
-        -- Add the clip (no duplicate check since the IDs are simplified)
-        ns.AddNewDeathClips({clip})
-        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
-    elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
-        local parts = {strsplit(":", message)}
-        local name = parts[1]
-        local raceId = tonumber(parts[2])
-        local genderId = tonumber(parts[3])
-        local classId = tonumber(parts[4])
-
-        -- Default values (because these are missing in the message)
-        local level = 80   -- Default level
-        local zone = "Неизвестно"  -- Default zone
-        local deathCause = "Неизвестно"  -- Default death cause (for consistency)
-        local mobLevelText = ""  -- Default mob level text (empty)
-
-        -- Create the completed challenge clip (use default "Неизвестно" for missing data)
-        local clip = {
-            id = BuildSimpleClipID({
-                characterName = name,
-                level = level,
-                where = zone,
-                faction = (races[raceId] and races[raceId].faction) or "Неизвестно"
-            }),
-            ts = GetServerTime(),
-            streamer = ns.GetTwitchName(name) or name,
-            characterName = name,
-            race = (races[raceId] and races[raceId].name) or "Неизвестно",
-            faction = (races[raceId] and races[raceId].faction) or "Неизвестно",
-            class = classes[classId] or "Неизвестно",
-            level = level,
-            where = zone,
-            deathCause = deathCause,
-            mobLevelText = mobLevelText,
-            completed = true
-        }
-
-        print("no clip id for: "..name)
-        if not clip.id then return end
-
-        -- Add the clip (no duplicate check since the IDs are simplified)
-        ns.AddNewDeathClips({clip})
-        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
     end
 end)
+
 
 --ns.GameEventHandler:On("PLAYER_DEAD", function()
 --    if ns.CharacterPrefs:Get("diedAtLeastOnce") then
