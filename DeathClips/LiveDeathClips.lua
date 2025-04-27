@@ -1,5 +1,8 @@
 local _, ns = ...
 
+-- Define the global queue table to track both completed and death event characters
+local queue = {}
+
 local races = {
     [1] = { name = "Человек", faction = "Alliance" },
     [2] = { name = "Орк", faction = "Horde" },
@@ -86,7 +89,9 @@ ns.GetNewDeathClips = function(since, existing)
     end
     if #newClips > 100 then
         -- keep the latest 100 entries
-        table.sort(newClips, function(l, r) return l.ts < r.ts end)
+        table.sort(newClips, function(l, r)
+            return l.ts < r.ts
+        end)
         local newClips2 = {}
         local seen2 = {}
         for i = #newClips - 99, #newClips do
@@ -138,17 +143,6 @@ ns.GetCompletedDeathClips = function()
 end
 
 
-local function BuildSimpleClipID(clip)
-    -- Use the full message as the ID to avoid duplicates
-    local clipID = string.format("%s-%s-%d-%s-%s", clip.characterName, clip.level, clip.where, clip.faction, clip.deathCause)
-
-    -- Return the formatted clip ID based on the message details
-    return clipID
-end
-
-
-
-
 -- Create the frame to listen for addon messages
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("CHAT_MSG_ADDON")
@@ -191,15 +185,20 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
                     -- Determine color based on level difference
                     local color
-                    if levelDiff >= 5 then       -- Red
+                    if levelDiff >= 5 then
+                        -- Red
                         color = "|cFFFF0000"
-                    elseif levelDiff >= 3 then    -- Orange
+                    elseif levelDiff >= 3 then
+                        -- Orange
                         color = "|cFFFF7F00"
-                    elseif levelDiff >= -2 then   -- Yellow
+                    elseif levelDiff >= -2 then
+                        -- Yellow
                         color = "|cFFFFFF00"
-                    elseif levelDiff >= -6 then   -- Green
+                    elseif levelDiff >= -6 then
+                        -- Green
                         color = "|cFF00FF00"
-                    else                          -- Gray
+                    else
+                        -- Gray
                         color = "|cFF808080"
                     end
 
@@ -237,23 +236,29 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 mobLevelText = mobLevelText,
             }
 
-            if not clip.id then return end
+            if not clip.id then
+                return
+            end
 
             -- Check if the clip ID already exists
             local existingClips = ns.GetLiveDeathClips()
             if existingClips[clip.id] then
-                print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
+                --print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
                 return  -- Return early to prevent adding the duplicate clip
             end
 
-            -- If no duplicate, add the clip
-            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+            -- Add the completed clip to the queue (for both death and completed clips)
+            queue[name] = queue[name] or {}
+            table.insert(queue[name], clip)
 
-            ns.AddNewDeathClips({clip})
+            -- If no duplicate, add the clip
+--            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+
+            ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
 
         elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
-            local parts = {strsplit(":", message)}
+            local parts = { strsplit(":", message) }
             local name = parts[1]
             local raceId = tonumber(parts[2])
             local genderId = tonumber(parts[3])
@@ -289,22 +294,29 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 where = zoneStr,
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
-                completed = true
+                completed = true,
+                completeTime = nil  -- `completeTime` is nil initially (we'll populate it later)
             }
 
-            if not clip.id then return end
+            if not clip.id then
+                return
+            end
 
             -- Check if the clip ID already exists
             local existingClips = ns.GetLiveDeathClips()
             if existingClips[clip.id] then
-                print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
+                --print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
                 return  -- Return early to prevent adding the duplicate clip
             end
 
-            -- If no duplicate, add the clip
-            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+            -- Add the completed clip to the queue (for both death and completed clips)
+            queue[name] = queue[name] or {}
+            table.insert(queue[name], clip)
 
-            ns.AddNewDeathClips({clip})
+            -- If no duplicate, add the clip
+--            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+
+            ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
     end
@@ -392,7 +404,7 @@ end
 local f = CreateFrame("Frame", "HardcoreDeathTimerReporter")
 local listening = false
 local nextUpdateDeadline = nil
-local ladderBuffer           = {}
+local ladderBuffer = {}
 local deathQueue = {}
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -400,11 +412,32 @@ f:RegisterEvent("CHAT_MSG_ADDON")
 
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
+        -- Iterate over completed clips and check if they don't have a completeTime
+        local completedClips = ns.GetCompletedDeathClips()
+        for _, clip in ipairs(completedClips) do
+            if type(clip) == "table" then
+                if clip.completed and not clip.completeTime and clip.characterName then
+                    -- Ensure the queue for the character exists (initialize if not present)
+                    if not queue[clip.characterName] then
+                        queue[clip.characterName] = {}  -- Initialize the table for this character
+                    end
+
+                    -- Insert the clip into the character's queue
+                    table.insert(queue[clip.characterName], clip)
+                    print(clip.characterName .. " added to the queue (no completeTime)")
+                end
+            end
+        end
+
         -- skip auto-refresh on login/reload
-        C_Timer:After(3, function() listening = true end)
+        C_Timer:After(3, function()
+            listening = true
+        end)
         return
     end
-    if not listening then return end
+    if not listening then
+        return
+    end
 
     if prefix == "ASMSG_HARDCORE_DEATH" then
         local admin = UnitName("player")
@@ -413,7 +446,6 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         end
         local name = msg:match("^([^:]+)")
         if name then
-            deathQueue[name] = true
             if nextUpdateDeadline then
                 local left = nextUpdateDeadline - GetTime()
                 if left < 0 then left = 0 end
@@ -421,35 +453,74 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
         end
 
+        -- Modify the ASMSG_HARDCORE_LADDER_LIST handler to process the queue and update `completeTime`
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
-        -- handle one or more <challengeID>:<chunk> blocks
+        -- Handle one or more <challengeID>:<chunk> blocks
         for block in msg:gmatch("([^|]+)") do
             local id, data = block:match("^(%d+):(.*)")
             if id and data then
+                --print("Block found - ID: " .. id .. " Data: " .. data)
+
+                -- Append data to the current buffer for the given ID
                 ladderBuffer[id] = (ladderBuffer[id] or "") .. data
 
-                -- final fragment if no trailing semicolon
-                if not data:match(";$") then
+                -- If data ends with a semicolon, it's still incomplete; continue to accumulate data
+                if data:match(";$") then
+                    print("Data ends with a semicolon, continuing to accumulate data for ID " .. id)
+                else
+                    -- Full data received for this block (no semicolon)
                     local full = ladderBuffer[id]
-                    ladderBuffer[id] = nil
+                    ladderBuffer[id] = nil  -- Clear the buffer for this ID
+                    --print("Full data for ID " .. id .. ": " .. full)
 
-                    -- for every death in queue, find and print run time
+                    -- Process the full data (split by semicolon)
                     for entry in full:gmatch("([^;]+)") do
-                        local _, n, _, _, _, _, tm = entry:match(
-                                "^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$"
-                        )
-                        if n and deathQueue[n] then
-                            print(("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)))
-                            deathQueue[n] = nil
+                        -- Extract values from each entry
+                        local _, n, _, _, _, _, tm = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
+                        if n and queue[n] then
+                            print("Found player ID: " .. n .. " with complete time: " .. tm)
+
+                            -- Process each clip in the queue (both deaths and completed)
+                            -- Ensure that queue[n] is a table before using ipairs
+                            if type(queue[n]) == "table" then
+                                for _, clip in ipairs(queue[n]) do
+                                    print("Checking clip for player " .. n .. ": completed=" .. tostring(clip.completed) .. ", completeTime=" .. tostring(clip.completeTime))
+                                    if clip.completed and clip.completeTime == nil then
+                                        -- Update the `completeTime` (using `tm` from the ladder list)
+                                        clip.completeTime = tm
+                                        print(("%s's completeTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's completeTime updated to: %d"):format(n, tm) .. "|r")
+
+                                        -- Remove the player from the queue after updating `completeTime`
+                                        queue[n] = nil
+                                        print(("%s removed from the queue after updating completeTime"):format(n))
+                                    elseif not clip.completed then
+                                        -- For death events, just print the lasted time (tm)
+                                        print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)) .. "|r")
+                                    else
+                                        print("Clip not updated due to conditions.")
+                                    end
+                                end
+                            else
+                                -- Print the type and the value of queue[n] for debugging
+                                print("queue[n] is not a table, it's a " .. type(queue[n]) .. ": " .. tostring(queue[n]))
+                            end
+
+                        else
+                            --print("No matching entry found in queue for player " .. n)
+                        end
                     end
                 end
-
-                    -- restart 10-minute timer
-                    nextUpdateDeadline = GetTime() + 600
-    end
+            else
+                print("Block data invalid or missing ID: " .. (block or "nil"))
             end
         end
+        -- Restart the 10-minute timer
+        nextUpdateDeadline = GetTime() + 600
+        print("Timer reset to: " .. nextUpdateDeadline)
     end
+
+
 end)
+
 
 

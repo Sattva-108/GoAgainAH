@@ -442,6 +442,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     clipText:SetText(clip.deathCause or "Неизвестно")
     mobLevelText:SetText(clip.mobLevelText or "")
     mobLevelText:SetJustifyH("CENTER")
+    if clip.completed then
+        clipText:SetText(clip.completeTime or "Грузится")
+    end
 
     -- Update Rating Widget
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget
