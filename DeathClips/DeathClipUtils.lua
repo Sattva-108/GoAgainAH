@@ -520,6 +520,44 @@ end
 --    PrintCurrentTime()
 --end)
 
+SLASH_CHECKHC1 = "/checkhc"
+SlashCmdList["CHECKHC"] = function()
+    print("|cff00ffff[Hardcore]|r Checking leaderboard entries...")
+    local challengeID = C_Hardcore.GetSelectedChallenge()
+    if not challengeID then
+        print("No active challenge selected.")
+        return
+    end
+
+    local numEntries = C_Hardcore.GetNumLeaderboardEntries(challengeID)
+    if numEntries == 0 then
+        print("No entries found.")
+        return
+    end
+
+    for i = 1, numEntries do
+        local entry = C_Hardcore.GetLeaderboardEntry(challengeID, i)
+        if entry then
+            local statusText
+            if entry.status == Enum.Hardcore.Status.Failed then
+                statusText = "FAILED"
+            elseif entry.status == Enum.Hardcore.Status.Completed then
+                statusText = "COMPLETED"
+            else
+                statusText = "IN PROGRESS"
+            end
+
+            local timeText = ""
+            if entry.time and entry.time > 0 then
+                timeText = string.format(" - Time: %s", SecondsToTime(entry.time))
+            end
+
+            print(string.format(" - %s (Lv %d) [%s]%s", entry.name, entry.level, statusText, timeText))
+        end
+    end
+
+end
+
 -- TODO FIXME before release 3.3.5
 -- a little hack to not get warning when running testing script:
 -- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
@@ -538,3 +576,5 @@ hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
         end)
     end
 end)
+
+

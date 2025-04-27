@@ -443,8 +443,20 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     mobLevelText:SetText(clip.mobLevelText or "")
     mobLevelText:SetJustifyH("CENTER")
     if clip.completed then
-        clipText:SetText(clip.completeTime or "Грузится")
+        -- Convert playedTime (in seconds) to D H M S format
+        local seconds = clip.playedTime or 0
+        local days = math.floor(seconds / 86400)  -- 1 day = 86400 seconds
+        local hours = math.floor((seconds % 86400) / 3600)  -- 1 hour = 3600 seconds
+        local minutes = math.floor((seconds % 3600) / 60)  -- 1 minute = 60 seconds
+        local remainingSeconds = seconds % 60  -- Remaining seconds
+
+        -- Format the string to D H M S
+        local formattedTime = string.format("%d d %d h %d m %d s", days, hours, minutes, remainingSeconds)
+
+        -- Set the formatted time to the clipText
+        clipText:SetText(("%s's playedTime: %s"):format(n, formattedTime))
     end
+
 
     -- Update Rating Widget
     local ratingWidget = _G[buttonName.."Rating"].ratingWidget

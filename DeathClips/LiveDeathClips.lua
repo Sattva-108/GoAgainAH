@@ -118,14 +118,16 @@ end
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        -- Ensure that the clip has a valid ID before attempting to add it to existingClips
+        -- Ensure that the clip has a valid ID and playedTime before attempting to add it
         if clip.id then
+            clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
             existingClips[clip.id] = clip
         else
-            print("Error: Clip ID is nil for character:", clip.characterName)
+            --print("Error: Clip ID is nil for character:", clip.characterName)
         end
     end
 end
+
 
 ns.RemoveDeathClip = function(clipID)
     local existingClips = ns.GetLiveDeathClips()
@@ -140,6 +142,16 @@ ns.GetCompletedDeathClips = function()
         end
     end
     return completedClips
+end
+
+ns.GetPlayedDeathClips = function()
+    local playedClips = {}
+    for _, clip in pairs(ns.GetLiveDeathClips()) do
+        if clip.playedTime then  -- Check if the clip has playedTime
+            table.insert(playedClips, clip)
+        end
+    end
+    return playedClips
 end
 
 
@@ -234,6 +246,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 where = zoneStr,
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
+                playedTime = nil,  -- `playedTime` is nil initially (we'll populate it later)
             }
 
             if not clip.id then
@@ -248,7 +261,9 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
+            -- Add the played clip to the queue (for both death and played clips)
             queue[name] = queue[name] or {}
+            clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
             table.insert(queue[name], clip)
 
             -- If no duplicate, add the clip
@@ -295,7 +310,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
                 completed = true,
-                completeTime = nil  -- `completeTime` is nil initially (we'll populate it later)
+                playedTime = nil,  -- `playedTime` is nil initially (we'll populate it later)
             }
 
             if not clip.id then
@@ -310,7 +325,9 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
+            -- Add the played clip to the queue (for both death and played clips)
             queue[name] = queue[name] or {}
+            clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
             table.insert(queue[name], clip)
 
             -- If no duplicate, add the clip
@@ -361,62 +378,22 @@ end)
 --end)
 
 
-SLASH_CHECKHC1 = "/checkhc"
-SlashCmdList["CHECKHC"] = function()
-    print("|cff00ffff[Hardcore]|r Checking leaderboard entries...")
-    local challengeID = C_Hardcore.GetSelectedChallenge()
-    if not challengeID then
-        print("No active challenge selected.")
-        return
-    end
-
-    local numEntries = C_Hardcore.GetNumLeaderboardEntries(challengeID)
-    if numEntries == 0 then
-        print("No entries found.")
-        return
-    end
-
-    for i = 1, numEntries do
-        local entry = C_Hardcore.GetLeaderboardEntry(challengeID, i)
-        if entry then
-            local statusText
-            if entry.status == Enum.Hardcore.Status.Failed then
-                statusText = "FAILED"
-            elseif entry.status == Enum.Hardcore.Status.Completed then
-                statusText = "COMPLETED"
-            else
-                statusText = "IN PROGRESS"
-            end
-
-            local timeText = ""
-            if entry.time and entry.time > 0 then
-                timeText = string.format(" - Time: %s", SecondsToTime(entry.time))
-            end
-
-            print(string.format(" - %s (Lv %d) [%s]%s", entry.name, entry.level, statusText, timeText))
-        end
-    end
-
-end
-
-
 --===== Hardcore Death → Ladder (with '|' splitting) =====--
 local f = CreateFrame("Frame", "HardcoreDeathTimerReporter")
 local listening = false
 local nextUpdateDeadline = nil
 local ladderBuffer = {}
-local deathQueue = {}
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
 
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
-        -- Iterate over completed clips and check if they don't have a completeTime
-        local completedClips = ns.GetCompletedDeathClips()
-        for _, clip in ipairs(completedClips) do
+        -- Iterate over completed clips and check if they don't have a playedTime
+        local playedClips = ns.GetPlayedDeathClips()
+        for _, clip in ipairs(playedClips) do
             if type(clip) == "table" then
-                if clip.completed and not clip.completeTime and clip.characterName then
+                if not clip.playedTime and clip.characterName then
                     -- Ensure the queue for the character exists (initialize if not present)
                     if not queue[clip.characterName] then
                         queue[clip.characterName] = {}  -- Initialize the table for this character
@@ -424,7 +401,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
                     -- Insert the clip into the character's queue
                     table.insert(queue[clip.characterName], clip)
-                    print(clip.characterName .. " added to the queue (no completeTime)")
+                    print(clip.characterName .. " added to the queue (no playedTime)")
                 end
             end
         end
@@ -435,6 +412,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         end)
         return
     end
+
     if not listening then
         return
     end
@@ -453,7 +431,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
         end
 
-        -- Modify the ASMSG_HARDCORE_LADDER_LIST handler to process the queue and update `completeTime`
+        -- Modify the ASMSG_HARDCORE_LADDER_LIST handler to process the queue and update `playedTime`
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
         -- Handle one or more <challengeID>:<chunk> blocks
         for block in msg:gmatch("([^|]+)") do
@@ -466,61 +444,53 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
                 -- If data ends with a semicolon, it's still incomplete; continue to accumulate data
                 if data:match(";$") then
-                    print("Data ends with a semicolon, continuing to accumulate data for ID " .. id)
+                    --print("Data ends with a semicolon, continuing to accumulate data for ID " .. id)
                 else
                     -- Full data received for this block (no semicolon)
                     local full = ladderBuffer[id]
                     ladderBuffer[id] = nil  -- Clear the buffer for this ID
-                    --print("Full data for ID " .. id .. ": " .. full)
+--                    print("Full data for ID " .. id .. ": " .. full)
 
                     -- Process the full data (split by semicolon)
                     for entry in full:gmatch("([^;]+)") do
                         -- Extract values from each entry
                         local _, n, _, _, _, _, tm = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
                         if n and queue[n] then
-                            print("Found player ID: " .. n .. " with complete time: " .. tm)
+--                            print("Found player ID: " .. n .. " with playedTime: " .. tm)
 
                             -- Process each clip in the queue (both deaths and completed)
                             -- Ensure that queue[n] is a table before using ipairs
                             if type(queue[n]) == "table" then
                                 for _, clip in ipairs(queue[n]) do
-                                    print("Checking clip for player " .. n .. ": completed=" .. tostring(clip.completed) .. ", completeTime=" .. tostring(clip.completeTime))
-                                    if clip.completed and clip.completeTime == nil then
-                                        -- Update the `completeTime` (using `tm` from the ladder list)
-                                        clip.completeTime = tm
-                                        print(("%s's completeTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's completeTime updated to: %d"):format(n, tm) .. "|r")
+--                                    print("Checking clip for player " .. n .. ": completed=" .. tostring(clip.completed) .. ", playedTime=" .. tostring(clip.playedTime))
+                                    if clip.completed and clip.playedTime == nil then
+                                        -- Update the `playedTime` (using `tm` from the ladder list)
+                                        clip.playedTime = tm
+                                        print(("%s's playedTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
 
-                                        -- Remove the player from the queue after updating `completeTime`
+                                        -- Remove the player from the queue after updating `playedTime`
                                         queue[n] = nil
-                                        print(("%s removed from the queue after updating completeTime"):format(n))
+--                                        print(("%s removed from the queue after updating playedTime"):format(n))
                                     elseif not clip.completed then
                                         -- For death events, just print the lasted time (tm)
+                                        clip.playedTime = tm
                                         print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)) .. "|r")
+                                        queue[n] = nil
                                     else
-                                        print("Clip not updated due to conditions.")
+                                        print("Clip not updated due clip completed or playedTime missing")
                                     end
                                 end
-                            else
-                                -- Print the type and the value of queue[n] for debugging
-                                print("queue[n] is not a table, it's a " .. type(queue[n]) .. ": " .. tostring(queue[n]))
                             end
-
-                        else
-                            --print("No matching entry found in queue for player " .. n)
                         end
                     end
                 end
-            else
-                print("Block data invalid or missing ID: " .. (block or "nil"))
             end
         end
-        -- Restart the 10-minute timer
-        nextUpdateDeadline = GetTime() + 600
-        print("Timer reset to: " .. nextUpdateDeadline)
+        -- Set the next update deadline for 10 minutes (600 seconds) from now
+        nextUpdateDeadline = GetTime() + 600  -- 600 seconds = 10 minutes
     end
-
-
 end)
+
 
 
 
