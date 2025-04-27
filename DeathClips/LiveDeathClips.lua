@@ -133,23 +133,66 @@ ns.GetCompletedDeathClips = function()
 end
 
 
--- Get the rounded server time to the nearest hour with a grace period of 180 seconds
-local function GetRoundedServerTimeWithGracePeriod()
-    local serverTime = GetServerTime()
-    local roundedTime = serverTime - (serverTime % 3600)  -- Round down to the hour
-    local gracePeriod = 180  -- Grace period in seconds (3 minute before the hour)
+local roundToMinutes = 60 -- Time to round to in minutes (e.g., 60 for the hour, 15 for a quarter of an hour)
+local gracePeriodMinutesBefore = 1 -- Grace period in minutes before the defined point (e.g., 1 minute before)
+local gracePeriodMinutesAfter = 1  -- Grace period in minutes after the defined point (e.g., 1 minute after)
+local graceMinuteTarget = 30 -- The specific minute to set the grace period (e.g., 16th minute)
 
-    -- If the time is within the last minute before the hour, round to the previous hour
-    if serverTime - roundedTime <= gracePeriod then
-        roundedTime = roundedTime - 3600  -- Round down to the previous hour
+-- Store the last seen clip's timestamp for each character and zone within the grace period
+local lastClipTimestamps = {}
+
+-- Get the rounded server time to the nearest hour with a grace period
+local function GetRoundedServerTimeWithGracePeriod(clip)
+    local serverTime = GetServerTime()
+    local roundToSeconds = roundToMinutes * 60 -- Convert the minutes to seconds
+    local gracePeriodBeforeSeconds = gracePeriodMinutesBefore * 60 -- Convert the grace period before the target time to seconds
+    local gracePeriodAfterSeconds = gracePeriodMinutesAfter * 60  -- Convert the grace period after the target time to seconds
+
+    -- Get the current hour and minute
+    local currentHour = math.floor(serverTime / 3600)
+    local currentMinute = math.floor((serverTime % 3600) / 60)
+    local currentTimeRoundedToHour = currentHour * 3600  -- This is the time rounded to the start of the current hour
+
+    -- Define the target grace period time in seconds (e.g., 16 minutes past the hour)
+    local gracePeriodTime = currentTimeRoundedToHour + graceMinuteTarget * 60  -- For example, 16 minutes past the hour
+
+    -- Debugging grace period check
+    print("Current time: " .. serverTime .. " (" .. currentHour .. ":" .. currentMinute .. ")")
+    print("Grace period target time: " .. gracePeriodTime)
+
+    -- Check if we're within the grace period of ±1 minute around the target grace period time
+    local gracePeriodStart = gracePeriodTime - gracePeriodBeforeSeconds
+    local gracePeriodEnd = gracePeriodTime + gracePeriodAfterSeconds
+
+    print("Grace Period Start: " .. gracePeriodStart)
+    print("Grace Period End: " .. gracePeriodEnd)
+
+    -- Check if this clip has been seen within the grace period already
+    local clipKey = clip.characterName .. "-" .. clip.where
+    print("Clip Key: " .. clipKey)
+
+    -- Debugging existing timestamp checks
+    if lastClipTimestamps[clipKey] then
+        print("Last timestamp for this character and zone: " .. lastClipTimestamps[clipKey])
     end
 
-    return roundedTime
+    -- Check if the current time is within the grace period window
+    if lastClipTimestamps[clipKey] and serverTime >= gracePeriodStart and serverTime <= gracePeriodEnd then
+        -- If the clip was seen within the grace period, return the same timestamp as the previous one
+        print("Duplicate detected within grace period. Reusing timestamp: " .. lastClipTimestamps[clipKey])
+        return lastClipTimestamps[clipKey]
+    else
+        -- Otherwise, save the current timestamp for future checks
+        lastClipTimestamps[clipKey] = gracePeriodTime
+        print("New timestamp generated: " .. gracePeriodTime)
+        return gracePeriodTime
+    end
 end
 
--- Function to generate the unique clip ID
+-- Function to generate the unique clip ID based on the rounded server time with grace period
 local function BuildSimpleClipID(clip)
-    local t = GetRoundedServerTimeWithGracePeriod()  -- Get time rounded to the nearest hour with grace period
+    local t = GetRoundedServerTimeWithGracePeriod(clip)  -- Get the time rounded to the nearest hour with grace period
+    print("Generated Clip ID Timestamp: " .. t)
     return string.format("%d-%s-%d-%s-%s", t, clip.characterName, clip.level, clip.where, clip.faction)
 end
 
