@@ -133,11 +133,11 @@ ns.GetCompletedDeathClips = function()
 end
 
 
--- Get the rounded server time to the nearest hour with a grace period of 60 seconds
+-- Get the rounded server time to the nearest hour with a grace period of 180 seconds
 local function GetRoundedServerTimeWithGracePeriod()
     local serverTime = GetServerTime()
     local roundedTime = serverTime - (serverTime % 3600)  -- Round down to the hour
-    local gracePeriod = 60  -- Grace period in seconds (1 minute before the hour)
+    local gracePeriod = 180  -- Grace period in seconds (3 minute before the hour)
 
     -- If the time is within the last minute before the hour, round to the previous hour
     if serverTime - roundedTime <= gracePeriod then
