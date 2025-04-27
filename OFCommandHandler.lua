@@ -24,6 +24,7 @@ local function fromAdjustedTime(t)
     return t + INIT_TIME
 end
 
+---- FIXME TODO 3.3.5 does it ever affect our custom clips aka deaths?
 ns.HandleOFCommMessage = function(message, sender, channel)
     if channel ~= COMM_CHANNEL then
         return

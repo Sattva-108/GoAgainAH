@@ -343,9 +343,11 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
                 clip.race = "Ночнорождённый"
             elseif clip.race == "Озарён. дреней" then
                 clip.race = "Озарённый дреней"
+            elseif clip.race == "Дворф Ч. Железа" then
+                clip.race = "Дворф Чёрного Железа"
             end
         else
-
+            -- do nothing
         end
     end
 
@@ -394,6 +396,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         -- Only shorten Warlock and Rogue for Russian clients
         if GetLocale() == "ruRU" then
             if ns.isCompletedTabActive then
+                -- do nothing
             else
                 if classKey == "WARLOCK" then
                     localizedName = "Черно\nкнижник"
