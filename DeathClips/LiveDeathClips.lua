@@ -154,6 +154,16 @@ ns.GetPlayedDeathClips = function()
     return playedClips
 end
 
+ns.GetNoPlayedDeathClips = function()
+    local playedClips = {}
+    for _, clip in pairs(ns.GetLiveDeathClips()) do
+        if not clip.playedTime then  -- Check if the clip has playedTime
+            table.insert(playedClips, clip)
+        end
+    end
+    return playedClips
+end
+
 
 -- Create the frame to listen for addon messages
 local frame = CreateFrame("Frame")
@@ -390,7 +400,7 @@ f:RegisterEvent("CHAT_MSG_ADDON")
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
         -- Iterate over completed clips and check if they don't have a playedTime
-        local playedClips = ns.GetPlayedDeathClips()
+        local playedClips = ns.GetNoPlayedDeathClips()
         for _, clip in ipairs(playedClips) do
             if type(clip) == "table" then
                 if not clip.playedTime and clip.characterName then
@@ -401,7 +411,9 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
                     -- Insert the clip into the character's queue
                     table.insert(queue[clip.characterName], clip)
-                    print(clip.characterName .. " added to the queue (no playedTime)")
+                    C_Timer:After(10, function()
+                        print(clip.characterName .. " added to the queue (no playedTime)")
+                    end)
                 end
             end
         end

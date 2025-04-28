@@ -443,6 +443,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     mobLevelText:SetText(clip.mobLevelText or "")
     mobLevelText:SetJustifyH("CENTER")
     if clip.completed then
+        clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
         -- Convert playedTime (in seconds) to D H M S format
         local seconds = clip.playedTime or 0
         local days = math.floor(seconds / 86400)  -- 1 day = 86400 seconds
@@ -454,7 +455,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         local formattedTime = string.format("%d d %d h %d m %d s", days, hours, minutes, remainingSeconds)
 
         -- Set the formatted time to the clipText
-        clipText:SetText(("%s's playedTime: %s"):format(n, formattedTime))
+        clipText:SetText(("%s"):format(formattedTime))
+    else
+        clipText:SetFontObject("GameFontNormal")   -- Fallback font for live tab
     end
 
 
