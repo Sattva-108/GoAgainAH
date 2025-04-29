@@ -91,7 +91,18 @@ local function CreateClipsSorter(sortParams)
         elseif k == "where" then
             addSorter(desc, function(l, r) return stringCompare(l, r, "where") end)
         elseif k == "clip" then
-            addSorter(desc, function(l, r) return stringCompare(l, r, "clip") end)
+            addSorter(desc, function(l, r)
+                -- if both are completed, sort by numeric playedTime
+                if l.completed and r.completed then
+                    return (l.playedTime or 0) - (r.playedTime or 0)
+                end
+                -- if only one is completed, push completed clips to bottom (or top)
+                if l.completed ~= r.completed then
+                    return l.completed and 1 or -1
+                end
+                -- otherwise fall back to color-stripped string compare
+                return stringCompare(l, r, "clip")
+            end)
         elseif k == "rate" then
             addSorter(desc, function(l, r) return 0 end)
         elseif k == "rating" then
