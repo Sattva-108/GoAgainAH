@@ -107,42 +107,65 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     if frame._hasSubtabs then return end
     frame._hasSubtabs = true
 
-    local liveBtn = CreateFrame("Button", "OFDeathClipsTabLive", frame, "UIPanelButtonTemplate")
-    local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", frame, "UIPanelButtonTemplate")
+    -- Create two buttons using EncounterTierTabTemplate
+    local liveBtn = CreateFrame("Button", "OFDeathClipsTabLive", frame, "EncounterTierTabTemplate")
+    local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", liveBtn, "EncounterTierTabTemplate")
 
     -- size & positioning
-    liveBtn:SetSize(80,22)
-    liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 60, -10)
+    liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 82, -15)
     liveBtn:SetText(L["Live"])
-    compBtn:SetSize(80,22)
-    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 10, 0)
+
+    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 22, 0)
     compBtn:SetText(L["Completed"])
+
+    ---- size & positioning
+    liveBtn:SetSize(113,35)
+    compBtn:SetSize(113,35)
+
+    liveBtn.selectedGlow:SetAlpha(0.60)
+    compBtn.selectedGlow:SetAlpha(0.60)
+    liveBtn.selectedGlow:SetVertexColor(0.78, 0.35, 0.33)  -- soft red
+    compBtn.selectedGlow:SetVertexColor(0.5, 0.7, 0.5)     -- soft green
+
 
     -- style toggle
     local function updateTabStyles()
         if frame.currentSubTab == "live" then
-            liveBtn:Disable(); compBtn:Enable()
+            liveBtn.selectedGlow:Show()
+            compBtn.selectedGlow:Hide()
+
+            compBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
+            liveBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
         else
-            compBtn:Disable(); liveBtn:Enable()
+            compBtn.selectedGlow:Show()
+            liveBtn.selectedGlow:Hide()
+
+            liveBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
+            compBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
         end
     end
 
+
     -- 3) Hook Live button: only set state & run Update
     liveBtn:SetScript("OnClick", function()
-        frame.currentSubTab = "live"
-        updateTabStyles()
-        ns.isCompletedTabActive = false
-        OnSubTabChanged(frame, "live")
-        OFAuctionFrameDeathClips_Update()
+        if frame.currentSubTab ~= "live" then
+            frame.currentSubTab = "live"
+            updateTabStyles()
+            ns.isCompletedTabActive = false
+            OnSubTabChanged(frame, "live")
+            OFAuctionFrameDeathClips_Update()
+        end
     end)
 
     -- 4) Hook Completed button: set state, run your logic, then Update
     compBtn:SetScript("OnClick", function()
-        frame.currentSubTab = "completed"
-        updateTabStyles()
-        ns.isCompletedTabActive = true
-        OnSubTabChanged(frame, "completed")
-        OFAuctionFrameDeathClips_Update()
+        if frame.currentSubTab ~= "completed" then
+            frame.currentSubTab = "completed"
+            updateTabStyles()
+            ns.isCompletedTabActive = true
+            OnSubTabChanged(frame, "completed")
+            OFAuctionFrameDeathClips_Update()
+        end
     end)
 
     -- initialize
