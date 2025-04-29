@@ -9,8 +9,22 @@ ns.GetClipUrl = function(streamer, ts)
     return string.format(CLIP_URL_TEMPLATE, streamer, ts)
 end
 
-local function stringCompare(l,r, field)
-    return (l[field] or "") < (r[field] or "") and -1 or (l[field] or "") > (r[field] or "") and 1 or 0
+-- helper to remove WoW color escapes (|cAARRGGBB … |r)
+function ns.stripColorCodes(s)
+    return (s or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+end
+
+
+local function stringCompare(l, r, field)
+    local a = ns.stripColorCodes(l[field])
+    local b = ns.stripColorCodes(r[field])
+    if a < b then
+        return -1
+    elseif a > b then
+        return 1
+    else
+        return 0
+    end
 end
 
 local function GetDeathClipRatingSorter(desc)
