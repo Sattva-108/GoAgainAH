@@ -23,6 +23,21 @@ end
 function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.page = 0
     OFAuctionFrame_SetSort("clips", "when", false)
+
+    --C_Timer:After(3, function()
+    --    -- Hook the “Live” tab:
+    --    OFDeathClipsTabLive:HookScript("OnClick", function()
+    --        -- when you switch back to Live, sort by timestamp descending:
+    --        OFAuctionFrame_SetSort("clips", "when", false)
+    --    end)
+    --
+    --    -- Hook the “Completed” tab:
+    --    OFDeathClipsTabCompleted:HookScript("OnClick", function()
+    --        -- when you switch to Completed, sort by playedTime ascending:
+    --        OFAuctionFrame_SetSort("clips", "clip", true)
+    --    end)
+    --end)
+
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()

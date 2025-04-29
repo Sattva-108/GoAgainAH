@@ -385,7 +385,8 @@ function GOAHClearDBName(targetName)
         -- It's useful to know if nothing was found for the target names
         local namesListForLogging = {}
         for name in pairs(namesToRemoveSet) do table.insert(namesListForLogging, "'" .. name .. "'") end
-        print(string.format("%s: No clips found for names %s in LiveDeathClips.", addonName, table.concat(namesListForLogging, ", ")))
+        --print(string.format("%s: No clips found for names %s in LiveDeathClips.", addonName, table.concat(namesListForLogging, ", ")))
+        print("No clips found to remove.")
         return {}
     end
 

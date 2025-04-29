@@ -14,7 +14,14 @@ local function UpdateDeathClipsLayout()
     local classSort = _G["OFDeathClipsClassSort"]
     local raceSort = _G["OFDeathClipsRaceSort"]
 
+    --if ns.isCompletedTabActive then
+    --    OFAuctionFrame_SetSort("clips", "playedTime", true)
+    --else
+    --    OFAuctionFrame_SetSort("clips", "when", false)
+    --end
+
     if ns.isCompletedTabActive then
+        OFDeathClipsClipSort:SetText("Время прохождения")
         -- When completed tab is active, hide the level sort button
         levelSort:Hide()
 
@@ -41,6 +48,7 @@ local function UpdateDeathClipsLayout()
         raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)   -- Position it immediately to the right of ClassSort
 
     else
+        OFDeathClipsClipSort:SetText("Причина смерти")
         -- If live tab is active, show the level sort button again
         levelSort:Show()
 
@@ -80,9 +88,14 @@ local function OnSubTabChanged(frame, newTab)
 
     if newTab == "completed" then
         ns.isCompletedTabActive = true
+        OFAuctionFrame_SetSort("clips", "clip", false)
+
         UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
+
     else
         ns.isCompletedTabActive = false
+        OFAuctionFrame_SetSort("clips", "when", false)
+
         UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
     end
 end

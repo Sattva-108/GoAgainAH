@@ -502,7 +502,3 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         nextUpdateDeadline = GetTime() + 600  -- 600 seconds = 10 minutes
     end
 end)
-
-
-
-
