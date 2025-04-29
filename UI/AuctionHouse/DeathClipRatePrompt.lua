@@ -37,7 +37,7 @@ local function CreateReviewPrompt()
     frame:SetTitle(L["Rate Clip"])
     frame:SetLayout("Flow")
     frame:SetWidth(410)
-    frame:SetHeight(330)
+    frame:SetHeight(350)
 
     -- Close button
     local closeButton = CreateFrame("Button", "GoAHExitButtonDeathRate", frame.frame, "UIPanelCloseButton")
@@ -60,7 +60,7 @@ local function CreateReviewPrompt()
     ----------------------------------------------------------------------------
     -- Review Group
     ----------------------------------------------------------------------------
-    local reviewGroup = CreateBorderedGroup(1, 230)
+    local reviewGroup = CreateBorderedGroup(1, 240)
     reviewGroup:SetPadding(10, 15)
     frame:AddChild(reviewGroup)
 
@@ -71,6 +71,20 @@ local function CreateReviewPrompt()
     staticLabel:SetText("|cFFFFD100".. label .. "|r")
     staticLabel:SetHeight(16)
     reviewGroup:AddChild(staticLabel)
+
+    -- Static “Played time” label
+    local staticPlayed = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    staticPlayed:SetPoint("LEFT", staticLabel.frame, "RIGHT", 80, 0)
+    staticPlayed:SetText("Played time")
+    staticPlayed:Hide()
+
+    -- Dynamic time label, anchored to the static one
+    local playedTimeLabel = staticPlayed:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    -- anchor LEFT edge of this to RIGHT edge of staticPlayed, with a little padding
+    playedTimeLabel:SetPoint("TOPLEFT", staticPlayed, "BOTTOMLEFT", 0, -8)
+    playedTimeLabel:SetText("")
+    playedTimeLabel:SetTextColor(1, 1, 1, 1)
+
 
     -- Add padding between label and name
     local labelPadding = AceGUI:Create("MinimalFrame")
@@ -84,6 +98,7 @@ local function CreateReviewPrompt()
     targetLabel:SetHeight(20)
     targetLabel:SetFullWidth(true)
     reviewGroup:AddChild(targetLabel)
+
 
     local submitButton = AceGUI:Create("Button")
     submitButton:SetText(L["Submit Review"])
@@ -136,6 +151,9 @@ local function CreateReviewPrompt()
         end
     end)
 
+    -- 1) Add some inner padding so the text sits inset
+    reviewEdit.editBox:SetTextInsets(6, 6, 6, 6)
+
     reviewGroup:AddChild(reviewEdit)
 
     -- Add padding between info and review group
@@ -153,6 +171,7 @@ local function CreateReviewPrompt()
         frame = frame,
         closeButton = closeButton,
         targetLabel = targetLabel,
+        playedTimeLabel = playedTimeLabel,
         starRating = starRating,
         reviewEdit = reviewEdit,
         submitButton = submitButton
@@ -177,6 +196,17 @@ local function CreateReviewPrompt()
     function prompt:SetTargetName(name)
         self.targetLabel:SetText(name)
     end
+
+    function prompt:SetPlayedTime(seconds)
+        if seconds then
+            staticPlayed:Show()
+            self.playedTimeLabel:SetText(SecondsToTime(seconds))
+        else
+            staticPlayed:Hide()
+            self.playedTimeLabel:SetText("")
+        end
+    end
+
 
     ----------------------------------------------------------------------------
     -- Callbacks
@@ -252,6 +282,8 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
 
     -- Update the display
     prompt:SetTargetName(ns.GetDisplayName(clip.characterName))
+    prompt:SetPlayedTime(clip.playedTime)
+
 
     prompt:OnSubmit(function(rating, text)
         local finalText = text == REVIEW_PLACEHOLDER and "" or text

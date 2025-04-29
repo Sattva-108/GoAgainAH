@@ -452,7 +452,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         local remainingSeconds = seconds % 60  -- Remaining seconds
 
         -- Format the string to D H M S
-        local formattedTime = string.format("%d d %d h %d m %d s", days, hours, minutes, remainingSeconds)
+        local formattedTime = string.format("%dд %dч %dм %dс", days, hours, minutes, remainingSeconds)
 
         -- Set the formatted time to the clipText
         clipText:SetText(("%s"):format(formattedTime))
