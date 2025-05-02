@@ -41,16 +41,18 @@ local function Layout(self)
 	if self.labelHeight == 0 then
 		self.scrollBG:SetPoint("TOP", self.frame, "TOP", 0, 0)
 	else
-		self.scrollBG:SetPoint("TOP", self.label, "BOTTOM", 0, -19)
+		-- Adjusting the top point to 0 instead of -19
+		self.scrollBG:SetPoint("TOP", self.label, "BOTTOM", 0, 0)
 	end
 
 	if self.disablebutton then
-		self.scrollBG:SetPoint("BOTTOMLEFT", self.frame, "BOTTOMLEFT", 3, 3)
+		self.scrollBG:SetPoint("BOTTOMLEFT", self.frame, "BOTTOMLEFT", 0, 0)
 	else
 		-- Place just above the button if not disabled
 		self.scrollBG:SetPoint("BOTTOMLEFT", self.button, "TOPLEFT")
 	end
 
+	-- Ensure the right side of the frame is still aligned correctly
 	self.scrollBG:SetPoint("RIGHT", self.frame, "RIGHT")
 end
 
