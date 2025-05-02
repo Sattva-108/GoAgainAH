@@ -64,7 +64,7 @@ local function CreateReviewPrompt()
     reviewGroup:SetPadding(10, 15)
     frame:AddChild(reviewGroup)
 
-    -- Static label
+    -- Static label for "Write your review for"
     local staticLabel = AceGUI:Create("Label")
     staticLabel:SetFontObject(GameFontNormal)
     local label = L["Write your review for"]
@@ -72,25 +72,11 @@ local function CreateReviewPrompt()
     staticLabel:SetHeight(16)
     reviewGroup:AddChild(staticLabel)
 
-    -- Static “Played time” label
-    local staticPlayed = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    staticPlayed:SetPoint("LEFT", staticLabel.frame, "RIGHT", 80, 0)
-    staticPlayed:SetText("Played time")
-    staticPlayed:Hide()
-
-    -- Dynamic time label, anchored to the static one
-    local playedTimeLabel = staticPlayed:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    -- anchor LEFT edge of this to RIGHT edge of staticPlayed, with a little padding
-    playedTimeLabel:SetPoint("TOPLEFT", staticPlayed, "BOTTOMLEFT", 0, -8)
-    playedTimeLabel:SetText("")
-    playedTimeLabel:SetTextColor(1, 1, 1, 1)
-
-
-    -- Add padding between label and name
-    local labelPadding = AceGUI:Create("MinimalFrame")
-    labelPadding:SetFullWidth(true)
-    labelPadding:SetHeight(2)
-    reviewGroup:AddChild(labelPadding)
+    -- Static Played Time label (this will appear below the Target Name)
+    local rateClip = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    rateClip:SetPoint("TOPLEFT", staticLabel.frame, "TOPRIGHT", 60, 0)
+    rateClip:SetText("Rate Clip")
+    rateClip:SetHeight(16)
 
     -- Target name label
     local targetLabel = AceGUI:Create("Label")
@@ -98,6 +84,27 @@ local function CreateReviewPrompt()
     targetLabel:SetHeight(20)
     targetLabel:SetFullWidth(true)
     reviewGroup:AddChild(targetLabel)
+
+
+    -- Static Played Time label (this will appear below the Target Name)
+    local staticPlayed = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    staticPlayed:SetPoint("LEFT", targetLabel.frame, "LEFT", 0, -20)
+    staticPlayed:SetText("Played time")
+    staticPlayed:SetHeight(16)
+
+    -- Played time label (created dynamically with CreateFontString and aligned to the right)
+    local playedTimeLabel = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    playedTimeLabel:SetPoint("TOPLEFT", staticPlayed, "TOPRIGHT", 180, 0)
+    playedTimeLabel:SetHeight(20)
+    playedTimeLabel:SetText("") -- Set this dynamically later
+
+
+
+    -- Add padding between label and name
+    local labelPadding = AceGUI:Create("MinimalFrame")
+    labelPadding:SetFullWidth(true)
+    labelPadding:SetHeight(2)
+    reviewGroup:AddChild(labelPadding)
 
 
     local submitButton = AceGUI:Create("Button")
