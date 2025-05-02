@@ -397,6 +397,18 @@ local f = CreateFrame("Frame", "HardcoreDeathTimerReporter")
 local listening = false
 local nextUpdateDeadline = nil
 local ladderBuffer = {}
+local lastLogoutTime = AuctionHouseDBSaved and AuctionHouseDBSaved.lastLogoutTime or nil
+
+local function adjustNextUpdateDeadline()
+    local now = GetTime()
+
+    -- If the last logout time exists and less than 3 minutes have passed since then
+    if lastLogoutTime and (now - lastLogoutTime) < 180 then
+        -- Adjust the nextUpdateDeadline based on the time difference
+        nextUpdateDeadline = now + (180 - (now - lastLogoutTime))  -- Ensure the deadline is still 3 minutes from the last logout
+    end
+end
+
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
@@ -427,7 +439,13 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         -- skip auto-refresh on login/reload
         C_Timer:After(3, function()
             listening = true
+            adjustNextUpdateDeadline()
+
+            -- Optionally, print out the nextUpdateDeadline to verify
+            print("Next update deadline: " .. SecondsToTime(nextUpdateDeadline - GetTime()))
         end)
+        -- Update the saved logout time in AuctionHouseDBSaved when the player logs out
+        AuctionHouseDBSaved.lastLogoutTime = GetTime()
         return
     end
 
