@@ -71,7 +71,7 @@ function Database:Find(search, class, subclass, slot, quality, minLevel, maxLeve
 
     local endTime = GetTime()
     local elapsedTime = endTime - startTime
-    print(string.format("Search took %.2f seconds", elapsedTime))
+    --print(string.format("Search took %.2f seconds", elapsedTime))
 
     return results
 end

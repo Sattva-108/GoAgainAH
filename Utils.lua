@@ -270,70 +270,96 @@ ns.DebugLog = function(...)
     end
 end
 
--- Local function to inspect a frame and print its information
-local function GetFrameInfo(frameName)
-    -- Try to get the frame by name
-    local frame = _G[frameName]
+-- Local function to inspect a frame and print its information with improved styling
+local function InspectFrameInfo(frame)
     if not frame then
-        print("Frame not found:", frameName)
+        print("|cffff0000No frame provided.|r")
         return
     end
 
-    -- Print basic frame info
-    print("Frame Name:", frame:GetName())
-    print("Frame Width:", frame:GetWidth())
-    print("Frame Height:", frame:GetHeight())
-    local point, relativeFrame, relativePoint, xOfs, yOfs = frame:GetPoint()
-    print("Frame Point:", point, relativeFrame and relativeFrame:GetName() or "nil", relativePoint, xOfs, yOfs)
+    -- Exclude WorldFrame
+    if frame == WorldFrame then
+        print("|cffff0000WorldFrame is excluded from inspection.|r")
+        return
+    end
 
-    -- Print all textures used by the frame (if any)
-    print("Textures used by", frame:GetName())
+    -- Print basic frame info in green, bold for titles
+    print("|cff00ff00|hFrame Name:|r|cffffffff", frame:GetName())
+    print("|cff00ff00|hFrame Width:|r|cffffffff", frame:GetWidth())
+    print("|cff00ff00|hFrame Height:|r|cffffffff", frame:GetHeight())
+    local point, relativeFrame, relativePoint, xOfs, yOfs = frame:GetPoint()
+    print("|cff00ff00|hFrame Position:|r|cffffffff", point, relativeFrame and relativeFrame:GetName() or "nil", relativePoint, xOfs, yOfs)
+
+    -- Print all textures used by the frame (if any) with extra spacing
+    print("|cff00ff00====================|r")
+    print("|cff00ff00Textures used by|r", frame:GetName())
     for i, texture in ipairs({frame:GetRegions()}) do
         if texture and texture.GetTexture then
-            print("  Texture", i, ":", texture:GetTexture())
+            print("|cff00ff00  Texture|r", i, ":", texture:GetTexture())
 
             -- Check and print texcoords if present
             local texCoords = {texture:GetTexCoord()}
             if texCoords[1] then
-                print("    TexCoords:", texCoords[1], texCoords[2], texCoords[3], texCoords[4])
+                print("    |cff00ff00TexCoords:|r", texCoords[1], texCoords[2], texCoords[3], texCoords[4])
             end
         end
     end
 
-    -- Print all children of the frame
-    print("Children of", frame:GetName())
+    -- Add spacing before children section
+    print("|cff00ff00====================|r")
+    print("|cff00ff00Children of|r", frame:GetName())
     for i, child in ipairs({frame:GetChildren()}) do
-        print("  Child", i, ":", child:GetName())
+        print("|cff00ff00  Child|r", i, ":", child:GetName())
     end
 
-    -- Print any set scripts or events
-    print("Scripts and events for", frame:GetName())
+    -- Add spacing before script section
+    print("|cff00ff00====================|r")
+    print("|cff00ff00Scripts and events for|r", frame:GetName())
     for _, scriptType in ipairs({"OnClick", "OnEnter", "OnLeave", "OnShow", "OnHide"}) do
-        local scriptFunc = frame:GetScript(scriptType)
-        if scriptFunc then
-            print("  Script type:", scriptType)
+        -- Skip checking OnClick for frames without this script
+        local success, scriptFunc = pcall(frame.GetScript, frame, scriptType)
+
+        -- If successful, print the script type; otherwise, report it as not available
+        if success and scriptFunc then
+            print("|cff00ff00  Script type:|r", scriptType)
+        elseif not success then
+            print("|cffff0000Error accessing script for", scriptType, "|r")
+        else
+            print("|cffff0000No script for|r", scriptType)
         end
     end
 
     -- Check for parent frame details if the parent is a table
     if relativeFrame then
-        print("Parent Name:", relativeFrame:GetName())
+        print("|cff00ff00Parent Name:|r", relativeFrame:GetName())
     else
-        print("No parent or parent is not set")
+        print("|cffff0000No parent frame|r")
     end
-end
 
+    -- Print last line in red, more emphasis
+    print("|cffff0000====================|r")
+    print("|cffff0000End of frame info|r")
+    print("|cffff0000====================|r")
+end
 
 -- Register the slash command correctly
-SLASH_ATHENEFRAME1 = "/atheneframe"  -- Make sure this matches the command we use to call the function
-SlashCmdList["ATHENEFRAME"] = function(msg)
-    -- Call the GetFrameInfo function with the provided frame name or default to the example frame
+SLASH_ATHENEGRAB1 = "/athenegrab"
+SlashCmdList["ATHENEGRAB"] = function(msg)
     if msg and msg ~= "" then
-        GetFrameInfo(msg)  -- Use the frame name passed after the slash command
+        -- If an argument (frame name) is passed, get the frame info of that frame
+        local frame = _G[msg]
+        if frame then
+            InspectFrameInfo(frame)
+        else
+            print("|cffff0000Frame not found: " .. msg .. "|r")
+        end
     else
-        print("Please provide a frame name, e.g., /atheneframe StoreFrameContentPageEquipmentPaperDollSlotButton1")
+        -- If no argument, use the frame under the mouse (MouseFocus)
+        local frame = GetMouseFocus()
+        if frame then
+            InspectFrameInfo(frame)
+        else
+            print("|cffff0000No frame under the mouse.|r")
+        end
     end
 end
-
-
-
