@@ -92,9 +92,9 @@ local methods = {
 		wipe(self.localstatus)
 	end,
 
-	["OnWidthSet"] = function(self, width)
+	["OnWidthSet"] = function(self, width, useCustomPadding)
 		local content = self.content
-		local contentwidth = width - 34
+		local contentwidth = useCustomPadding and (width - 34) or width
 		if contentwidth < 0 then
 			contentwidth = 0
 		end
@@ -102,9 +102,9 @@ local methods = {
 		content.width = contentwidth
 	end,
 
-	["OnHeightSet"] = function(self, height)
+	["OnHeightSet"] = function(self, height, useCustomPadding)
 		local content = self.content
-		local contentheight = height - 57
+		local contentheight = useCustomPadding and (height - 57) or height
 		if contentheight < 0 then
 			contentheight = 0
 		end
@@ -222,14 +222,14 @@ local function Constructor()
 	titletext:SetPoint("TOP", titlebg, "TOP", 0, -14)
 
 	local titlebg_l = frame:CreateTexture(nil, "OVERLAY")
-	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
+	titlebg_l:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg_l:SetTexCoord(0.21, 0.31, 0, 0.63)
 	titlebg_l:SetPoint("RIGHT", titlebg, "LEFT")
 	titlebg_l:SetWidth(30)
 	titlebg_l:SetHeight(40)
 
 	local titlebg_r = frame:CreateTexture(nil, "OVERLAY")
-	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
+	titlebg_r:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg_r:SetTexCoord(0.67, 0.77, 0, 0.63)
 	titlebg_r:SetPoint("LEFT", titlebg, "RIGHT")
 	titlebg_r:SetWidth(30)
@@ -280,11 +280,20 @@ local function Constructor()
 	content:SetPoint("TOPLEFT", 17, -27)
 	content:SetPoint("BOTTOMRIGHT", -17, 40)
 
+	function ns.CustomFrameSetAllPoints()
+		content:SetAllPoints(frame)
+	end
+	function ns.CustomFrameHideBackDrop()
+		frame:SetBackdrop(nil)
+	end
+
 	local widget = {
 		localstatus = {},
         title = title,
 		titletext   = titletext,
 		titlebg     = titlebg,
+		titlebg_l     = titlebg_l,
+		titlebg_r     = titlebg_r,
 		--sizer_se    = sizer_se,
 		--sizer_s     = sizer_s,
 		--sizer_e     = sizer_e,
