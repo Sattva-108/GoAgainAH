@@ -409,7 +409,6 @@ local function adjustNextUpdateDeadline()
     end
 end
 
-
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
 
@@ -442,8 +441,11 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             adjustNextUpdateDeadline()
 
             -- Optionally, print out the nextUpdateDeadline to verify
-            print("Next update deadline: " .. SecondsToTime(nextUpdateDeadline - GetTime()))
+            if nextUpdateDeadline then
+                print("Next update deadline: " .. SecondsToTime(nextUpdateDeadline - GetTime()))
+            end
         end)
+
         -- Update the saved logout time in AuctionHouseDBSaved when the player logs out
         AuctionHouseDBSaved.lastLogoutTime = GetTime()
         return
@@ -469,47 +471,36 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
         end
 
-        -- Modify the ASMSG_HARDCORE_LADDER_LIST handler to process the queue and update `playedTime`
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
         -- Handle one or more <challengeID>:<chunk> blocks
         for block in msg:gmatch("([^|]+)") do
             local id, data = block:match("^(%d+):(.*)")
             if id and data then
-                --print("Block found - ID: " .. id .. " Data: " .. data)
-
                 -- Append data to the current buffer for the given ID
                 ladderBuffer[id] = (ladderBuffer[id] or "") .. data
 
                 -- If data ends with a semicolon, it's still incomplete; continue to accumulate data
                 if data:match(";$") then
-                    --print("Data ends with a semicolon, continuing to accumulate data for ID " .. id)
+                    -- Continue to accumulate data for this ID
                 else
                     -- Full data received for this block (no semicolon)
                     local full = ladderBuffer[id]
                     ladderBuffer[id] = nil  -- Clear the buffer for this ID
-                    --                    print("Full data for ID " .. id .. ": " .. full)
-
                     -- Process the full data (split by semicolon)
                     for entry in full:gmatch("([^;]+)") do
                         -- Extract values from each entry
                         local _, n, _, _, _, _, tm = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
                         if n and queue[n] then
-                            --                            print("Found player ID: " .. n .. " with playedTime: " .. tm)
-
                             -- Process each clip in the queue (both deaths and completed)
-                            -- Ensure that queue[n] is a table before using ipairs
                             if type(queue[n]) == "table" then
                                 for _, clip in ipairs(queue[n]) do
-                                    --                                    print("Checking clip for player " .. n .. ": completed=" .. tostring(clip.completed) .. ", playedTime=" .. tostring(clip.playedTime))
                                     if clip.completed and clip.playedTime == nil then
                                         -- Update the `playedTime` (using `tm` from the ladder list)
                                         clip.playedTime = tm
                                         print(("%s's playedTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
-
                                         -- Remove the player from the queue after updating `playedTime`
                                         queue[n] = nil
                                         clip.getPlayedTry = nil
-                                        --                                        print(("%s removed from the queue after updating playedTime"):format(n))
                                     elseif not clip.completed then
                                         -- For death events, just print the lasted time (tm)
                                         clip.playedTime = tm
@@ -521,18 +512,18 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                     end
                                 end
                             end
+                                    end
+                                end
+                            end
                         end
                     end
-                end
-            end
-        end
         -- <<< MINIMAL: only bump once per 10m interval
         do
             local now = GetTime()
             -- initialize on first run so we don’t bump immediately
             if not nextUpdateDeadline then
                 nextUpdateDeadline = now + 600
-            end
+                end
             -- if we’re past the deadline, do one bump pass and reset it
             if now >= nextUpdateDeadline then
                 for name, clips in pairs(queue) do
