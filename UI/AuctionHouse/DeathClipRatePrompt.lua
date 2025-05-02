@@ -8,7 +8,7 @@ local PaneBackdrop  = {
     bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     tile = true, tileSize = 16, edgeSize = 8,
-    insets = { left = 2, right = 2, top = 5, bottom = 2 }
+    insets = { left = 2, right = 2, top = 2, bottom = 2 }
 }
 
 local REVIEW_PLACEHOLDER = L["Write your review ..."]
@@ -23,8 +23,7 @@ local function CreateBorderedGroup(relativeWidth, height)
     end
 
     local border = CreateFrame("Frame", nil, group.frame)
-    border:SetPoint("TOPLEFT", 0, 0)
-    border:SetPoint("BOTTOMRIGHT", 0, 0)
+    border:SetAllPoints(group.frame)
     border:SetBackdrop(PaneBackdrop)
     border:SetBackdropColor(0.15, 0.15, 0.13, 1) -- #272522
     border:SetBackdropBorderColor(0.4, 0.4, 0.4)
@@ -34,10 +33,21 @@ end
 
 local function CreateReviewPrompt()
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle(L["Rate Clip"])
+    frame:SetTitle("")
+    frame.titlebg:Hide()
+    frame.titlebg_l:Hide()
+    frame.titlebg_r:Hide()
     frame:SetLayout("Flow")
     frame:SetWidth(410)
     frame:SetHeight(350)
+
+    ns.CustomFrameSetAllPoints()
+    ns.CustomFrameHideBackDrop()
+
+
+    -- Here, we're passing `true` to use custom padding
+    frame:OnWidthSet(410, true) -- Apply custom width adjustment
+    frame:OnHeightSet(350, true) -- Apply custom height adjustment
 
     -- Close button
     local closeButton = CreateFrame("Button", "GoAHExitButtonDeathRate", frame.frame, "UIPanelCloseButton")
@@ -50,6 +60,7 @@ local function CreateReviewPrompt()
         end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
     end)
+    closeButton:Hide()
 
     ---- Add top padding
     --local topPadding = AceGUI:Create("SimpleGroup")
@@ -61,7 +72,7 @@ local function CreateReviewPrompt()
     -- Review Group
     ----------------------------------------------------------------------------
     local submitButton
-    local reviewGroup = CreateBorderedGroup(1, 300)
+    local reviewGroup = CreateBorderedGroup(1, 340)
     reviewGroup:SetPadding(10, 20)
     frame:AddChild(reviewGroup)
 
