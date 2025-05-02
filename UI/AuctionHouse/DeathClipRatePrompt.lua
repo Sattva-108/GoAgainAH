@@ -51,72 +51,57 @@ local function CreateReviewPrompt()
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
     end)
 
-    -- Add top padding
-    local topPadding = AceGUI:Create("SimpleGroup")
-    topPadding:SetFullWidth(true)
-    topPadding:SetHeight(4)
-    frame:AddChild(topPadding)
+    ---- Add top padding
+    --local topPadding = AceGUI:Create("SimpleGroup")
+    --topPadding:SetFullWidth(true)
+    --topPadding:SetHeight(4)
+    --frame:AddChild(topPadding)
 
     ----------------------------------------------------------------------------
     -- Review Group
     ----------------------------------------------------------------------------
-    local reviewGroup = CreateBorderedGroup(1, 240)
-    reviewGroup:SetPadding(10, 15)
+    local submitButton
+    local reviewGroup = CreateBorderedGroup(1, 300)
+    reviewGroup:SetPadding(10, 20)
     frame:AddChild(reviewGroup)
 
     -- Static label for "Write your review for"
     local staticLabel = AceGUI:Create("Label")
-    staticLabel:SetFontObject(GameFontNormal)
+    staticLabel:SetFontObject(GameFontNormalLarge) -- Using a larger font object
     local label = L["Write your review for"]
     staticLabel:SetText("|cFFFFD100".. label .. "|r")
-    staticLabel:SetHeight(16)
+    staticLabel:SetHeight(22)  -- Adjusted for larger font size
     reviewGroup:AddChild(staticLabel)
 
     -- Static Played Time label (this will appear below the Target Name)
-    local rateClip = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local rateClip = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Using a larger font object
     rateClip:SetPoint("TOPLEFT", staticLabel.frame, "TOPRIGHT", 60, 0)
     rateClip:SetText("Rate Clip")
-    rateClip:SetHeight(16)
+    rateClip:SetHeight(22)  -- Adjusted for larger font size
 
     -- Target name label
     local targetLabel = AceGUI:Create("Label")
-    targetLabel:SetFontObject(GameFontNormal)
-    targetLabel:SetHeight(20)
+    targetLabel:SetFontObject(GameFontNormalLarge)  -- Using a larger font object
+    targetLabel:SetHeight(24)  -- Adjusted for larger font size
     targetLabel:SetFullWidth(true)
     reviewGroup:AddChild(targetLabel)
 
-
     -- Static Played Time label (this will appear below the Target Name)
-    local staticPlayed = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    staticPlayed:SetPoint("LEFT", targetLabel.frame, "LEFT", 0, -20)
+    local staticPlayed = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")  -- Using a larger font object
+    staticPlayed:SetPoint("LEFT", targetLabel.frame, "LEFT", 0, -30)
     staticPlayed:SetText("Played time")
-    staticPlayed:SetHeight(16)
+    staticPlayed:SetHeight(22)  -- Adjusted for larger font size
 
     -- Played time label (created dynamically with CreateFontString and aligned to the right)
-    local playedTimeLabel = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local playedTimeLabel = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")  -- Using a larger font object
     playedTimeLabel:SetPoint("TOPLEFT", staticPlayed, "TOPRIGHT", 180, 0)
-    playedTimeLabel:SetHeight(20)
+    playedTimeLabel:SetHeight(24)  -- Adjusted for larger font size
     playedTimeLabel:SetText("") -- Set this dynamically later
-
-
-
-    -- Add padding between label and name
-    local labelPadding = AceGUI:Create("MinimalFrame")
-    labelPadding:SetFullWidth(true)
-    labelPadding:SetHeight(2)
-    reviewGroup:AddChild(labelPadding)
-
-
-    local submitButton = AceGUI:Create("Button")
-    submitButton:SetText(L["Submit Review"])
-    submitButton:SetFullWidth(true)
-    submitButton:SetHeight(40)
-    submitButton:SetDisabled(true)
 
     -- Add padding between name and star
     local labelPadding = AceGUI:Create("MinimalFrame")
     labelPadding:SetFullWidth(true)
-    labelPadding:SetHeight(10)
+    labelPadding:SetHeight(25)
     reviewGroup:AddChild(labelPadding)
 
     -- Star rating
@@ -131,8 +116,19 @@ local function CreateReviewPrompt()
         hitboxPadX = 6,
         textWidth = 26,
         labelFont = "GameFontNormalLarge",
+        leftPadding = 10,  -- Set the left padding to 20px
     })
+
+
     reviewGroup:AddChild(starRating)
+
+
+
+    ---- Add padding between label and name
+    --local labelPadding = AceGUI:Create("MinimalFrame")
+    --labelPadding:SetFullWidth(true)
+    --labelPadding:SetHeight(2)
+    --reviewGroup:AddChild(labelPadding)
 
     -- Comment box
     local reviewEdit = AceGUI:Create("MultiLineEditBoxCustom")
@@ -144,6 +140,17 @@ local function CreateReviewPrompt()
     reviewEdit:SetHeight(115)
     reviewEdit.editBox:SetFontObject(GameFontNormal)
     reviewEdit.editBox:SetTextColor(1, 1, 1, 0.75)
+    reviewGroup:AddChild(reviewEdit)
+
+
+    submitButton = AceGUI:Create("Button")
+    submitButton:SetText(L["Submit Review"])
+    submitButton:SetFullWidth(true)
+    submitButton:SetHeight(40)
+    submitButton:SetDisabled(true)
+
+    -- Submit Button
+    reviewGroup:AddChild(submitButton)
 
     -- Clear placeholder text on focus
     reviewEdit.editBox:SetScript("OnEditFocusGained", function(self)
@@ -161,16 +168,11 @@ local function CreateReviewPrompt()
     -- 1) Add some inner padding so the text sits inset
     reviewEdit.editBox:SetTextInsets(6, 6, 6, 6)
 
-    reviewGroup:AddChild(reviewEdit)
-
     -- Add padding between info and review group
     local bottomPadding = AceGUI:Create("MinimalFrame")
     bottomPadding:SetFullWidth(true)
     bottomPadding:SetHeight(5)
     frame:AddChild(bottomPadding)
-
-    -- Submit Button
-    frame:AddChild(submitButton)
 
 
     -- Collect references for later access

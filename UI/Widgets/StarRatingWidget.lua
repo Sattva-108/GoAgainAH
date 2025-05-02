@@ -20,7 +20,10 @@ end
 
 local function CreateStarRatingWidget(config)
     local starGroup = AceGUI:Create("MinimalFrame")
-    starGroup:SetWidth(CalculateOffset(6, config) - (config.marginBetweenStarsX or 8))
+
+    -- Calculate width, considering leftPadding if provided
+    local leftPadding = config.leftPadding or 0  -- Default to 0 if no leftPadding is provided
+    starGroup:SetWidth(CalculateOffset(6, config) - (config.marginBetweenStarsX or 8) + leftPadding)  -- Add leftPadding to width if provided
     starGroup:SetHeight(config.panelHeight or 40)
     starGroup.rating = config.initialRating or 0
 
@@ -34,7 +37,7 @@ local function CreateStarRatingWidget(config)
     -- Create text label unless hideText is true
     if not config.hideText then
         local label = starGroup.frame:CreateFontString(nil, "OVERLAY", config.labelFont or "GameFontNormal")
-        label:SetPoint("LEFT", 0, 0)
+        label:SetPoint("LEFT", leftPadding, 0)  -- Only apply leftPadding if passed
         label:SetText(string.format("%d", starGroup.rating))
         starGroup.label = label
     end
@@ -43,7 +46,7 @@ local function CreateStarRatingWidget(config)
     for i = 1, 5 do
         local starButton = CreateFrame("Button", nil, starGroup.frame)
         starButton:SetSize(starSize + (config.hitboxPadX or 0), starSize + (config.hitboxPadY or 0))
-        starButton:SetPoint("LEFT", CalculateOffset(i, config), 0)
+        starButton:SetPoint("LEFT", leftPadding + CalculateOffset(i, config), 0)  -- Add leftPadding if provided
 
         -- Add a transparent background to increase hit area
         local background = starButton:CreateTexture(nil, "BACKGROUND")
