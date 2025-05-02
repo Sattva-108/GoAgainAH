@@ -399,6 +399,7 @@ local nextUpdateDeadline = nil
 local ladderBuffer = {}
 local lastLogoutTime = AuctionHouseDBSaved and AuctionHouseDBSaved.lastLogoutTime or nil
 
+-- Function to adjust nextUpdateDeadline based on lastLogoutTime (for predictable timer)
 local function adjustNextUpdateDeadline()
     local now = GetTime()
 
@@ -409,11 +410,39 @@ local function adjustNextUpdateDeadline()
     end
 end
 
+-- Register necessary events
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("CHAT_MSG_ADDON")
+f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
+-- Function to save logout data
+local function saveLogoutData()
+    local now = GetTime()
+    AuctionHouseDBSaved.lastLogoutTime = now
+    AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the last calculated nextUpdateDeadline
+    print("lastLogoutTime and nextUpdateDeadline saved during logout: ", AuctionHouseDBSaved.lastLogoutTime, AuctionHouseDBSaved.nextUpdateDeadline)
+end
+
+-- Event handler for all the registered events
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
+        -- If the last logout was within 3 minutes, use previous session's state to calculate nextUpdateDeadline
+        local now = GetTime()
+        if lastLogoutTime and (now - lastLogoutTime) < 180 then
+            nextUpdateDeadline = lastLogoutTime + 180  -- Set it to 3 minutes from last logout time
+            print("Next update deadline adjusted to: " .. SecondsToTime(nextUpdateDeadline - now))
+        end
+
+        -- Update the saved logout time when the player logs in (if not already stored)
+        if not AuctionHouseDBSaved.lastLogoutTime then
+            AuctionHouseDBSaved.lastLogoutTime = now
+        end
+
+        -- Handle the nextUpdateDeadline from saved data if available
+        if AuctionHouseDBSaved.nextUpdateDeadline then
+            nextUpdateDeadline = AuctionHouseDBSaved.nextUpdateDeadline
+        end
+
         -- Iterate over completed clips and check if they don't have a playedTime
         local playedClips = ns.GetNoPlayedDeathClips()
         for _, clip in ipairs(playedClips) do
@@ -446,8 +475,12 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
         end)
 
-        -- Update the saved logout time in AuctionHouseDBSaved when the player logs out
-        AuctionHouseDBSaved.lastLogoutTime = GetTime()
+        return
+    end
+
+    if event == "PLAYER_LOGOUT" then
+        -- Save the logout data when the player logs out
+        saveLogoutData()
         return
     end
 
@@ -455,6 +488,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         return
     end
 
+    -- Handle "ASMSG_HARDCORE_DEATH" event
     if prefix == "ASMSG_HARDCORE_DEATH" then
         local admin = UnitName("player")
         if admin == "Lenkomag" then
@@ -471,6 +505,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
         end
 
+        -- Handle "ASMSG_HARDCORE_LADDER_LIST" event
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
         -- Handle one or more <challengeID>:<chunk> blocks
         for block in msg:gmatch("([^|]+)") do
@@ -512,18 +547,19 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                     end
                                 end
                             end
-                                    end
-                                end
-                            end
                         end
                     end
+                end
+            end
+        end
+
         -- <<< MINIMAL: only bump once per 10m interval
         do
             local now = GetTime()
             -- initialize on first run so we don’t bump immediately
             if not nextUpdateDeadline then
                 nextUpdateDeadline = now + 600
-                end
+            end
             -- if we’re past the deadline, do one bump pass and reset it
             if now >= nextUpdateDeadline then
                 for name, clips in pairs(queue) do
@@ -547,3 +583,4 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         nextUpdateDeadline = GetTime() + 600  -- 600 seconds = 10 minutes
     end
 end)
+
