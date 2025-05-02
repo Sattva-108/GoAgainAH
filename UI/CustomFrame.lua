@@ -191,9 +191,25 @@ local function Constructor()
 	frame:SetResizable(true)
 	frame:SetFrameStrata("FULLSCREEN_DIALOG")
 	frame:SetFrameLevel(100) -- Lots of room to draw under it
-	frame:SetBackdrop(FrameBackdrop)
-	frame:SetBackdropColor(0.06, 0.06, 0.06, 0.9)
-	frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+	frame:SetBackdrop({
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 16,
+		edgeSize = 16,
+		insets = { left = 5, right = 5, top = 5, bottom = 5 },
+	})
+	frame:SetBackdropColor(0.031, 0.031, 0.031, 1)            -- rgba(8,8,8,255)
+	frame:SetBackdropBorderColor(0.8, 0.8, 0.8, 1)            -- Blizzard-style border
+	local bg = frame:CreateTexture(nil, "BACKGROUND")
+	-- Assuming 'bg' is the background texture
+	bg:SetAtlas("PKBT-Tile-Obsidian-256", true)
+	bg:SetAllPoints(frame)  -- Ensure it covers the full frame area
+
+	-- Create a dark overlay frame
+	local darkOverlay = frame:CreateTexture(nil, "OVERLAY")
+	darkOverlay:SetAllPoints(frame)
+	darkOverlay:SetTexture(0, 0, 0)  -- Set the texture to black
+	darkOverlay:SetAlpha(0.3)  -- Set transparency (0 = fully transparent, 1 = fully opaque)
 
 	if frame.SetResizeBounds then -- WoW 10.0
 		frame:SetResizeBounds(400, 200)
@@ -222,14 +238,14 @@ local function Constructor()
 	titletext:SetPoint("TOP", titlebg, "TOP", 0, -14)
 
 	local titlebg_l = frame:CreateTexture(nil, "OVERLAY")
-	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
+	titlebg_l:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg_l:SetTexCoord(0.21, 0.31, 0, 0.63)
 	titlebg_l:SetPoint("RIGHT", titlebg, "LEFT")
 	titlebg_l:SetWidth(30)
 	titlebg_l:SetHeight(40)
 
 	local titlebg_r = frame:CreateTexture(nil, "OVERLAY")
-	titlebg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
+	titlebg_r:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
 	titlebg_r:SetTexCoord(0.67, 0.77, 0, 0.63)
 	titlebg_r:SetPoint("LEFT", titlebg, "RIGHT")
 	titlebg_r:SetWidth(30)
