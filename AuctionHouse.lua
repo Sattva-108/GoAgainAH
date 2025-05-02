@@ -103,8 +103,8 @@ local TEST_USERS = {
 }
 ns.TEST_USERS = TEST_USERS
 local TEST_USERS_RACE = {
---    ["Lenkomag"] = "Troll",
---    ["Lenkomage"] = "Troll"
+    --["Lenkomag"] = "Troll",
+    --["Lenkomage"] = "Naga"
   --  ["Pencilbow"] = "Human",
    -- ["Onefingerjoe"] = "Human",
    -- ["Flawlezzgg"] = "Human",

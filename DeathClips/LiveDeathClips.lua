@@ -121,13 +121,13 @@ ns.AddNewDeathClips = function(newClips)
         -- Ensure that the clip has a valid ID and playedTime before attempting to add it
         if clip.id then
             clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
+            clip.getPlayedTry = 0
             existingClips[clip.id] = clip
         else
             --print("Error: Clip ID is nil for character:", clip.characterName)
         end
     end
 end
-
 
 ns.RemoveDeathClip = function(clipID)
     local existingClips = ns.GetLiveDeathClips()
@@ -147,7 +147,8 @@ end
 ns.GetPlayedDeathClips = function()
     local playedClips = {}
     for _, clip in pairs(ns.GetLiveDeathClips()) do
-        if clip.playedTime then  -- Check if the clip has playedTime
+        if clip.playedTime then
+            -- Check if the clip has playedTime
             table.insert(playedClips, clip)
         end
     end
@@ -157,7 +158,8 @@ end
 ns.GetNoPlayedDeathClips = function()
     local playedClips = {}
     for _, clip in pairs(ns.GetLiveDeathClips()) do
-        if not clip.playedTime then  -- Check if the clip has playedTime
+        if not clip.playedTime then
+            -- Check if the clip has playedTime
             table.insert(playedClips, clip)
         end
     end
@@ -256,7 +258,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 where = zoneStr,
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
-                playedTime = nil,  -- `playedTime` is nil initially (we'll populate it later)
+                playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
             }
 
             if not clip.id then
@@ -274,10 +276,11 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             -- Add the played clip to the queue (for both death and played clips)
             queue[name] = queue[name] or {}
             clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
+            clip.getPlayedTry = 0
             table.insert(queue[name], clip)
 
             -- If no duplicate, add the clip
---            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+            --            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
 
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
@@ -320,7 +323,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
                 completed = true,
-                playedTime = nil,  -- `playedTime` is nil initially (we'll populate it later)
+                playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
             }
 
             if not clip.id then
@@ -338,10 +341,11 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             -- Add the played clip to the queue (for both death and played clips)
             queue[name] = queue[name] or {}
             clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
+            clip.getPlayedTry = 0
             table.insert(queue[name], clip)
 
             -- If no duplicate, add the clip
---            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
+            --            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
 
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
@@ -404,16 +408,18 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         for _, clip in ipairs(playedClips) do
             if type(clip) == "table" then
                 if not clip.playedTime and clip.characterName then
-                    -- Ensure the queue for the character exists (initialize if not present)
-                    if not queue[clip.characterName] then
-                        queue[clip.characterName] = {}  -- Initialize the table for this character
+                    if not clip.getPlayedTry then
+                        clip.getPlayedTry = 0
                     end
-
-                    -- Insert the clip into the character's queue
-                    table.insert(queue[clip.characterName], clip)
-                    C_Timer:After(10, function()
-                        print(clip.characterName .. " added to the queue (no playedTime)")
-                    end)
+                    if type(clip.getPlayedTry) == "number" and clip.getPlayedTry < 3 then
+                        if not queue[clip.characterName] then
+                            queue[clip.characterName] = queue[clip.characterName] or {}
+                            table.insert(queue[clip.characterName], clip)
+                            C_Timer:After(10, function()
+                                print(clip.characterName .. " added to the queue (no playedTime)")
+                            end)
+                        end
+                    end
                 end
             end
         end
@@ -438,7 +444,9 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         if name then
             if nextUpdateDeadline then
                 local left = nextUpdateDeadline - GetTime()
-                if left < 0 then left = 0 end
+                if left < 0 then
+                    left = 0
+                end
                 print(("%s died — next ladder in %s"):format(name, SecondsToTime(left)))
             end
         end
@@ -461,20 +469,20 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     -- Full data received for this block (no semicolon)
                     local full = ladderBuffer[id]
                     ladderBuffer[id] = nil  -- Clear the buffer for this ID
---                    print("Full data for ID " .. id .. ": " .. full)
+                    --                    print("Full data for ID " .. id .. ": " .. full)
 
                     -- Process the full data (split by semicolon)
                     for entry in full:gmatch("([^;]+)") do
                         -- Extract values from each entry
                         local _, n, _, _, _, _, tm = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
                         if n and queue[n] then
---                            print("Found player ID: " .. n .. " with playedTime: " .. tm)
+                            --                            print("Found player ID: " .. n .. " with playedTime: " .. tm)
 
                             -- Process each clip in the queue (both deaths and completed)
                             -- Ensure that queue[n] is a table before using ipairs
                             if type(queue[n]) == "table" then
                                 for _, clip in ipairs(queue[n]) do
---                                    print("Checking clip for player " .. n .. ": completed=" .. tostring(clip.completed) .. ", playedTime=" .. tostring(clip.playedTime))
+                                    --                                    print("Checking clip for player " .. n .. ": completed=" .. tostring(clip.completed) .. ", playedTime=" .. tostring(clip.playedTime))
                                     if clip.completed and clip.playedTime == nil then
                                         -- Update the `playedTime` (using `tm` from the ladder list)
                                         clip.playedTime = tm
@@ -482,12 +490,14 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
                                         -- Remove the player from the queue after updating `playedTime`
                                         queue[n] = nil
---                                        print(("%s removed from the queue after updating playedTime"):format(n))
+                                        clip.getPlayedTry = nil
+                                        --                                        print(("%s removed from the queue after updating playedTime"):format(n))
                                     elseif not clip.completed then
                                         -- For death events, just print the lasted time (tm)
                                         clip.playedTime = tm
                                         print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)) .. "|r")
                                         queue[n] = nil
+                                        clip.getPlayedTry = nil
                                     else
                                         print("Clip not updated due clip completed or playedTime missing")
                                     end
@@ -498,6 +508,32 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                 end
             end
         end
+        -- <<< MINIMAL: only bump once per 10m interval
+        do
+            local now = GetTime()
+            -- initialize on first run so we don’t bump immediately
+            if not nextUpdateDeadline then
+                nextUpdateDeadline = now + 600
+            end
+            -- if we’re past the deadline, do one bump pass and reset it
+            if now >= nextUpdateDeadline then
+                for name, clips in pairs(queue) do
+                    for _, clip in ipairs(clips) do
+                        if not clip.playedTime and type(clip.getPlayedTry) == "number" then
+                            clip.getPlayedTry = clip.getPlayedTry + 1
+                            print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
+                            if clip.getPlayedTry >= 3 then
+                                clip.getPlayedTry = "failed"
+                                print(name .. " getPlayedTry failed after 3 attempts — removing from queue")
+                                queue[name] = nil
+                            end
+                        end
+                    end
+                end
+                nextUpdateDeadline = now + 600
+            end
+        end
+
         -- Set the next update deadline for 10 minutes (600 seconds) from now
         nextUpdateDeadline = GetTime() + 600  -- 600 seconds = 10 minutes
     end

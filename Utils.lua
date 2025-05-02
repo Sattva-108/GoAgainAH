@@ -269,3 +269,71 @@ ns.DebugLog = function(...)
         print(...)
     end
 end
+
+-- Local function to inspect a frame and print its information
+local function GetFrameInfo(frameName)
+    -- Try to get the frame by name
+    local frame = _G[frameName]
+    if not frame then
+        print("Frame not found:", frameName)
+        return
+    end
+
+    -- Print basic frame info
+    print("Frame Name:", frame:GetName())
+    print("Frame Width:", frame:GetWidth())
+    print("Frame Height:", frame:GetHeight())
+    local point, relativeFrame, relativePoint, xOfs, yOfs = frame:GetPoint()
+    print("Frame Point:", point, relativeFrame and relativeFrame:GetName() or "nil", relativePoint, xOfs, yOfs)
+
+    -- Print all textures used by the frame (if any)
+    print("Textures used by", frame:GetName())
+    for i, texture in ipairs({frame:GetRegions()}) do
+        if texture and texture.GetTexture then
+            print("  Texture", i, ":", texture:GetTexture())
+
+            -- Check and print texcoords if present
+            local texCoords = {texture:GetTexCoord()}
+            if texCoords[1] then
+                print("    TexCoords:", texCoords[1], texCoords[2], texCoords[3], texCoords[4])
+            end
+        end
+    end
+
+    -- Print all children of the frame
+    print("Children of", frame:GetName())
+    for i, child in ipairs({frame:GetChildren()}) do
+        print("  Child", i, ":", child:GetName())
+    end
+
+    -- Print any set scripts or events
+    print("Scripts and events for", frame:GetName())
+    for _, scriptType in ipairs({"OnClick", "OnEnter", "OnLeave", "OnShow", "OnHide"}) do
+        local scriptFunc = frame:GetScript(scriptType)
+        if scriptFunc then
+            print("  Script type:", scriptType)
+        end
+    end
+
+    -- Check for parent frame details if the parent is a table
+    if relativeFrame then
+        print("Parent Name:", relativeFrame:GetName())
+    else
+        print("No parent or parent is not set")
+    end
+end
+
+
+-- Register the slash command correctly
+SLASH_ATHENEFRAME1 = "/atheneframe"  -- Make sure this matches the command we use to call the function
+SlashCmdList["ATHENEFRAME"] = function(msg)
+    -- Call the GetFrameInfo function with the provided frame name or default to the example frame
+    if msg and msg ~= "" then
+        GetFrameInfo(msg)  -- Use the frame name passed after the slash command
+    else
+        print("Please provide a frame name, e.g., /atheneframe StoreFrameContentPageEquipmentPaperDollSlotButton1")
+    end
+end
+
+
+
