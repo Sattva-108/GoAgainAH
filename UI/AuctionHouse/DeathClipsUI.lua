@@ -457,7 +457,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     clipText:SetText(clip.deathCause or "Неизвестно")
     mobLevelText:SetText(clip.mobLevelText or "")
     mobLevelText:SetJustifyH("CENTER")
-    if clip.completed then
+    if clip.completed and clip.playedTime then
         clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
         -- Convert playedTime (in seconds) to D H M S format
         local seconds = clip.playedTime or 0
@@ -471,6 +471,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
         -- Set the formatted time to the clipText
         clipText:SetText(("%s"):format(formattedTime))
+    elseif clip.completed and not clip.playedTime then
+        clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
+        clipText:SetText("Грузится")
     else
         clipText:SetFontObject("GameFontNormal")   -- Fallback font for live tab
     end

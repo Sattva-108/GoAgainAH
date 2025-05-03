@@ -418,33 +418,51 @@ f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 -- Function to save logout data
 local function saveLogoutData()
     local now = GetTime()
-    AuctionHouseDBSaved.lastLogoutTime = now
-    AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the last calculated nextUpdateDeadline
+    -- Simply store the current time as the last logout time
+    AuctionHouseDBSaved.lastLogoutTime = now  -- Store the last logout time (current time)
+    AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the next update deadline
     print("lastLogoutTime and nextUpdateDeadline saved during logout: ", AuctionHouseDBSaved.lastLogoutTime, AuctionHouseDBSaved.nextUpdateDeadline)
 end
 
 -- Event handler for all the registered events
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
-        -- If the last logout was within 3 minutes, use previous session's state to calculate nextUpdateDeadline
         local now = GetTime()
-        if lastLogoutTime and (now - lastLogoutTime) < 180 then
-            nextUpdateDeadline = lastLogoutTime + 180  -- Set it to 3 minutes from last logout time
-            print("Next update deadline adjusted to: " .. SecondsToTime(nextUpdateDeadline - now))
-        end
+        listening = false -- Ensure listening is off until timer fires
 
-        -- Update the saved logout time when the player logs in (if not already stored)
-        if not AuctionHouseDBSaved.lastLogoutTime then
-            AuctionHouseDBSaved.lastLogoutTime = now
-        end
+        -- Load relevant saved data
+        local savedLogoutTime = AuctionHouseDBSaved and AuctionHouseDBSaved.lastLogoutTime
+        local savedDeadline = AuctionHouseDBSaved and AuctionHouseDBSaved.nextUpdateDeadline
 
-        -- Handle the nextUpdateDeadline from saved data if available
-        if AuctionHouseDBSaved.nextUpdateDeadline then
-            nextUpdateDeadline = AuctionHouseDBSaved.nextUpdateDeadline
+        -- *** CORE LOGIC CHANGE START ***
+        -- Check if the last logout was within 3 minutes
+        if savedLogoutTime and (now - savedLogoutTime) < 180 then
+            -- Yes, recent login: Use the deadline saved in the DB from the previous session
+            nextUpdateDeadline = savedDeadline
+            if nextUpdateDeadline then
+                local remaining = nextUpdateDeadline - now
+                if remaining < 0 then
+                    print(string.format("Recent login (<180s): Using saved deadline, but it's passed. Waiting for ladder event. (Passed by %s)", SecondsToTime(math.abs(remaining))))
+                else
+                    print(string.format("Recent login (<180s): Using saved deadline. Next update in: %s", SecondsToTime(remaining)))
+                end
+            else
+                print("Recent login (<180s): No deadline was saved in DB. Waiting for ladder event.")
+                nextUpdateDeadline = nil -- Ensure it's nil if nothing was saved
+            end
+        else
+            -- No, login was > 180s ago OR no logout time saved: Do NOT use the saved deadline.
+            if savedLogoutTime then
+                print(string.format("Login >180s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime)))
+            else
+                print("No previous logout time. Ignoring saved deadline. Waiting for ladder event.")
+            end
+            nextUpdateDeadline = nil -- Start fresh, wait for ladder event to set it
         end
+        -- *** CORE LOGIC CHANGE END ***
 
-        -- Iterate over completed clips and check if they don't have a playedTime
-        local playedClips = ns.GetNoPlayedDeathClips()
+        -- Iterate over completed clips and check if they don't have a playedTime (Keep original code)
+        local playedClips = ns.GetNoPlayedDeathClips() -- Make sure 'ns' and the function exist
         for _, clip in ipairs(playedClips) do
             if type(clip) == "table" then
                 if not clip.playedTime and clip.characterName then
@@ -452,8 +470,14 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                         clip.getPlayedTry = 0
                     end
                     if type(clip.getPlayedTry) == "number" and clip.getPlayedTry < 3 then
-                        if not queue[clip.characterName] then
-                            queue[clip.characterName] = queue[clip.characterName] or {}
+                        -- Original queueing logic (ensure 'queue' is defined)
+                        queue[clip.characterName] = queue[clip.characterName] or {}
+                        -- Prevent adding duplicates if necessary (simple reference check shown)
+                        local found = false
+                        for _, existingClip in ipairs(queue[clip.characterName]) do
+                            if existingClip == clip then found = true break end
+                        end
+                        if not found then
                             table.insert(queue[clip.characterName], clip)
                             C_Timer:After(10, function()
                                 print(clip.characterName .. " added to the queue (no playedTime)")
@@ -464,18 +488,22 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
         end
 
-        -- skip auto-refresh on login/reload
+        -- skip auto-refresh on login/reload (Keep original code)
         C_Timer:After(3, function()
             listening = true
-            adjustNextUpdateDeadline()
+            -- adjustNextUpdateDeadline() -- Review if this function is still needed or interferes
+            -- print("adjustNextUpdateDeadline() called") -- Uncomment to see if it runs
 
-            -- Optionally, print out the nextUpdateDeadline to verify
+            -- Optionally, print out the nextUpdateDeadline to verify (Keep original code)
             if nextUpdateDeadline then
-                print("Next update deadline: " .. SecondsToTime(nextUpdateDeadline - GetTime()))
+                local remaining = nextUpdateDeadline - GetTime()
+                print("Next update deadline (after 3s delay): " .. SecondsToTime(remaining > 0 and remaining or 0))
+            else
+                print("Next update deadline not set after 3s delay (waiting for ladder event).")
             end
         end)
 
-        return
+        return -- End PLAYER_ENTERING_WORLD block
     end
 
     if event == "PLAYER_LOGOUT" then
@@ -583,4 +611,3 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         nextUpdateDeadline = GetTime() + 600  -- 600 seconds = 10 minutes
     end
 end)
-
