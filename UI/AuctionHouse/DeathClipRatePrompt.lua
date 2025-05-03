@@ -39,7 +39,7 @@ local function CreateReviewPrompt()
     frame.titlebg_r:Hide()
     frame:SetLayout("Flow")
     frame:SetWidth(350)
-    frame:SetHeight(350)
+    frame:SetHeight(270)
 
     ns.CustomFrameSetAllPoints()
     ns.CustomFrameHideBackDrop()
@@ -47,11 +47,19 @@ local function CreateReviewPrompt()
 
     -- Here, we're passing `true` to use custom padding
     frame:OnWidthSet(350, true) -- Apply custom width adjustment
-    frame:OnHeightSet(350, true) -- Apply custom height adjustment
+    frame:OnHeightSet(270, true) -- Apply custom height adjustment
+
+    frame.frame:SetScript("OnHide", function()
+        if ns._ratePromptTicker then
+            ns._ratePromptTicker:Cancel()
+            ns._ratePromptTicker = nil
+        end
+    end)
+
 
     -- Close button
     local closeButton = CreateFrame("Button", "GoAHExitButtonDeathRate", frame.frame, "UIPanelCloseButton")
-    closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 7, 7)
+    closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 5, 1)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()
         OFAuctionFrameDeathClips.openedPromptClipID = nil
@@ -60,7 +68,7 @@ local function CreateReviewPrompt()
         end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
     end)
-    closeButton:Hide()
+    closeButton:SetFrameLevel(frame.frame:GetFrameLevel()+10)
 
     ---- Add top padding
     --local topPadding = AceGUI:Create("SimpleGroup")
@@ -72,7 +80,7 @@ local function CreateReviewPrompt()
     -- Review Group
     ----------------------------------------------------------------------------
     local submitButton
-    local reviewGroup = CreateBorderedGroup(1, 350)
+    local reviewGroup = CreateBorderedGroup(1, 270)
     reviewGroup:SetPadding(25, 20)
     frame:AddChild(reviewGroup)
 
@@ -114,8 +122,9 @@ local function CreateReviewPrompt()
     playedLabel:SetText("Время в игре:")
 
     -- Played time label (created dynamically with CreateFontString and aligned to the right)
+    -- Attach it to the closebutton as we need something stable, static.
     local playedTime = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")  -- Using a larger font object
-    playedTime:SetPoint("RIGHT", playedLabel, "RIGHT", 176, 0)
+    playedTime:SetPoint("TOPRIGHT", closeButton, "BOTTOMLEFT", -3, -36)
     playedTime:SetText("") -- Set this dynamically later
     playedTime:SetTextColor(1, 1, 1, 1) -- White color with full opacity
 
@@ -157,18 +166,18 @@ local function CreateReviewPrompt()
     reviewEdit:SetWidth(400)
 
     reviewEdit:DisableButton(true)
-    reviewEdit:SetMaxLetters(90+45)
-    reviewEdit:SetNumLines(6)
-    reviewEdit:SetHeight(115)
+    reviewEdit:SetMaxLetters(30)
+    --reviewEdit:SetNumLines(6)
+    reviewEdit:SetHeight(60)
     reviewEdit.editBox:SetFontObject(GameFontNormal)
     reviewEdit.editBox:SetTextColor(1, 1, 1, 0.75)
     reviewGroup:AddChild(reviewEdit)
 
 
-    submitButton = AceGUI:Create("Button")
-    submitButton:SetText(L["Submit Review"])
+    submitButton = AceGUI:Create("PKBTRedButton")
     submitButton:SetFullWidth(true)
     submitButton:SetHeight(40)
+    submitButton:SetText(L["Submit Review"])
     submitButton:SetDisabled(true)
 
     -- Submit Button
@@ -231,6 +240,10 @@ local function CreateReviewPrompt()
     function prompt:Hide()
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
         self.frame:Hide()
+        if ns._ratePromptTicker then
+            ns._ratePromptTicker:Cancel()
+            ns._ratePromptTicker = nil
+        end
     end
 
     ----------------------------------------------------------------------------
@@ -251,11 +264,40 @@ local function CreateReviewPrompt()
 
     function prompt:SetPlayedTime(seconds)
         if seconds then
+            -- Show actual played time
             playedLabel:Show()
+            playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
+
+            -- Stop any active countdown ticker
+            if ns._ratePromptTicker then
+                ns._ratePromptTicker:Cancel()
+                ns._ratePromptTicker = nil
+            end
+        elseif ns.nextUpdateDeadline then
+            -- Show countdown to update
+            playedLabel:Show()
+            playedLabel:SetText("Обновится через:")
+            self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - GetTime()))
+
+            -- Start ticker only if not already running
+            if not ns._ratePromptTicker then
+                ns._ratePromptTicker = C_Timer:NewTicker(1, function()
+                    if self.frame:IsShown() and ns.nextUpdateDeadline then
+                        self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - GetTime()))
+                    end
+                end)
+            end
         else
             playedLabel:Hide()
+            playedLabel:SetText("")
             self.playedTime:SetText("")
+
+            -- Also stop ticker if nothing to show
+            if ns._ratePromptTicker then
+                ns._ratePromptTicker:Cancel()
+                ns._ratePromptTicker = nil
+            end
         end
     end
 

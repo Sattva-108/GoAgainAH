@@ -397,18 +397,6 @@ local f = CreateFrame("Frame", "HardcoreDeathTimerReporter")
 local listening = false
 local nextUpdateDeadline = nil
 local ladderBuffer = {}
-local lastLogoutTime = AuctionHouseDBSaved and AuctionHouseDBSaved.lastLogoutTime or nil
-
--- Function to adjust nextUpdateDeadline based on lastLogoutTime (for predictable timer)
-local function adjustNextUpdateDeadline()
-    local now = GetTime()
-
-    -- If the last logout time exists and less than 3 minutes have passed since then
-    if lastLogoutTime and (now - lastLogoutTime) < 180 then
-        -- Adjust the nextUpdateDeadline based on the time difference
-        nextUpdateDeadline = now + (180 - (now - lastLogoutTime))  -- Ensure the deadline is still 3 minutes from the last logout
-    end
-end
 
 -- Register necessary events
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -445,8 +433,16 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             if nextUpdateDeadline then
                 local remaining = nextUpdateDeadline - now
                 if remaining < 0 then
-                    -- Store the message instead of printing
-                    deadlineStatusMessage = string.format("Recent login (<180s): Using saved deadline, but it's passed. Waiting for ladder event. (Passed by %s)", SecondsToTime(math.abs(remaining)))
+                    local passedBy = math.abs(remaining)
+                    local cyclesMissed = math.floor(passedBy / 600) + 1
+                    local predictedNext = nextUpdateDeadline + (cyclesMissed * 600)
+                    local nextIn = predictedNext - now
+
+                    nextUpdateDeadline = predictedNext
+                    AuctionHouseDBSaved.nextUpdateDeadline = predictedNext
+
+
+                    deadlineStatusMessage = string.format("Saved deadline passed %s ago. Predicting next ladder event in ~%s.", SecondsToTime(passedBy), SecondsToTime(nextIn))
                 else
                     -- Store the message instead of printing
                     deadlineStatusMessage = string.format("Recent login (<180s): Using saved deadline. Next update in: %s", SecondsToTime(remaining))
@@ -640,7 +636,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     end -- End if queue
                     -- This reset happens *only* when the deadline check passes
                     nextUpdateDeadline = now + 600
-                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline))
+                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - GetTime()))
                 end -- End deadline check
             end -- End do block
 
@@ -652,4 +648,6 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
         end -- End elseif ASMSG_HARDCORE_LADDER_LIST
     end
+    ns.nextUpdateDeadline = nextUpdateDeadline
 end)
+

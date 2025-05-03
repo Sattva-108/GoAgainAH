@@ -2494,6 +2494,7 @@
 			<OnShow function="OFAuctionFrame_OnShow" />
 			<OnHide>
 				PlaySound(SOUNDKIT.AUCTION_WINDOW_CLOSE)
+				OFAuctionFrameDeathClips.openedPromptClipID = nil
                 OFCloseAuctionStaticPopups()
 				SetAuctionsTabShowing(false)
 			</OnHide>

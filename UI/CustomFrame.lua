@@ -308,4 +308,37 @@ local function Constructor()
 	return AceGUI:RegisterAsContainer(widget)
 end
 
+do
+	local AceGUI = LibStub("AceGUI-3.0")
+	local function Constructor()
+		local num   = AceGUI:GetNextWidgetNum("PKBTRedButton")
+		local frame = CreateFrame("Button",
+				"AceGUI30PKBTRedButton"..num,
+				UIParent,
+				"PKBT_RedButtonTemplate"
+		)
+		local widget = {
+			frame    = frame,
+			type     = "PKBTRedButton",
+			OnAcquire = function(self)
+				frame:Show()
+				frame:SetScript("OnClick", nil)
+				frame:SetEnabled(true)
+			end
+		}
+		-- mix in the standard widget API
+		AceGUI:RegisterAsWidget(widget)
+		-- text handling
+		function widget:SetText(text) frame:SetText(text) end
+		function widget:SetDisabled(disabled)
+			if disabled then frame:Disable() else frame:Enable() end
+		end
+		function widget:SetCallback(_, callback)
+			frame:SetScript("OnClick", function() callback(self) end)
+		end
+		return widget
+	end
+	AceGUI:RegisterWidgetType("PKBTRedButton", Constructor, 1)
+end
+
 AceGUI:RegisterWidgetType(Type, Constructor, Version)
