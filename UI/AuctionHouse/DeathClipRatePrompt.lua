@@ -236,7 +236,11 @@ local function CreateReviewPrompt()
             GameTooltip:AddLine(string.format("• Белое: до %s (медленно)", SecondsToTime(tip.upper)), 1, 1, 1)
             GameTooltip:AddLine(string.format("• Красное: > %s (очень медленно)", SecondsToTime(tip.upper)), 1, 0.25, 0.25)
         else
-            GameTooltip:AddLine("Недостаточно данных для уровня", 1, 1, 1)
+            -- Simplified version if no data
+            GameTooltip:AddLine("• Зеленое — быстро", 0.25, 1, 0.25)
+            GameTooltip:AddLine("• Желтое — средне", 1, 1, 0.3)
+            GameTooltip:AddLine("• Белое — медленно", 1, 1, 1)
+            GameTooltip:AddLine("• Красное — очень медленно", 1, 0.25, 0.25)
         end
 
         GameTooltip:Show()

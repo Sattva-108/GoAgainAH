@@ -1,5 +1,24 @@
 local _, ns = ...
 
+------------------------------------------------------------------------
+-- >>> REALM SUPPORT
+------------------------------------------------------------------------
+local CURRENT_REALM = GetRealmName()
+ns.CURRENT_REALM = CURRENT_REALM   -- expose for other files
+
+-- Filter helper ----------------------------------------------
+function ns.FilterClipsThisRealm(pool)
+    local filtered = {}
+    for _, clip in pairs(pool) do
+        if clip.realm == CURRENT_REALM then
+            table.insert(filtered, clip)
+        end
+    end
+    return filtered
+end
+------------------------------------------------------------------------
+
+
 -- Define the global queue table to track both completed and death event characters
 local queue = {}
 
@@ -71,8 +90,8 @@ end
 
 ns.GetLastDeathClipTimestamp = function()
     local ts = 0
-    for _, clip in pairs(ns.GetLiveDeathClips()) do
-        ts = math.max(ts, clip.ts)
+    for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
+        ts = math.max(ts, clip.ts or 0)
     end
     return ts
 end
@@ -146,9 +165,9 @@ end
 
 ns.GetPlayedDeathClips = function()
     local playedClips = {}
-    for _, clip in pairs(ns.GetLiveDeathClips()) do
+    -- Realm-filtered loop  ↓
+    for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if clip.playedTime then
-            -- Check if the clip has playedTime
             table.insert(playedClips, clip)
         end
     end
@@ -156,14 +175,14 @@ ns.GetPlayedDeathClips = function()
 end
 
 ns.GetNoPlayedDeathClips = function()
-    local playedClips = {}
-    for _, clip in pairs(ns.GetLiveDeathClips()) do
+    local clips = {}
+    -- Realm-filtered loop  ↓
+    for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if not clip.playedTime then
-            -- Check if the clip has playedTime
-            table.insert(playedClips, clip)
+            table.insert(clips, clip)
         end
     end
-    return playedClips
+    return clips
 end
 
 -- Returns R, G, B, median, lower, upper based on playedTime relative to level median
@@ -173,10 +192,11 @@ ns.GetPlayedTimeColor = function(seconds, level)
     end
 
     seconds = tonumber(seconds)
-    level = tonumber(level)
+    level   = tonumber(level)
 
     local relevant = {}
-    for _, clip in pairs(ns.GetLiveDeathClips()) do
+    -- Realm-filtered loop  ↓
+    for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if tonumber(clip.level) == level and clip.playedTime then
             table.insert(relevant, tonumber(clip.playedTime))
         end
@@ -299,6 +319,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
                 playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
+                realm         = CURRENT_REALM,
             }
 
             if not clip.id then
@@ -364,6 +385,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 mobLevelText = mobLevelText,
                 completed = true,
                 playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
+                realm         = CURRENT_REALM,
             }
 
             if not clip.id then

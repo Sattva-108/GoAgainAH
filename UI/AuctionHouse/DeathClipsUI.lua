@@ -555,21 +555,23 @@ function OFAuctionFrameDeathClips_Update()
     local state = ns.GetDeathClipReviewState()
     local ratingsByClip = state:GetRatingsByClip()
 
-    -- Get all live clips
-    local allClips = ns.GetLiveDeathClips()
-    local clips = {}
+    --------------------------------------------------------------
+    --  Build the list that feeds FauxScrollFrame  (Approach A)
+    --------------------------------------------------------------
+    local rawPool  = ns.GetLiveDeathClips()             -- every clip in DB
+    local pool     = ns.FilterClipsThisRealm(rawPool)   -- realm-filtered once
+    local clips    = {}                                 -- final list for this tab
 
-    -- Filter clips based on the active tab
     if frame.currentSubTab == "completed" then
-        -- Show only completed clips
-        for _, clip in pairs(allClips) do
+        -- Completed tab → keep only completed clips
+        for _, clip in ipairs(pool) do
             if clip.completed then
                 table.insert(clips, clip)
             end
         end
     else
-        -- Show only live clips (not completed)
-        for _, clip in pairs(allClips) do
+        -- Live tab → keep non-completed clips
+        for _, clip in ipairs(pool) do
             if not clip.completed then
                 table.insert(clips, clip)
             end
