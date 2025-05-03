@@ -434,6 +434,9 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         local savedLogoutTime = AuctionHouseDBSaved and AuctionHouseDBSaved.lastLogoutTime
         local savedDeadline = AuctionHouseDBSaved and AuctionHouseDBSaved.nextUpdateDeadline
 
+        -- Variable to hold the message we want to print later
+        local deadlineStatusMessage = ""
+
         -- *** CORE LOGIC CHANGE START ***
         -- Check if the last logout was within 3 minutes
         if savedLogoutTime and (now - savedLogoutTime) < 180 then
@@ -442,24 +445,38 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             if nextUpdateDeadline then
                 local remaining = nextUpdateDeadline - now
                 if remaining < 0 then
-                    print(string.format("Recent login (<180s): Using saved deadline, but it's passed. Waiting for ladder event. (Passed by %s)", SecondsToTime(math.abs(remaining))))
+                    -- Store the message instead of printing
+                    deadlineStatusMessage = string.format("Recent login (<180s): Using saved deadline, but it's passed. Waiting for ladder event. (Passed by %s)", SecondsToTime(math.abs(remaining)))
                 else
-                    print(string.format("Recent login (<180s): Using saved deadline. Next update in: %s", SecondsToTime(remaining)))
+                    -- Store the message instead of printing
+                    deadlineStatusMessage = string.format("Recent login (<180s): Using saved deadline. Next update in: %s", SecondsToTime(remaining))
                 end
             else
-                print("Recent login (<180s): No deadline was saved in DB. Waiting for ladder event.")
+                -- Store the message instead of printing
+                deadlineStatusMessage = "Recent login (<180s): No deadline was saved in DB. Waiting for ladder event."
                 nextUpdateDeadline = nil -- Ensure it's nil if nothing was saved
             end
         else
             -- No, login was > 180s ago OR no logout time saved: Do NOT use the saved deadline.
             if savedLogoutTime then
-                print(string.format("Login >180s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime)))
+                -- Store the message instead of printing
+                deadlineStatusMessage = string.format("Login >180s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
             else
-                print("No previous logout time. Ignoring saved deadline. Waiting for ladder event.")
+                -- Store the message instead of printing
+                deadlineStatusMessage = "No previous logout time. Ignoring saved deadline. Waiting for ladder event."
             end
             nextUpdateDeadline = nil -- Start fresh, wait for ladder event to set it
         end
         -- *** CORE LOGIC CHANGE END ***
+
+        -- *** ADDED DELAY FOR PRINTING ***
+        -- Schedule the stored message to be printed after 9 seconds
+        if deadlineStatusMessage ~= "" then
+            C_Timer:After(9, function()
+                print(deadlineStatusMessage)
+            end)
+        end
+        -- *** END ADDED DELAY ***
 
         -- Iterate over completed clips and check if they don't have a playedTime (Keep original code)
         local playedClips = ns.GetNoPlayedDeathClips() -- Make sure 'ns' and the function exist
@@ -479,6 +496,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                         end
                         if not found then
                             table.insert(queue[clip.characterName], clip)
+                            -- This print has its own 10s delay, leave it as is
                             C_Timer:After(10, function()
                                 print(clip.characterName .. " added to the queue (no playedTime)")
                             end)
@@ -491,16 +509,6 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         -- skip auto-refresh on login/reload (Keep original code)
         C_Timer:After(3, function()
             listening = true
-            -- adjustNextUpdateDeadline() -- Review if this function is still needed or interferes
-            -- print("adjustNextUpdateDeadline() called") -- Uncomment to see if it runs
-
-            -- Optionally, print out the nextUpdateDeadline to verify (Keep original code)
-            if nextUpdateDeadline then
-                local remaining = nextUpdateDeadline - GetTime()
-                print("Next update deadline (after 3s delay): " .. SecondsToTime(remaining > 0 and remaining or 0))
-            else
-                print("Next update deadline not set after 3s delay (waiting for ladder event).")
-            end
         end)
 
         return -- End PLAYER_ENTERING_WORLD block
