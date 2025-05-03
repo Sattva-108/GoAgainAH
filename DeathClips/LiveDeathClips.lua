@@ -166,6 +166,52 @@ ns.GetNoPlayedDeathClips = function()
     return playedClips
 end
 
+-- Returns R, G, B based on playedTime relative to median at that level
+ns.GetPlayedTimeColor = function(seconds, level)
+    if not seconds or not level then
+        return 1, 1, 1 -- fallback white
+    end
+
+    if type(seconds) ~= "number" then
+        seconds = tonumber(seconds)
+    end
+
+    if type(level) ~= "number" then
+        level = tonumber(level)
+    end
+
+
+    local relevant = {}
+    for _, clip in pairs(ns.GetLiveDeathClips()) do
+        if tonumber(clip.level) == level and clip.playedTime then
+            table.insert(relevant, tonumber(clip.playedTime))
+        end
+    end
+
+    if #relevant < 5 then
+        return 1, 1, 1 -- Not enough data for level
+    end
+
+    table.sort(relevant)
+    local mid = math.floor(#relevant / 2)
+    local median = (#relevant % 2 == 1) and relevant[mid + 1]
+            or (relevant[mid] + relevant[mid + 1]) / 2
+
+    local lower = median * 0.7
+    local upper = median * 1.3
+
+    if seconds <= lower then
+        return 0.25, 1.0, 0.25 -- Green (Excellent)
+    elseif seconds <= median then
+        return 1.0, 1.0, 0.3 -- Yellow (Good)
+    elseif seconds <= upper then
+        return 1.0, 1.0, 1.0 -- White (Average)
+    else
+        return 1.0, 0.25, 0.25 -- Red (Poor)
+    end
+end
+
+
 
 -- Create the frame to listen for addon messages
 local frame = CreateFrame("Frame")

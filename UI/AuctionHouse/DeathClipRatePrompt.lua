@@ -386,6 +386,8 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
     end
 
     prompt:SetPlayedTime(clip.playedTime)
+    local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+    prompt.playedTime:SetTextColor(r, g, b, 1)
 
 
     prompt:OnSubmit(function(rating, text)
