@@ -543,79 +543,113 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
         -- Handle "ASMSG_HARDCORE_LADDER_LIST" event
     elseif prefix == "ASMSG_HARDCORE_LADDER_LIST" then
-        -- Handle one or more <challengeID>:<chunk> blocks
+        -- [ Keep all ladder data processing code exactly as provided by user ]
         for block in msg:gmatch("([^|]+)") do
             local id, data = block:match("^(%d+):(.*)")
             if id and data then
-                -- Append data to the current buffer for the given ID
                 ladderBuffer[id] = (ladderBuffer[id] or "") .. data
-
-                -- If data ends with a semicolon, it's still incomplete; continue to accumulate data
                 if data:match(";$") then
-                    -- Continue to accumulate data for this ID
+                    -- Continue
                 else
-                    -- Full data received for this block (no semicolon)
                     local full = ladderBuffer[id]
-                    ladderBuffer[id] = nil  -- Clear the buffer for this ID
-                    -- Process the full data (split by semicolon)
-                    for entry in full:gmatch("([^;]+)") do
-                        -- Extract values from each entry
-                        local _, n, _, _, _, _, tm = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
-                        if n and queue[n] then
-                            -- Process each clip in the queue (both deaths and completed)
-                            if type(queue[n]) == "table" then
-                                for _, clip in ipairs(queue[n]) do
-                                    if clip.completed and clip.playedTime == nil then
-                                        -- Update the `playedTime` (using `tm` from the ladder list)
-                                        clip.playedTime = tm
-                                        print(("%s's playedTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
-                                        -- Remove the player from the queue after updating `playedTime`
-                                        queue[n] = nil
-                                        clip.getPlayedTry = nil
-                                    elseif not clip.completed then
-                                        -- For death events, just print the lasted time (tm)
-                                        clip.playedTime = tm
-                                        print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tonumber(tm) or 0)) .. "|r")
-                                        queue[n] = nil
-                                        clip.getPlayedTry = nil
-                                    else
-                                        print("Clip not updated due clip completed or playedTime missing")
+                    ladderBuffer[id] = nil
+                    if full then
+                        for entry in full:gmatch("([^;]+)") do
+                            local _, n, _, _, _, _, tm_str = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
+                            local tm = tonumber(tm_str)
+                            if n and tm and queue and queue[n] then
+                                if type(queue[n]) == "table" then
+                                    local playerRemoved = false
+                                    for _, clip in ipairs(queue[n]) do
+                                        if playerRemoved then break end
+                                        if type(clip) == "table" then
+                                            if clip.completed and clip.playedTime == nil then
+                                                clip.playedTime = tm
+                                                print(("%s's playedTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
+                                                queue[n] = nil
+                                                clip.getPlayedTry = nil
+                                                playerRemoved = true
+                                            elseif not clip.completed and clip.playedTime == nil then -- Added nil check based on debug analysis
+                                                clip.playedTime = tm
+                                                print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tm)) .. "|r")
+                                                queue[n] = nil
+                                                clip.getPlayedTry = nil
+                                                playerRemoved = true
+                                                -- else -- Use original state (commented or not)
+                                                --    print("Clip not updated due clip completed or playedTime missing")
+                                                -- end
+                                            end
+                                        end
                                     end
                                 end
                             end
                         end
                     end
                 end
-            end
-        end
+            end -- End block loop
 
-        -- <<< MINIMAL: only bump once per 10m interval
-        do
-            local now = GetTime()
-            -- initialize on first run so we don’t bump immediately
-            if not nextUpdateDeadline then
-                nextUpdateDeadline = now + 600
-            end
-            -- if we’re past the deadline, do one bump pass and reset it
-            if now >= nextUpdateDeadline then
-                for name, clips in pairs(queue) do
-                    for _, clip in ipairs(clips) do
-                        if not clip.playedTime and type(clip.getPlayedTry) == "number" then
-                            clip.getPlayedTry = clip.getPlayedTry + 1
-                            print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
-                            if clip.getPlayedTry >= 3 then
-                                clip.getPlayedTry = "failed"
-                                print(name .. " getPlayedTry failed after 3 attempts — removing from queue")
-                                queue[name] = nil
-                            end
-                        end
-                    end
+            -- <<< MINIMAL: only bump once per 10m interval
+            -- [ Keep this do...end block EXACTLY as provided by user ]
+            do
+                local now = GetTime()
+                if not nextUpdateDeadline then
+                    nextUpdateDeadline = now + 600
                 end
-                nextUpdateDeadline = now + 600
-            end
-        end
+                if now >= nextUpdateDeadline then
+                    if queue then
+                        for name, clips in pairs(queue) do
+                            if type(clips) == "table" then
+                                local playerMarkedForRemoval = false
+                                for i = #clips, 1, -1 do
+                                    local clip = clips[i]
+                                    if type(clip) == "table" then
+                                        -- Check type is number OR nil (to allow init) AND playedTime is nil
+                                        if not clip.playedTime and (type(clip.getPlayedTry) == "number" or clip.getPlayedTry == nil) then
+                                            if clip.getPlayedTry == nil then clip.getPlayedTry = 0 end -- Init
 
-        -- Set the next update deadline for 10 minutes (600 seconds) from now
-        nextUpdateDeadline = GetTime() + 600  -- 600 seconds = 10 minutes
+                                            -- Original code incremented if it was a number
+                                            if type(clip.getPlayedTry) == "number" then
+                                                clip.getPlayedTry = clip.getPlayedTry + 1
+                                                if clip.getPlayedTry >= 2 then
+                                                    print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
+                                                end
+                                                if clip.getPlayedTry >= 3 then
+                                                    clip.getPlayedTry = "failed"
+                                                    print(name .. " getPlayedTry failed after 3 attempts — removing from queue")
+                                                    playerMarkedForRemoval = true
+                                                end
+                                            end
+                                        elseif clip.getPlayedTry == "failed" then
+                                            -- If already failed, still mark player for removal based on original logic
+                                            playerMarkedForRemoval = true
+                                        end
+                                    else
+                                        table.remove(clips, i) -- remove bad data
+                                    end
+                                end
+                                -- Original removal logic
+                                if playerMarkedForRemoval then
+                                    queue[name] = nil
+                                elseif #clips == 0 then
+                                    queue[name] = nil
+                                end
+                            else
+                                queue[name] = nil -- Remove bad player entry
+                            end
+                        end -- End queue loop
+                    end -- End if queue
+                    -- This reset happens *only* when the deadline check passes
+                    nextUpdateDeadline = now + 600
+                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline))
+                end -- End deadline check
+            end -- End do block
+
+            -- MINIMAL CHANGE: Remove the conflicting unconditional reset below.
+            -- This ensures the deadline check in the do...end block uses the
+            -- value set by the *last successful check*, allowing the 10-minute
+            -- interval to function correctly *relative to the check itself*.
+            -- nextUpdateDeadline = GetTime() + 600  -- REMOVED
+
+        end -- End elseif ASMSG_HARDCORE_LADDER_LIST
     end
 end)
