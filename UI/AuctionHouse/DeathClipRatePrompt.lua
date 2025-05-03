@@ -39,7 +39,7 @@ local function CreateReviewPrompt()
     frame.titlebg_r:Hide()
     frame:SetLayout("Flow")
     frame:SetWidth(350)
-    frame:SetHeight(270)
+    frame:SetHeight(250)
 
     ns.CustomFrameSetAllPoints()
     ns.CustomFrameHideBackDrop()
@@ -47,7 +47,7 @@ local function CreateReviewPrompt()
 
     -- Here, we're passing `true` to use custom padding
     frame:OnWidthSet(350, true) -- Apply custom width adjustment
-    frame:OnHeightSet(270, true) -- Apply custom height adjustment
+    frame:OnHeightSet(250, true) -- Apply custom height adjustment
 
     frame.frame:SetScript("OnHide", function()
         if ns._ratePromptTicker then
@@ -80,7 +80,7 @@ local function CreateReviewPrompt()
     -- Review Group
     ----------------------------------------------------------------------------
     local submitButton
-    local reviewGroup = CreateBorderedGroup(1, 270)
+    local reviewGroup = CreateBorderedGroup(1, 250)
     reviewGroup:SetPadding(25, 20)
     frame:AddChild(reviewGroup)
 
@@ -127,6 +127,13 @@ local function CreateReviewPrompt()
     playedTime:SetPoint("TOPRIGHT", closeButton, "BOTTOMLEFT", -3, -36)
     playedTime:SetText("") -- Set this dynamically later
     playedTime:SetTextColor(1, 1, 1, 1) -- White color with full opacity
+
+    -- Transparent wrapper to enable mouse interaction on playedTime
+    local playedTimeWrapper = CreateFrame("Frame", nil, targetLabel.frame:GetParent())
+    playedTimeWrapper:SetPoint("TOPRIGHT", closeButton, "BOTTOMLEFT", -3, -36)
+    playedTimeWrapper:SetSize(150, 20) -- Size matching the text
+    playedTimeWrapper:EnableMouse(true)
+    playedTimeWrapper:SetFrameStrata("TOOLTIP")
 
     -- Add padding between name and star
     local labelPadding = AceGUI:Create("MinimalFrame")
@@ -218,6 +225,28 @@ local function CreateReviewPrompt()
         submitButton = submitButton
     }
 
+    playedTimeWrapper:SetScript("OnEnter", function()
+        local tip = prompt.playedTimeTooltipData
+        GameTooltip:SetOwner(playedTimeWrapper, "ANCHOR_TOPLEFT")
+        GameTooltip:AddLine("Категории времени в игре", 1, 1, 1)
+
+        if tip and tip.median then
+            GameTooltip:AddLine(string.format("• Зеленое: < %s (быстро)", SecondsToTime(tip.lower)), 0.25, 1, 0.25)
+            GameTooltip:AddLine(string.format("• Желтое: до %s (средне)", SecondsToTime(tip.median)), 1, 1, 0.3)
+            GameTooltip:AddLine(string.format("• Белое: до %s (медленно)", SecondsToTime(tip.upper)), 1, 1, 1)
+            GameTooltip:AddLine(string.format("• Красное: > %s (очень медленно)", SecondsToTime(tip.upper)), 1, 0.25, 0.25)
+        else
+            GameTooltip:AddLine("Недостаточно данных для уровня", 1, 1, 1)
+        end
+
+        GameTooltip:Show()
+    end)
+
+    playedTimeWrapper:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+
     ----------------------------------------------------------------------------
     -- Show / Hide
     ----------------------------------------------------------------------------
@@ -262,12 +291,24 @@ local function CreateReviewPrompt()
         end
     end
 
-    function prompt:SetPlayedTime(seconds)
+    function prompt:SetPlayedTime(seconds, clip)
         if seconds then
             -- Show actual played time
             playedLabel:Show()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
+
+            local r, g, b, median, lower, upper = ns.GetPlayedTimeColor(seconds, clip.level)
+            self.playedTime:SetTextColor(r, g, b, 1)
+
+            -- Save for tooltip later
+            self.playedTimeTooltipData = {
+                median = median,
+                lower = lower,
+                upper = upper,
+                level = clip.level
+            }
+
 
             -- Stop any active countdown ticker
             if ns._ratePromptTicker then
@@ -284,14 +325,42 @@ local function CreateReviewPrompt()
             if not ns._ratePromptTicker then
                 ns._ratePromptTicker = C_Timer:NewTicker(1, function()
                     if self.frame:IsShown() and ns.nextUpdateDeadline then
-                        self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - GetTime()))
+                        local remaining = ns.nextUpdateDeadline - GetTime()
+
+                        if remaining <= 0 then
+                            -- Countdown is over, switch to actual playedTime view
+                            playedLabel:SetText("Время в игре:")
+                            self.playedTime:SetText(SecondsToTime(clip.playedTime or 0))
+
+                            -- Colorize with clip.level (optional)
+                            if clip and clip.playedTime and clip.level then
+                                local r, g, b, median, lower, upper = ns.GetPlayedTimeColor(seconds, clip.level)
+                                self.playedTime:SetTextColor(r, g, b, 1)
+
+                                -- Save for tooltip later
+                                self.playedTimeTooltipData = {
+                                    median = median,
+                                    lower = lower,
+                                    upper = upper,
+                                    level = clip.level
+                                }
+                            end
+
+                            -- Stop the ticker
+                            ns._ratePromptTicker:Cancel()
+                            ns._ratePromptTicker = nil
+                        else
+                            -- Still counting down
+                            self.playedTime:SetText(SecondsToTime(remaining))
+                        end
                     end
                 end)
+
             end
         else
-            playedLabel:Hide()
-            playedLabel:SetText("")
-            self.playedTime:SetText("")
+            playedLabel:SetText("Обновится через:")
+            self.playedTime:SetText("~10 минут")
+            self.playedTime:SetTextColor(1, 1, 1, 1)
 
             -- Also stop ticker if nothing to show
             if ns._ratePromptTicker then
@@ -385,9 +454,7 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
         prompt:SetTargetName(ns.GetDisplayName(clip.characterName), nil)
     end
 
-    prompt:SetPlayedTime(clip.playedTime)
-    local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-    prompt.playedTime:SetTextColor(r, g, b, 1)
+    prompt:SetPlayedTime(clip.playedTime, clip)
 
 
     prompt:OnSubmit(function(rating, text)

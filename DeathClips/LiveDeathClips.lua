@@ -166,20 +166,14 @@ ns.GetNoPlayedDeathClips = function()
     return playedClips
 end
 
--- Returns R, G, B based on playedTime relative to median at that level
+-- Returns R, G, B, median, lower, upper based on playedTime relative to level median
 ns.GetPlayedTimeColor = function(seconds, level)
     if not seconds or not level then
-        return 1, 1, 1 -- fallback white
+        return 1, 1, 1, nil, nil, nil
     end
 
-    if type(seconds) ~= "number" then
-        seconds = tonumber(seconds)
-    end
-
-    if type(level) ~= "number" then
-        level = tonumber(level)
-    end
-
+    seconds = tonumber(seconds)
+    level = tonumber(level)
 
     local relevant = {}
     for _, clip in pairs(ns.GetLiveDeathClips()) do
@@ -189,7 +183,7 @@ ns.GetPlayedTimeColor = function(seconds, level)
     end
 
     if #relevant < 5 then
-        return 1, 1, 1 -- Not enough data for level
+        return 1, 1, 1, nil, nil, nil
     end
 
     table.sort(relevant)
@@ -201,13 +195,13 @@ ns.GetPlayedTimeColor = function(seconds, level)
     local upper = median * 1.3
 
     if seconds <= lower then
-        return 0.25, 1.0, 0.25 -- Green (Excellent)
+        return 0.25, 1.0, 0.25, median, lower, upper -- Green
     elseif seconds <= median then
-        return 1.0, 1.0, 0.3 -- Yellow (Good)
+        return 1.0, 1.0, 0.3, median, lower, upper -- Yellow
     elseif seconds <= upper then
-        return 1.0, 1.0, 1.0 -- White (Average)
+        return 1.0, 1.0, 1.0, median, lower, upper -- White
     else
-        return 1.0, 0.25, 0.25 -- Red (Poor)
+        return 1.0, 0.25, 0.25, median, lower, upper -- Red
     end
 end
 
