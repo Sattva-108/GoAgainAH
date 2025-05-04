@@ -14,6 +14,8 @@ local function GetTimePreciseSec()
     return Time - InitalGTPSCall
 end
 
+local FULL_SYNC_THRESHOLD = 1   -- trigger when peerCount - myCount >= 1
+
 
 local COMM_PREFIX = "OFAuctionHouse"
 local OF_COMM_PREFIX = "OnlyFangsAddon"
@@ -403,6 +405,7 @@ function AuctionHouse:Initialize()
             ns.AuctionHouseDB.revision, ns.AuctionHouseDB.lastUpdateAt, age, auctionCount))
 
     AHConfigSaved = ns.GetConfig()
+    AHConfigSaved.hasDoneCountSync = AHConfigSaved.hasDoneCountSync or false
 
     -- Register comm prefixes
     Addon:RegisterComm(COMM_PREFIX)
@@ -436,7 +439,7 @@ function AuctionHouse:Initialize()
     self:RequestLatestState()
     self:RequestLatestTradeState()
     self:RequestLatestRatingsState()
-    self:RequestLatestDeathClipState(now, false)
+    self:RequestLatestDeathClipState(self.now, false)
     self:RequestLatestLFGState()
     self:RequestLatestBlacklistState()
     self:RequestAddonVersion()
@@ -806,19 +809,79 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         if AHConfigSaved and payload.version < AHConfigSaved.version then
             self:SendDm(Addon:Serialize({ T_CONFIG_CHANGED, AHConfigSaved }), sender, "BULK")
         end
+        -- 1) Handle incoming state‐REQUEST: reply with your full or incremental state
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        local newClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        if #newClips > 0 then
-            local newClipsCompressed = LibDeflate:CompressDeflate(Addon:Serialize(newClips))
-            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, newClipsCompressed }), sender, "BULK")
+        -- parse their request
+        local since    = payload.since or 0
+        local full     = (since == 0)
+        local now      = time()
+
+        -- build your state table
+        local state
+        if full then
+            -- full‐sync: send absolutely every clip
+            state = { fromTs = 0, clips = {} }
+        else
+            -- incremental: only clips in the last sync window
+            local window = ns.GetConfig().deathClipsSyncWindow
+            state = {
+                fromTs = now - window,
+                clips  = self:BuildDeathClipsTable(now),
+            }
         end
+
+        -- count how many clips you have
+        local totalCount = 0
+        for _ in pairs(ns.GetLiveDeathClips()) do
+            totalCount = totalCount + 1
+        end
+
+        -- package and compress the response payload
+        local resp = {
+            since      = full and 0 or ns.GetLastDeathClipTimestamp(),
+            clips      = state,
+            totalCount = totalCount,
+        }
+        local compressed = LibDeflate:CompressDeflate(Addon:Serialize(resp))
+
+        -- send it back directly to the requester
+        local reply = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
+        self:SendDm(reply, sender, "BULK")
+
+        return
+
+        -- 2) Handle incoming state‐RESPONSE: decompress, compare, then merge or full-sync
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
+        -- decompress & deserialize
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        local success, newClips = Addon:Deserialize(decompressed)
-        if success then
+        local ok, resp     = Addon:Deserialize(decompressed)
+        if not ok then return end
+
+        -- one-time count-compare for full-sync
+        local peerCount = resp.totalCount or 0
+        local myCount   = 0
+        for _ in pairs(ns.GetLiveDeathClips()) do
+            myCount = myCount + 1
+        end
+
+        if not AHConfigSaved.hasDoneCountSync
+                and (peerCount - myCount) >= FULL_SYNC_THRESHOLD
+        then
+            AHConfigSaved.hasDoneCountSync = true
+            -- trigger a one-off full resend
+            self:RequestLatestDeathClipState(self.now, true)
+            return
+        end
+
+        -- incremental merge: only clips newer than resp.since OR not in resp.clips
+        local newClips = ns.GetNewDeathClips(resp.since, resp.clips)
+        if #newClips > 0 then
             ns.AddNewDeathClips(newClips)
             API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
+
+        return
+
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
         local rev = payload.rev
         local state = ns.GetDeathClipReviewState()
@@ -1515,24 +1578,27 @@ end
 
 -- === 1) Update RequestLatestDeathClipState to send totalCount ===
 function AuctionHouse:RequestLatestDeathClipState(now, full)
-    -- build the “fromTs & clips” map as before, or empty for full
+    -- 1) build the “fromTs & clips” map
     local state
     if full then
+        -- one-off full sync: ask for every clip
         state = { fromTs = 0, clips = {} }
     else
+        -- normal incremental: only clips in the last deathClipsSyncWindow
+        local window = ns.GetConfig().deathClipsSyncWindow
         state = {
-            fromTs = now - ns.GetConfig().deathClipsSyncWindow,
+            fromTs = now - window,
             clips  = self:BuildDeathClipsTable(now),
         }
     end
 
-    -- count every clip we currently know about
+    -- 2) count how many clips *we* currently know
     local totalCount = 0
     for _ in pairs(ns.GetLiveDeathClips()) do
         totalCount = totalCount + 1
     end
 
-    -- package it all up
+    -- 3) package & broadcast
     local payload = {
         ns.T_DEATH_CLIPS_STATE_REQUEST,
         {
@@ -1541,7 +1607,6 @@ function AuctionHouse:RequestLatestDeathClipState(now, full)
             totalCount = totalCount,
         }
     }
-
     local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
@@ -1704,4 +1769,72 @@ ns.AuctionHouse = AuctionHouse.new(UnitName("player"))
 
 function Addon:OnInitialize()
     ns.AuctionHouse:Initialize()
+end
+
+-- at top of file, cache your AH object
+local AH = AuctionHouse
+
+-- 1) Show local count & flag
+SLASH_GAHCOUNT1 = "/gahcount"
+SlashCmdList["GAHCOUNT"] = function()
+    local count = 0
+    for _ in pairs(ns.GetLiveDeathClips()) do count = count + 1 end
+    print(("[GoAgainAH] live‐clip count = %d, hasDoneCountSync = %s"):format(
+            count,
+            tostring(AHConfigSaved.hasDoneCountSync)
+    ))
+end
+
+-- 2) Force an incremental state‐request
+SLASH_GAHDIFF1 = "/gahdiff"
+SlashCmdList["GAHDIFF"] = function()
+    AH:RequestLatestDeathClipState(AH.now, false)
+    print("[GoAgainAH] Sent incremental death‐clips state request")
+end
+
+-- 3) Force a full state‐request
+SLASH_GAHFULL1 = "/gahfull"
+SlashCmdList["GAHFULL"] = function()
+    AH:RequestLatestDeathClipState(AH.now, true)
+    print("[GoAgainAH] Sent FULL death‐clips state request")
+end
+
+-- 4) Reset the count‐sync guard so it will run again
+SLASH_GAHRESET1 = "/gahreset"
+SlashCmdList["GAHRESET"] = function()
+    AHConfigSaved.hasDoneCountSync = false
+    print("[GoAgainAH] Reset hasDoneCountSync → false")
+end
+
+
+SLASH_GAHSYNC1 = "/gahsync"
+SlashCmdList["GAHSYNC"] = function()
+    AuctionHouse:RequestLatestDeathClipState(time(), true)
+end
+
+
+-- simulate a peer state response with +X clips
+SLASH_GAHTEST1 = "/gahtest"
+SlashCmdList["GAHTEST"] = function(msg)
+    local X = tonumber(msg) or 1
+
+    -- count our clips
+    local myCount = 0
+    for _ in pairs(ns.GetLiveDeathClips()) do myCount = myCount + 1 end
+
+    -- build a fake state with peerCount = myCount + X
+    local fakeState = {
+        since      = ns.GetLastDeathClipTimestamp(),
+        clips      = {},               -- empty on purpose
+        totalCount = myCount + X,
+    }
+
+    -- wrap it in the same event they’d send you:
+    local payload = { ns.T_DEATH_CLIPS_STATE, fakeState }
+    local msgOut  = Addon:Serialize(payload)
+
+    -- fire your OnCommReceived handler directly
+    AuctionHouse:OnCommReceived(COMM_PREFIX, msgOut, "GUILD", "Tester")
+
+    print(("[GoAgainAH] simulated peerCount=%d (my %d), X=%d"):format(myCount+X, myCount, X))
 end

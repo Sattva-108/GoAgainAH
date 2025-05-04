@@ -96,38 +96,47 @@ ns.GetLastDeathClipTimestamp = function()
     return ts
 end
 
+
 ns.GetNewDeathClips = function(since, existing)
+    -- guard against nils
+    since    = since or 0
+    existing = existing or {}
+
     local allClips = ns.GetLiveDeathClips()
     local newClips = {}
-    local seen = {}
+    local seen     = {}
+
+    -- 1) pull clips strictly newer than `since`
     for _, clip in pairs(allClips) do
         if clip.ts > since then
             table.insert(newClips, clip)
             seen[clip.id] = true
         end
     end
+
+    -- 2) cap to the latest 100, if needed
     if #newClips > 100 then
-        -- keep the latest 100 entries
-        table.sort(newClips, function(l, r)
-            return l.ts < r.ts
-        end)
-        local newClips2 = {}
+        table.sort(newClips, function(a, b) return a.ts < b.ts end)
+        local keep = {}
         local seen2 = {}
         for i = #newClips - 99, #newClips do
-            table.insert(newClips2, newClips[i])
+            table.insert(keep, newClips[i])
             seen2[newClips[i].id] = true
         end
-        newClips = newClips2
-        seen = seen2
+        newClips = keep
+        seen     = seen2
     end
-    if existing then
-        local fromTs = existing.fromTs
-        local existingClips = existing.clips
-        for clipID, clip in pairs(allClips) do
-            if not existingClips[clipID] and not seen[clipID] and clip.ts >= fromTs then
-                table.insert(newClips, clip)
-                seen[clipID] = true
-            end
+
+    -- 3) merge in anything in `existing.clips` older than your window
+    local fromTs       = existing.fromTs or 0
+    local existingClips = existing.clips or {}
+    for clipID, clip in pairs(allClips) do
+        if     clip.ts >= fromTs
+                and not existingClips[clipID]
+                and not seen[clipID]
+        then
+            table.insert(newClips, clip)
+            seen[clipID] = true
         end
     end
 
