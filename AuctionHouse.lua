@@ -361,7 +361,6 @@ function AuctionHouse:Initialize()
             end
         end,
     })
-
     ns.AuctionHouseAPI:Load()
     self.db = ns.AuctionHouseDB
 
@@ -400,7 +399,6 @@ function AuctionHouse:Initialize()
     for _ in pairs(ns.FilterAuctionsThisRealm(auctions)) do
         auctionCount = auctionCount + 1
     end
-
     ns.DebugLog(string.format("[DEBUG] db loaded from persistence. rev: %s, lastUpdateAt: %d (%ds old) with %d auctions",
             ns.AuctionHouseDB.revision, ns.AuctionHouseDB.lastUpdateAt, age, auctionCount))
 
@@ -578,7 +576,6 @@ function AuctionHouse:After(delay, callback)
 end
 
 function Addon:OnCommReceived(prefix, message, distribution, sender)
-    print(message .. sender)
     ns.AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 end
 
@@ -636,7 +633,6 @@ function AuctionHouse:BroadcastAck(ackType, revision, isHigherRevision, broadcas
 end
 
 function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
-    print(message..sender)
     -- disallow whisper messages from outside the guild to avoid bad actors to inject malicious data
     -- this means that early on during login we might discard messages from guild members until the guild roaster is known.
     -- however, since we sync the state with the guild roaster on login this shouldn't be a problem.
