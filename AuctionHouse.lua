@@ -431,12 +431,12 @@ function AuctionHouse:Initialize()
         end)
     end
 
-    self.initAt = time()
+    self.now = time()
     self:RequestLatestConfig()
     self:RequestLatestState()
     self:RequestLatestTradeState()
     self:RequestLatestRatingsState()
-    self:RequestLatestDeathClipState(self.initAt)
+    self:RequestLatestDeathClipState(now, false)
     self:RequestLatestLFGState()
     self:RequestLatestBlacklistState()
     self:RequestAddonVersion()
@@ -500,7 +500,7 @@ end
 function AuctionHouse:IsSyncWindowExpired()
     -- safety: only allow initial state within 2 minutes after login (chat can be very slow due to ratelimit, so has to be high)
     -- just in case there's a bug we didn't anticipate
-    return GetTime() - self.initAt > 120
+    return GetTime() - self.now > 120
 end
 
 -- Helper: a random delay biased toward the higher end.
@@ -1513,9 +1513,35 @@ function AuctionHouse:RequestLatestRatingsState()
     self:BroadcastMessage(msg)
 end
 
-function AuctionHouse:RequestLatestDeathClipState(now)
-    local clips = self:BuildDeathClipsTable(now)
-    local payload = { ns.T_DEATH_CLIPS_STATE_REQUEST, { since = ns.GetLastDeathClipTimestamp(), clips = clips } }
+-- === 1) Update RequestLatestDeathClipState to send totalCount ===
+function AuctionHouse:RequestLatestDeathClipState(now, full)
+    -- build the “fromTs & clips” map as before, or empty for full
+    local state
+    if full then
+        state = { fromTs = 0, clips = {} }
+    else
+        state = {
+            fromTs = now - ns.GetConfig().deathClipsSyncWindow,
+            clips  = self:BuildDeathClipsTable(now),
+        }
+    end
+
+    -- count every clip we currently know about
+    local totalCount = 0
+    for _ in pairs(ns.GetLiveDeathClips()) do
+        totalCount = totalCount + 1
+    end
+
+    -- package it all up
+    local payload = {
+        ns.T_DEATH_CLIPS_STATE_REQUEST,
+        {
+            since      = full and 0 or ns.GetLastDeathClipTimestamp(),
+            clips      = state,
+            totalCount = totalCount,
+        }
+    }
+
     local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
