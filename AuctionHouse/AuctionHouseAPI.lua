@@ -1,6 +1,10 @@
 local addonName, ns = ...
 local L = ns.L
 
+-- put at top of the first file that runs (AuctionHouseAPI.lua is ideal)
+local CURRENT_REALM = ns.CURRENT_REALM or GetRealmName()
+ns.CURRENT_REALM = CURRENT_REALM         -- expose for everything else
+
 local AuctionHouseAPI = {}
 ns.AuctionHouseAPI = AuctionHouseAPI
 
@@ -117,6 +121,14 @@ function AuctionHouseAPI:Load()
 
     -- After requesting other states, also request the blacklist state:
     AuctionHouseDBSaved = DB
+
+    -- Back-fill legacy data on load (auctions that dont have realm realm yet.)
+    for _, a in pairs(DB.auctions or {}) do
+        if not a.realm then
+            a.realm = CURRENT_REALM
+        end
+    end
+
 end
 
 function AuctionHouseAPI:Initialize(deps)
@@ -189,12 +201,23 @@ the buyer pays the amount on the COD mail and receives the item:
 
 ]]--
 
+function ns.FilterAuctionsThisRealm(pool)
+    local list = {}
+    for id, a in pairs(pool) do
+        if a.realm == CURRENT_REALM then
+            list[id] = a
+        end
+    end
+    return list
+end
+
+
 -- GetMyUnsoldAuctions()
 --   Return all auctions that I own and are still in "active" or perhaps "unsold" states.
 function AuctionHouseAPI:GetMyUnsoldAuctions()
     local me = UnitName("player")
     local myList = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if auction.owner == me and auction.status == ns.AUCTION_STATUS_ACTIVE then
             table.insert(myList, auction)
         end
@@ -208,7 +231,7 @@ end
 function AuctionHouseAPI:GetMyBuyPendingAuctions()
     local me = UnitName("player")
     local pending = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if auction.buyer == me and (auction.status == ns.AUCTION_STATUS_PENDING_TRADE or auction.status == ns.AUCTION_STATUS_PENDING_LOAN) then
             table.insert(pending, auction)
         end
@@ -219,7 +242,7 @@ end
 
 function AuctionHouseAPI:GetAuctionsWithOwnerAndStatus(owner, statuses)
     local results = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if auction.owner == owner then
             for _, status in ipairs(statuses) do
                 if auction.status == status then
@@ -234,7 +257,7 @@ end
 
 function AuctionHouseAPI:GetAuctionsWithBuyerAndStatus(buyer, statuses)
     local results = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if auction.buyer == buyer then
             for _, status in ipairs(statuses) do
                 if auction.status == status then
@@ -253,7 +276,7 @@ end
 function AuctionHouseAPI:GetMySellPendingAuctions()
     local me = UnitName("player")
     local pending = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if auction.owner == me and (auction.status == ns.AUCTION_STATUS_PENDING_TRADE or auction.status == ns.AUCTION_STATUS_PENDING_LOAN) then
             table.insert(pending, auction)
         end
@@ -310,6 +333,50 @@ end
 
 
 function AuctionHouseAPI:UpdateDB(payload)
+    ------------------------------------------------------------------
+    -- Realm-isolation guard (nil-safe version)
+    -- • If the record has a .realm field and it differs → ignore.
+    -- • If the field is missing (old addon version) → let it through
+    --   until all users upgrade; the later mutator will add the flag.
+    ------------------------------------------------------------------
+    if payload.auction
+            and payload.auction.realm
+            and payload.auction.realm ~= ns.CURRENT_REALM then
+        return
+    end
+
+    if payload.trade
+            and payload.trade.realm
+            and payload.trade.realm ~= ns.CURRENT_REALM then
+        return
+    end
+
+    if payload.rating
+            and payload.rating.realm
+            and payload.rating.realm ~= ns.CURRENT_REALM then
+        return
+    end
+
+    if payload.lfg
+            and payload.lfg.realm
+            and payload.lfg.realm ~= ns.CURRENT_REALM then
+        return
+    end
+
+    if payload.entry          -- blacklist
+            and payload.entry.realm
+            and payload.entry.realm ~= ns.CURRENT_REALM then
+        return
+    end
+
+    if payload.transaction
+            and payload.transaction.realm
+            and payload.transaction.realm ~= ns.CURRENT_REALM then
+        return
+    end
+
+
+
     DB.auctions[payload.auction.id] = payload.auction
     DB.lastUpdateAt = time()
     DB.revision = DB.revision + 1
@@ -347,6 +414,7 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
     local auction = {
         id = id,
         owner = owner,
+        realm = CURRENT_REALM,
         itemID = itemID,
         quantity = quantity,
         price = price, -- amount of copper
@@ -390,6 +458,7 @@ function AuctionHouseAPI:CreateTrade(auction)
         sellerText = nil,
         sellerRating = nil,
         rev = 0,
+        realm         = auction.realm,        -- stamp with the auction’s realm
     }
 
     self:UpdateDBTrade({trade = trade})
@@ -441,6 +510,10 @@ function AuctionHouseAPI:RequestBuyAuction(auctionID, tip, overrides)
     if not auction then
         return nil, L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status ~= ns.AUCTION_STATUS_ACTIVE then
         return nil, L["Auction is not active"]
     end
@@ -474,6 +547,10 @@ function AuctionHouseAPI:RequestFulfillAuction(auctionID, overrides)
     if not auction then
         return nil, L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status ~= ns.AUCTION_STATUS_ACTIVE then
         return nil, L["Auction is not active"]
     end
@@ -544,6 +621,10 @@ function AuctionHouseAPI:RequestBuyAuctionWithLoan(auctionID, tip, overrides)
     if not auction then
         return nil, L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status ~= ns.AUCTION_STATUS_ACTIVE then
         return nil, L["Auction is not active"]
     end
@@ -575,6 +656,10 @@ function AuctionHouseAPI:UpdateAuctionStatus(auctionID, status)
     if not auction then
         return nil, L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status == status then
         return auction, nil
     end
@@ -599,6 +684,10 @@ function AuctionHouseAPI:UpdateAuctionExpiry(auctionID, newExpiryTime)
     if not auction then
         return nil, L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
 
     auction.rev = (auction.rev or 0) + 1
     auction.expiresAt = newExpiryTime
@@ -671,6 +760,10 @@ function AuctionHouseAPI:CompleteAuction(auctionID, overrides)
     if not auction then
         return nil, nil, L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status == ns.AUCTION_STATUS_COMPLETED then
         return nil, nil, L["Auction already completed"]
     end
@@ -705,6 +798,10 @@ function AuctionHouseAPI:MarkLoanComplete(auctionID, overrides)
     if not auction then
         return L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status ~= ns.AUCTION_STATUS_SENT_LOAN then
         return L["No loan pending for this auction"]
     end
@@ -723,6 +820,10 @@ function AuctionHouseAPI:DeclareBankruptcy(auctionID, overrides)
     if not auction then
         return L["No such auction"]
     end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return L["Wrong realm"]
+    end
+
     if auction.status ~= ns.AUCTION_STATUS_SENT_LOAN then
         return L["No loan pending for this auction"]
     end
@@ -740,7 +841,7 @@ function AuctionHouseAPI:ExpireAuctions()
     local deletes = {}
     local bankruptcies = {}
 
-    for k, v in pairs(DB.auctions) do
+    for k, v in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if v.expiresAt and v.expiresAt <= now then
             if v.status == ns.AUCTION_STATUS_SENT_LOAN then
                 bankruptcies[k] = v
@@ -802,7 +903,7 @@ end
 
 function AuctionHouseAPI:GetAllAuctions()
     local auctionList = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         table.insert(auctionList, auction)
     end
     return auctionList
@@ -810,7 +911,7 @@ end
 
 function AuctionHouseAPI:QueryAuctions(filter)
     local auctionList = {}
-    for _, auction in pairs(DB.auctions) do
+    for _, auction in pairs(ns.FilterAuctionsThisRealm(DB.auctions)) do
         if filter(auction) then
             table.insert(auctionList, auction)
         end
@@ -1094,6 +1195,12 @@ end
 
 
 function AuctionHouseAPI:CreateOrUpdateRating(tradeID, buyer, seller, buyerRating, sellerRating)
+    --------------------------------------------------------------
+    -- Resolve the realm once, using the parent trade if possible
+    --------------------------------------------------------------
+    local trade       = DB.trades[tradeID]
+    local ratingRealm = (trade and trade.realm) or ns.CURRENT_REALM
+
     local rating = DB.ratings[tradeID]
 
     if not rating then
@@ -1105,6 +1212,7 @@ function AuctionHouseAPI:CreateOrUpdateRating(tradeID, buyer, seller, buyerRatin
             buyerRating = buyerRating,
             sellerRating = sellerRating,
             rev = 0,
+            realm        = ratingRealm,
         }
     else
         -- Update existing rating
@@ -1115,6 +1223,11 @@ function AuctionHouseAPI:CreateOrUpdateRating(tradeID, buyer, seller, buyerRatin
             rating.sellerRating = sellerRating
         end
         rating.rev = (rating.rev or 0) + 1
+
+        -- Back-fill realm if this is an old record
+        if not rating.realm then
+            rating.realm = ratingRealm
+        end
     end
 
     self:UpdateDBRating({rating = rating})
@@ -1189,7 +1302,8 @@ end
 function AuctionHouseAPI:UpdateDBBlacklist(payload)
     DB.blacklists[payload.playerName] = {
         rev = payload.rev,
-        names = payload.names
+        names = payload.names,
+        realm = ns.CURRENT_REALM,
     }
     DB.lastBlacklistUpdateAt = time()
     DB.revBlacklists = (DB.revBlacklists or 0) + 1
@@ -1206,7 +1320,8 @@ function AuctionHouseAPI:AddToBlacklist(playerName, blacklistedNames)
     local entry = {
         playerName = playerName,
         rev = (DB.blacklists[playerName] and DB.blacklists[playerName].rev or 0) + 1,
-        names = blacklistedNames
+        names = blacklistedNames,
+        realm = ns.CURRENT_REALM
     }
 
     self:UpdateDBBlacklist(entry)
@@ -1247,7 +1362,8 @@ function AuctionHouseAPI:RemoveFromBlacklist(ownerName, unblacklistName)
     local entry = {
         playerName = ownerName,
         rev = blacklist.rev + 1,
-        names = newNames
+        names = newNames,
+        realm = ns.CURRENT_REALM
     }
 
     self:UpdateDBBlacklist(entry)
@@ -1273,6 +1389,9 @@ function AuctionHouseAPI:ExtendAuction(auctionId)
     local auction = DB.auctions[auctionId]
     if not auction then
         return nil, L["No such auction"]
+    end
+    if auction.realm ~= ns.CURRENT_REALM then
+        return nil, L["Wrong realm"]
     end
 
     auction.expiresAt = time() + ns.GetConfig().auctionExpiry

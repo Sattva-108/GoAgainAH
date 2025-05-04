@@ -313,25 +313,55 @@ function AuctionHouse:Initialize()
 
     -- Initialize API
     ns.AuctionHouseAPI:Initialize({
+        -- AUCTIONS ---------------------------------------------------------------
         broadcastAuctionUpdate = function(dataType, payload)
-            self:BroadcastAuctionUpdate(dataType, payload)
+            -- Only ship auctions from my realm
+            if payload.auction and payload.auction.realm == ns.CURRENT_REALM then
+                self:BroadcastAuctionUpdate(dataType, payload)
+            end
         end,
+
+        -- TRADES -----------------------------------------------------------------
         broadcastTradeUpdate = function(dataType, payload)
-            self:BroadcastTradeUpdate(dataType, payload)
+            -- Trades inherit the auction’s realm when they are created
+            if payload.trade and payload.trade.realm == ns.CURRENT_REALM then
+                self:BroadcastTradeUpdate(dataType, payload)
+            end
         end,
+
+        -- RATINGS ---------------------------------------------------------------
         broadcastRatingUpdate = function(dataType, payload)
-            self:BroadcastRatingUpdate(dataType, payload)
+            -- Ratings reference a trade → same realm flag
+            if payload.rating and payload.rating.realm == ns.CURRENT_REALM then
+                self:BroadcastRatingUpdate(dataType, payload)
+            end
         end,
+
+        -- LFG POSTS --------------------------------------------------------------
         broadcastLFGUpdate = function(dataType, payload)
-            self:BroadcastLFGUpdate(dataType, payload)
+            -- LFG posts are always realm-scoped by design, keep the symmetry
+            if payload.lfg and payload.lfg.realm == ns.CURRENT_REALM then
+                self:BroadcastLFGUpdate(dataType, payload)
+            end
         end,
+
+        -- BLACKLIST --------------------------------------------------------------
         broadcastBlacklistUpdate = function(dataType, payload)
-            self:BroadcastBlacklistUpdate(dataType, payload)
+            -- Blacklist entries carry the offending player’s realm
+            if payload.entry and payload.realm == ns.CURRENT_REALM then
+                self:BroadcastBlacklistUpdate(dataType, payload)
+            end
         end,
+
+        -- PENDING TRANSACTIONS ---------------------------------------------------
         broadcastPendingTransactionUpdate = function(dataType, payload)
-            self:BroadcastPendingTransactionUpdate(dataType, payload)
+            -- Same guard for buy/sell confirmation messages
+            if payload.transaction and payload.transaction.realm == ns.CURRENT_REALM then
+                self:BroadcastPendingTransactionUpdate(dataType, payload)
+            end
         end,
     })
+
     ns.AuctionHouseAPI:Load()
     self.db = ns.AuctionHouseDB
 
@@ -345,6 +375,7 @@ function AuctionHouse:Initialize()
         if payload.fromNetwork then
             return
         end
+        print("SENDING REVIEW", payload.review and payload.review.id)
         self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_UPDATED,  {review=payload.review}}))
     end)
     clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, function(payload)
@@ -366,9 +397,10 @@ function AuctionHouse:Initialize()
     local age = time() - ns.AuctionHouseDB.lastUpdateAt
     local auctions = ns.AuctionHouseDB.auctions
     local auctionCount = 0
-    for _, _ in pairs(auctions) do
+    for _ in pairs(ns.FilterAuctionsThisRealm(auctions)) do
         auctionCount = auctionCount + 1
     end
+
     ns.DebugLog(string.format("[DEBUG] db loaded from persistence. rev: %s, lastUpdateAt: %d (%ds old) with %d auctions",
             ns.AuctionHouseDB.revision, ns.AuctionHouseDB.lastUpdateAt, age, auctionCount))
 
@@ -546,6 +578,7 @@ function AuctionHouse:After(delay, callback)
 end
 
 function Addon:OnCommReceived(prefix, message, distribution, sender)
+    print(message .. sender)
     ns.AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 end
 
@@ -603,6 +636,7 @@ function AuctionHouse:BroadcastAck(ackType, revision, isHigherRevision, broadcas
 end
 
 function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
+    print(message..sender)
     -- disallow whisper messages from outside the guild to avoid bad actors to inject malicious data
     -- this means that early on during login we might discard messages from guild members until the guild roaster is known.
     -- however, since we sync the state with the guild roaster on login this shouldn't be a problem.
@@ -1158,7 +1192,7 @@ function AuctionHouse:BuildDeltaState(requesterRevision, requesterAuctions)
         end
 
         -- Find auctions to send (those that requester doesn't have or has older revision)
-        for id, auction in pairs(self.db.auctions) do
+        for id, auction in pairs(ns.FilterAuctionsThisRealm(self.db.auctions)) do
             local requesterRev = requesterAuctionLookup[id]
             if not requesterRev or (auction.rev > requesterRev) then
                 auctionsToSend[id] = auction
@@ -1393,7 +1427,7 @@ end
 
 function AuctionHouse:BuildAuctionsTable()
     local auctions = {}
-    for id, auction in pairs(self.db.auctions) do
+    for id, auction in pairs(ns.FilterAuctionsThisRealm(self.db.auctions)) do
         table.insert(auctions, {id = id, rev = auction.rev})
     end
     return auctions

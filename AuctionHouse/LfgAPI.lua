@@ -26,6 +26,9 @@ function LfgAPI:UpsertEntry(data)
     if not data.name then
         return nil, L["No name provided"]
     end
+    if not data.realm then
+        data.realm = ns.CURRENT_REALM
+    end
 
     local currentRev = -1
     local prevEntry = DB.lfg[data.name]
