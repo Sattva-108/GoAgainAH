@@ -345,6 +345,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+            ns.AuctionHouse:BroadcastDeathClipAdded(clip)
 
         elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
             local parts = { strsplit(":", message) }
@@ -411,6 +412,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+            ns.AuctionHouse:BroadcastDeathClipAdded(clip)
         end
     end
 end)
