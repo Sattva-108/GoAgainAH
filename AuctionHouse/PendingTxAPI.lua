@@ -25,6 +25,11 @@ function PendingTxAPI:AddPendingTransaction(transaction)
         return nil, L["Missing transaction ID"]
     end
 
+    -- Inject realm flag if caller forgot it
+    if not transaction.realm then
+        transaction.realm = ns.CURRENT_REALM      -- NEW LINE
+    end
+
     -- Initialize or increment revision
     if not transaction.rev then
         transaction.rev = 1
@@ -62,8 +67,21 @@ function PendingTxAPI:RemovePendingTransaction(transactionId, fromNetwork)
     API:FireEvent(ns.T_PENDING_TRANSACTION_DELETED, transactionId)
 
     if not fromNetwork then
-        API.broadcastPendingTransactionUpdate(ns.T_PENDING_TRANSACTION_DELETED, transactionId)
+        --------------------------------------------------------------------
+        -- Wrap the ID in a tiny table that also carries the realm flag.
+        -- The delegate's guard will see `payload.transaction.realm`
+        -- and pass the message through.
+        --------------------------------------------------------------------
+        local payload = {
+            transaction = {
+                id    = transactionId,
+                realm = ns.CURRENT_REALM,
+                deleted = true,        -- helper flag (optional)
+            }
+        }
+        API.broadcastPendingTransactionUpdate(ns.T_PENDING_TRANSACTION_DELETED, payload)
     end
+
 
     return true
 end

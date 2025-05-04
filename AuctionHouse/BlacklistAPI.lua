@@ -28,6 +28,7 @@ function BlacklistAPI:UpdateDBBlacklist(payload)
             rev = 0,
             namesByType = {},
             c = time(), -- createdAt. present only since v1.0.8
+            realm = ns.CURRENT_REALM,
         }
     end
     existingEntry.rev = payload.rev
@@ -79,7 +80,9 @@ function BlacklistAPI:AddToBlacklist(playerName, blType, blacklistedName)
         rev = newRev,
         blType = blType,
         names = newNames,
+        realm      = ns.CURRENT_REALM,
     }
+    print(payload.playerName .. " " .. payload.realm)
 
     self:UpdateDBBlacklist(payload)
     API:FireEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, payload)
@@ -134,7 +137,8 @@ function BlacklistAPI:RemoveFromBlacklist(ownerName, blType, unblacklistName)
         playerName = ownerName,
         rev = newRev,
         blType = blType,
-        names = newNames
+        names = newNames,
+        realm      = ns.CURRENT_REALM,
     }
 
     self:UpdateDBBlacklist(payload)

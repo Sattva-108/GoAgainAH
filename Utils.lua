@@ -363,3 +363,39 @@ SlashCmdList["ATHENEGRAB"] = function(msg)
         end
     end
 end
+
+-- =====================  GoAgainAH realm-debug slash tools  =====================
+SLASH_GAHRL1 = "/gahrl"
+SlashCmdList.GAHRL = function()
+    local total, localOnly = 0, 0
+    for _ in pairs(ns.AuctionHouseDB.auctions) do total = total + 1 end
+    for _ in pairs(ns.FilterAuctionsThisRealm(ns.AuctionHouseDB.auctions)) do localOnly = localOnly + 1 end
+    print(string.format("Realm %s — auctions: %d total / %d this realm",
+            ns.CURRENT_REALM, total, localOnly))
+end
+
+SLASH_GAHMAKE1 = "/gahmake"
+SlashCmdList.GAHMAKE = function()
+    local a = ns.AuctionHouseAPI:CreateAuction(99999, 1, 1) -- dummy itemID 99999
+    if a then
+        print("Created test auction ID", a.id, "realm", a.realm)
+    end
+end
+
+SLASH_GAHLIST1 = "/gahlistforeign"
+SlashCmdList.GAHLIST = function()
+    for id, a in pairs(ns.AuctionHouseDB.auctions) do
+        if a.realm ~= ns.CURRENT_REALM then
+            print("Foreign auction:", id, a.realm, a.owner, a.itemID)
+        end
+    end
+end
+
+SLASH_GAHDUMP1 = "/gahdump"
+SlashCmdList.GAHDUMP = function(msg)
+    local id = msg:match("%S+")
+    if not id then print("Usage: /gahdump <auctionID>") return end
+    dump(ns.AuctionHouseDB.auctions[id])
+end
+-- ==============================================================================
+

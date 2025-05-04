@@ -567,6 +567,7 @@ function OFLFG_Apply(overrideDungeons)
         level = ns.GetPlayerLevel(),  -- we'll overwrite this with live data if we have it
         race = select(2, UnitRace("player")),
         class = select(2, UnitClass("player")),
+        realm      = ns.CURRENT_REALM,
     }
 
     local entry, error = ns.LfgAPI:UpsertEntry(data)
