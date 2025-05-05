@@ -644,6 +644,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     end
 
     if prefix == OF_COMM_PREFIX then
+        print("sus send")
         ns.HandleOFCommMessage(message, sender, distribution)
         return
     end
@@ -813,10 +814,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        print((">> OptionE: %d death‐clips to sync"):format(#rawClips))
+        print((">> OptionF: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
-        -- 1) BUILD ALL‐STRING→CODE MAPS
+        -- 1) BUILD STRING→CODE MAPS
         local nameMap, classMap, causeMap, raceMap, zoneMap, factionMap, realmMap = {}, {}, {}, {}, {}, {}, {}
         local ctr = { name=1, class=1, cause=1, race=1, zone=1, faction=1, realm=1 }
         local function safeGet(map, key, ck)
@@ -828,57 +829,77 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             return map[key]
         end
 
-        -- populate maps from every clip
         for _, c in ipairs(rawClips) do
             local plainCause = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            safeGet(nameMap,    c.characterName,         "name")
-            safeGet(classMap,   c.class,                 "class")
-            safeGet(causeMap,   plainCause,              "cause")
-            safeGet(raceMap,    c.race,                  "race")
-            safeGet(zoneMap,    c.where,                 "zone")
-            safeGet(factionMap, c.faction,               "faction")
-            safeGet(realmMap,   c.realm,                 "realm")
+            safeGet(nameMap,    c.characterName, "name")
+            safeGet(classMap,   c.class,         "class")
+            safeGet(causeMap,   plainCause,      "cause")
+            safeGet(raceMap,    c.race,          "race")
+            safeGet(zoneMap,    c.where,         "zone")
+            safeGet(factionMap, c.faction,       "faction")
+            safeGet(realmMap,   c.realm,         "realm")
         end
 
-        -- 2) SEND THE HANDSHAKE MAPS
+        -- 2) SEND HANDSHAKE MAPS
         local mapsPayload    = { nameMap, classMap, causeMap, raceMap, zoneMap, factionMap, realmMap }
         local serializedMaps = Addon:Serialize(mapsPayload)
-        print((">> OptionE: serialized maps = %d bytes"):format(#serializedMaps))
+        print((">> OptionF: serialized maps = %d bytes"):format(#serializedMaps))
         local compressedMaps = LibDeflate:CompressDeflate(serializedMaps)
-        print((">> OptionE: compressed maps = %d bytes"):format(#compressedMaps))
+        print((">> OptionF: compressed maps = %d bytes"):format(#compressedMaps))
         local mapsMsg        = Addon:Serialize({ ns.T_DEATH_CLIP_MAPS, compressedMaps })
         self:SendDm(mapsMsg, sender, "BULK")
 
         -- 3) BUILD ALL-NUMERIC ARRAYS
         local numericClips = {}
         for i, c in ipairs(rawClips) do
-            -- clean out color codes from mobLevelText
-            local mobTxt = (c.mobLevelText or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            local mobLevel = tonumber(mobTxt) or 0
+            local plainCause = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+            local mobTxt     = (c.mobLevelText or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+            local mobLevel   = tonumber(mobTxt) or 0
 
             numericClips[i] = {
-                nameMap[c.characterName],  -- [1] characterName code
-                c.ts            or 0,     -- [2] timestamp
-                classMap[c.class]   or 0, -- [3] class code
-                causeMap[plainCause] or 0,-- [4] cause code
-                raceMap[c.race]     or 0, -- [5] race code
-                zoneMap[c.where]    or 0, -- [6] zone code
-                factionMap[c.faction] or 0,-- [7] faction code
-                realmMap[c.realm]   or 0, -- [8] realm code
-                c.level         or 0,     -- [9] level
-                c.playedTime    or 0,     -- [10] playedTime
-                mobLevel,                  -- [11] mobLevel
+                safeGet(nameMap,    c.characterName, "name"),   -- [1]
+                c.ts            or 0,                           -- [2]
+                safeGet(classMap,   c.class,         "class"),  -- [3]
+                safeGet(causeMap,   plainCause,      "cause"),  -- [4]
+                safeGet(raceMap,    c.race,          "race"),   -- [5]
+                safeGet(zoneMap,    c.where,         "zone"),   -- [6]
+                safeGet(factionMap, c.faction,       "faction"),-- [7]
+                safeGet(realmMap,   c.realm,         "realm"),  -- [8]
+                c.level         or 0,                           -- [9]
+                c.playedTime    or 0,                           -- [10]
+                mobLevel,                                        -- [11]
             }
         end
 
-        -- 4) SEND THE NUMERIC ARRAYS
+        -- 4) SEND NUMERIC ARRAYS
         local serializedNum = Addon:Serialize(numericClips)
-        print((">> OptionE: serialized numericClips = %d bytes"):format(#serializedNum))
+        print((">> OptionF: serialized numericClips = %d bytes"):format(#serializedNum))
         local compressedNum = LibDeflate:CompressDeflate(serializedNum)
-        print((">> OptionE: compressed numericClips = %d bytes"):format(#compressedNum))
+        print((">> OptionF: compressed numericClips = %d bytes"):format(#compressedNum))
         local stateMsg      = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressedNum })
         self:SendDm(stateMsg, sender, "BULK")
 
+
+    elseif dataType == ns.T_DEATH_CLIPS_STATE then
+
+
+        -- 1) Mark the end time
+        local benchEnd = GetTime()
+        -- 2) Compute and print the delta
+        if self.benchStartDeathClipSync then
+            print((">> Bench: DeathClip sync completed at %.2f (took %.2f s)")
+                    :format(benchEnd, benchEnd - self.benchStartDeathClipSync))
+        end
+
+        -- 3) Proceed with your normal handling
+        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local success, newClips = Addon:Deserialize(decompressed)
+        if success then
+            ns.AddNewDeathClips(newClips)
+            API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+        end
+
+        -- … remainder of function …
 
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
         local rev = payload.rev
