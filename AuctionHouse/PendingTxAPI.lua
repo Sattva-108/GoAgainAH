@@ -82,7 +82,6 @@ function PendingTxAPI:RemovePendingTransaction(transactionId, fromNetwork)
         API.broadcastPendingTransactionUpdate(ns.T_PENDING_TRANSACTION_DELETED, payload)
     end
 
-
     return true
 end
 

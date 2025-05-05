@@ -477,7 +477,7 @@ end
 -- Event handler for all the registered events
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
-        local now = GetTime()
+        local now = GetServerTime()
         listening = false -- Ensure listening is off until timer fires
 
         -- Load relevant saved data
@@ -488,8 +488,8 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         local deadlineStatusMessage = ""
 
         -- *** CORE LOGIC CHANGE START ***
-        -- Check if the last logout was within 3 minutes
-        if savedLogoutTime and (now - savedLogoutTime) < 180 then
+        -- Check if the last logout was within 5 minutes
+        if savedLogoutTime and (now - savedLogoutTime) < 300 then
             -- Yes, recent login: Use the deadline saved in the DB from the previous session
             nextUpdateDeadline = savedDeadline
             if nextUpdateDeadline then
@@ -507,18 +507,18 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     deadlineStatusMessage = string.format("Saved deadline passed %s ago. Predicting next ladder event in ~%s.", SecondsToTime(passedBy), SecondsToTime(nextIn))
                 else
                     -- Store the message instead of printing
-                    deadlineStatusMessage = string.format("Recent login (<180s): Using saved deadline. Next update in: %s", SecondsToTime(remaining))
+                    deadlineStatusMessage = string.format("Recent login (<300s): Using saved deadline. Next update in: %s", SecondsToTime(remaining))
                 end
             else
                 -- Store the message instead of printing
-                deadlineStatusMessage = "Recent login (<180s): No deadline was saved in DB. Waiting for ladder event."
+                deadlineStatusMessage = "Recent login (<300s): No deadline was saved in DB. Waiting for ladder event."
                 nextUpdateDeadline = nil -- Ensure it's nil if nothing was saved
             end
         else
-            -- No, login was > 180s ago OR no logout time saved: Do NOT use the saved deadline.
+            -- No, login was > 300s ago OR no logout time saved: Do NOT use the saved deadline.
             if savedLogoutTime then
                 -- Store the message instead of printing
-                deadlineStatusMessage = string.format("Login >180s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
+                deadlineStatusMessage = string.format("Login >300s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
             else
                 -- Store the message instead of printing
                 deadlineStatusMessage = "No previous logout time. Ignoring saved deadline. Waiting for ladder event."

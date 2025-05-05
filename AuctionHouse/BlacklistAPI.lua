@@ -82,7 +82,6 @@ function BlacklistAPI:AddToBlacklist(playerName, blType, blacklistedName)
         names = newNames,
         realm      = ns.CURRENT_REALM,
     }
-    print(payload.playerName .. " " .. payload.realm)
 
     self:UpdateDBBlacklist(payload)
     API:FireEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, payload)
