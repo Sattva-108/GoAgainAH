@@ -812,50 +812,30 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        local TEST_OPTION_B = true
+        -- Debug: count how many clips we’re about to sync
+        local newClips = ns.GetNewDeathClips(payload.since, payload.clips)
+        print((">> Debug: %d death-clips to sync"):format(#newClips))
 
-        local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        -- print how many clips are being processed
-        print((">> Test: processing %d death-clips for sync"):format(#rawClips))
+        if #newClips > 0 then
+            -- 1) Serialize the raw clips table
+            local serializedClips = Addon:Serialize(newClips)
+            print((">> Debug: serialized newClips = %d bytes"):format(#serializedClips))
 
-        if #rawClips > 0 then
+            -- 2) Compress the serialized string
+            local compressedClips = LibDeflate:CompressDeflate(serializedClips)
+            print((">> Debug: compressed clips payload = %d bytes"):format(#compressedClips))
 
-            if TEST_OPTION_B then
-                -- Option B: tiny numeric payload
-                local tinyClips = {}
-                for i, clip in ipairs(rawClips) do
-                    tinyClips[i] = {
-                        clip.ts or 0,
-                        math.random(1,99),  -- classCode
-                        math.random(1,99),  -- causeCode
-                        math.random(1,99),  -- raceCode
-                        math.random(1,99),  -- zoneCode
-                        math.random(1,99),  -- factionCode
-                        math.random(1,99),  -- realmCode
-                        clip.level or 0,
-                        clip.playedTime or 0,
-                    }
-                end
-                -- print how many tinyClips were built
-                print((">> Test: built %d tinyClips"):format(#tinyClips))
+            -- 3) Wrap in the state message and serialize
+            local statePayload     = { ns.T_DEATH_CLIPS_STATE, compressedClips }
+            local serializedState  = Addon:Serialize(statePayload)
+            print((">> Debug: serialized state payload = %d bytes"):format(#serializedState))
 
-                local serializedTiny = Addon:Serialize(tinyClips)
-                print((">> Test OptionB: serialized tinyClips size = %d bytes"):format(#serializedTiny))
-                local compressed     = LibDeflate:CompressDeflate(serializedTiny)
-                local stateMsg       = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
-                self:SendDm(stateMsg, sender, "BULK")
-
-            else
-                -- Option A: original full-text payload
-                local compressed = LibDeflate:CompressDeflate(Addon:Serialize(rawClips))
-                local stateMsg   = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
-                self:SendDm(stateMsg, sender, "BULK")
-            end
-
+            -- 4) Send exactly what the original code would send
+            self:SendDm(serializedState, sender, "BULK")
         end
 
-
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
+
 
         -- 1) Mark the end time
         local benchEnd = GetTime()
