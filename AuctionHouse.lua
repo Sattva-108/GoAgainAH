@@ -814,70 +814,41 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        print((">> OptionF: %d death-clips to sync"):format(#rawClips))
+        print((">> OptionG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
-        -- 1) BUILD STRING→CODE MAPS
-        local nameMap, classMap, causeMap, raceMap, zoneMap, factionMap, realmMap = {}, {}, {}, {}, {}, {}, {}
-        local ctr = { name=1, class=1, cause=1, race=1, zone=1, faction=1, realm=1 }
-        local function safeGet(map, key, ck)
-            if not key or key == "" then return 0 end
-            if not map[key] then
-                map[key] = ctr[ck]
-                ctr[ck] = ctr[ck] + 1
-            end
-            return map[key]
-        end
+        -- 1) Build Δ-TS + numeric arrays (no seed needed)
+        local baseTS = payload.since or 0
 
-        for _, c in ipairs(rawClips) do
-            local plainCause = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            safeGet(nameMap,    c.characterName, "name")
-            safeGet(classMap,   c.class,         "class")
-            safeGet(causeMap,   plainCause,      "cause")
-            safeGet(raceMap,    c.race,          "race")
-            safeGet(zoneMap,    c.where,         "zone")
-            safeGet(factionMap, c.faction,       "faction")
-            safeGet(realmMap,   c.realm,         "realm")
-        end
-
-        -- 2) SEND HANDSHAKE MAPS
-        local mapsPayload    = { nameMap, classMap, causeMap, raceMap, zoneMap, factionMap, realmMap }
-        local serializedMaps = Addon:Serialize(mapsPayload)
-        print((">> OptionF: serialized maps = %d bytes"):format(#serializedMaps))
-        local compressedMaps = LibDeflate:CompressDeflate(serializedMaps)
-        print((">> OptionF: compressed maps = %d bytes"):format(#compressedMaps))
-        local mapsMsg        = Addon:Serialize({ ns.T_DEATH_CLIP_MAPS, compressedMaps })
-        self:SendDm(mapsMsg, sender, "BULK")
-
-        -- 3) BUILD ALL-NUMERIC ARRAYS
-        local numericClips = {}
+        local deltaClips = {}
         for i, c in ipairs(rawClips) do
-            local plainCause = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            local mobTxt     = (c.mobLevelText or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            local mobLevel   = tonumber(mobTxt) or 0
+            local delta = (c.ts or 0) - baseTS
+            baseTS = c.ts or baseTS
 
-            numericClips[i] = {
-                safeGet(nameMap,    c.characterName, "name"),   -- [1]
-                c.ts            or 0,                           -- [2]
-                safeGet(classMap,   c.class,         "class"),  -- [3]
-                safeGet(causeMap,   plainCause,      "cause"),  -- [4]
-                safeGet(raceMap,    c.race,          "race"),   -- [5]
-                safeGet(zoneMap,    c.where,         "zone"),   -- [6]
-                safeGet(factionMap, c.faction,       "faction"),-- [7]
-                safeGet(realmMap,   c.realm,         "realm"),  -- [8]
-                c.level         or 0,                           -- [9]
-                c.playedTime    or 0,                           -- [10]
-                mobLevel,                                        -- [11]
+            deltaClips[i] = {
+                delta,                      -- [1] Δ-TS
+                math.random(1,99),          -- [2] classCode
+                math.random(1,99),          -- [3] causeCode
+                math.random(1,99),          -- [4] raceCode
+                math.random(1,99),          -- [5] zoneCode
+                math.random(1,99),          -- [6] factionCode
+                math.random(1,99),          -- [7] realmCode
+                c.level       or 0,         -- [8] level
+                tonumber(c.playedTime) or 0,-- [9] playedTime
             }
         end
 
-        -- 4) SEND NUMERIC ARRAYS
-        local serializedNum = Addon:Serialize(numericClips)
-        print((">> OptionF: serialized numericClips = %d bytes"):format(#serializedNum))
-        local compressedNum = LibDeflate:CompressDeflate(serializedNum)
-        print((">> OptionF: compressed numericClips = %d bytes"):format(#compressedNum))
-        local stateMsg      = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressedNum })
-        self:SendDm(stateMsg, sender, "BULK")
+        -- 2) Serialize & debug
+        local serialized = Addon:Serialize(deltaClips)
+        print((">> OptionG: serialized deltaClips = %d bytes"):format(#serialized))
+
+        -- 3) Compress & debug
+        local compressed = LibDeflate:CompressDeflate(serialized)
+        print((">> OptionG: compressed deltaClips = %d bytes"):format(#compressed))
+
+        -- 4) Send exactly like before
+        local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
+        self:SendDm(msg, sender, "BULK")
 
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
