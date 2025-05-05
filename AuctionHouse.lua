@@ -813,24 +813,40 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
         -- Debug: count how many clips we’re about to sync
-        local newClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        print((">> Debug: %d death-clips to sync"):format(#newClips))
+        local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
+        print((">> Debug: %d death-clips to sync"):format(#rawClips))
 
-        if #newClips > 0 then
-            -- 1) Serialize the raw clips table
-            local serializedClips = Addon:Serialize(newClips)
-            print((">> Debug: serialized newClips = %d bytes"):format(#serializedClips))
+        if #rawClips > 0 then
+            -- build tiny numeric-only payload
+            local tinyClips = {}
+            for i, clip in ipairs(rawClips) do
+                tinyClips[i] = {
+                    clip.ts or 0,
+                    math.random(1,99),  -- classCode
+                    math.random(1,99),  -- causeCode
+                    math.random(1,99),  -- raceCode
+                    math.random(1,99),  -- zoneCode
+                    math.random(1,99),  -- factionCode
+                    math.random(1,99),  -- realmCode
+                    clip.level or 0,
+                    clip.playedTime or 0,
+                }
+            end
 
-            -- 2) Compress the serialized string
-            local compressedClips = LibDeflate:CompressDeflate(serializedClips)
+            -- 1) Serialize tinyClips
+            local serializedTiny = Addon:Serialize(tinyClips)
+            print((">> Debug: serialized tinyClips = %d bytes"):format(#serializedTiny))
+
+            -- 2) Compress
+            local compressedClips = LibDeflate:CompressDeflate(serializedTiny)
             print((">> Debug: compressed clips payload = %d bytes"):format(#compressedClips))
 
-            -- 3) Wrap in the state message and serialize
-            local statePayload     = { ns.T_DEATH_CLIPS_STATE, compressedClips }
-            local serializedState  = Addon:Serialize(statePayload)
+            -- 3) Wrap & serialize state message
+            local statePayload    = { ns.T_DEATH_CLIPS_STATE, compressedClips }
+            local serializedState = Addon:Serialize(statePayload)
             print((">> Debug: serialized state payload = %d bytes"):format(#serializedState))
 
-            -- 4) Send exactly what the original code would send
+            -- 4) Send the tiny payload
             self:SendDm(serializedState, sender, "BULK")
         end
 
