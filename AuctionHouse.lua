@@ -809,19 +809,72 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         if AHConfigSaved and payload.version < AHConfigSaved.version then
             self:SendDm(Addon:Serialize({ T_CONFIG_CHANGED, AHConfigSaved }), sender, "BULK")
         end
+
+
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        local newClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        if #newClips > 0 then
-            local newClipsCompressed = LibDeflate:CompressDeflate(Addon:Serialize(newClips))
-            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, newClipsCompressed }), sender, "BULK")
+        local TEST_OPTION_B = true
+
+        local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
+        -- print how many clips are being processed
+        print((">> Test: processing %d death-clips for sync"):format(#rawClips))
+
+        if #rawClips > 0 then
+
+            if TEST_OPTION_B then
+                -- Option B: tiny numeric payload
+                local tinyClips = {}
+                for i, clip in ipairs(rawClips) do
+                    tinyClips[i] = {
+                        clip.ts or 0,
+                        math.random(1,99),  -- classCode
+                        math.random(1,99),  -- causeCode
+                        math.random(1,99),  -- raceCode
+                        math.random(1,99),  -- zoneCode
+                        math.random(1,99),  -- factionCode
+                        math.random(1,99),  -- realmCode
+                        clip.level or 0,
+                        clip.playedTime or 0,
+                    }
+                end
+                -- print how many tinyClips were built
+                print((">> Test: built %d tinyClips"):format(#tinyClips))
+
+                local serializedTiny = Addon:Serialize(tinyClips)
+                print((">> Test OptionB: serialized tinyClips size = %d bytes"):format(#serializedTiny))
+                local compressed     = LibDeflate:CompressDeflate(serializedTiny)
+                local stateMsg       = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
+                self:SendDm(stateMsg, sender, "BULK")
+
+            else
+                -- Option A: original full-text payload
+                local compressed = LibDeflate:CompressDeflate(Addon:Serialize(rawClips))
+                local stateMsg   = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
+                self:SendDm(stateMsg, sender, "BULK")
+            end
+
         end
+
+
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
+
+        -- 1) Mark the end time
+        local benchEnd = GetTime()
+        -- 2) Compute and print the delta
+        if self.benchStartDeathClipSync then
+            print((">> Bench: DeathClip sync completed at %.2f (took %.2f s)")
+                    :format(benchEnd, benchEnd - self.benchStartDeathClipSync))
+        end
+
+        -- 3) Proceed with your normal handling
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local success, newClips = Addon:Deserialize(decompressed)
         if success then
             ns.AddNewDeathClips(newClips)
             API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
+
+        -- … remainder of function …
+
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
         local rev = payload.rev
         local state = ns.GetDeathClipReviewState()
@@ -1516,12 +1569,22 @@ function AuctionHouse:RequestLatestRatingsState()
     self:BroadcastMessage(msg)
 end
 
+-- Modified (in AuctionHouse.lua)
+
 function AuctionHouse:RequestLatestDeathClipState(now)
-    local clips = self:BuildDeathClipsTable(now)
-    local payload = { ns.T_DEATH_CLIPS_STATE_REQUEST, { since = ns.GetLastDeathClipTimestamp(), clips = clips } }
+    -- Start benchmark timer
+    self.benchStartDeathClipSync = GetTime()
+    print((">> Bench: DeathClip sync requested at %.2f"):format(self.benchStartDeathClipSync))
+
+    local clips  = self:BuildDeathClipsTable(now)
+    local payload = {
+        ns.T_DEATH_CLIPS_STATE_REQUEST,
+        { since = ns.GetLastDeathClipTimestamp(), clips = clips }
+    }
     local msg = Addon:Serialize(payload)
     self:BroadcastMessage(msg)
 end
+
 
 function AuctionHouse:RequestLatestLFGState()
     local lfgEntries = self:BuildLFGTable()
