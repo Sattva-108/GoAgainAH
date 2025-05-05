@@ -812,75 +812,43 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
+        -- Debug: count how many clips we’re about to sync
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        print((">> OptionC: %d death-clips to sync"):format(#rawClips))
-        if #rawClips == 0 then return end
+        print((">> Debug: %d death-clips to sync"):format(#rawClips))
 
-        -- 1) Build maps safely
-        local classMap, causeMap, raceMap, zoneMap, factionMap, realmMap = {}, {}, {}, {}, {}, {}
-        local ctr = { class=1, cause=1, race=1, zone=1, faction=1, realm=1 }
-        local function safeGetCode(map, key, ck)
-            if not key or key == "" then return 0 end
-            if not map[key] then
-                map[key] = ctr[ck]
-                ctr[ck] = ctr[ck] + 1
-            end
-            return map[key]
-        end
-
-        for _, c in ipairs(rawClips) do
-            local plainCause = c.deathCause and c.deathCause:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            safeGetCode(classMap,   c.class,           "class")
-            safeGetCode(causeMap,   plainCause,        "cause")
-            safeGetCode(raceMap,    c.race,            "race")
-            safeGetCode(zoneMap,    c.where,           "zone")
-            safeGetCode(factionMap, c.faction,         "faction")
-            safeGetCode(realmMap,   c.realm,           "realm")
-        end
-
-        -- 2) Send handshake maps
-        local mapsPayload    = { classMap, causeMap, raceMap, zoneMap, factionMap, realmMap }
-        local serializedMaps = Addon:Serialize(mapsPayload)
-        print((">> OptionC: serialized maps = %d bytes"):format(#serializedMaps))
-        local compressedMaps = LibDeflate:CompressDeflate(serializedMaps)
-        print((">> OptionC: compressed maps = %d bytes"):format(#compressedMaps))
-        local mapsMsg        = Addon:Serialize({ ns.T_DEATH_CLIP_MAPS, compressedMaps })
-        self:SendDm(mapsMsg, sender, "BULK")
-
-        -- 3) Build tiny-arrays
+        if #rawClips > 0 then
+            -- build tiny numeric-only payload
         local tinyClips = {}
-        for i, c in ipairs(rawClips) do
-            -- strip tags first, into one value
-            local idClean   = (c.id or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            local causeClean= (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            local mobTxt    = (c.mobLevelText or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            local mobLevel  = tonumber(mobTxt) or 0
-
+            for i, clip in ipairs(rawClips) do
             tinyClips[i] = {
-                idClean,                   -- [1]
-                c.characterName or "",     -- [2]
-                c.ts            or 0,      -- [3]
-                classMap[c.class]   or 0,  -- [4]
-                causeClean,                -- [5]
-                raceMap[c.race]   or 0,    -- [6]
-                zoneMap[c.where]  or 0,    -- [7]
-                factionMap[c.faction] or 0,-- [8]
-                realmMap[c.realm] or 0,    -- [9]
-                c.level         or 0,      -- [10]
-                c.playedTime    or 0,      -- [11]
-                mobLevel,                  -- [12]
+                    clip.ts or 0,
+                    math.random(1,99),  -- classCode
+                    math.random(1,99),  -- causeCode
+                    math.random(1,99),  -- raceCode
+                    math.random(1,99),  -- zoneCode
+                    math.random(1,99),  -- factionCode
+                    math.random(1,99),  -- realmCode
+                    clip.level or 0,
+                    clip.playedTime or 0,
             }
         end
 
-        -- 4) Send tiny-arrays payload
+            -- 1) Serialize tinyClips
         local serializedTiny = Addon:Serialize(tinyClips)
-        print((">> OptionC: serialized tinyClips = %d bytes"):format(#serializedTiny))
-        local compressedTiny = LibDeflate:CompressDeflate(serializedTiny)
-        print((">> OptionC: compressed tinyClips = %d bytes"):format(#compressedTiny))
-        local stateMsg       = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressedTiny })
-        self:SendDm(stateMsg, sender, "BULK")
+            print((">> Debug: serialized tinyClips = %d bytes"):format(#serializedTiny))
 
+            -- 2) Compress
+            local compressedClips = LibDeflate:CompressDeflate(serializedTiny)
+            print((">> Debug: compressed clips payload = %d bytes"):format(#compressedClips))
 
+            -- 3) Wrap & serialize state message
+            local statePayload    = { ns.T_DEATH_CLIPS_STATE, compressedClips }
+            local serializedState = Addon:Serialize(statePayload)
+            print((">> Debug: serialized state payload = %d bytes"):format(#serializedState))
+
+            -- 4) Send the tiny payload
+            self:SendDm(serializedState, sender, "BULK")
+        end
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
 
