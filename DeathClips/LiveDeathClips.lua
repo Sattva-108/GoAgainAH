@@ -598,7 +598,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         local name = msg:match("^([^:]+)")
         if name then
             if nextUpdateDeadline then
-                local left = nextUpdateDeadline - GetTime()
+                local left = nextUpdateDeadline - GetServerTime()
                 if left < 0 then
                     left = 0
                 end

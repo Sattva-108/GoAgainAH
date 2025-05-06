@@ -1236,6 +1236,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             row[13] = mobLevelNum         -- raw mob level
             row[14] = c.realm or fullRealm-- full realm string
             if rawZone then row[15] = rawZone end
+            row[16] = c.completed or nil
 
             rows[i] = row
         end
@@ -1297,9 +1298,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
                 mobLevel      = arr[13] or 0,
-            }
+                completed     = arr[16] or nil,
+        }
 
-            -- faction string
+        -- faction string
             if clip.factionCode == 1 then
                 clip.faction = "Alliance"
             elseif clip.factionCode == 2 then
