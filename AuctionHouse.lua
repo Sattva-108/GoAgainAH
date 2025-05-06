@@ -1084,88 +1084,86 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
 
         -- Sender: T_DEATH_CLIPS_STATE_REQUEST
+        -- In AuctionHouse.lua, inside your Comm-handler:
+
+        -- Sender: T_DEATH_CLIPS_STATE_REQUEST
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        -- Start bench
+        -- start benchmark
         self.benchStartDeathClipSync = GetTime()
         print("|cffffff00>> Bench: DeathClip sync requested at "..date("%H:%M").."|r")
 
-        -- Gather clips
+        -- gather & debug count
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        print((">> DEBUG: %d rawClips (since=%s)"):format(#rawClips, tostring(payload.since)))
+        print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
-        -- Build delta arrays
+        -- sort by ts
+        table.sort(rawClips, function(a,b) return (a.ts or 0) < (b.ts or 0) end)
+
         local baseTS = payload.since or 0
-        print((">> DEBUG: initial baseTS = %s"):format(tostring(baseTS)))
         local deltaClips = {}
 
         for i, c in ipairs(rawClips) do
-            local ts = c.ts or 0
+            local ts    = c.ts or 0
             local delta = ts - baseTS
-            print((">> DEBUG[%d]: clip.ts=%s, baseTS=%s, delta=%s"):format(i, tostring(ts), tostring(baseTS), tostring(delta)))
-            baseTS = ts
+            baseTS      = ts
 
-            -- strip mob
             local plainMob = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
-            -- zoneID
-            local zoneID  = ns.ZoneIDByName[c.where] or 0
-            -- faction
+            local zoneID   = ns.ZoneIDByName[c.where] or 0
+
+            -- explicit faction mapping
             local facCode = (c.faction=="Alliance") and 1 or (c.faction=="Horde" and 2 or 3)
-            -- realm
-            local realmCode = ns.RealmIDByName[ ns.GetRealmKey(c.realm or "") ] or 0
+
+            local realmKey = ns.GetRealmKey(c.realm or "")
+            local realmID  = ns.RealmIDByName[realmKey] or 0
 
             deltaClips[i] = {
-                c.characterName or "",  -- [1]
-                delta,                  -- [2]
-                math.random(1,99),      -- [3]
-                math.random(1,99),      -- [4]
-                math.random(1,99),      -- [5]
-                zoneID,                 -- [6]
-                facCode,                -- [7]
-                realmCode,              -- [8]
-                c.level or 0,           -- [9]
-                c.getPlayedTry or 0,    -- [10]
+                c.characterName or "",       -- [1]
+                delta,                       -- [2]
+                math.random(1,99),           -- [3] classCode stub
+                math.random(1,99),           -- [4] causeCode stub
+                math.random(1,99),           -- [5] raceCode stub
+                zoneID,                      -- [6]
+                facCode,                     -- [7]
+                realmID,                     -- [8]
+                c.level        or 0,         -- [9]
+                c.getPlayedTry or 0,         -- [10]
                 tonumber(c.playedTime) or 0, -- [11]
-                plainMob,               -- [12]
+                plainMob,                    -- [12]
             }
         end
 
-        -- Serialize & send
-        local s = Addon:Serialize(deltaClips)
-        print((">> DEBUG: serialized deltaClips = %d bytes"):format(#s))
-        local cpd = LibDeflate:CompressDeflate(s)
-        print((">> DEBUG: compressed deltaClips = %d bytes"):format(#cpd))
-        local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, cpd })
+        -- serialize & debug
+        local serialized = Addon:Serialize(deltaClips)
+        print((">> DEBUG: serialized deltaClips = %d bytes"):format(#serialized))
+
+        -- compress & debug
+        local compressed = LibDeflate:CompressDeflate(serialized)
+        print((">> DEBUG: compressed deltaClips = %d bytes"):format(#compressed))
+
+        -- send
+        local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
         self:SendDm(msg, sender, "BULK")
 
 
         -- Receiver: T_DEATH_CLIPS_STATE
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
-        -- Decompress & deserialize
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local ok, deltaClips = Addon:Deserialize(decompressed)
-        if not ok then
-            print(">> ERROR: failed to deserialize deltaClips")
-            return
-        end
+        if not ok then return end
 
-        -- Rebuild
         local absTS = 0
-        print(">> DEBUG: starting rebuild, absTS=0")
-        for i, arr in ipairs(deltaClips) do
-            local d = arr[2] or 0
-            absTS = absTS + d
-            print((">> DEBUG[%d]: delta=%s, new absTS=%s"):format(i, tostring(d), tostring(absTS)))
+        for _, arr in ipairs(deltaClips) do
+            absTS = absTS + (arr[2] or 0)
 
-            local zoneName = ns.GetZoneNameByID(arr[6])
             local clip = {
                 characterName = arr[1] or "",
                 ts            = absTS,
                 classCode     = arr[3],
                 causeCode     = arr[4],
                 raceCode      = arr[5],
-                where         = zoneName,
-                factionCode   = arr[7],
+                where         = ns.GetZoneNameByID(arr[6]),
+                factionCode   = arr[7],   -- numeric code
                 realmCode     = arr[8],
                 level         = arr[9],
                 getPlayedTry  = arr[10],
@@ -1173,27 +1171,29 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 deathCause    = arr[12] or "",
             }
 
-            clip.faction = (clip.factionCode==1) and "Alliance" or "Horde"
+            -- rebuild clip.id with numeric factionCode
             clip.id = table.concat({
                 clip.characterName,
                 clip.level,
                 clip.where,
-                clip.faction,
+                tostring(clip.factionCode),
                 clip.deathCause
             }, "-")
-
-            print((">> DEBUG: rebuilt clip[%d].id = %s"):format(i, clip.id))
 
             LiveDeathClips[clip.id] = clip
         end
 
-        -- Stop bench
+        -- stop benchmark timer
         local benchEnd = GetTime()
-        local t = date("%H:%M")
-        local d = benchEnd - self.benchStartDeathClipSync
-        print("|cff00ff00>> Bench: DeathClip sync completed at "..t.." (took "..string.format("%.2f",d).." s)|r")
+        if self.benchStartDeathClipSync then
+            local now = date("%H:%M")
+            local dt  = benchEnd - self.benchStartDeathClipSync
+            print("|cff00ff00>> Bench: DeathClip sync completed at "
+                    ..now.." (took "..string.format("%.2f",dt).." s)|r")
+        end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+
 
 
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
