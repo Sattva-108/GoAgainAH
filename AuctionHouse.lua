@@ -1163,114 +1163,88 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
 
-
-        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
-        -- In AuctionHouse.lua, inside your Comm‐handler:
-
-        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
-        -- In AuctionHouse.lua, inside your Comm‐handler:
-
-        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
-        -- In AuctionHouse.lua, inside your Comm‐handler:
-
-        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
-        -- In AuctionHouse.lua, inside your Comm-handler:
-
-        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
-        -- In AuctionHouse.lua, inside your Comm‐handler:
-
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
+        -- start benchmark
         self.benchStartDeathClipSync = GetTime()
         print("|cffffff00>> Bench: DeathClip sync requested at "..date("%H:%M").."|r")
 
+        -- gather & debug count
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
         print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
+        -- sort by ts
         table.sort(rawClips, function(a,b) return (a.ts or 0) < (b.ts or 0) end)
-        local baseTS = payload.since or 0
-        local deltaClips = {}
 
-        -- get your true full realm name once
-        local myRealmFull = GetRealmName() or ""
-        local myRealmID   = ns.RealmFullNameToID[myRealmFull] or 0
+        -- precompute our realm
+        local fullRealm = GetRealmName() or ""
+        local realmID   = ns.RealmFullNameToID[fullRealm] or 0
 
+        local rows = {}
         for i, c in ipairs(rawClips) do
-            local ts    = c.ts or 0
-            local delta = ts - baseTS
-            baseTS      = ts
+            local ts = c.ts or 0  -- **absolute** server time
 
-            -- strip mob name
-            local strippedMob = (c.deathCause or "")
+            -- strip color from mob name
+            local mobName = (c.deathCause or "")
                     :gsub("|c%x%x%x%x%x%x%x%x","")
                     :gsub("|r","")
 
-            -- determine causeCode
-            local causeCode
+            -- determine causeCode (0–10, default 7 if none matches)
+            local causeCode = 7
             for id, text in pairs(ns.DeathCauseByID) do
-                if id ~= 7 and strfind(c.deathCause or "", text, 1, true) then
+                if id ~= 7 and c.deathCause:find(text,1,true) then
                     causeCode = id
                     break
                 end
             end
-            causeCode = causeCode or 7
 
-            -- zone → ID + rawZone fallback
-            local zid = ns.ZoneIDByName[c.where]
-            local zoneID, rawZone = (zid and zid>0) and zid or 0,
-            (zid and zid>0) and nil or (c.where or "")
+            -- zone → ID + fallback string
+            local zid = ns.ZoneIDByName[c.where] or 0
+            local rawZone = (zid>0) and nil or (c.where or "")
 
             -- faction → code
             local facCode = (c.faction=="Alliance") and 1
                     or (c.faction=="Horde"   ) and 2
                     or 3
 
-            -- realm → code (use sender’s realm, not per-clip)
-            local realmID = myRealmID
-            -- full realm string fallback
-            local realmFull = c.realm or myRealmFull
-
             -- race & class codes
             local raceCode  = ns.RaceIDByName[c.race] or 0
             local classCode = ns.ClassIDByName[c.class] or 0
 
-            -- correct mobLevel number
-            local rawML = (c.mobLevelText or "")
+            -- parse raw mob level number
+            local ml = (c.mobLevelText or "")
                     :gsub("|c%x%x%x%x%x%x%x%x","")
                     :gsub("|r","")
-            local mobLevelNum = tonumber(rawML) or 0
+            local mobLevelNum = tonumber(ml) or 0
 
-            -- build row
+            -- build the row
             local row = {
                 c.characterName or "",       -- [1]
-                delta,                       -- [2]
+                ts,                          -- [2] absolute ts
                 classCode,                   -- [3]
                 causeCode,                   -- [4]
                 raceCode,                    -- [5]
-                zoneID,                      -- [6]
+                zid,                         -- [6]
                 facCode,                     -- [7]
                 realmID,                     -- [8]
                 c.level        or 0,         -- [9]
                 c.getPlayedTry or 0,         -- [10]
                 tonumber(c.playedTime) or 0, -- [11]
-                "",                          -- [12] strippedMob if 7
+                (causeCode==7) and mobName or "" -- [12]
             }
-            if causeCode == 7 then
-                row[12] = strippedMob
-            end
-
-            row[13] = mobLevelNum       -- raw mob level
-            row[14] = realmFull         -- full realm string
+            row[13] = mobLevelNum         -- raw mob level
+            row[14] = c.realm or fullRealm-- full realm string
             if rawZone then row[15] = rawZone end
 
-            deltaClips[i] = row
+            rows[i] = row
         end
 
-        local serialized = Addon:Serialize(deltaClips)
-        print((">> DEBUG: serialized deltaClips = %d bytes"):format(#serialized))
+        -- serialize & send
+        local serialized = Addon:Serialize(rows)
+        print((">> DEBUG: serialized rows = %d bytes"):format(#serialized))
         local compressed = LibDeflate:CompressDeflate(serialized)
-        print((">> DEBUG: compressed deltaClips = %d bytes"):format(#compressed))
+        print((">> DEBUG: compressed rows = %d bytes"):format(#compressed))
 
         local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
         self:SendDm(msg, sender, "BULK")
@@ -1279,29 +1253,36 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         -- === Receiver: T_DEATH_CLIPS_STATE ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        local ok, deltaClips = Addon:Deserialize(decompressed)
+        local ok, rows = Addon:Deserialize(decompressed)
         if not ok then return end
 
-        local absTS = 0
-        for _, arr in ipairs(deltaClips) do
-            absTS = absTS + (arr[2] or 0)
+        for _, arr in ipairs(rows) do
+            -- 1) pull in the raw ts
+            local clipTS = arr[2] or 0
 
-            -- zone lookup
+            -- 2) clamp to "now" if it's in the future
+            local now = GetServerTime()
+            if clipTS > now then
+                clipTS = now
+            end
+
+            -- zone lookup + fallback
             local zid = arr[6] or 0
             local zoneName = (zid>0 and ns.GetZoneNameByID(zid))
                     or arr[15]
                     or ("UnknownZone("..zid..")")
 
-            -- cause lookup
-            local causeStr = ns.GetDeathCauseByID(arr[4] or 0, arr[12])
+            -- cause string (with mobName if id==7)
+            local causeStr = ns.GetDeathCauseByID(arr[4] or 0, arr[12] or "")
 
             -- class & race
             local classStr = ns.ClassNameByID[arr[3]] or ""
             local raceInfo = ns.GetRaceInfoByID(arr[5])
 
+            -- rebuild clip table
             local clip = {
                 characterName = arr[1] or "",
-                ts            = absTS,
+                ts            = clipTS,
                 classCode     = arr[3],
                 class         = classStr,
                 causeCode     = arr[4] or 0,
@@ -1311,7 +1292,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 where         = zoneName,
                 factionCode   = arr[7],
                 realmCode     = arr[8],
-                realm         = arr[14] or "",    -- restore full realm
+                realm         = arr[14] or "",
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
@@ -1327,7 +1308,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 clip.faction = "Neutral"
             end
 
-            -- rebuild ID
+            -- rebuild ID (with human faction)
             clip.id = table.concat({
                 clip.characterName,
                 clip.level,
@@ -1339,10 +1320,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             LiveDeathClips[clip.id] = clip
         end
 
+        -- stop benchmark
         local benchEnd = GetTime()
         if self.benchStartDeathClipSync then
             print("|cff00ff00>> Bench: DeathClip sync completed at "
-                    ..date("%H:%M").." (took "
+                    ..date("%H:%M")
+                    .." (took "
                     ..string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
                     .." s)|r")
         end
