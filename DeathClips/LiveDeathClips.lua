@@ -556,7 +556,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                             table.insert(queue[clip.characterName], clip)
                             -- This print has its own 10s delay, leave it as is
                             C_Timer:After(10, function()
-                                print(clip.characterName .. " added to the queue (no playedTime)")
+                                --print(clip.characterName .. " added to the queue (no playedTime)")
                             end)
                         end
                     end
