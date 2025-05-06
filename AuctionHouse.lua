@@ -6,6 +6,47 @@ ns.AuctionHouseAddon = Addon
 local LibDeflate = LibStub("LibDeflate")
 local API = ns.AuctionHouseAPI
 
+ns.RaceInfoByID = {
+    [1] = { name = "Человек", faction = "Alliance" },
+    [2] = { name = "Орк", faction = "Horde" },
+    [3] = { name = "Дворф", faction = "Alliance" },
+    [4] = { name = "Ночной эльф", faction = "Alliance" },
+    [5] = { name = "Нежить", faction = "Horde" },
+    [6] = { name = "Таурен", faction = "Horde" },
+    [7] = { name = "Гном", faction = "Alliance" },
+    [8] = { name = "Тролль", faction = "Horde" },
+    [9] = { name = "Гоблин", faction = "Horde" },
+    [10] = { name = "Эльф крови", faction = "Horde" },
+    [11] = { name = "Дреней", faction = "Alliance" },
+    [12] = { name = "Ворген", faction = "Alliance" },
+    [13] = { name = "Нага", faction = "Horde" },
+    [14] = { name = "Пандарен", faction = "Alliance" },
+    [15] = { name = "Высший эльф", faction = "Alliance" },
+    [16] = { name = "Пандарен", faction = "Horde" },
+    [17] = { name = "Ночноро\nждённый", faction = "Horde" },
+    [18] = { name = "Эльф Бездны", faction = "Alliance" },
+    [19] = { name = "Вульпера", faction = "Alliance" },
+    [20] = { name = "Вульпера", faction = "Horde" },
+    [21] = { name = "Вульпера", faction = "Neutral" },
+    [22] = { name = "Пандарен", faction = "Neutral" },
+    [23] = { name = "Зандалар", faction = "Horde" },
+    [24] = { name = "Озарён. дреней", faction = "Alliance" },
+    [25] = { name = "Эредар", faction = "Horde" },
+    [26] = { name = "Дворф Ч. Железа", faction = "Alliance" },
+    [27] = { name = "Драктир", faction = "Horde" }
+}
+
+-- Build race name → ID map for the sender
+ns.RaceIDByName = {}
+for id, info in pairs(ns.RaceInfoByID) do
+    ns.RaceIDByName[info.name] = id
+end
+
+-- Helper: get race info by code
+function ns.GetRaceInfoByID(id)
+    return ns.RaceInfoByID[id] or { name = ("UnknownRace(%d)"):format(id), faction = nil }
+end
+
 -- Only the “world” zones (zoneID → localized name)
 ns.ZoneNameByID = {
     [4] = "Дуротар",
@@ -238,41 +279,43 @@ ns.ZoneNameByID = {
     [993] = "Руины Нораласа"
 }
 
--- reverse it: localized name → zoneID
+-- Invert for sender: localized zone name → zoneID
 ns.ZoneIDByName = {}
 for id, name in pairs(ns.ZoneNameByID) do
     ns.ZoneIDByName[name] = id
 end
 
--- helper to get a name (falls back to “Unknown(ID)”)
+-- Helper: lookup zone name from ID
 function ns.GetZoneNameByID(id)
-    return ns.ZoneNameByID[id] or ("Unknown("..tostring(id)..")")
+    return ns.ZoneNameByID[id] or ("Неизвестно("..tostring(id)..")")
 end
 
--- Blizzard‐defined numeric realm IDs (short name → id)
+-- ============================================================================
+-- 2) Realm lookup: short key → numeric Blizzard realm ID
+--    (from E_REALM_ID on Sirus / 3.3.5)
+-- ============================================================================
 ns.RealmIDByName = {
-    ["Soulseeker"]  = 42,
-    ["Sirus"]       = 57,
-    ["Neltharion"]  = 21,
-    ["Frostmourne"] = 16,
-    ["Legacy_x10"]  = 5,
-    ["Scourge"]     = 9,
-    ["Algalon"]     = 33,
+    Soulseeker    = 42,
+    Sirus         = 57,
+    Neltharion    = 21,
+    Frostmourne   = 16,
+    Legacy_x10    = 5,
+    Scourge       = 9,
+    Algalon       = 33,
 }
-
--- invert for lookup
+-- Invert for receiver: numeric ID → short key
 ns.RealmNameByID = {}
-for name,id in pairs(ns.RealmIDByName) do
+for name, id in pairs(ns.RealmIDByName) do
     ns.RealmNameByID[id] = name
 end
 
--- helper: pull the “short” realm key from the full string
+-- Helper: extract the “short” realm key from GetRealmName()
 function ns.GetRealmKey(fullRealm)
-    -- take everything up to the first space or hyphen
+    -- strip off anything after first space or hyphen
     return fullRealm:match("^([^%s%-]+)") or fullRealm
 end
 
--- helper: get display name back from id
+-- Helper: lookup realm name from ID
 function ns.GetRealmNameByID(id)
     return ns.RealmNameByID[id] or ("UnknownRealm("..tostring(id)..")")
 end
@@ -1083,19 +1126,22 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
 
-        -- Sender: T_DEATH_CLIPS_STATE_REQUEST
-        -- In AuctionHouse.lua, inside your Comm-handler:
 
-        -- Sender: T_DEATH_CLIPS_STATE_REQUEST
+        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
+        -- In AuctionHouse.lua, inside your Comm‐handler:
+
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
+        -- start benchmark
         self.benchStartDeathClipSync = GetTime()
         print("|cffffff00>> Bench: DeathClip sync requested at "..date("%H:%M").."|r")
 
+        -- gather & debug count
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
         print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
+        -- sort by ts
         table.sort(rawClips, function(a,b) return (a.ts or 0) < (b.ts or 0) end)
 
         local baseTS = payload.since or 0
@@ -1126,12 +1172,15 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             local realmKey = ns.GetRealmKey(c.realm or "")
             local realmID  = ns.RealmIDByName[realmKey] or 0
 
+            -- race → code
+            local raceCode = ns.RaceIDByName[c.race] or 0
+
             local row = {
                 c.characterName or "",       -- [1]
                 delta,                       -- [2]
-                math.random(1,99),           -- [3]
-                math.random(1,99),           -- [4]
-                math.random(1,99),           -- [5]
+                math.random(1,99),           -- [3] classCode stub
+                math.random(1,99),           -- [4] causeCode stub
+                raceCode,                    -- [5] raceCode lookup
                 zoneID,                      -- [6]
                 facCode,                     -- [7]
                 realmID,                     -- [8]
@@ -1145,11 +1194,13 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             deltaClips[i] = row
         end
 
+        -- serialize & debug
         local serialized = Addon:Serialize(deltaClips)
         print((">> DEBUG: serialized deltaClips = %d bytes"):format(#serialized))
         local compressed = LibDeflate:CompressDeflate(serialized)
         print((">> DEBUG: compressed deltaClips = %d bytes"):format(#compressed))
 
+        -- send
         local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
         self:SendDm(msg, sender, "BULK")
 
@@ -1164,23 +1215,28 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         for _, arr in ipairs(deltaClips) do
             absTS = absTS + (arr[2] or 0)
 
-            -- only use GetZoneNameByID when zid>0
+            -- zone lookup with fallback
             local zid = arr[6] or 0
             local zoneName
             if zid > 0 then
                 zoneName = ns.GetZoneNameByID(zid)
             else
-                zoneName = arr[13] or ("Unknown("..zid..")")
+                zoneName = arr[13] or ("UnknownZone("..zid..")")
             end
 
+            -- race lookup
+            local raceInfo = ns.GetRaceInfoByID(arr[5])
+
+            -- build clip
             local clip = {
                 characterName = arr[1] or "",
                 ts            = absTS,
                 classCode     = arr[3],
                 causeCode     = arr[4],
-                raceCode      = arr[5],
+                raceCode      = arr[5],          -- numeric
+                race          = raceInfo.name,   -- localized name
                 where         = zoneName,
-                factionCode   = arr[7],
+                factionCode   = arr[7],          -- numeric 1/2/3
                 realmCode     = arr[8],
                 level         = arr[9],
                 getPlayedTry  = arr[10],
@@ -1188,7 +1244,18 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 deathCause    = arr[12] or "",
             }
 
-            -- build the ID with numeric factionCode
+            -- resolve faction string, fallback to race default if needed
+            if clip.factionCode == 1 then
+                clip.faction = "Alliance"
+            elseif clip.factionCode == 2 then
+                clip.faction = "Horde"
+            elseif raceInfo.faction then
+                clip.faction = raceInfo.faction
+            else
+                clip.faction = "Neutral"
+            end
+
+            -- rebuild clip.id with numeric factionCode
             clip.id = table.concat({
                 clip.characterName,
                 clip.level,
@@ -1200,6 +1267,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             LiveDeathClips[clip.id] = clip
         end
 
+        -- stop benchmark timer
         local benchEnd = GetTime()
         if self.benchStartDeathClipSync then
             print("|cff00ff00>> Bench: DeathClip sync completed at "
@@ -1208,6 +1276,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+
 
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
         local rev = payload.rev
