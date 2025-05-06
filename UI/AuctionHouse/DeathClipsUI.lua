@@ -313,9 +313,9 @@ local function UpdateLayout(buttonName)
 end
 
 local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
-    if clip.streamer == nil or clip.streamer == "" then
-        clip.streamer = ns.GetTwitchName(clip.characterName)
-    end
+    --if clip.streamer == nil or clip.streamer == "" then
+    --    clip.streamer = ns.GetTwitchName(clip.characterName)
+    --end
 
     local buttonName = button:GetName()
     local overrides = state:GetClipOverrides(clip.id)
