@@ -300,15 +300,29 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             end
 
             -- Directly build the clip ID here
-            local deathCauseStr = deathCause and deathCause ~= "" and deathCause or "Unknown"
             local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
             local zoneStr = zone and zone ~= "" and zone or "Unknown"
 
             -- Replace newlines in 'zone' with spaces
             zoneStr = zoneStr:gsub("\n", " ")
 
-            -- Build the ID using the full message (without BuildSimpleClipID)
-            local clipID = string.format("%s-%d-%s-%s-%s", name, level, zoneStr, factionStr, deathCauseStr)
+            -- build the “plain” deathCause and mobLevel fields
+            local causeCode     = tonumber(parts[7]) or 0
+            local rawMobName    = parts[8] or ""
+            local rawMobLevel   = tonumber(parts[9]) or 0
+
+            -- decide the deathCause string for non-creature causes
+            local causeText = causeCode == 7 and rawMobName
+                    or (ns.DeathCauseByID[causeCode] or "Неизвестно")
+
+            -- clip ID as before
+            local clipID = string.format(
+                    "%s-%d-%s-%s-%s",
+                    name, level, rawZone:gsub("\n"," "),
+                    races[raceId].faction or "Unknown",
+                    causeText
+            )
+
 
             -- Create the death clip entry
             local clip = {
@@ -321,10 +335,12 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 class = classes[classId] or "Неизвестно",
                 level = level,
                 where = zoneStr,
-                deathCause = deathCauseStr,
-                mobLevelText = mobLevelText,
+                causeCode     = causeCode,        -- NEW
+                deathCause    = causeText,        -- NEW: raw text only
+                mobLevel      = rawMobLevel,      -- NEW: raw number only
                 playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realm         = ns.CURRENT_REALM_CODE,
+                realmCode = ns.CURRENT_REALM_CODE,
+                realm     = ns.CURRENT_REALM,
             }
 
             if not clip.id then
@@ -472,7 +488,7 @@ f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
 -- Function to save logout data
 local function saveLogoutData()
-    local now = GetServerTime()
+    local now = time()
     -- Simply store the current time as the last logout time
     AuctionHouseDBSaved.lastLogoutTime = now  -- Store the last logout time (current time)
     AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the next update deadline
@@ -482,7 +498,7 @@ end
 -- Event handler for all the registered events
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
-        local now = GetServerTime()
+        local now = time()
         listening = false -- Ensure listening is off until timer fires
 
         -- Load relevant saved data
@@ -598,7 +614,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         local name = msg:match("^([^:]+)")
         if name then
             if nextUpdateDeadline then
-                local left = nextUpdateDeadline - GetServerTime()
+                local left = nextUpdateDeadline - time()
                 if left < 0 then
                     left = 0
                 end
@@ -656,7 +672,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             -- <<< MINIMAL: only bump once per 10m interval
             -- [ Keep this do...end block EXACTLY as provided by user ]
             do
-                local now = GetTime()
+                local now = time()
                 if not nextUpdateDeadline then
                     nextUpdateDeadline = now + 600
                 end
@@ -705,7 +721,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     end -- End if queue
                     -- This reset happens *only* when the deadline check passes
                     nextUpdateDeadline = now + 600
-                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - GetTime()))
+                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - time()))
                 end -- End deadline check
             end -- End do block
 
@@ -713,7 +729,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             -- This ensures the deadline check in the do...end block uses the
             -- value set by the *last successful check*, allowing the 10-minute
             -- interval to function correctly *relative to the check itself*.
-            -- nextUpdateDeadline = GetTime() + 600  -- REMOVED
+            -- nextUpdateDeadline = time() + 600  -- REMOVED
 
         end -- End elseif ASMSG_HARDCORE_LADDER_LIST
     end

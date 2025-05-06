@@ -323,13 +323,13 @@ local function CreateReviewPrompt()
             -- Show countdown to update
             playedLabel:Show()
             playedLabel:SetText("Обновится через:")
-            self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - GetTime()))
+            self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
 
             -- Start ticker only if not already running
             if not ns._ratePromptTicker then
                 ns._ratePromptTicker = C_Timer:NewTicker(1, function()
                     if self.frame:IsShown() and ns.nextUpdateDeadline then
-                        local remaining = ns.nextUpdateDeadline - GetTime()
+                        local remaining = ns.nextUpdateDeadline - time()
 
                         if remaining <= 0 then
                             -- Countdown is over, switch to actual playedTime view
