@@ -454,17 +454,38 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     local clipText     = _G[buttonName.."ClipText"]
     local mobLevelText = _G[buttonName.."ClipMobLevel"]
 
-    -- Death cause remains unchanged
-    clipText:SetText( clip.deathCause or "Неизвестно" )
+    local causeId  = clip.causeCode or 0
+    local mobName  = clip.deathCause or ""
+    local playerLv = clip.level    or 0
+    local mobLvNum = clip.mobLevel or 0
 
-    -- Now use raw mobLevel and color it
-    local lvl = clip.mobLevel or 0
-    local color = GetQuestDifficultyColor(lvl)
-    local hex   = string.format("|cff%02x%02x%02x",
-            color.r*255, color.g*255, color.b*255)
+    if causeId == 7 and mobName ~= "" then
+        -- creature kill: custom color bands
+        local diff = mobLvNum - playerLv
+        local colorTag
+        if diff >= 5 then
+            colorTag = "|cFFFF0000"  -- red
+        elseif diff >= 3 then
+            colorTag = "|cFFFF7F00"  -- orange
+        elseif diff >= -2 then
+            colorTag = "|cFFFFFF00"  -- yellow
+        elseif diff >= -6 then
+            colorTag = "|cFF00FF00"  -- green
+        else
+            colorTag = "|cFF808080"  -- gray
+        end
 
-    mobLevelText:SetText( hex .. lvl .. "|r" )
+        clipText:SetText( colorTag .. mobName .. "|r" )
+        mobLevelText:SetText( colorTag .. mobLvNum .. "|r" )
+    else
+        -- non–creature cause: plain white text
+        local causeStr = ns.DeathCauseByID[causeId] or "Неизвестно"
+        clipText:SetText( "|cFFFFFFFF" .. causeStr .. "|r" )
+        mobLevelText:SetText( "" )
+    end
+
     mobLevelText:SetJustifyH("CENTER")
+
 
 
     if clip.completed and clip.playedTime then

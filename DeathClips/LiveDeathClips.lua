@@ -472,7 +472,7 @@ f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
 -- Function to save logout data
 local function saveLogoutData()
-    local now = GetTime()
+    local now = GetServerTime()
     -- Simply store the current time as the last logout time
     AuctionHouseDBSaved.lastLogoutTime = now  -- Store the last logout time (current time)
     AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the next update deadline
@@ -517,6 +517,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             else
                 -- Store the message instead of printing
                 deadlineStatusMessage = "Recent login (<300s): No deadline was saved in DB. Waiting for ladder event."
+                savedLogoutTime = nil
                 nextUpdateDeadline = nil -- Ensure it's nil if nothing was saved
             end
         else
@@ -524,6 +525,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             if savedLogoutTime then
                 -- Store the message instead of printing
                 deadlineStatusMessage = string.format("Login >300s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
+                savedLogoutTime = nil
             else
                 -- Store the message instead of printing
                 deadlineStatusMessage = "No previous logout time. Ignoring saved deadline. Waiting for ladder event."
