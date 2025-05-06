@@ -6,6 +6,277 @@ ns.AuctionHouseAddon = Addon
 local LibDeflate = LibStub("LibDeflate")
 local API = ns.AuctionHouseAPI
 
+-- Only the “world” zones (zoneID → localized name)
+ns.ZoneNameByID = {
+    [4] = "Дуротар",
+    [9] = "Мулгор",
+    [11] = "Степи",
+    [15] = "Альтеракские горы",
+    [16] = "Нагорье Арати",
+    [17] = "Бесплодные земли",
+    [19] = "Выжженные земли",
+    [20] = "Тирисфальские леса",
+    [21] = "Серебряный бор",
+    [22] = "Западные Чумные земли",
+    [23] = "Восточные Чумные земли",
+    [24] = "Предгорья Хилсбрада",
+    [26] = "Внутренние земли",
+    [27] = "Дун Морог",
+    [28] = "Тлеющее ущелье",
+    [29] = "Пылающие степи",
+    [30] = "Элвиннский лес",
+    [32] = "Перевал Мертвого Ветра",
+    [34] = "Сумеречный лес",
+    [35] = "Лок Модан",
+    [36] = "Красногорье",
+    [37] = "Тернистая долина",
+    [38] = "Болото Печали",
+    [39] = "Западный Край",
+    [40] = "Болотина",
+    [41] = "Тельдрассил",
+    [42] = "Темные берега",
+    [43] = "Ясеневый лес",
+    [61] = "Тысяча Игл",
+    [81] = "Когтистые горы",
+    [101] = "Пустоши",
+    [121] = "Фералас",
+    [141] = "Пылевые топи",
+    [161] = "Танарис",
+    [181] = "Азшара",
+    [182] = "Оскверненный лес",
+    [201] = "Кратер Ун'Горо",
+    [241] = "Лунная поляна",
+    [261] = "Силитус",
+    [281] = "Зимние Ключи",
+    [301] = "Штормград",
+    [321] = "Оргриммар",
+    [341] = "Стальгорн",
+    [362] = "Громовой Утес",
+    [381] = "Дарнас",
+    [382] = "Подгород",
+    [401] = "Альтеракская долина",
+    [443] = "Ущелье Песни Войны",
+    [461] = "Низина Арати",
+    [462] = "Леса Вечной Песни",
+    [463] = "Призрачные земли",
+    [464] = "Остров Лазурной Дымки",
+    [465] = "Полуостров Адского Пламени",
+    [467] = "Зангартопь",
+    [471] = "Экзодар",
+    [473] = "Долина Призрачной Луны",
+    [475] = "Острогорье",
+    [476] = "Остров Кровавой Дымки",
+    [477] = "Награнд",
+    [478] = "Лес Тероккар",
+    [479] = "Пустоверть",
+    [480] = "Луносвет",
+    [481] = "Шаттрат",
+    [482] = "Око Бури",
+    [486] = "Борейская тундра",
+    [488] = "Драконий Погост",
+    [490] = "Седые холмы",
+    [491] = "Ревущий фьорд",
+    [492] = "Ледяная Корона",
+    [493] = "Низина Шолазар",
+    [495] = "Грозовая Гряда",
+    [496] = "Зул'Драк",
+    [499] = "Остров Кель'Данас",
+    [501] = "Озеро Ледяных Оков",
+    [502] = "Чумные земли: Анклав Алого ордена",
+    [504] = "Даларан",
+    [510] = "Лес Хрустальной Песни",
+    [512] = "Берег Древних",
+    [520] = "Нексус",
+    [521] = "Очищение Стратхольма",
+    [522] = "Ан'кахет: Старое Королевство",
+    [523] = "Крепость Утгард",
+    [524] = "Вершина Утгард",
+    [525] = "Чертоги Молний",
+    [526] = "Чертоги Камня",
+    [527] = "Око Вечности",
+    [528] = "Окулус",
+    [529] = "Ульдуар",
+    [530] = "Гундрак",
+    [531] = "Обсидиановое святилище",
+    [532] = "Склеп Аркавона",
+    [533] = "Азжол-Неруб",
+    [534] = "Крепость Драк'Тарон",
+    [535] = "Наксрамас",
+    [536] = "Аметистовая крепость",
+    [540] = "Остров Завоеваний",
+    [541] = "Лагерь Хротгара",
+    [542] = "Испытание чемпиона",
+    [543] = "Испытание крестоносца",
+    [601] = "Кузня Душ",
+    [602] = "Яма Сарона",
+    [603] = "Залы Отражений",
+    [604] = "Цитадель Ледяной Короны",
+    [609] = "Рубиновое святилище",
+    [610] = "Долина Узников",
+    [680] = "Огненная пропасть",
+    [687] = "Храм Атал'Хаккара",
+    [718] = "Логово Ониксии",
+    [722] = "Аукенайские гробницы",
+    [749] = "Пещеры Стенаний",
+    [833] = "Сетеккские залы",
+    [834] = "Темный лабиринт",
+    [835] = "Кузня Крови",
+    [836] = "Нижетопь",
+    [837] = "Паровое подземелье",
+    [838] = "Узилище",
+    [839] = "Ботаника",
+    [840] = "Механар",
+    [841] = "Аркатрац",
+    [842] = "Гробницы Маны",
+    [843] = "Разрушенные залы",
+    [844] = "Черные топи",
+    [845] = "Старые предгорья Хилсбрада",
+    [846] = "Плато Солнечного Колодца",
+    [847] = "Черный храм",
+    [848] = "Бастионы Адского Пламени",
+    [849] = "Терраса Магистров",
+    [860] = "Сверкающие копи",
+    [861] = "Крепость Бурь",
+    [862] = "Змеиное святилище",
+    [863] = "Вершина Хиджала",
+    [864] = "Логово Груула",
+    [865] = "Логово Магтеридона",
+    [866] = "Зул'Аман",
+    [867] = "Каражан",
+    [869] = "Хиджал",
+    [871] = "Зул'Фаррак",
+    [873] = "Непроглядная Пучина",
+    [874] = "Тюрьма",
+    [875] = "Гномреган",
+    [876] = "Ульдаман",
+    [877] = "Огненные Недра",
+    [879] = "Забытый Город",
+    [880] = "Глубины Черной горы",
+    [881] = "Руины Ан'Киража",
+    [882] = "Пик Черной горы",
+    [884] = "Мародон",
+    [885] = "Логово Крыла Тьмы",
+    [886] = "Мертвые копи",
+    [887] = "Курганы Иглошкурых",
+    [888] = "Лабиринты Иглошкурых",
+    [889] = "Монастырь Алого Ордена - Кладбище",
+    [890] = "Некроситет",
+    [891] = "Крепость Темного Клыка",
+    [892] = "Стратхольм",
+    [893] = "Ан'Кираж",
+    [896] = "Клоака",
+    [897] = "Затерянный остров",
+    [899] = "Поднявшиеся глубины",
+    [904] = "Цитадель Ледяной Короны",
+    [905] = "Нексус",
+    [906] = "Остров Форбс",
+    [907] = "Ко'Танг",
+    [908] = "Серебряный бор",
+    [909] = "Гарнизон Альянса",
+    [910] = "Гарнизон Альянса",
+    [911] = "Гарнизон Орды",
+    [912] = "Гарнизон Орды",
+    [913] = "Пустота",
+    [914] = "Утёсы Пыльного ветра",
+    [915] = "Битва за Гилнеас",
+    [916] = "Храм Котмогу",
+    [917] = "Храмовый город Ала'ваште",
+    [918] = "Остров Погоды",
+    [920] = "Лес Великанов",
+    [921] = "Ярнвид",
+    [922] = "Хаустлунд",
+    [923] = "Чаща Проклятых",
+    [924] = "Бронзовое святилище",
+    [925] = "Мертвые копи",
+    [926] = "Извержение",
+    [927] = "Чащоба",
+    [928] = "Обитель Холода",
+    [929] = "Место встречи Триумвирата",
+    [930] = "Ущелье Скрытого",
+    [931] = "Логово замерзшего снеговика",
+    [932] = "Два Пика",
+    [933] = "Черная гора",
+    [934] = "Черная гора",
+    [935] = "Черная гора",
+    [936] = "Монастырь Алого Ордена",
+    [937] = "Пещеры Стенаний",
+    [938] = "Монастырь Алого Ордена - Библиотека",
+    [939] = "Монастырь Алого Ордена - Оружейная",
+    [940] = "Монастырь Алого Ордена - Собор",
+    [941] = "Шар'гел",
+    [945] = "Тол'Гарод",
+    [946] = "Подземный поезд",
+    [947] = "Огненный холм",
+    [948] = "Осквернённый Край",
+    [949] = "Тронхейм",
+    [950] = "Остров Западного Ветра",
+    [951] = "Длань Ходира",
+    [952] = "Копье Гиннунга и Покой Гролана",
+    [953] = "Нордерон",
+    [954] = "Тол'Гародская тюрьма",
+    [955] = "Гилнеас",
+    [956] = "Хрупкий пол",
+    [957] = "Зимняя Низина Арати",
+    [958] = "Остров Лунар",
+    [959] = "Ущелье Песни Войны",
+    [960] = "Око Бури",
+    [962] = "Альтеракская долина",
+    [963] = "Андраккис",
+    [964] = "Зул'Гуруб",
+    [971] = "Безжалостные Дюны",
+    [972] = "Дикие Чащобы",
+    [974] = "Рао-Дан",
+    [975] = "Ломая двери",
+    [976] = "На грани",
+    [977] = "Эльдранил",
+    [979] = "Нордерон",
+    [980] = "Гилнеас",
+    [981] = "Цветной захват",
+    [982] = "Подпольный колизей Рисона",
+    [983] = "Остров Изгнанников",
+    [990] = "Цитадель Темного Молота",
+    [993] = "Руины Нораласа"
+}
+
+-- reverse it: localized name → zoneID
+ns.ZoneIDByName = {}
+for id, name in pairs(ns.ZoneNameByID) do
+    ns.ZoneIDByName[name] = id
+end
+
+-- helper to get a name (falls back to “Unknown(ID)”)
+function ns.GetZoneNameByID(id)
+    return ns.ZoneNameByID[id] or ("Unknown("..tostring(id)..")")
+end
+
+-- Blizzard‐defined numeric realm IDs (short name → id)
+ns.RealmIDByName = {
+    ["Soulseeker"]  = 42,
+    ["Sirus"]       = 57,
+    ["Neltharion"]  = 21,
+    ["Frostmourne"] = 16,
+    ["Legacy_x10"]  = 5,
+    ["Scourge"]     = 9,
+    ["Algalon"]     = 33,
+}
+
+-- invert for lookup
+ns.RealmNameByID = {}
+for name,id in pairs(ns.RealmIDByName) do
+    ns.RealmNameByID[id] = name
+end
+
+-- helper: pull the “short” realm key from the full string
+function ns.GetRealmKey(fullRealm)
+    -- take everything up to the first space or hyphen
+    return fullRealm:match("^([^%s%-]+)") or fullRealm
+end
+
+-- helper: get display name back from id
+function ns.GetRealmNameByID(id)
+    return ns.RealmNameByID[id] or ("UnknownRealm("..tostring(id)..")")
+end
+
 -- backport from ClassicAPI by Tsoukie
 local InitalGTPSCall
 local function GetTimePreciseSec()
@@ -813,64 +1084,113 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
 
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
+        -- 1) Start benchmark timer
+        self.benchStartDeathClipSync = GetTime()
+        print("|cffffff00>> Bench: DeathClip sync requested at "..date("%H:%M").."|r")
+
+        -- 2) Gather new clips
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
-        print((">> OptionG: %d death-clips to sync"):format(#rawClips))
+        print((">> OptionG4: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
-        -- 1) Build Δ-TS + numeric arrays (no seed needed)
+        -- 3) Build Δ-TS + numeric arrays (embed names + mob, map zone→ID, map faction→code, map realm→code)
         local baseTS = payload.since or 0
-
         local deltaClips = {}
         for i, c in ipairs(rawClips) do
-            local delta = (c.ts or 0) - baseTS
-            baseTS = c.ts or baseTS
+            -- strip color codes
+            local plainMob = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+            -- Δ-TS
+            local delta    = (c.ts or 0) - baseTS
+            baseTS         = c.ts or baseTS
+
+            -- zone → ID
+            local zoneID   = ns.ZoneIDByName[c.where] or 0
+            -- faction → code (1=Alliance,2=Horde,3=Neutral)
+            local facCode  = (c.faction=="Alliance") and 1 or (c.faction=="Horde" and 2 or 3)
+            -- realm → code
+            local realmKey = ns.GetRealmKey(c.realm or "")
+            local realmID  = ns.RealmIDByName[realmKey] or 0
 
             deltaClips[i] = {
-                delta,                      -- [1] Δ-TS
-                math.random(1,99),          -- [2] classCode
-                math.random(1,99),          -- [3] causeCode
-                math.random(1,99),          -- [4] raceCode
-                math.random(1,99),          -- [5] zoneCode
-                math.random(1,99),          -- [6] factionCode
-                math.random(1,99),          -- [7] realmCode
-                c.level       or 0,         -- [8] level
-                tonumber(c.playedTime) or 0,-- [9] playedTime
+                c.characterName or "",        -- [1] characterName
+                delta,                        -- [2] Δ-TS
+                math.random(1,99),            -- [3] classCode stub
+                math.random(1,99),            -- [4] causeCode stub
+                math.random(1,99),            -- [5] raceCode stub
+                zoneID,                       -- [6] zoneCode
+                facCode,                      -- [7] factionCode
+                realmID,                      -- [8] realmCode
+                c.level        or 0,          -- [9] level
+                c.getPlayedTry or 0,          -- [10] getPlayedTry
+                tonumber(c.playedTime) or 0,  -- [11] playedTime
+                plainMob,                     -- [12] deathCause (plain)
             }
         end
 
-        -- 2) Serialize & debug
+        -- 4) Serialize & compress
         local serialized = Addon:Serialize(deltaClips)
-        print((">> OptionG: serialized deltaClips = %d bytes"):format(#serialized))
-
-        -- 3) Compress & debug
+        print((">> OptionG4: serialized = %d bytes"):format(#serialized))
         local compressed = LibDeflate:CompressDeflate(serialized)
-        print((">> OptionG: compressed deltaClips = %d bytes"):format(#compressed))
+        print((">> OptionG4: compressed = %d bytes"):format(#compressed))
 
-        -- 4) Send exactly like before
+        -- 5) Send
         local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
         self:SendDm(msg, sender, "BULK")
 
 
+
+        -- Receiver: state handler
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
-
-
-        -- 1) Mark the end time
-        local benchEnd = GetTime()
-        -- 2) Compute and print the delta
-        if self.benchStartDeathClipSync then
-            print((">> Bench: DeathClip sync completed at %.2f (took %.2f s)")
-                    :format(benchEnd, benchEnd - self.benchStartDeathClipSync))
-        end
-
-        -- 3) Proceed with your normal handling
+        -- 1) Decompress & deserialize
         local decompressed = LibDeflate:DecompressDeflate(payload)
-        local success, newClips = Addon:Deserialize(decompressed)
-        if success then
-            ns.AddNewDeathClips(newClips)
-            API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+        local ok, deltaClips = Addon:Deserialize(decompressed)
+        if not ok then return end
+
+        -- 2) Reconstruct absolute TS + full clip tables
+        local absTS = 0
+        for _, arr in ipairs(deltaClips) do
+            absTS = absTS + (arr[2] or 0)
+
+            local clip = {
+                characterName = arr[1] or "",
+                ts            = absTS,
+                classCode     = arr[3],
+                causeCode     = arr[4],
+                raceCode      = arr[5],
+                where         = ns.GetZoneNameByID(arr[6]),
+                factionCode   = arr[7],
+                realmCode     = arr[8],
+                level         = arr[9],
+                getPlayedTry  = arr[10],
+                playedTime    = arr[11],
+                deathCause    = arr[12] or "",
+            }
+
+            -- rebuild clip.id
+            clip.id = table.concat({
+                clip.characterName,
+                clip.level,
+                clip.where,
+                clip.factionCode == 1 and "Alliance" or "Horde",
+                clip.deathCause
+            }, "-")
+
+            -- store it
+            LiveDeathClips[clip.id] = clip
         end
 
-        -- … remainder of function …
+        -- 3) Stop benchmark timer & print
+        local benchEnd = GetTime()
+        if self.benchStartDeathClipSync then
+            local t = date("%H:%M")
+            local d = benchEnd - self.benchStartDeathClipSync
+            print("|cff00ff00>> Bench: DeathClip sync completed at "
+                    ..t.." (took "..string.format("%.2f",d).." s)|r")
+        end
+
+        -- 4) Notify UI
+        API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+
 
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
         local rev = payload.rev
