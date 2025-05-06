@@ -1318,6 +1318,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 where         = zoneName,
                 factionCode   = arr[7],
                 realmCode     = arr[8],
+                realm         = ns.GetRealmNameByID(arr[8]) or "",
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],

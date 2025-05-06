@@ -451,12 +451,22 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
     where:SetText(whereStr or L["Unknown"])
 
-    local clipText = _G[buttonName.."ClipText"]
+    local clipText     = _G[buttonName.."ClipText"]
     local mobLevelText = _G[buttonName.."ClipMobLevel"]
 
-    clipText:SetText(clip.deathCause or "Неизвестно")
-    mobLevelText:SetText(clip.mobLevelText or "")
+    -- Death cause remains unchanged
+    clipText:SetText( clip.deathCause or "Неизвестно" )
+
+    -- Now use raw mobLevel and color it
+    local lvl = clip.mobLevel or 0
+    local color = GetQuestDifficultyColor(lvl)
+    local hex   = string.format("|cff%02x%02x%02x",
+            color.r*255, color.g*255, color.b*255)
+
+    mobLevelText:SetText( hex .. lvl .. "|r" )
     mobLevelText:SetJustifyH("CENTER")
+
+
     if clip.completed and clip.playedTime then
         clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
         -- Convert playedTime (in seconds) to D H M S format

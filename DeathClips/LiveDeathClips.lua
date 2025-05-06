@@ -3,14 +3,16 @@ local _, ns = ...
 ------------------------------------------------------------------------
 -- >>> REALM SUPPORT
 ------------------------------------------------------------------------
-local CURRENT_REALM = GetRealmName()
-ns.CURRENT_REALM = CURRENT_REALM   -- expose for other files
+local CURRENT_REALM_KEY   = GetRealmName():match("^([^%s%-]+)")
+local CURRENT_REALM_CODE  = ns.RealmIDByName[CURRENT_REALM_KEY] or 0
+ns.CURRENT_REALM_CODE     = CURRENT_REALM_CODE
+
 
 -- Filter helper ----------------------------------------------
 function ns.FilterClipsThisRealm(pool)
     local filtered = {}
     for _, clip in pairs(pool) do
-        if clip.realm == CURRENT_REALM then
+        if clip.realmCode == ns.CURRENT_REALM_CODE then
             table.insert(filtered, clip)
         end
     end
