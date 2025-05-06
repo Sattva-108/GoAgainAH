@@ -334,30 +334,27 @@ end
 -- 2) Realm lookup: short key → numeric Blizzard realm ID
 --    (from E_REALM_ID on Sirus / 3.3.5)
 -- ============================================================================
-ns.RealmIDByName = {
-    Soulseeker    = 42,
-    Sirus         = 57,
-    Neltharion    = 21,
-    Frostmourne   = 16,
-    Legacy_x10    = 5,
-    Scourge       = 9,
-    Algalon       = 33,
+-- exact Blizzard GetRealmName() → numeric Sirus ID
+ns.RealmFullNameToID = {
+    ["Soulseeker x1 - 3.3.5a+"] = 42,
+    ["Sirus"]                   = 57,
+    ["Neltharion"]              = 21,
+    ["Frostmourne"]             = 16,
+    ["Legacy x10"]              = 5,
+    ["Scourge"]                 = 9,
+    ["Algalon"]                 = 33,
+    -- add any other exact realm strings here
 }
--- Invert for receiver: numeric ID → short key
-ns.RealmNameByID = {}
-for name, id in pairs(ns.RealmIDByName) do
-    ns.RealmNameByID[id] = name
+
+-- invert it: numeric ID → full Blizzard realm string
+ns.RealmIDToFullName = {}
+for fullname,id in pairs(ns.RealmFullNameToID) do
+    ns.RealmIDToFullName[id] = fullname
 end
 
--- Helper: extract the “short” realm key from GetRealmName()
-function ns.GetRealmKey(fullRealm)
-    -- strip off anything after first space or hyphen
-    return fullRealm:match("^([^%s%-]+)") or fullRealm
-end
-
--- Helper: lookup realm name from ID
+-- helper: lookup ID → full name
 function ns.GetRealmNameByID(id)
-    return ns.RealmNameByID[id] or ("UnknownRealm("..tostring(id)..")")
+    return ns.RealmIDToFullName[id] or ("UnknownRealm("..tostring(id)..")")
 end
 
 -- backport from ClassicAPI by Tsoukie
@@ -1226,9 +1223,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     or (c.faction=="Horde"   ) and 2
                     or 3
 
-            -- realm → code
-            local realmKey = ns.GetRealmKey(c.realm or "")
-            local realmID  = ns.RealmIDByName[realmKey] or 0
+            -- get the exact full realm string
+            local fullRealm = c.realm or GetRealmName() or ""
+            -- lookup its numeric ID (default 0)
+            local realmID   = ns.RealmFullNameToID[fullRealm] or 0
+
+
 
             -- race → code
             local raceCode = ns.RaceIDByName[c.race] or 0
@@ -1317,8 +1317,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 race          = raceInfo.name,
                 where         = zoneName,
                 factionCode   = arr[7],
-                realmCode     = arr[8],
-                realm         = ns.GetRealmNameByID(arr[8]) or "",
+                realmCode = arr[8] or 0,
+                realm     = ns.GetRealmNameByID(arr[8]),  -- full Blizzard string
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],

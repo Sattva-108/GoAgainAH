@@ -3,9 +3,11 @@ local _, ns = ...
 ------------------------------------------------------------------------
 -- >>> REALM SUPPORT
 ------------------------------------------------------------------------
-local CURRENT_REALM_KEY   = GetRealmName():match("^([^%s%-]+)")
-local CURRENT_REALM_CODE  = ns.RealmIDByName[CURRENT_REALM_KEY] or 0
-ns.CURRENT_REALM_CODE     = CURRENT_REALM_CODE
+local fullName = GetRealmName() or ""
+ns.CURRENT_REALM_CODE = ns.RealmFullNameToID[fullName] or 0
+
+print(("Current realm: %q → code %d"):format(fullName, ns.CURRENT_REALM_CODE))
+
 
 
 -- Filter helper ----------------------------------------------
@@ -18,6 +20,7 @@ function ns.FilterClipsThisRealm(pool)
     end
     return filtered
 end
+
 ------------------------------------------------------------------------
 
 
@@ -321,7 +324,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 deathCause = deathCauseStr,
                 mobLevelText = mobLevelText,
                 playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realm         = CURRENT_REALM,
+                realm         = ns.CURRENT_REALM_CODE,
             }
 
             if not clip.id then
@@ -387,7 +390,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 mobLevelText = mobLevelText,
                 completed = true,
                 playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realm         = CURRENT_REALM,
+                realm         = ns.CURRENT_REALM_CODE,
             }
 
             if not clip.id then
