@@ -6,6 +6,28 @@ ns.AuctionHouseAddon = Addon
 local LibDeflate = LibStub("LibDeflate")
 local API = ns.AuctionHouseAPI
 
+ns.DeathCauseByID = {
+    [0]  = "Усталость",
+    [1]  = "Утопление",
+    [2]  = "Падение",
+    [3]  = "Лава",
+    [4]  = "Слизь",
+    [5]  = "Огонь",
+    [6]  = "Падение в бездну",
+    [7]  = "существом",            -- this one uses mob name instead
+    [8]  = "Умер в PVP схватке",
+    [9]  = "Погиб от действий союзника",
+    [10] = "Погиб от собственных действий",
+}
+
+function ns.GetDeathCauseByID(id, mobName)
+    if id == 7 and mobName and mobName ~= "" then
+        return mobName
+    else
+        return ns.DeathCauseByID[id] or ("UnknownCause("..tostring(id)..")")
+    end
+end
+
 ns.RaceInfoByID = {
     [1] = { name = "Человек", faction = "Alliance" },
     [2] = { name = "Орк", faction = "Horde" },
@@ -1131,6 +1153,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         -- In AuctionHouse.lua, inside your Comm‐handler:
 
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
+        -- In AuctionHouse.lua, inside your Comm‐handler:
+
+        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
         -- start benchmark
         self.benchStartDeathClipSync = GetTime()
@@ -1141,7 +1166,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
-        -- sort by ts
+        -- sort by timestamp
         table.sort(rawClips, function(a,b) return (a.ts or 0) < (b.ts or 0) end)
 
         local baseTS = payload.since or 0
@@ -1152,18 +1177,22 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             local delta = ts - baseTS
             baseTS      = ts
 
-            local plainMob = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+            -- strip mob name
+            local strippedMob = (c.deathCause or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
 
-            -- zone → ID, capture rawZone if missing
-            local zid = ns.ZoneIDByName[c.where]
-            local zoneID, rawZone
-            if zid and zid > 0 then
-                zoneID  = zid
-                rawZone = nil
-            else
-                zoneID  = 0
-                rawZone = c.where or ""
+            -- determine causeCode
+            local causeCode
+            for id, text in pairs(ns.DeathCauseByID) do
+                if id ~= 7 and strfind(c.deathCause or "", text, 1, true) then
+                    causeCode = id
+                    break
+                end
             end
+            causeCode = causeCode or 7
+
+            -- zone → ID + fallback
+            local zid = ns.ZoneIDByName[c.where]
+            local zoneID, rawZone = zid and zid > 0 and zid or 0, (zid and zid>0) and nil or (c.where or "")
 
             -- faction → code
             local facCode = (c.faction=="Alliance") and 1 or (c.faction=="Horde" and 2 or 3)
@@ -1175,20 +1204,26 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             -- race → code
             local raceCode = ns.RaceIDByName[c.race] or 0
 
+            -- build row
             local row = {
                 c.characterName or "",       -- [1]
                 delta,                       -- [2]
                 math.random(1,99),           -- [3] classCode stub
-                math.random(1,99),           -- [4] causeCode stub
-                raceCode,                    -- [5] raceCode lookup
+                causeCode,                   -- [4] deathCause code
+                raceCode,                    -- [5] raceCode
                 zoneID,                      -- [6]
                 facCode,                     -- [7]
                 realmID,                     -- [8]
                 c.level        or 0,         -- [9]
                 c.getPlayedTry or 0,         -- [10]
                 tonumber(c.playedTime) or 0, -- [11]
-                plainMob,                    -- [12]
+                "",                          -- [12] mobName if needed
             }
+            -- only include mob name when it's a creature kill
+            if causeCode == 7 then
+                row[12] = strippedMob
+            end
+            -- include raw zone fallback
             if rawZone then row[13] = rawZone end
 
             deltaClips[i] = row
@@ -1217,12 +1252,14 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
             -- zone lookup with fallback
             local zid = arr[6] or 0
-            local zoneName
-            if zid > 0 then
-                zoneName = ns.GetZoneNameByID(zid)
-            else
-                zoneName = arr[13] or ("UnknownZone("..zid..")")
-            end
+            local zoneName = (zid>0 and ns.GetZoneNameByID(zid))
+                    or arr[13]
+                    or ("UnknownZone("..zid..")")
+
+            -- cause lookup
+            local causeCode = arr[4] or 0
+            local mobName   = arr[12] or ""
+            local causeStr  = ns.GetDeathCauseByID(causeCode, mobName)
 
             -- race lookup
             local raceInfo = ns.GetRaceInfoByID(arr[5])
@@ -1232,47 +1269,49 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 characterName = arr[1] or "",
                 ts            = absTS,
                 classCode     = arr[3],
-                causeCode     = arr[4],
-                raceCode      = arr[5],          -- numeric
-                race          = raceInfo.name,   -- localized name
+                causeCode     = causeCode,
+                deathCause    = causeStr,
+                raceCode      = arr[5],
+                race          = raceInfo.name,
                 where         = zoneName,
-                factionCode   = arr[7],          -- numeric 1/2/3
+                factionCode   = arr[7],
                 realmCode     = arr[8],
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
-                deathCause    = arr[12] or "",
             }
 
-            -- resolve faction string, fallback to race default if needed
+            -- resolve faction string
             if clip.factionCode == 1 then
                 clip.faction = "Alliance"
             elseif clip.factionCode == 2 then
                 clip.faction = "Horde"
-            elseif raceInfo.faction then
-                clip.faction = raceInfo.faction
             else
                 clip.faction = "Neutral"
             end
 
-            -- rebuild clip.id with numeric factionCode
+            -- rebuild id using human faction
             clip.id = table.concat({
                 clip.characterName,
                 clip.level,
                 clip.where,
-                tostring(clip.factionCode),
+                clip.faction,
                 clip.deathCause
             }, "-")
 
             LiveDeathClips[clip.id] = clip
         end
 
-        -- stop benchmark timer
+        -- stop benchmark
         local benchEnd = GetTime()
         if self.benchStartDeathClipSync then
-            print("|cff00ff00>> Bench: DeathClip sync completed at "
-                    ..date("%H:%M").." (took "..string.format("%.2f",
-                    benchEnd - self.benchStartDeathClipSync).." s)|r")
+            print(
+                    "|cff00ff00>> Bench: DeathClip sync completed at "
+                            ..date("%H:%M")
+                            .." (took "
+                            ..string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
+                            .." s)|r"
+            )
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
