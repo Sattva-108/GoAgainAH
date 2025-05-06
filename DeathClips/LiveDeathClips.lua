@@ -368,61 +368,60 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
 
         elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
-            local parts = { strsplit(":", message) }
-            local name = parts[1]
-            local raceId = tonumber(parts[2])
-            local genderId = tonumber(parts[3])
-            local classId = tonumber(parts[4])
+            -- parse the incoming message
+            local parts     = { strsplit(":", message) }
+            local name      = parts[1]
+            local raceId    = tonumber(parts[2])
+            local genderId  = tonumber(parts[3])
+            local classId   = tonumber(parts[4])
 
-            -- Default values (because these are missing in the message)
-            local level = 80   -- Default level
-            local zone = "Неизвестно"  -- Default zone
-            local deathCause = "Неизвестно"  -- Default death cause (for consistency)
-            local mobLevelText = ""  -- Default mob level text (empty)
+            -- default/fallback values
+            local level        = 80                                  -- no level in COMPLETE msg
+            local zoneStr      = "Неизвестно"
+            local causeCode    = 0                                   -- non-creature
+            local deathCause   = ns.DeathCauseByID[causeCode] or "Неизвестно"
+            local mobLevel     = 0
 
-            -- Directly build the clip ID here
-            local deathCauseStr = deathCause and deathCause ~= "" and deathCause or "Unknown"
+            -- build the unique clip ID
             local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-            local zoneStr = zone and zone ~= "" and zone or "Unknown"
-
-            -- Replace newlines in 'zone' with spaces
             zoneStr = zoneStr:gsub("\n", " ")
+            local clipID = string.format(
+                    "%s-%d-%s-%s-%s",
+                    name,
+                    level,
+                    zoneStr,
+                    factionStr,
+                    deathCause
+            )
 
-            -- Build the ID using the full message (without BuildSimpleClipID)
-            local clipID = string.format("%s-%d-%s-%s-%s", name, level, zoneStr, factionStr, deathCauseStr)
-
-            -- Create the completed challenge clip
+            -- assemble the clip with the new unified fields
             local clip = {
-                id = clipID,
-                ts = GetServerTime(),
-                streamer = ns.GetTwitchName(name) or name,
+                id            = clipID,
+                ts            = GetServerTime(),
+                streamer      = ns.GetTwitchName(name) or name,
                 characterName = name,
-                race = (races[raceId] and races[raceId].name) or "Неизвестно",
-                faction = factionStr,
-                class = classes[classId] or "Неизвестно",
-                level = level,
-                where = zoneStr,
-                deathCause = deathCauseStr,
-                mobLevelText = mobLevelText,
-                completed = true,
-                playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realm         = ns.CURRENT_REALM_CODE,
+                race          = (races[raceId] and races[raceId].name) or "Неизвестно",
+                faction       = factionStr,
+                class         = classes[classId] or "Неизвестно",
+                level         = level,
+                where         = zoneStr,
+                causeCode     = causeCode,     -- NEW: numeric cause for UI logic
+                deathCause    = deathCause,    -- NEW: plain text for UI logic
+                mobLevel      = mobLevel,      -- NEW: plain number for UI logic
+                completed     = true,
+                playedTime    = nil,           -- will be populated later
+                realmCode     = ns.CURRENT_REALM_CODE,  -- filter by numeric realm
+                realm         = ns.CURRENT_REALM,       -- human-readable realm
             }
 
-            if not clip.id then
+            -- dedupe guard
+            if not clip.id or ns.GetLiveDeathClips()[clip.id] then
                 return
-            end
-
-            -- Check if the clip ID already exists
-            local existingClips = ns.GetLiveDeathClips()
-            if existingClips[clip.id] then
-                --print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
-                return  -- Return early to prevent adding the duplicate clip
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
             -- Add the played clip to the queue (for both death and played clips)
-            queue[name] = queue[name] or {}
+            queue[name]      = queue[name] or {}
             clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
             clip.getPlayedTry = 0
             table.insert(queue[name], clip)
@@ -433,6 +432,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
+
     end
 end)
 
