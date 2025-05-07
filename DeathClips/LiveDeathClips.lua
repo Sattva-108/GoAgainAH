@@ -238,120 +238,60 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" then
         if prefix == "ASMSG_HARDCORE_DEATH" then
-            -- Parsing the message (like before)
-            local parts = {}
-            for part in string.gmatch(message, "([^:]+)") do
+            -- 1) Parse incoming message parts
+            local parts      = {}
+            for part in message:gmatch("([^:]+)") do
                 table.insert(parts, part)
             end
 
-            local name = parts[1]
-            local raceId = tonumber(parts[2])
-            local classId = tonumber(parts[4])
-            local level = tonumber(parts[5])
-            local rawZone = parts[6]
-            local deathCauseId = tonumber(parts[7])
-            local mobName = parts[8] or ""
-            local mobLevel = parts[9] or ""
+            local name       = parts[1]
+            local raceId     = tonumber(parts[2])
+            local classId    = tonumber(parts[4])
+            local level      = tonumber(parts[5])
+            local rawZone    = parts[6] or ""
+            local causeCode  = tonumber(parts[7]) or 0
+            local rawMobName = parts[8] or ""
+            local rawMobLv   = tonumber(parts[9]) or 0
 
-            -- Process the zone and death cause
-            local firstWord, rest = string.match(rawZone or "", "^(%S+)%s*(.*)$")
-            local zone = rest and rest ~= "" and firstWord .. "\n" .. rest or firstWord
+            -- 2) Normalize zone
+            local zoneStr = rawZone:gsub("\n", " ")
+            if zoneStr == "" then zoneStr = "Неизвестно" end
 
-            local deathCause = deathCauses[deathCauseId] or "Неизвестно"
-            local mobLevelText = ""  -- Default empty
-
-            -- Check if the death was caused by a creature and we have its name
-            if deathCauseId == 7 and mobName ~= "" then
-                -- Initially set deathCause to the mob name (uncolored)
-                deathCause = mobName
-
-                -- Check if we also have the mob's level
-                if mobLevel ~= "" then
-                    -- Calculate level difference and color logic
-                    local playerLevel = level or 0 -- Ensure player level is a number
-                    local mobLevelNum = tonumber(mobLevel)
-                    local levelDiff = mobLevelNum - playerLevel
-
-                    -- Determine color based on level difference
-                    local color
-                    if levelDiff >= 5 then
-                        -- Red
-                        color = "|cFFFF0000"
-                    elseif levelDiff >= 3 then
-                        -- Orange
-                        color = "|cFFFF7F00"
-                    elseif levelDiff >= -2 then
-                        -- Yellow
-                        color = "|cFFFFFF00"
-                    elseif levelDiff >= -6 then
-                        -- Green
-                        color = "|cFF00FF00"
-                    else
-                        -- Gray
-                        color = "|cFF808080"
-                    end
-
-                    -- Format mob level text with color and " ур." suffix
-                    mobLevelText = string.format("%s%s|r", color, mobLevel)
-
-                    -- Format death cause (mob name) with the same color
-                    deathCause = string.format("%s%s|r", color, mobName)
-                end
-            end
-
-            -- Directly build the clip ID here
-            local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-            local zoneStr = zone and zone ~= "" and zone or "Unknown"
-
-            -- Replace newlines in 'zone' with spaces
-            zoneStr = zoneStr:gsub("\n", " ")
-
-            -- build the “plain” deathCause and mobLevel fields
-            local causeCode     = tonumber(parts[7]) or 0
-            local rawMobName    = parts[8] or ""
-            local rawMobLevel   = tonumber(parts[9]) or 0
-
-            -- decide the deathCause string for non-creature causes
-            local causeText = causeCode == 7 and rawMobName
+            -- 3) Decide the plain cause text
+            local causeText = (causeCode == 7 and rawMobName ~= "")
+                    and rawMobName
                     or (ns.DeathCauseByID[causeCode] or "Неизвестно")
 
-            -- clip ID as before
-            local clipID = string.format(
+            -- 4) Build the unique clip ID
+            local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
+            local clipID     = string.format(
                     "%s-%d-%s-%s-%s",
-                    name, level, rawZone:gsub("\n"," "),
-                    races[raceId].faction or "Unknown",
-                    causeText
+                    name, level, zoneStr, factionStr, causeText
             )
 
-
-            -- Create the death clip entry
+            -- 5) Assemble the clip with only the raw fields
             local clip = {
-                id = clipID,
-                ts = GetServerTime(),
-                streamer = ns.GetTwitchName(name) or name,
+                id            = clipID,
+                ts            = GetServerTime(),
+                streamer      = ns.GetTwitchName(name) or name,
                 characterName = name,
-                race = (races[raceId] and races[raceId].name) or "Неизвестно",
-                faction = factionStr,
-                class = classes[classId] or "Неизвестно",
-                level = level,
-                where = zoneStr,
-                causeCode     = causeCode,        -- NEW
-                deathCause    = causeText,        -- NEW: raw text only
-                mobLevel      = rawMobLevel,      -- NEW: raw number only
-                playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realmCode = ns.CURRENT_REALM_CODE,
-                realm     = ns.CURRENT_REALM,
+                race          = (races[raceId] and races[raceId].name) or "Неизвестно",
+                faction       = factionStr,
+                class         = classes[classId] or "Неизвестно",
+                level         = level,
+                where         = zoneStr,
+                causeCode     = causeCode,     -- numeric cause ID
+                deathCause    = causeText,     -- raw text
+                mobLevel      = rawMobLv,      -- raw number
+                playedTime    = nil,           -- will be filled later
+                getPlayedTry  = 0,
+                realmCode     = ns.CURRENT_REALM_CODE,
+                realm         = ns.CURRENT_REALM,
             }
 
-            if not clip.id then
+            -- 6) Deduplicate
+            if not clip.id or ns.GetLiveDeathClips()[clip.id] then
                 return
-            end
-
-            -- Check if the clip ID already exists
-            local existingClips = ns.GetLiveDeathClips()
-            if existingClips[clip.id] then
-                --print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
-                return  -- Return early to prevent adding the duplicate clip
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
@@ -361,13 +301,13 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             clip.getPlayedTry = 0
             table.insert(queue[name], clip)
 
-            -- If no duplicate, add the clip
-            --            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
-
+            -- 7) Merge, notify UI and broadcast
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+            ns.AuctionHouse:BroadcastDeathClipAdded(clip)
 
-        elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
+
+    elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
             -- parse the incoming message
             local parts     = { strsplit(":", message) }
             local name      = parts[1]
