@@ -101,86 +101,43 @@ ns.GetLastDeathClipTimestamp = function()
     return ts
 end
 
--- Paste this complete function into LiveDeathClips.lua, replacing the existing ns.GetNewDeathClips
-
 ns.GetNewDeathClips = function(since, existing)
     local allClips = ns.GetLiveDeathClips()
-
-    -- Counters for debugging
-    local totalClips        = 0
-    local tsPassCount       = 0
-    local tsFailCount       = 0
-    local afterCapCount     = 0
-    local mergeBackCount    = 0
-    local excludeSeenCount  = 0
-    local excludeExistCount = 0
-    local excludeTsCount    = 0
-
-    -- Count total
-    for _ in pairs(allClips) do totalClips = totalClips + 1 end
-    print(("|cffffff00[Debug] Total live clips: %d|r"):format(totalClips))
-
-    -- 1) “since” filter
     local newClips = {}
-    local seen     = {}
-    for id, clip in pairs(allClips) do
+    local seen = {}
+    for _, clip in pairs(allClips) do
         if clip.ts > since then
-            tsPassCount = tsPassCount + 1
-            newClips[#newClips+1] = clip
-            seen[id] = true
-        else
-            tsFailCount = tsFailCount + 1
+            table.insert(newClips, clip)
+            seen[clip.id] = true
         end
     end
-    print(("|cffffff00[Debug] After ts> %d filter: %d passed, %d failed|r")
-            :format(since, tsPassCount, tsFailCount))
-
-    -- 2) cap to latest 100
     if #newClips > 100 then
-        table.sort(newClips, function(a,b) return (a.ts or 0) < (b.ts or 0) end)
-        local capped = {}
-        local newSeen = {}
-        for i = #newClips-99, #newClips do
-            local c = newClips[i]
-            capped[#capped+1] = c
-            newSeen[c.id] = true
+        -- keep the latest 100 entries
+        table.sort(newClips, function(l, r)
+            return l.ts < r.ts
+        end)
+        local newClips2 = {}
+        local seen2 = {}
+        for i = #newClips - 99, #newClips do
+            table.insert(newClips2, newClips[i])
+            seen2[newClips[i].id] = true
         end
-        newClips = capped
-        seen = newSeen
+        newClips = newClips2
+        seen = seen2
     end
-    afterCapCount = #newClips
-    print(("|cffffff00[Debug] After capping to 100: %d clips|r"):format(afterCapCount))
-
-    -- 3) merge back
     if existing then
-        local fromTs       = existing.fromTs or since
-        local existingMap  = existing.clips or existing
-        local beforeMerge  = #newClips
-
-        for id, clip in pairs(allClips) do
-            if clip.ts < fromTs then
-                excludeTsCount = excludeTsCount + 1
-            elseif seen[id] then
-                excludeSeenCount = excludeSeenCount + 1
-            elseif existingMap[id] then
-                excludeExistCount = excludeExistCount + 1
-            else
-                -- this will be merged back
-                newClips[#newClips+1] = clip
-                seen[id] = true
-                mergeBackCount = mergeBackCount + 1
+        local fromTs = existing.fromTs
+        local existingClips = existing.clips
+        for clipID, clip in pairs(allClips) do
+            if not existingClips[clipID] and not seen[clipID] and clip.ts >= fromTs then
+                table.insert(newClips, clip)
+                seen[clipID] = true
             end
         end
-
-        print(("|cffffff00[Debug] Merged back: %d|r"):format(mergeBackCount))
-        print(("|cffffff00[Debug] Excluded by ts<fromTs: %d|r"):format(excludeTsCount))
-        print(("|cffffff00[Debug] Excluded by seen (cap): %d|r"):format(excludeSeenCount))
-        print(("|cffffff00[Debug] Excluded by existing map: %d|r"):format(excludeExistCount))
     end
 
     return newClips
 end
-
 
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()

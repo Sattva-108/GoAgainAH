@@ -995,7 +995,6 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     end
 
     if prefix == OF_COMM_PREFIX then
-        print("sus send")
         ns.HandleOFCommMessage(message, sender, distribution)
         return
     end
