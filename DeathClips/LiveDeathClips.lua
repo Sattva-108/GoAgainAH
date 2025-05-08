@@ -101,35 +101,54 @@ end
 
 ns.GetNewDeathClips = function(since, existing)
     local allClips = ns.GetLiveDeathClips()
+
+    -- FULL‐SYNC: if since is zero or nil, return every clip unfiltered
+    if not since or since == 0 then
+        local full = {}
+        for _, clip in pairs(allClips) do
+            full[#full+1] = clip
+        end
+        table.sort(full, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
+        return full
+    end
+
+    -- Otherwise, do the normal incremental sync logic:
+
+    -- 1) collect clips newer than `since`
     local newClips = {}
-    local seen = {}
+    local seen     = {}
     for _, clip in pairs(allClips) do
         if clip.ts > since then
-            table.insert(newClips, clip)
-            seen[clip.id] = true
+            newClips[#newClips+1] = clip
+            seen[clip.id]         = true
         end
     end
+
+    -- 2) cap to the latest 100
     if #newClips > 100 then
-        -- keep the latest 100 entries
-        table.sort(newClips, function(l, r)
-            return l.ts < r.ts
-        end)
-        local newClips2 = {}
-        local seen2 = {}
+        table.sort(newClips, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
+        local capped = {}
+        local capSeen = {}
         for i = #newClips - 99, #newClips do
-            table.insert(newClips2, newClips[i])
-            seen2[newClips[i].id] = true
+            local c = newClips[i]
+            capped[#capped+1] = c
+            capSeen[c.id]     = true
         end
-        newClips = newClips2
-        seen = seen2
+        newClips, seen = capped, capSeen
     end
+
+    -- 3) merge back any clips ≥ since that the receiver doesn’t already have
     if existing then
-        local fromTs = existing.fromTs
-        local existingClips = existing.clips
-        for clipID, clip in pairs(allClips) do
-            if not existingClips[clipID] and not seen[clipID] and clip.ts >= fromTs then
-                table.insert(newClips, clip)
-                seen[clipID] = true
+        local fromTs      = existing.fromTs or since
+        local existingMap = existing.clips or existing
+
+        for id, clip in pairs(allClips) do
+            if clip.ts >= fromTs
+                    and not seen[id]
+                    and not existingMap[id]
+            then
+                newClips[#newClips+1] = clip
+                seen[id]             = true
             end
         end
     end
@@ -232,7 +251,7 @@ end
 
 -- Create the frame to listen for addon messages
 local frame = CreateFrame("Frame")
-frame:RegisterEvent("CHAT_MSG_ADDON")
+--frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" then
         if prefix == "ASMSG_HARDCORE_DEATH" then
@@ -416,9 +435,9 @@ local nextUpdateDeadline = nil
 local ladderBuffer = {}
 
 -- Register necessary events
-f:RegisterEvent("PLAYER_ENTERING_WORLD")
-f:RegisterEvent("CHAT_MSG_ADDON")
-f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
+--f:RegisterEvent("PLAYER_ENTERING_WORLD")
+--f:RegisterEvent("CHAT_MSG_ADDON")
+--f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
 -- Function to save logout data
 local function saveLogoutData()

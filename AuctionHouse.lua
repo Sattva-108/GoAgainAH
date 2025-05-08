@@ -1168,6 +1168,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         self.benchStartDeathClipSync = GetTime()
         print("|cffffff00>> Bench: DeathClip sync requested at "..date("%H:%M").."|r")
 
+        print("Payload since TS: "..payload.since)
+
         -- gather & debug count
         local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
         print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
@@ -1279,8 +1281,13 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             print("SEND-RAW {" .. table.concat(parts, ", ") .. "}")
         end
 
+        local debugShown = 0                         -- NEW
+
         for _, arr in ipairs(rows) do
-            DebugDumpClipArr(arr)
+            if debugShown < 100 then                 -- print only first 100
+                DebugDumpClipArr(arr)
+                debugShown = debugShown + 1
+            end
         end
 
 
@@ -1301,37 +1308,36 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         if not ok then return end
 
         for _, arr in ipairs(rows) do
-            -- 1) pull in the raw ts
+            -- 1) raw timestamp
             local clipTS = arr[2] or 0
+            local now    = GetServerTime()
+            if clipTS > now then clipTS = now end
 
-            -- 2) clamp to "now" if it's in the future
-            local now = GetServerTime()
-            if clipTS > now then
-                clipTS = now
-            end
+            ------------------------------------------------------------------
+            -- Look-ups and fallbacks
+            ------------------------------------------------------------------
+            local zid       = arr[6] or 0
+            local zoneName  = (zid > 0 and ns.GetZoneNameByID(zid))
+                    or arr[15]                       -- optional string
+                    or ""                           -- no “Unknown” text
 
-            -- zone lookup + fallback --------------------------------------
-            local zid = arr[6] or 0
-            local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
-                    or arr[15]                -- optional string
-                    or ""                     -- ➤ no "Unknown" text
-
-            -- realm lookup + fallback -------------------------------------
-            local rid = arr[8] or 0
-            local realmStr = (rid > 0 and ns.GetRealmNameByID(rid))
+            local rid       = arr[8] or 0
+            local realmStr  = (rid > 0 and ns.GetRealmNameByID(rid))
                     or ((zid == 0 and arr[16]) or arr[15])
                     or "UnknownRealm"
 
-            -- cause string (with mobName if id==7)
+            local clipCompleted = arr[14] and true or false    -- slot-14 flag
             local causeID  = arr[4] or 0
-            local causeStr = (causeID > 0 and ns.GetDeathCauseByID(causeID, arr[12] or ""))
-                    or ""                     -- ➤ empty when 0
+            local causeStr = clipCompleted and ""              -- blank for completed
+                    or ns.GetDeathCauseByID(causeID, arr[12] or "")
 
-            -- class & race
+            -- class & race strings
             local classStr = ns.ClassNameByID[arr[3]] or ""
             local raceInfo = ns.GetRaceInfoByID(arr[5])
 
-            -- rebuild clip table
+            ------------------------------------------------------------------
+            -- Build clip table
+            ------------------------------------------------------------------
             local clip = {
                 characterName = arr[1] or "",
                 ts            = clipTS,
@@ -1341,7 +1347,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 deathCause    = causeStr,
                 raceCode      = arr[5],
                 race          = raceInfo.name,
-                where         = zoneName,
+                where         = clipCompleted and "" or zoneName,
                 factionCode   = arr[7],
                 realmCode     = rid,
                 realm         = realmStr,
@@ -1349,14 +1355,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
                 mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
-                completed     = arr[14] or nil,         -- now slot-14
+                completed     = clipCompleted and true or nil,  -- slot-14
             }
-
-            -- ➤ If completed, blank out zone / cause (they travelled as zeros)
-            if clip.completed then
-                clip.where      = ""
-                clip.deathCause = ""
-            end
 
             -- faction string
             if clip.factionCode == 1 then
@@ -1372,16 +1372,16 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ------------------------------------------------------------------
             clip.classCode, clip.raceCode, clip.factionCode, clip.realmCode = nil, nil, nil, nil
             if clip.playedTime then clip.getPlayedTry = nil end
-            ------------------------------------------------------------------
 
-            -- rebuild ID (empty strings are fine)
-            clip.id = table.concat({
-                clip.characterName,
-                clip.level,
-                clip.where,
-                clip.faction,
-                clip.deathCause
-            }, "-")
+            ------------------------------------------------------------------
+            -- Rebuild unique ID (omit zone/cause for completed clips)
+            ------------------------------------------------------------------
+            local idParts = { clip.characterName, clip.level, clip.faction }
+            if not clipCompleted then
+                table.insert(idParts, clip.where)
+                table.insert(idParts, clip.deathCause)
+            end
+            clip.id = table.concat(idParts, "-")
 
             LiveDeathClips[clip.id] = clip
         end
