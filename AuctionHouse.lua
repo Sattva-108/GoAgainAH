@@ -1222,9 +1222,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 c.characterName or "",       -- [1]
                 ts,                          -- [2] absolute ts
                 classCode,                   -- [3]
-                causeCode,                   -- [4]
+                c.completed and 0 or causeCode,  -- [4] ❶ send 0 when completed
                 raceCode,                    -- [5]
-                zid,                         -- [6]
+                c.completed and 0 or zid,        -- [6] ❶ send 0 when completed
                 facCode,                     -- [7]
                 realmID,                     -- [8]
                 c.level        or 0,         -- [9]
@@ -1232,16 +1232,16 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 tonumber(c.playedTime) or 0, -- [11]
                 (causeCode==7) and mobName or "" -- [12]
             }
-            row[13] = mobLevelNum                  -- raw mob level
-            row[14] = c.completed or nil           -- ← ALWAYS put completed flag here
+            row[13] = mobLevelNum                 -- [13] mob level
+            row[14] = c.completed or nil          -- [14] ❷ completed flag ALWAYS here
 
-            local idx = 15                         -- optional fallback strings
-            if row[6] == 0 and rawZone then        -- zoneID unknown → send zoneName
-                row[idx] = rawZone                 -- 15
+            local idx = 15                        -- optional strings start
+            if row[6] == 0 and rawZone then       -- ❸ only when zoneID==0
+                row[idx] = rawZone                -- zoneName
                 idx = idx + 1
             end
-            if row[8] == 0 and fullRealm then      -- realmID unknown → send realmName
-                row[idx] = fullRealm               -- 15 or 16
+            if row[8] == 0 and fullRealm then     -- ❸ only when realmID==0
+                row[idx] = fullRealm              -- realmName
             end
 
             rows[i] = row
@@ -1313,17 +1313,19 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             -- zone lookup + fallback --------------------------------------
             local zid = arr[6] or 0
             local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
-                    or arr[15]                                   -- ← shifted
-                    or ("UnknownZone("..zid..")")
+                    or arr[15]                -- optional string
+                    or ""                     -- ➤ no "Unknown" text
 
             -- realm lookup + fallback -------------------------------------
             local rid = arr[8] or 0
             local realmStr = (rid > 0 and ns.GetRealmNameByID(rid))
-                    or ((zid == 0 and arr[16]) or arr[15])       -- ← new rule
+                    or ((zid == 0 and arr[16]) or arr[15])
                     or "UnknownRealm"
 
             -- cause string (with mobName if id==7)
-            local causeStr = ns.GetDeathCauseByID(arr[4] or 0, arr[12] or "")
+            local causeID  = arr[4] or 0
+            local causeStr = (causeID > 0 and ns.GetDeathCauseByID(causeID, arr[12] or ""))
+                    or ""                     -- ➤ empty when 0
 
             -- class & race
             local classStr = ns.ClassNameByID[arr[3]] or ""
@@ -1335,20 +1337,26 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 ts            = clipTS,
                 classCode     = arr[3],
                 class         = classStr,
-                causeCode     = arr[4] or 0,
+                causeCode     = causeID,
                 deathCause    = causeStr,
                 raceCode      = arr[5],
                 race          = raceInfo.name,
                 where         = zoneName,
                 factionCode   = arr[7],
-                realmCode     = arr[8],
-                realm         = realmStr,            -- ← was arr[14]
+                realmCode     = rid,
+                realm         = realmStr,
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
                 mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
-                completed     = arr[14] or nil,      -- ← shifted from 16 to 14
+                completed     = arr[14] or nil,         -- now slot-14
             }
+
+            -- ➤ If completed, blank out zone / cause (they travelled as zeros)
+            if clip.completed then
+                clip.where      = ""
+                clip.deathCause = ""
+            end
 
             -- faction string
             if clip.factionCode == 1 then
@@ -1363,11 +1371,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             -- ✂️ Minimal cleanup: drop unused or default fields
             ------------------------------------------------------------------
             clip.classCode, clip.raceCode, clip.factionCode, clip.realmCode = nil, nil, nil, nil
-            if clip.mobLevel == 0 then clip.mobLevel = nil end
             if clip.playedTime then clip.getPlayedTry = nil end
             ------------------------------------------------------------------
 
-            -- rebuild ID (with human faction)
+            -- rebuild ID (empty strings are fine)
             clip.id = table.concat({
                 clip.characterName,
                 clip.level,
