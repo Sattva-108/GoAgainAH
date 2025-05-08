@@ -1471,7 +1471,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     .. " (took "
                     .. string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
                     .. " s)|r")
-            self.benchStartDeathClipSync = nil            -- reset
+            self.benchStartDeathClipSync = nil  -- allow the next sync to go :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
@@ -2194,6 +2194,13 @@ end
 -- Modified (in AuctionHouse.lua)
 
 function AuctionHouse:RequestLatestDeathClipState(now)
+    -- if a sync is already in flight, bail out immediately
+    if self.benchStartDeathClipSync then
+        print(">> Bench: DeathClip sync already in progress, skipping new request.")
+        return
+    end
+
+    -- otherwise start a fresh benchmark timer
     self.benchStartDeathClipSync = GetTime()
     print((">> Bench: DeathClip sync requested at %.2f"):format(self.benchStartDeathClipSync))
 
