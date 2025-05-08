@@ -1174,9 +1174,33 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 .. date("%H:%M") .. "|r")
 
         print("Payload since TS: "..payload.since)
+        -- 1. Decode the WoW-safe ASCII back into raw bytes
+        local ok, compressed = LibDeflate:DecodeForWoWAddonChannel(message)
+        if not ok then
+            print("! DBG: failed to Base64-decode death-clip request")
+            return
+        end
 
-        -- gather & debug count
-        local rawClips = ns.GetNewDeathClips(payload.since, payload.clips)
+        -- 2. Inflate (DEFLATE → original JSON string)
+        local serialized = LibDeflate:DecompressDeflate(compressed)
+        if not serialized then
+            print("! DBG: failed to decompress death-clip request")
+            return
+        end
+
+        -- 3. Deserialize back into a Lua table
+        local success, requestPayload = Addon:Deserialize(serialized)
+        if not success then
+            print("! DBG: failed to deserialize death-clip request")
+            return
+        end
+
+        -- 4. Now pull out your `since` and `clips` exactly as before
+        local since = requestPayload[2].since
+        local clips = requestPayload[2].clips
+
+        -- 5. Let your de-dup logic run unchanged
+        local rawClips = ns.GetNewDeathClips(since, clips)
         print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then return end
 
@@ -1322,7 +1346,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         for _, arr in ipairs(rows) do
             ------------------------------------------------------------------
             -- SAFETY CHECK --------------------------------------------------
-            -- • A correct row (our v2 protocol) has at least 14 numeric slots
+            -- • A correct row (our v2 protocol) has at least 13 numeric slots
             --   1-14: name, ts, classID, causeID, raceID, zoneID, factionID,
             --         realmID, level, getPlayedTry, playedTime, mobName,
             --         mobLevel, completedFlag
@@ -1331,7 +1355,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             --   2) the message got truncated/corrupted in transit.
             --   We simply skip it and keep syncing the next row.
             ------------------------------------------------------------------
-            if #arr >= 14 then
+            if #arr >= 13 then
                 ----------------------------------------------------------------
                 -- 1) pull in the raw ts
                 ----------------------------------------------------------------
@@ -2139,13 +2163,25 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     self.benchStartDeathClipSync = GetTime()
     print((">> Bench: DeathClip sync requested at %.2f"):format(self.benchStartDeathClipSync))
 
-    local clips  = self:BuildDeathClipsTable(now)
+    -- Build your full clip-ID table
+    local clips = self:BuildDeathClipsTable(now)
     local payload = {
         ns.T_DEATH_CLIPS_STATE_REQUEST,
         { since = ns.GetLastDeathClipTimestamp(), clips = clips }
     }
-    local msg = Addon:Serialize(payload)
-    self:BroadcastMessage(msg)
+
+    -- Serialize → compress → encode
+    local serialized = Addon:Serialize(payload)
+    local compressed = LibDeflate:CompressDeflate(serialized)
+    local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+
+    -- Debug: print out the encoded string 10s later
+    C_Timer:After(10, function()
+        print(encoded)
+    end)
+
+    -- Send the compact, encoded payload
+    self:BroadcastMessage(encoded)
 end
 
 
