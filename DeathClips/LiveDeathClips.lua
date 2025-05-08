@@ -271,7 +271,6 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             local clip = {
                 id            = clipID,
                 ts            = GetServerTime(),
-                streamer      = ns.GetTwitchName(name) or name,
                 characterName = name,
                 race          = (races[raceId] and races[raceId].name) or "Неизвестно",
                 faction       = factionStr,
@@ -283,7 +282,6 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 mobLevel      = rawMobLv,      -- raw number
                 playedTime    = nil,           -- will be filled later
                 getPlayedTry  = 0,
-                realmCode     = ns.CURRENT_REALM_CODE,
                 realm         = ns.CURRENT_REALM,
             }
 
@@ -336,7 +334,6 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             local clip = {
                 id            = clipID,
                 ts            = GetServerTime(),
-                streamer      = ns.GetTwitchName(name) or name,
                 characterName = name,
                 race          = (races[raceId] and races[raceId].name) or "Неизвестно",
                 faction       = factionStr,
@@ -348,7 +345,6 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 mobLevel      = mobLevel,      -- NEW: plain number for UI logic
                 completed     = true,
                 playedTime    = nil,           -- will be populated later
-                realmCode     = ns.CURRENT_REALM_CODE,  -- filter by numeric realm
                 realm         = ns.CURRENT_REALM,       -- human-readable realm
             }
 

@@ -79,7 +79,8 @@ local function CreateClipsSorter(sortParams)
         local k = sortParams[i].column
         local desc = sortParams[i].reverse
         if k == "streamer" then
-            addSorter(desc, function(l, r) return stringCompare(l, r, "streamer") end)
+            -- ⬇️ compare by characterName instead of now-deleted streamer
+            addSorter(desc, function(l, r) return stringCompare(l, r, "characterName") end)
         elseif k == "race" then
             addSorter(desc, function(l, r) return stringCompare(l, r, "race") end)
         elseif k == "level" then
