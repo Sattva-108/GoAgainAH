@@ -1268,9 +1268,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
             -- zone lookup + fallback
             local zid = arr[6] or 0
-            local zoneName = (zid>0 and ns.GetZoneNameByID(zid))
+            local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
                     or arr[15]
-                    or ("UnknownZone("..zid..")")
+                    or ("UnknownZone(" .. zid .. ")")
 
             -- cause string (with mobName if id==7)
             local causeStr = ns.GetDeathCauseByID(arr[4] or 0, arr[12] or "")
@@ -1296,11 +1296,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
-                mobLevel      = arr[13] or 0,
+                -- keep the field only if the number is > 0
+                mobLevel = (arr[13] and arr[13] > 0) and arr[13] or nil,
                 completed     = arr[16] or nil,
-        }
+            }
 
-        -- faction string
+            -- faction string
             if clip.factionCode == 1 then
                 clip.faction = "Alliance"
             elseif clip.factionCode == 2 then
@@ -1308,6 +1309,14 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             else
                 clip.faction = "Neutral"
             end
+
+            ------------------------------------------------------------------
+            -- ✂️ Minimal cleanup: drop unused or default fields
+            ------------------------------------------------------------------
+            clip.classCode, clip.raceCode, clip.factionCode, clip.realmCode = nil, nil, nil, nil
+            if clip.mobLevel == 0 then clip.mobLevel = nil end
+            if clip.playedTime then clip.getPlayedTry = nil end
+            ------------------------------------------------------------------
 
             -- rebuild ID (with human faction)
             clip.id = table.concat({
@@ -1325,10 +1334,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local benchEnd = GetTime()
         if self.benchStartDeathClipSync then
             print("|cff00ff00>> Bench: DeathClip sync completed at "
-                    ..date("%H:%M")
-                    .." (took "
-                    ..string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
-                    .." s)|r")
+                    .. date("%H:%M")
+                    .. " (took "
+                    .. string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
+                    .. " s)|r")
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)

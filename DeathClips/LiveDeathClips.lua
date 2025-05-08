@@ -5,16 +5,14 @@ local _, ns = ...
 ------------------------------------------------------------------------
 local fullName = GetRealmName() or ""
 ns.CURRENT_REALM_CODE = ns.RealmFullNameToID[fullName] or 0
-
-print(("Current realm: %q → code %d"):format(fullName, ns.CURRENT_REALM_CODE))
-
-
+ns.CURRENT_REALM      = fullName                    -- ← NEW
 
 -- Filter helper ----------------------------------------------
 function ns.FilterClipsThisRealm(pool)
     local filtered = {}
     for _, clip in pairs(pool) do
-        if clip.realmCode == ns.CURRENT_REALM_CODE then
+        -- use the string field we now keep
+        if clip.realm == ns.CURRENT_REALM then
             table.insert(filtered, clip)
         end
     end
