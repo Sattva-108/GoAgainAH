@@ -1230,18 +1230,18 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 c.level        or 0,         -- [9]
                 c.getPlayedTry or 0,         -- [10]
                 tonumber(c.playedTime) or 0, -- [11]
-                (causeCode==7) and mobName or "" -- [12]
+                (not c.completed and causeCode == 7) and mobName or "", -- [12]
             }
             row[13] = mobLevelNum                 -- [13] mob level
             row[14] = c.completed or nil          -- [14] ❷ completed flag ALWAYS here
 
-            local idx = 15                        -- optional strings start
-            if row[6] == 0 and rawZone then       -- ❸ only when zoneID==0
-                row[idx] = rawZone                -- zoneName
+            local idx = 15                       -- optional strings start
+            if (not c.completed) and row[6] == 0 and rawZone then   -- ← add not-completed
+                row[idx] = rawZone               -- zoneName
                 idx = idx + 1
             end
-            if row[8] == 0 and fullRealm then     -- ❸ only when realmID==0
-                row[idx] = fullRealm              -- realmName
+            if (not c.completed) and row[8] == 0 and fullRealm then -- ← add not-completed
+                row[idx] = fullRealm             -- realmName
             end
 
             rows[i] = row
