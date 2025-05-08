@@ -1164,9 +1164,14 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        -- start benchmark
+        ------------------------------------------------------------------
+        --  START BENCHMARK
+        --  We mark the time before we build and send the payload so
+        --  the remote client can see how long the entire operation took.
+        ------------------------------------------------------------------
         self.benchStartDeathClipSync = GetTime()
-        print("|cffffff00>> Bench: DeathClip sync requested at "..date("%H:%M").."|r")
+        print("|cff00ff00>> Bench: DeathClip sync requested at "
+                .. date("%H:%M") .. "|r")
 
         print("Payload since TS: "..payload.since)
 
@@ -1301,90 +1306,125 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         -- === Receiver: T_DEATH_CLIPS_STATE ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
+        ------------------------------------------------------------------
+        --  START BENCHMARK here, too, in case the sender is OLD and
+        --  did not include the “requested” print. We overwrite only if
+        --  it hasn’t been set yet.
+        ------------------------------------------------------------------
+        if not self.benchStartDeathClipSync then
+            self.benchStartDeathClipSync = GetTime()
+            print("|cff00ff00>> Bench: DeathClip sync started (no request print)|r")
+        end
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local ok, rows = Addon:Deserialize(decompressed)
         if not ok then return end
 
         for _, arr in ipairs(rows) do
-            -- 1) raw timestamp
-            local clipTS = arr[2] or 0
-            local now    = GetServerTime()
-            if clipTS > now then clipTS = now end
-
             ------------------------------------------------------------------
-            -- Look-ups and fallbacks
+            -- SAFETY CHECK --------------------------------------------------
+            -- • A correct row (our v2 protocol) has at least 14 numeric slots
+            --   1-14: name, ts, classID, causeID, raceID, zoneID, factionID,
+            --         realmID, level, getPlayedTry, playedTime, mobName,
+            --         mobLevel, completedFlag
+            -- • If we receive a shorter array it means:
+            --   1) the sender is an old addon version, or
+            --   2) the message got truncated/corrupted in transit.
+            --   We simply skip it and keep syncing the next row.
             ------------------------------------------------------------------
-            local zid       = arr[6] or 0
-            local zoneName  = (zid > 0 and ns.GetZoneNameByID(zid))
-                    or arr[15]                       -- optional string
-                    or ""                           -- no “Unknown” text
+            if #arr >= 14 then
+                ----------------------------------------------------------------
+                -- 1) pull in the raw ts
+                ----------------------------------------------------------------
+                local clipTS = arr[2] or 0
+                local now    = GetServerTime()
+                if clipTS > now then clipTS = now end
 
-            local rid       = arr[8] or 0
-            local realmStr  = (rid > 0 and ns.GetRealmNameByID(rid))
-                    or ((zid == 0 and arr[16]) or arr[15])
-                    or "UnknownRealm"
+                ----------------------------------------------------------------
+                -- 2) look-ups and fallbacks
+                ----------------------------------------------------------------
+                local zid      = arr[6] or 0
+                local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
+                        or arr[15] or ""
 
-            local clipCompleted = arr[14] and true or false    -- slot-14 flag
-            local causeID  = arr[4] or 0
-            local causeStr = clipCompleted and ""              -- blank for completed
-                    or ns.GetDeathCauseByID(causeID, arr[12] or "")
+                local rid      = arr[8] or 0
+                local realmStr = (rid > 0 and ns.GetRealmNameByID(rid))
+                        or ((zid == 0 and arr[16]) or arr[15])
+                        or "UnknownRealm"
 
-            -- class & race strings
-            local classStr = ns.ClassNameByID[arr[3]] or ""
-            local raceInfo = ns.GetRaceInfoByID(arr[5])
+                local clipCompleted = arr[14] ~= nil            -- slot-14 flag
+                local causeID  = arr[4] or 0
+                local causeStr = clipCompleted and ""
+                        or ns.GetDeathCauseByID(causeID, arr[12] or "")
 
-            ------------------------------------------------------------------
-            -- Build clip table
-            ------------------------------------------------------------------
-            local clip = {
-                characterName = arr[1] or "",
-                ts            = clipTS,
-                classCode     = arr[3],
-                class         = classStr,
-                causeCode     = causeID,
-                deathCause    = causeStr,
-                raceCode      = arr[5],
-                race          = raceInfo.name,
-                where         = clipCompleted and "" or zoneName,
-                factionCode   = arr[7],
-                realmCode     = rid,
-                realm         = realmStr,
-                level         = arr[9],
-                getPlayedTry  = arr[10],
-                playedTime    = arr[11],
-                mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
-                completed     = clipCompleted and true or nil,  -- slot-14
-            }
+                ----------------------------------------------------------------
+                -- 3) class & race names
+                ----------------------------------------------------------------
+                local classStr = ns.ClassNameByID[arr[3]] or ""
+                local raceInfo = ns.GetRaceInfoByID(arr[5])
 
-            -- faction string
-            if clip.factionCode == 1 then
-                clip.faction = "Alliance"
-            elseif clip.factionCode == 2 then
-                clip.faction = "Horde"
+                ----------------------------------------------------------------
+                -- 4) rebuild the clip table
+                ----------------------------------------------------------------
+                local clip = {
+                    characterName = arr[1] or "",
+                    ts            = clipTS,
+                    classCode     = arr[3],
+                    class         = classStr,
+                    causeCode     = causeID,
+                    deathCause    = causeStr,
+                    raceCode      = arr[5],
+                    race          = raceInfo.name,
+                    where         = clipCompleted and "" or zoneName,
+                    factionCode   = arr[7],
+                    realmCode     = rid,
+                    realm         = realmStr,
+                    level         = arr[9],
+                    getPlayedTry  = arr[10],
+                    playedTime    = arr[11],
+                    mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
+                    completed     = clipCompleted and true or nil,
+                }
+
+                ----------------------------------------------------------------
+                -- 5) faction string
+                ----------------------------------------------------------------
+                if clip.factionCode == 1 then
+                    clip.faction = "Alliance"
+                elseif clip.factionCode == 2 then
+                    clip.faction = "Horde"
+                else
+                    clip.faction = "Neutral"
+                end
+
+                ----------------------------------------------------------------
+                -- 6) ✂️ Minimal cleanup: drop unused or default fields
+                ----------------------------------------------------------------
+                clip.classCode, clip.raceCode, clip.factionCode, clip.realmCode = nil, nil, nil, nil
+                if clip.playedTime then clip.getPlayedTry = nil end
+
+                ----------------------------------------------------------------
+                -- 7) build unique ID (omit zone/cause for completed)
+                ----------------------------------------------------------------
+                local idParts = { clip.characterName, clip.level, clip.faction }
+                if clipCompleted then
+                    table.insert(idParts, tostring(clip.ts))       -- keep uniqueness
+                else
+                    table.insert(idParts, clip.where)
+                    table.insert(idParts, clip.deathCause)
+                end
+                clip.id = table.concat(idParts, "-")
+
+                LiveDeathClips[clip.id] = clip
             else
-                clip.faction = "Neutral"
+                -- Row too short: log once so the user/dev can notice
+                print("WARN: skipped malformed clip row with length "..#arr)
             end
-
-            ------------------------------------------------------------------
-            -- ✂️ Minimal cleanup: drop unused or default fields
-            ------------------------------------------------------------------
-            clip.classCode, clip.raceCode, clip.factionCode, clip.realmCode = nil, nil, nil, nil
-            if clip.playedTime then clip.getPlayedTry = nil end
-
-            ------------------------------------------------------------------
-            -- Rebuild unique ID (omit zone/cause for completed clips)
-            ------------------------------------------------------------------
-            local idParts = { clip.characterName, clip.level, clip.faction }
-            if not clipCompleted then
-                table.insert(idParts, clip.where)
-                table.insert(idParts, clip.deathCause)
-            end
-            clip.id = table.concat(idParts, "-")
-
-            LiveDeathClips[clip.id] = clip
         end
 
-        -- stop benchmark
+
+        ------------------------------------------------------------------
+        --  STOP BENCHMARK
+        ------------------------------------------------------------------
         local benchEnd = GetTime()
         if self.benchStartDeathClipSync then
             print("|cff00ff00>> Bench: DeathClip sync completed at "
@@ -1392,6 +1432,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     .. " (took "
                     .. string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
                     .. " s)|r")
+            self.benchStartDeathClipSync = nil            -- reset
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
