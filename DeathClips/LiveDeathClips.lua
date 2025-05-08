@@ -251,7 +251,7 @@ end
 
 -- Create the frame to listen for addon messages
 local frame = CreateFrame("Frame")
---frame:RegisterEvent("CHAT_MSG_ADDON")
+frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" then
         if prefix == "ASMSG_HARDCORE_DEATH" then
@@ -435,9 +435,9 @@ local nextUpdateDeadline = nil
 local ladderBuffer = {}
 
 -- Register necessary events
---f:RegisterEvent("PLAYER_ENTERING_WORLD")
---f:RegisterEvent("CHAT_MSG_ADDON")
---f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
+f:RegisterEvent("CHAT_MSG_ADDON")
+f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
 -- Function to save logout data
 local function saveLogoutData()

@@ -1184,14 +1184,14 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         local rows = {}
         for i, c in ipairs(rawClips) do
-            local ts = c.ts or 0  -- **absolute** server time
+            local ts = c.ts or 0  -- absolute server time
 
             -- strip color from mob name
             local mobName = (c.deathCause or "")
                     :gsub("|c%x%x%x%x%x%x%x%x","")
                     :gsub("|r","")
 
-            -- determine causeCode (0–10, default 7 if none matches)
+            -- determine causeCode (0–10, default 7)
             local causeCode = 7
             for id, text in pairs(ns.DeathCauseByID) do
                 if id ~= 7 and c.deathCause:find(text,1,true) then
@@ -1201,53 +1201,51 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             end
 
             -- zone → ID + fallback string
-            local zid = ns.ZoneIDByName[c.where] or 0
-            local rawZone = (zid>0) and nil or (c.where or "")
+            local zid     = ns.ZoneIDByName[c.where] or 0
+            local rawZone = (zid > 0) and nil or (c.where or "")
 
             -- faction → code
-            local facCode = (c.faction=="Alliance") and 1
-                    or (c.faction=="Horde"   ) and 2
+            local facCode = (c.faction == "Alliance" and 1)
+                    or (c.faction == "Horde"    and 2)
                     or 3
 
             -- race & class codes
-            local raceCode  = ns.RaceIDByName[c.race] or 0
+            local raceCode  = ns.RaceIDByName[c.race]  or 0
             local classCode = ns.ClassIDByName[c.class] or 0
 
-            -- parse raw mob level number
-            local ml = (c.mobLevelText or "")
-                    :gsub("|c%x%x%x%x%x%x%x%x","")
-                    :gsub("|r","")
-            local mobLevelNum = tonumber(ml) or 0
+            -- **NEW**: read the raw mobLevel field directly
+            local mobLevelNum = c.mobLevel or 0
 
             -- build the row
             local row = {
-                c.characterName or "",       -- [1]
-                ts,                          -- [2] absolute ts
-                classCode,                   -- [3]
-                c.completed and 0 or causeCode,  -- [4] ❶ send 0 when completed
-                raceCode,                    -- [5]
-                c.completed and 0 or zid,        -- [6] ❶ send 0 when completed
-                facCode,                     -- [7]
-                realmID,                     -- [8]
-                c.level        or 0,         -- [9]
-                c.getPlayedTry or 0,         -- [10]
-                tonumber(c.playedTime) or 0, -- [11]
+                c.characterName or "",          -- [1]
+                ts,                             -- [2]
+                classCode,                      -- [3]
+                c.completed and 0 or causeCode, -- [4]
+                raceCode,                       -- [5]
+                c.completed and 0 or zid,       -- [6]
+                facCode,                        -- [7]
+                realmID,                        -- [8]
+                c.level        or 0,            -- [9]
+                c.getPlayedTry or 0,            -- [10]
+                tonumber(c.playedTime) or 0,    -- [11]
                 (not c.completed and causeCode == 7) and mobName or "", -- [12]
             }
-            row[13] = mobLevelNum                 -- [13] mob level
-            row[14] = c.completed or nil          -- [14] ❷ completed flag ALWAYS here
 
-            local idx = 15                       -- optional strings start
-            if (not c.completed) and row[6] == 0 and rawZone then   -- ← add not-completed
-                row[idx] = rawZone               -- zoneName
+            row[13] = mobLevelNum              -- [13] fixed mob level
+            row[14] = c.completed or nil       -- [14] completed flag
+
+            -- optional zone + realm strings
+            local idx = 15
+            if (not c.completed) and row[6] == 0 and rawZone then
+                row[idx] = rawZone
                 idx = idx + 1
             end
-            if (not c.completed) and row[8] == 0 and fullRealm then -- ← add not-completed
-                row[idx] = fullRealm             -- realmName
+            if (not c.completed) and row[8] == 0 and fullRealm then
+                row[idx] = fullRealm
             end
 
             rows[i] = row
-
         end
 
         -- ------------------------------------------------------------------
