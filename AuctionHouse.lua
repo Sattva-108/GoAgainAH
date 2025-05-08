@@ -1232,13 +1232,57 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 tonumber(c.playedTime) or 0, -- [11]
                 (causeCode==7) and mobName or "" -- [12]
             }
-            row[13] = mobLevelNum         -- raw mob level
-            row[14] = c.realm or fullRealm-- full realm string
-            if rawZone then row[15] = rawZone end
-            row[16] = c.completed or nil
+            row[13] = mobLevelNum                  -- raw mob level
+            row[14] = c.completed or nil           -- ← ALWAYS put completed flag here
+
+            local idx = 15                         -- optional fallback strings
+            if row[6] == 0 and rawZone then        -- zoneID unknown → send zoneName
+                row[idx] = rawZone                 -- 15
+                idx = idx + 1
+            end
+            if row[8] == 0 and fullRealm then      -- realmID unknown → send realmName
+                row[idx] = fullRealm               -- 15 or 16
+            end
 
             rows[i] = row
+
         end
+
+        -- ------------------------------------------------------------------
+        -- Debug: pretty-print one RAW 'rows' entry (numeric array)
+        -- ------------------------------------------------------------------
+        local function DebugDumpClipArr(arr)
+            -- map numeric slots -> human labels so the printout is readable
+            local labels = {
+                "name",        -- 1
+                "ts",          -- 2
+                "classID",     -- 3
+                "causeID",     -- 4
+                "raceID",      -- 5
+                "zoneID",      -- 6
+                "factionID",   -- 7
+                "realmID",     -- 8
+                "level",       -- 9
+                "getPlayedTry",--10
+                "playedTime",  --11
+                "mobName",     --12
+                "mobLevel",    --13
+                "realmName",   --14
+                "zoneName",    --15 (optional fallback)
+                "completed",   --16
+            }
+
+            local parts = {}
+            for i = 1, #arr do
+                table.insert(parts, labels[i] .. "=" .. tostring(arr[i]))
+            end
+            print("SEND-RAW {" .. table.concat(parts, ", ") .. "}")
+        end
+
+        for _, arr in ipairs(rows) do
+            DebugDumpClipArr(arr)
+        end
+
 
         -- serialize & send
         local serialized = Addon:Serialize(rows)
@@ -1266,11 +1310,17 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 clipTS = now
             end
 
-            -- zone lookup + fallback
+            -- zone lookup + fallback --------------------------------------
             local zid = arr[6] or 0
             local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
-                    or arr[15]
-                    or ("UnknownZone(" .. zid .. ")")
+                    or arr[15]                                   -- ← shifted
+                    or ("UnknownZone("..zid..")")
+
+            -- realm lookup + fallback -------------------------------------
+            local rid = arr[8] or 0
+            local realmStr = (rid > 0 and ns.GetRealmNameByID(rid))
+                    or ((zid == 0 and arr[16]) or arr[15])       -- ← new rule
+                    or "UnknownRealm"
 
             -- cause string (with mobName if id==7)
             local causeStr = ns.GetDeathCauseByID(arr[4] or 0, arr[12] or "")
@@ -1292,13 +1342,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 where         = zoneName,
                 factionCode   = arr[7],
                 realmCode     = arr[8],
-                realm         = arr[14] or "",
+                realm         = realmStr,            -- ← was arr[14]
                 level         = arr[9],
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
-                -- keep the field only if the number is > 0
-                mobLevel = (arr[13] and arr[13] > 0) and arr[13] or nil,
-                completed     = arr[16] or nil,
+                mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
+                completed     = arr[14] or nil,      -- ← shifted from 16 to 14
             }
 
             -- faction string
