@@ -457,19 +457,19 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     local mobLvNum = clip.mobLevel or 0
 
     if causeId == 7 and mobName ~= "" then
-        -- creature kill: custom color bands
+        -- LEVEL DIFFERENCE COLOR LOGIC: compressed center
         local diff = mobLvNum - playerLv
         local colorTag
-        if diff >= 5 then
-            colorTag = "|cFFFF0000"  -- red
-        elseif diff >= 3 then
-            colorTag = "|cFFFF7F00"  -- orange
-        elseif diff >= -2 then
-            colorTag = "|cFFFFFF00"  -- yellow
-        elseif diff >= -6 then
-            colorTag = "|cFF00FF00"  -- green
+        if diff >= 4 then
+            colorTag = "|cFFFF0000" -- red
+        elseif diff >= 2 then
+            colorTag = "|cFFFF7F00" -- orange
+        elseif diff >= -1 then
+            colorTag = "|cFFFFFF00" -- yellow
+        elseif diff >= -4 then
+            colorTag = "|cFF00FF00" -- green
         else
-            colorTag = "|cFF808080"  -- gray
+            colorTag = "|cFF808080" -- gray
         end
 
         clipText:SetText( colorTag .. mobName .. "|r" )
