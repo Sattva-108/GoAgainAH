@@ -84,6 +84,24 @@ local deathCauses = {
     [10] = "Погиб от собственных действий",
 }
 
+--- Generates a unique clip ID.
+--- @param clip table  The clip object (must have characterName, level, faction, where, deathCause)
+--- @param isCompleted boolean  True if this is a completed clip
+function ns.GenerateClipID(clip, isCompleted)
+    local parts = {
+        clip.characterName,
+        clip.level,
+        clip.faction,
+    }
+    if not isCompleted then
+        -- only live‐death clips get zone+cause
+        parts[#parts+1] = clip.where
+        parts[#parts+1] = clip.deathCause
+    end
+    -- completed clips stop here (no ts, no zone/cause)
+    return table.concat(parts, "-")
+end
+
 ns.GetLiveDeathClips = function()
     if LiveDeathClips == nil then
         LiveDeathClips = {}
@@ -281,14 +299,9 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 
             -- 4) Build the unique clip ID
             local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-            local clipID     = string.format(
-                    "%s-%d-%s-%s-%s",
-                    name, level, zoneStr, factionStr, causeText
-            )
 
             -- 5) Assemble the clip with only the raw fields
             local clip = {
-                id            = clipID,
                 ts            = GetServerTime(),
                 characterName = name,
                 race          = (races[raceId] and races[raceId].name) or "Неизвестно",
@@ -303,6 +316,8 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 getPlayedTry  = 0,
                 realm         = ns.CURRENT_REALM,
             }
+
+            clip.id = ns.GenerateClipID(clip, false)
 
             -- 6) Deduplicate
             if not clip.id or ns.GetLiveDeathClips()[clip.id] then
@@ -340,18 +355,9 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             -- build the unique clip ID
             local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
             zoneStr = zoneStr:gsub("\n", " ")
-            local clipID = string.format(
-                    "%s-%d-%s-%s-%s",
-                    name,
-                    level,
-                    zoneStr,
-                    factionStr,
-                    deathCause
-            )
 
             -- assemble the clip with the new unified fields
             local clip = {
-                id            = clipID,
                 ts            = GetServerTime(),
                 characterName = name,
                 race          = (races[raceId] and races[raceId].name) or "Неизвестно",
@@ -366,6 +372,8 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
                 playedTime    = nil,           -- will be populated later
                 realm         = ns.CURRENT_REALM,       -- human-readable realm
             }
+
+            clip.id = ns.GenerateClipID(clip, true)
 
             -- dedupe guard
             if not clip.id or ns.GetLiveDeathClips()[clip.id] then

@@ -1415,22 +1415,22 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ----------------------------------------------------------------
             local clip = {
                 characterName = arr[1] or "",
-                ts = clipTS,
-                classCode = arr[3],
-                class = classStr,
-                causeCode = causeID,
-                deathCause = causeStr,
-                raceCode = arr[5],
-                race = raceInfo.name,
-                where = clipCompleted and "" or zoneName,
-                factionCode = arr[7],
-                realmCode = rid,
-                realm = realmStr,
-                level = arr[9],
-                getPlayedTry = arr[10],
-                playedTime = arr[11],
-                mobLevel = (arr[13] and arr[13] > 0) and arr[13] or nil,
-                completed = clipCompleted and true or nil,
+                ts            = clipTS,
+                classCode     = arr[3],
+                class         = classStr,
+                causeCode     = causeID,
+                deathCause    = causeStr,
+                raceCode      = arr[5],
+                race          = raceInfo.name,
+                where         = clipCompleted and "" or zoneName,
+                factionCode   = arr[7],
+                realmCode     = rid,
+                realm         = realmStr,
+                level         = arr[9],
+                getPlayedTry  = arr[10],
+                playedTime    = arr[11],
+                mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
+                completed     = clipCompleted and true or nil,
             }
 
             ----------------------------------------------------------------
@@ -1453,19 +1453,11 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             end
 
             ----------------------------------------------------------------
-            -- 7) build unique ID (omit zone/cause for completed)
+            -- 7) build unique ID via helper
             ----------------------------------------------------------------
-            local idParts = { clip.characterName, clip.level, clip.faction }
-            if clipCompleted then
-                table.insert(idParts, tostring(clip.ts))       -- keep uniqueness
-            else
-                table.insert(idParts, clip.where)
-                table.insert(idParts, clip.deathCause)
-            end
-            clip.id = table.concat(idParts, "-")
+            clip.id = ns.GenerateClipID(clip, clip.completed)
 
             LiveDeathClips[clip.id] = clip
-
         end
 
 
