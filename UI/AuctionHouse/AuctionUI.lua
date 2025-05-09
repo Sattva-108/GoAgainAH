@@ -731,13 +731,16 @@ local function AssignReviewTextures(includingLeftBorder)
     if includingLeftBorder then
         OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft")
         OFAuctionFrameTopLeft:SetTexture(basepath .. "topleft")
+        OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-Top")
+        OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-TopRight")
+
     else
-        OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotLeft")
-        OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-TopLeft")
+        local basepath2 = "Interface\\AddOns\\"..addonName.."\\Media\\auctionframe-clip-"
+        OFAuctionFrameBotLeft:SetTexture(basepath2 .. "botleft")
+        OFAuctionFrameTopLeft:SetTexture(basepath2 .. "topleft")
+        OFAuctionFrameTop:SetTexture(basepath2 .. "top")
+        OFAuctionFrameTopRight:SetTexture(basepath2 .. "topright")
     end
-    OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-Top")
-    OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-Top")
-    OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-TopRight")
     OFAuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-Bot")
     OFAuctionFrameBotRight:SetTexture(basepath .. "botright")
 end
@@ -777,6 +780,23 @@ function OFAuctionFrameSwitchTab(index)
     SetAuctionsTabShowing(false)
 
 	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+
+    if not OFAuctionFrameCloseButton.defaultPoint then
+        local point, relativeTo, relativePoint, xOffset, yOffset = OFAuctionFrameCloseButton:GetPoint()
+        OFAuctionFrameCloseButton.defaultPoint = {point, relativeTo, relativePoint, xOffset, yOffset}
+    end
+
+    if index == TAB_DEATH_CLIPS then
+        OFAuctionFrameCloseButton:ClearAllPoints()
+        OFAuctionFrameCloseButton:SetPoint("TOPRIGHT", OFAuctionFrame, "TOPRIGHT", 3, -27)
+    else
+        local p = OFAuctionFrameCloseButton.defaultPoint
+        if p then
+            OFAuctionFrameCloseButton:ClearAllPoints()
+            OFAuctionFrameCloseButton:SetPoint(unpack(p))
+        end
+    end
+
 
 	if ( index == TAB_BROWSE ) then
 		OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopLeft");

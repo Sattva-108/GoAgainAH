@@ -64,6 +64,8 @@ AuctionHouse\ItemTooltipHook.lua
 UI\AuctionHouse\BrowseParams.lua
 UI\Mailbox\Mailbox.lua
 
+Bindings.xml
+
 UI\AuctionHouse\AuctionData.lua
 UI\AuctionHouse\ReviewUI.lua
 

@@ -1348,7 +1348,7 @@
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <FontString name="OFDeathClipsTitle" inherits="GameFontNormal" text="L_DEATH_CLIPS">
+                        <FontString name="OFDeathClipsTitle" inherits="GameFontNormal" text="">
                             <Anchors>
                                 <Anchor point="TOP">
                                     <Offset>

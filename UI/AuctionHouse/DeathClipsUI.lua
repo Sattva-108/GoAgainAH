@@ -9,6 +9,41 @@ local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
 local CLIPS_BUTTON_HEIGHT = 37
 
+-- This must match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …> in Bindings.xml
+-- 1) Key-Bindings header and friendly name
+_G.BINDING_HEADER_GoAgainAH            = "GoAgainAH"
+_G.BINDING_NAME_GOAGAINAH_TOGGLE_CLIPS = "Показать панель смертей"
+
+-- 2) This must exactly match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …>
+function GOAGAINAH_TOGGLE_CLIPS()
+    local af = _G["OFAuctionFrame"]
+    if not af then return end
+
+    -- if visible, just hide and exit
+    if af:IsShown() then
+        af:Hide()
+        return
+    end
+
+    -- otherwise show & select Death-Clips → Live
+    af:Show()
+
+    -- click main tab #6 (Death-Clips)
+    local tab6 = _G["OFAuctionFrameTab6"]
+    if tab6 and tab6:IsShown() then
+        tab6:Click()
+    end
+
+    -- click the “Live” sub-tab
+    local liveTab = _G["OFDeathClipsTabLive"]
+    if liveTab and liveTab:IsShown() then
+        liveTab:Click()
+    end
+end
+
+
+
+
 local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsStreamerSort, "clips", "streamer")
     OFSortButton_UpdateArrow(OFDeathClipsRaceSort, "clips", "race")
@@ -313,9 +348,6 @@ local function UpdateLayout(buttonName)
 end
 
 local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
-    if clip.streamer == nil or clip.streamer == "" then
-        clip.streamer = ns.GetTwitchName(clip.characterName)
-    end
 
     local buttonName = button:GetName()
     local overrides = state:GetClipOverrides(clip.id)
@@ -451,12 +483,43 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     end
     where:SetText(whereStr or L["Unknown"])
 
-    local clipText = _G[buttonName.."ClipText"]
+    local clipText     = _G[buttonName.."ClipText"]
     local mobLevelText = _G[buttonName.."ClipMobLevel"]
 
-    clipText:SetText(clip.deathCause or "Неизвестно")
-    mobLevelText:SetText(clip.mobLevelText or "")
+    local causeId  = clip.causeCode or 0
+    local mobName  = clip.deathCause or ""
+    local playerLv = clip.level    or 0
+    local mobLvNum = clip.mobLevel or 0
+
+    if causeId == 7 and mobName ~= "" then
+        -- LEVEL DIFFERENCE COLOR LOGIC: compressed center
+        local diff = mobLvNum - playerLv
+        local colorTag
+        if diff >= 4 then
+            colorTag = "|cFFFF0000" -- red
+        elseif diff >= 2 then
+            colorTag = "|cFFFF7F00" -- orange
+        elseif diff >= -1 then
+            colorTag = "|cFFFFFF00" -- yellow
+        elseif diff >= -4 then
+            colorTag = "|cFF00FF00" -- green
+        else
+            colorTag = "|cFF808080" -- gray
+        end
+
+        clipText:SetText( colorTag .. mobName .. "|r" )
+        mobLevelText:SetText( colorTag .. mobLvNum .. "|r" )
+    else
+        -- non–creature cause: plain white text
+        local causeStr = ns.DeathCauseByID[causeId] or "Неизвестно"
+        clipText:SetText( "|cFFFFFFFF" .. causeStr .. "|r" )
+        mobLevelText:SetText( "" )
+    end
+
     mobLevelText:SetJustifyH("CENTER")
+
+
+
     if clip.completed and clip.playedTime then
         clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
         -- Convert playedTime (in seconds) to D H M S format

@@ -3,19 +3,22 @@ local _, ns = ...
 ------------------------------------------------------------------------
 -- >>> REALM SUPPORT
 ------------------------------------------------------------------------
-local CURRENT_REALM = GetRealmName()
-ns.CURRENT_REALM = CURRENT_REALM   -- expose for other files
+local fullName = GetRealmName() or ""
+ns.CURRENT_REALM_CODE = ns.RealmFullNameToID[fullName] or 0
+ns.CURRENT_REALM      = fullName                    -- ← NEW
 
 -- Filter helper ----------------------------------------------
 function ns.FilterClipsThisRealm(pool)
     local filtered = {}
     for _, clip in pairs(pool) do
-        if clip.realm == CURRENT_REALM then
+        -- use the string field we now keep
+        if clip.realm == ns.CURRENT_REALM then
             table.insert(filtered, clip)
         end
     end
     return filtered
 end
+
 ------------------------------------------------------------------------
 
 
@@ -81,6 +84,24 @@ local deathCauses = {
     [10] = "Погиб от собственных действий",
 }
 
+--- Generates a unique clip ID.
+--- @param clip table  The clip object (must have characterName, level, faction, where, deathCause)
+--- @param isCompleted boolean  True if this is a completed clip
+function ns.GenerateClipID(clip, isCompleted)
+    local parts = {
+        clip.characterName,
+        clip.level,
+        clip.faction,
+    }
+    if not isCompleted then
+        -- only live‐death clips get zone+cause
+        parts[#parts+1] = clip.where
+        parts[#parts+1] = clip.deathCause
+    end
+    -- completed clips stop here (no ts, no zone/cause)
+    return table.concat(parts, "-")
+end
+
 ns.GetLiveDeathClips = function()
     if LiveDeathClips == nil then
         LiveDeathClips = {}
@@ -98,35 +119,54 @@ end
 
 ns.GetNewDeathClips = function(since, existing)
     local allClips = ns.GetLiveDeathClips()
+
+    -- FULL‐SYNC: if since is zero or nil, return every clip unfiltered
+    if not since or since == 0 then
+        local full = {}
+        for _, clip in pairs(allClips) do
+            full[#full+1] = clip
+        end
+        table.sort(full, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
+        return full
+    end
+
+    -- Otherwise, do the normal incremental sync logic:
+
+    -- 1) collect clips newer than `since`
     local newClips = {}
-    local seen = {}
+    local seen     = {}
     for _, clip in pairs(allClips) do
         if clip.ts > since then
-            table.insert(newClips, clip)
-            seen[clip.id] = true
+            newClips[#newClips+1] = clip
+            seen[clip.id]         = true
         end
     end
+
+    -- 2) cap to the latest 100
     if #newClips > 100 then
-        -- keep the latest 100 entries
-        table.sort(newClips, function(l, r)
-            return l.ts < r.ts
-        end)
-        local newClips2 = {}
-        local seen2 = {}
+        table.sort(newClips, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
+        local capped = {}
+        local capSeen = {}
         for i = #newClips - 99, #newClips do
-            table.insert(newClips2, newClips[i])
-            seen2[newClips[i].id] = true
+            local c = newClips[i]
+            capped[#capped+1] = c
+            capSeen[c.id]     = true
         end
-        newClips = newClips2
-        seen = seen2
+        newClips, seen = capped, capSeen
     end
+
+    -- 3) merge back any clips ≥ since that the receiver doesn’t already have
     if existing then
-        local fromTs = existing.fromTs
-        local existingClips = existing.clips
-        for clipID, clip in pairs(allClips) do
-            if not existingClips[clipID] and not seen[clipID] and clip.ts >= fromTs then
-                table.insert(newClips, clip)
-                seen[clipID] = true
+        local fromTs      = existing.fromTs or since
+        local existingMap = existing.clips or existing
+
+        for id, clip in pairs(allClips) do
+            if clip.ts >= fromTs
+                    and not seen[id]
+                    and not existingMap[id]
+            then
+                newClips[#newClips+1] = clip
+                seen[id]             = true
             end
         end
     end
@@ -233,104 +273,55 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" then
         if prefix == "ASMSG_HARDCORE_DEATH" then
-            -- Parsing the message (like before)
-            local parts = {}
-            for part in string.gmatch(message, "([^:]+)") do
+            -- 1) Parse incoming message parts
+            local parts      = {}
+            for part in message:gmatch("([^:]+)") do
                 table.insert(parts, part)
             end
 
-            local name = parts[1]
-            local raceId = tonumber(parts[2])
-            local classId = tonumber(parts[4])
-            local level = tonumber(parts[5])
-            local rawZone = parts[6]
-            local deathCauseId = tonumber(parts[7])
-            local mobName = parts[8] or ""
-            local mobLevel = parts[9] or ""
+            local name       = parts[1]
+            local raceId     = tonumber(parts[2])
+            local classId    = tonumber(parts[4])
+            local level      = tonumber(parts[5])
+            local rawZone    = parts[6] or ""
+            local causeCode  = tonumber(parts[7]) or 0
+            local rawMobName = parts[8] or ""
+            local rawMobLv   = tonumber(parts[9]) or 0
 
-            -- Process the zone and death cause
-            local firstWord, rest = string.match(rawZone or "", "^(%S+)%s*(.*)$")
-            local zone = rest and rest ~= "" and firstWord .. "\n" .. rest or firstWord
+            -- 2) Normalize zone
+            local zoneStr = rawZone:gsub("\n", " ")
+            if zoneStr == "" then zoneStr = "Неизвестно" end
 
-            local deathCause = deathCauses[deathCauseId] or "Неизвестно"
-            local mobLevelText = ""  -- Default empty
+            -- 3) Decide the plain cause text
+            local causeText = (causeCode == 7 and rawMobName ~= "")
+                    and rawMobName
+                    or (ns.DeathCauseByID[causeCode] or "Неизвестно")
 
-            -- Check if the death was caused by a creature and we have its name
-            if deathCauseId == 7 and mobName ~= "" then
-                -- Initially set deathCause to the mob name (uncolored)
-                deathCause = mobName
-
-                -- Check if we also have the mob's level
-                if mobLevel ~= "" then
-                    -- Calculate level difference and color logic
-                    local playerLevel = level or 0 -- Ensure player level is a number
-                    local mobLevelNum = tonumber(mobLevel)
-                    local levelDiff = mobLevelNum - playerLevel
-
-                    -- Determine color based on level difference
-                    local color
-                    if levelDiff >= 5 then
-                        -- Red
-                        color = "|cFFFF0000"
-                    elseif levelDiff >= 3 then
-                        -- Orange
-                        color = "|cFFFF7F00"
-                    elseif levelDiff >= -2 then
-                        -- Yellow
-                        color = "|cFFFFFF00"
-                    elseif levelDiff >= -6 then
-                        -- Green
-                        color = "|cFF00FF00"
-                    else
-                        -- Gray
-                        color = "|cFF808080"
-                    end
-
-                    -- Format mob level text with color and " ур." suffix
-                    mobLevelText = string.format("%s%s|r", color, mobLevel)
-
-                    -- Format death cause (mob name) with the same color
-                    deathCause = string.format("%s%s|r", color, mobName)
-                end
-            end
-
-            -- Directly build the clip ID here
-            local deathCauseStr = deathCause and deathCause ~= "" and deathCause or "Unknown"
+            -- 4) Build the unique clip ID
             local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-            local zoneStr = zone and zone ~= "" and zone or "Unknown"
 
-            -- Replace newlines in 'zone' with spaces
-            zoneStr = zoneStr:gsub("\n", " ")
-
-            -- Build the ID using the full message (without BuildSimpleClipID)
-            local clipID = string.format("%s-%d-%s-%s-%s", name, level, zoneStr, factionStr, deathCauseStr)
-
-            -- Create the death clip entry
+            -- 5) Assemble the clip with only the raw fields
             local clip = {
-                id = clipID,
-                ts = GetServerTime(),
-                streamer = ns.GetTwitchName(name) or name,
+                ts            = GetServerTime(),
                 characterName = name,
-                race = (races[raceId] and races[raceId].name) or "Неизвестно",
-                faction = factionStr,
-                class = classes[classId] or "Неизвестно",
-                level = level,
-                where = zoneStr,
-                deathCause = deathCauseStr,
-                mobLevelText = mobLevelText,
-                playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realm         = CURRENT_REALM,
+                race          = (races[raceId] and races[raceId].name) or "Неизвестно",
+                faction       = factionStr,
+                class         = classes[classId] or "Неизвестно",
+                level         = level,
+                where         = zoneStr,
+                causeCode     = causeCode,     -- numeric cause ID
+                deathCause    = causeText,     -- raw text
+                mobLevel      = rawMobLv,      -- raw number
+                playedTime    = nil,           -- will be filled later
+                getPlayedTry  = 0,
+                realm         = ns.CURRENT_REALM,
             }
 
-            if not clip.id then
-                return
-            end
+            clip.id = ns.GenerateClipID(clip, false)
 
-            -- Check if the clip ID already exists
-            local existingClips = ns.GetLiveDeathClips()
-            if existingClips[clip.id] then
-                --print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
-                return  -- Return early to prevent adding the duplicate clip
+            -- 6) Deduplicate
+            if not clip.id or ns.GetLiveDeathClips()[clip.id] then
+                return
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
@@ -340,68 +331,58 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             clip.getPlayedTry = 0
             table.insert(queue[name], clip)
 
-            -- If no duplicate, add the clip
-            --            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
-
+            -- 7) Merge, notify UI and broadcast
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+            ns.AuctionHouse:BroadcastDeathClipAdded(clip)
 
-        elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
-            local parts = { strsplit(":", message) }
-            local name = parts[1]
-            local raceId = tonumber(parts[2])
-            local genderId = tonumber(parts[3])
-            local classId = tonumber(parts[4])
 
-            -- Default values (because these are missing in the message)
-            local level = 80   -- Default level
-            local zone = "Неизвестно"  -- Default zone
-            local deathCause = "Неизвестно"  -- Default death cause (for consistency)
-            local mobLevelText = ""  -- Default mob level text (empty)
+    elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
+            -- parse the incoming message
+            local parts     = { strsplit(":", message) }
+            local name      = parts[1]
+            local raceId    = tonumber(parts[2])
+            local genderId  = tonumber(parts[3])
+            local classId   = tonumber(parts[4])
 
-            -- Directly build the clip ID here
-            local deathCauseStr = deathCause and deathCause ~= "" and deathCause or "Unknown"
+            -- default/fallback values
+            local level        = 80                                  -- no level in COMPLETE msg
+            local zoneStr      = "Неизвестно"
+            local causeCode    = 0                                   -- non-creature
+            local deathCause   = ns.DeathCauseByID[causeCode] or "Неизвестно"
+            local mobLevel     = 0
+
+            -- build the unique clip ID
             local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-            local zoneStr = zone and zone ~= "" and zone or "Unknown"
-
-            -- Replace newlines in 'zone' with spaces
             zoneStr = zoneStr:gsub("\n", " ")
 
-            -- Build the ID using the full message (without BuildSimpleClipID)
-            local clipID = string.format("%s-%d-%s-%s-%s", name, level, zoneStr, factionStr, deathCauseStr)
-
-            -- Create the completed challenge clip
+            -- assemble the clip with the new unified fields
             local clip = {
-                id = clipID,
-                ts = GetServerTime(),
-                streamer = ns.GetTwitchName(name) or name,
+                ts            = GetServerTime(),
                 characterName = name,
-                race = (races[raceId] and races[raceId].name) or "Неизвестно",
-                faction = factionStr,
-                class = classes[classId] or "Неизвестно",
-                level = level,
-                where = zoneStr,
-                deathCause = deathCauseStr,
-                mobLevelText = mobLevelText,
-                completed = true,
-                playedTime = nil, -- `playedTime` is nil initially (we'll populate it later)
-                realm         = CURRENT_REALM,
+                race          = (races[raceId] and races[raceId].name) or "Неизвестно",
+                faction       = factionStr,
+                class         = classes[classId] or "Неизвестно",
+                level         = level,
+                where         = zoneStr,
+                causeCode     = causeCode,     -- NEW: numeric cause for UI logic
+                deathCause    = deathCause,    -- NEW: plain text for UI logic
+                mobLevel      = mobLevel,      -- NEW: plain number for UI logic
+                completed     = true,
+                playedTime    = nil,           -- will be populated later
+                realm         = ns.CURRENT_REALM,       -- human-readable realm
             }
 
-            if not clip.id then
-                return
-            end
+            clip.id = ns.GenerateClipID(clip, true)
 
-            -- Check if the clip ID already exists
-            local existingClips = ns.GetLiveDeathClips()
-            if existingClips[clip.id] then
-                --print("Duplicate clip detected for: " .. name .. " with ID: " .. clip.id)
-                return  -- Return early to prevent adding the duplicate clip
+            -- dedupe guard
+            if not clip.id or ns.GetLiveDeathClips()[clip.id] then
+                return
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
             -- Add the played clip to the queue (for both death and played clips)
-            queue[name] = queue[name] or {}
+            queue[name]      = queue[name] or {}
             clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
             clip.getPlayedTry = 0
             table.insert(queue[name], clip)
@@ -412,6 +393,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
+
     end
 end)
 
@@ -467,7 +449,7 @@ f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
 -- Function to save logout data
 local function saveLogoutData()
-    local now = GetTime()
+    local now = time()
     -- Simply store the current time as the last logout time
     AuctionHouseDBSaved.lastLogoutTime = now  -- Store the last logout time (current time)
     AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the next update deadline
@@ -477,7 +459,7 @@ end
 -- Event handler for all the registered events
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
-        local now = GetServerTime()
+        local now = time()
         listening = false -- Ensure listening is off until timer fires
 
         -- Load relevant saved data
@@ -512,6 +494,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             else
                 -- Store the message instead of printing
                 deadlineStatusMessage = "Recent login (<300s): No deadline was saved in DB. Waiting for ladder event."
+                savedLogoutTime = nil
                 nextUpdateDeadline = nil -- Ensure it's nil if nothing was saved
             end
         else
@@ -519,6 +502,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             if savedLogoutTime then
                 -- Store the message instead of printing
                 deadlineStatusMessage = string.format("Login >300s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
+                savedLogoutTime = nil
             else
                 -- Store the message instead of printing
                 deadlineStatusMessage = "No previous logout time. Ignoring saved deadline. Waiting for ladder event."
@@ -556,7 +540,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                             table.insert(queue[clip.characterName], clip)
                             -- This print has its own 10s delay, leave it as is
                             C_Timer:After(10, function()
-                                print(clip.characterName .. " added to the queue (no playedTime)")
+                                --print(clip.characterName .. " added to the queue (no playedTime)")
                             end)
                         end
                     end
@@ -591,7 +575,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         local name = msg:match("^([^:]+)")
         if name then
             if nextUpdateDeadline then
-                local left = nextUpdateDeadline - GetTime()
+                local left = nextUpdateDeadline - time()
                 if left < 0 then
                     left = 0
                 end
@@ -649,7 +633,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             -- <<< MINIMAL: only bump once per 10m interval
             -- [ Keep this do...end block EXACTLY as provided by user ]
             do
-                local now = GetTime()
+                local now = time()
                 if not nextUpdateDeadline then
                     nextUpdateDeadline = now + 600
                 end
@@ -698,7 +682,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     end -- End if queue
                     -- This reset happens *only* when the deadline check passes
                     nextUpdateDeadline = now + 600
-                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - GetTime()))
+                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - time()))
                 end -- End deadline check
             end -- End do block
 
@@ -706,7 +690,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             -- This ensures the deadline check in the do...end block uses the
             -- value set by the *last successful check*, allowing the 10-minute
             -- interval to function correctly *relative to the check itself*.
-            -- nextUpdateDeadline = GetTime() + 600  -- REMOVED
+            -- nextUpdateDeadline = time() + 600  -- REMOVED
 
         end -- End elseif ASMSG_HARDCORE_LADDER_LIST
     end
