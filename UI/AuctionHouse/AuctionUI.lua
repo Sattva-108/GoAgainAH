@@ -732,8 +732,9 @@ local function AssignReviewTextures(includingLeftBorder)
         OFAuctionFrameBotLeft:SetTexture(basepath .. "botleft")
         OFAuctionFrameTopLeft:SetTexture(basepath .. "topleft")
     else
-        OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotLeft")
-        OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-TopLeft")
+        local basepath2 = "Interface\\AddOns\\"..addonName.."\\Media\\auctionframe-clip-"
+        OFAuctionFrameBotLeft:SetTexture(basepath2 .. "botleft")
+        OFAuctionFrameTopLeft:SetTexture(basepath2 .. "topleft")
     end
     OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-Top")
     OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-Top")
