@@ -1,0 +1,5 @@
+<Bindings>
+	<Binding name="GOAGAINAH_TOGGLE_CLIPS" header="GoAgainAH">
+		GOAGAINAH_TOGGLE_CLIPS()
+	</Binding>
+</Bindings>

@@ -9,6 +9,41 @@ local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
 local CLIPS_BUTTON_HEIGHT = 37
 
+-- This must match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …> in Bindings.xml
+-- 1) Key-Bindings header and friendly name
+_G.BINDING_HEADER_GoAgainAH            = "GoAgainAH"
+_G.BINDING_NAME_GOAGAINAH_TOGGLE_CLIPS = "Показать панель смертей"
+
+-- 2) This must exactly match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …>
+function GOAGAINAH_TOGGLE_CLIPS()
+    local af = _G["OFAuctionFrame"]
+    if not af then return end
+
+    -- if visible, just hide and exit
+    if af:IsShown() then
+        af:Hide()
+        return
+    end
+
+    -- otherwise show & select Death-Clips → Live
+    af:Show()
+
+    -- click main tab #6 (Death-Clips)
+    local tab6 = _G["OFAuctionFrameTab6"]
+    if tab6 and tab6:IsShown() then
+        tab6:Click()
+    end
+
+    -- click the “Live” sub-tab
+    local liveTab = _G["OFDeathClipsTabLive"]
+    if liveTab and liveTab:IsShown() then
+        liveTab:Click()
+    end
+end
+
+
+
+
 local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsStreamerSort, "clips", "streamer")
     OFSortButton_UpdateArrow(OFDeathClipsRaceSort, "clips", "race")

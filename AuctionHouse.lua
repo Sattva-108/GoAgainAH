@@ -1206,20 +1206,6 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-        ------------------------------------------------------------------
-        --  START BENCHMARK
-        --  We mark the time before we build and send the payload so
-        --  the remote client can see how long the entire operation took.
-        ------------------------------------------------------------------
-        ------------------------------------------------------------------
-        --  START BENCHMARK
-        ------------------------------------------------------------------
-        self.benchStartDeathClipSync = GetTime()
-        print("|cff00ff00>> Bench: DeathClip sync requested at "
-                .. date("%H:%M") .. "|r")
-        C_Timer:After(1, function()
-            print("🔍DBG: in STATE_REQUEST branch")
-        end)
 
         local since = payload.since
         local clips = payload.clips or {}
@@ -1362,15 +1348,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         -- === Receiver: T_DEATH_CLIPS_STATE ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
-        ------------------------------------------------------------------
-        --  START BENCHMARK here, too, in case the sender is OLD and
-        --  did not include the “requested” print. We overwrite only if
-        --  it hasn’t been set yet.
-        ------------------------------------------------------------------
-        if not self.benchStartDeathClipSync then
-            self.benchStartDeathClipSync = GetTime()
-            print("|cff00ff00>> Bench: DeathClip sync started (no request print)|r")
-        end
+
         local decompressed = LibDeflate:DecompressDeflate(payload)
         local ok, rows = Addon:Deserialize(decompressed)
         if not ok then
@@ -1462,16 +1440,14 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
 
         ------------------------------------------------------------------
-        --  STOP BENCHMARK
+        --  STOP BENCHMARK (debug only)
         ------------------------------------------------------------------
-        local benchEnd = GetTime()
-        if self.benchStartDeathClipSync then
-            print("|cff00ff00>> Bench: DeathClip sync completed at "
-                    .. date("%H:%M")
-                    .. " (took "
-                    .. string.format("%.2f", benchEnd - self.benchStartDeathClipSync)
-                    .. " s)|r")
-            self.benchStartDeathClipSync = nil  -- allow the next sync to go :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
+        -- ── POP & PRINT ──
+        local entry = table.remove(self.benchDebugQueue or {}, 1)
+        if entry then
+            local elapsed = GetTime() - entry.start
+            print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
+                    :format(entry.id, date("%H:%M"), elapsed))
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
@@ -2191,20 +2167,20 @@ function AuctionHouse:RequestLatestRatingsState()
     self:BroadcastMessage(msg)
 end
 
--- Modified (in AuctionHouse.lua)
-
 function AuctionHouse:RequestLatestDeathClipState(now)
-    -- if a sync is already in flight, bail out immediately
-    if self.benchStartDeathClipSync then
-        print(">> Bench: DeathClip sync already in progress, skipping new request.")
-        return
-    end
+    -- ── DEBUG TICKET ──
+    -- assign a unique ID and enqueue this run's start time
+    self.benchDebugCounter = (self.benchDebugCounter or 0) + 1
+    local dbgID            = self.benchDebugCounter
+    local dbgStart         = GetTime()
+    self.benchDebugQueue   = self.benchDebugQueue or {}
+    table.insert(self.benchDebugQueue, { id = dbgID, start = dbgStart })
 
-    -- otherwise start a fresh benchmark timer
-    self.benchStartDeathClipSync = GetTime()
-    print((">> Bench: DeathClip sync requested at %.2f"):format(self.benchStartDeathClipSync))
+    -- unchanged print
+    print(("|cff00ff00>> Bench[%d]: DeathClip sync requested at %s|r")
+            :format(dbgID, date("%H:%M")))
 
-    local clips = self:BuildDeathClipsTable(now)
+    local clips   = self:BuildDeathClipsTable(now)
     local payload = {
         ns.T_DEATH_CLIPS_STATE_REQUEST,
         { since = ns.GetLastDeathClipTimestamp(), clips = clips }
@@ -2215,12 +2191,12 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     -- 2. Compress (raw bytes)
     local compressed = LibDeflate:CompressDeflate(serialized)
     -- 3. Encode (ASCII-safe)
-    local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+    local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
     -- 4. Prepend our marker
-    local msg = "DF:" .. encoded
+    local msg        = "DF:" .. encoded
 
     C_Timer:After(10, function()
-        print(("🔍DBG Encoded login-sync payload starts with “%s”"):format(msg:sub(1, 20)))
+        print(("🔍DBG Encoded login-sync payload starts with “%s”"):format(msg:sub(1,20)))
     end)
 
     -- 5. Send it off
