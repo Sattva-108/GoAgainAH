@@ -228,19 +228,53 @@ local function CreateReviewPrompt()
     playedTimeWrapper:SetScript("OnEnter", function()
         local tip = prompt.playedTimeTooltipData
         GameTooltip:SetOwner(playedTimeWrapper, "ANCHOR_TOPLEFT")
-        GameTooltip:AddLine("Категории времени в игре", 1, 1, 1)
+        GameTooltip:ClearLines()
+
+        GameTooltip:AddLine("Время проведенное в игре", 1, 1, 1)
+        GameTooltip:AddLine(" ")
 
         if tip and tip.median then
-            GameTooltip:AddLine(string.format("• Зеленое: < %s (быстро)", SecondsToTime(tip.lower)), 0.25, 1, 0.25)
-            GameTooltip:AddLine(string.format("• Желтое: до %s (средне)", SecondsToTime(tip.median)), 1, 1, 0.3)
-            GameTooltip:AddLine(string.format("• Белое: до %s (медленно)", SecondsToTime(tip.upper)), 1, 1, 1)
-            GameTooltip:AddLine(string.format("• Красное: > %s (очень медленно)", SecondsToTime(tip.upper)), 1, 0.25, 0.25)
+            local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
+                GameTooltip:AddDoubleLine(label, SecondsToTime(value), lr, lg, lb, rr, rg, rb)
+            end
+
+            -- Right-aligned time values
+            AddRow("Спидраннер",   tip.lower,  0.25, 1.0, 0.25, 0.25, 1.0, 0.25)
+            AddRow("Быстро",          tip.median, 1.0, 1.0, 0.0,  1.0, 1.0, 0.0)
+            AddRow("Средне",         tip.upper,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0)
+            AddRow("Медленно", tip.upper,  1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
+
+            GameTooltip:AddLine(" ")
+
+            -- Цвет числа ранга по времени (по сравнению с lower/median/upper)
+            local played = tip.playedTime
+            local rankColor = {1, 1, 1}
+
+            if played and tip.lower and tip.median and tip.upper then
+                if played <= tip.lower then
+                    rankColor = {0.25, 1.0, 0.25}
+                elseif played <= tip.median then
+                    rankColor = {1.0, 1.0, 0.3}
+                elseif played <= tip.upper then
+                    rankColor = {1.0, 1.0, 1.0}
+                else
+                    rankColor = {1.0, 0.25, 0.25}
+                end
+            end
+
+            -- Жёлтый текст WoW: только "Ранг:"
+            local label = "|cffffd100Ранг:|r"
+            local rankStr = string.format(" %s", tip.rank)
+
+            GameTooltip:AddLine(label .. rankStr, unpack(rankColor))
+
+            local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()]
+            if lastLine then
+                lastLine:SetFontObject("PKBT_Font_16")
+            end
+
         else
-            -- Simplified version if no data
-            GameTooltip:AddLine("• Зеленое — быстро", 0.25, 1, 0.25)
-            GameTooltip:AddLine("• Желтое — средне", 1, 1, 0.3)
-            GameTooltip:AddLine("• Белое — медленно", 1, 1, 1)
-            GameTooltip:AddLine("• Красное — очень медленно", 1, 0.25, 0.25)
+            GameTooltip:AddLine("Недостаточно данных для оценки", 1, 1, 1)
         end
 
         GameTooltip:Show()
@@ -302,7 +336,7 @@ local function CreateReviewPrompt()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
 
-            local r, g, b, median, lower, upper = ns.GetPlayedTimeColor(seconds, clip.level)
+            local r, g, b, median, lower, upper, rank = ns.GetPlayedTimeColor(seconds, clip.level)
             self.playedTime:SetTextColor(r, g, b, 1)
 
             -- Save for tooltip later
@@ -310,7 +344,9 @@ local function CreateReviewPrompt()
                 median = median,
                 lower = lower,
                 upper = upper,
-                level = clip.level
+                level = clip.level,
+                rank = rank,
+                playedTime = clip.playedTime
             }
 
 
@@ -339,7 +375,7 @@ local function CreateReviewPrompt()
 
                             -- Colorize with clip.level (optional)
                             if clip and clip.playedTime and clip.level then
-                                local r, g, b, median, lower, upper = ns.GetPlayedTimeColor(seconds, clip.level)
+                                local r, g, b, median, lower, upper, rank = ns.GetPlayedTimeColor(seconds, clip.level)
                                 self.playedTime:SetTextColor(r, g, b, 1)
 
                                 -- Save for tooltip later
@@ -347,7 +383,9 @@ local function CreateReviewPrompt()
                                     median = median,
                                     lower = lower,
                                     upper = upper,
-                                    level = clip.level
+                                    level = clip.level,
+                                    rank = rank,
+                                    playedTime = clip.playedTime
                                 }
                             end
 

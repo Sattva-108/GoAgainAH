@@ -225,17 +225,16 @@ ns.GetNoPlayedDeathClips = function()
     return clips
 end
 
--- Returns R, G, B, median, lower, upper based on playedTime relative to level median
+-- Возвращает R, G, B, median, lower, upper, rank
 ns.GetPlayedTimeColor = function(seconds, level)
     if not seconds or not level then
-        return 1, 1, 1, nil, nil, nil
+        return 1, 1, 1, nil, nil, nil, nil
     end
 
     seconds = tonumber(seconds)
     level   = tonumber(level)
 
     local relevant = {}
-    -- Realm-filtered loop  ↓
     for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if tonumber(clip.level) == level and clip.playedTime then
             table.insert(relevant, tonumber(clip.playedTime))
@@ -243,7 +242,7 @@ ns.GetPlayedTimeColor = function(seconds, level)
     end
 
     if #relevant < 5 then
-        return 1, 1, 1, nil, nil, nil
+        return 1, 1, 1, nil, nil, nil, nil
     end
 
     table.sort(relevant)
@@ -254,15 +253,28 @@ ns.GetPlayedTimeColor = function(seconds, level)
     local lower = median * 0.7
     local upper = median * 1.3
 
+    local r, g, b
     if seconds <= lower then
-        return 0.25, 1.0, 0.25, median, lower, upper -- Green
+        r, g, b = 0.25, 1.0, 0.25
     elseif seconds <= median then
-        return 1.0, 1.0, 0.0, median, lower, upper   -- BRIGHT Yellow
+        r, g, b = 1.0, 1.0, 0.0
     elseif seconds <= upper then
-        return 1.0, 1.0, 1.0, median, lower, upper -- White
+        r, g, b = 1.0, 1.0, 1.0
     else
-        return 1.0, 0.25, 0.25, median, lower, upper -- Red
+        r, g, b = 1.0, 0.25, 0.25
     end
+
+    -- Ранг: 1 = лучший, N = худший
+    local rank
+    for i, val in ipairs(relevant) do
+        if seconds <= val then
+            rank = i
+            break
+        end
+    end
+    rank = rank or (#relevant + 1)
+
+    return r, g, b, median, lower, upper, rank
 end
 
 
