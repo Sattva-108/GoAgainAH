@@ -33,6 +33,10 @@ end
 
 local function CreateReviewPrompt()
     local frame = AceGUI:Create("CustomFrame")
+    local point, relativeTo, relativePoint, xOfs, yOfs = frame.frame:GetPoint()
+    frame.frame:ClearAllPoints()
+    frame.frame:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs - 15)
+
     frame:SetTitle("")
     frame.titlebg:Hide()
     frame.titlebg_l:Hide()
@@ -242,19 +246,38 @@ local function CreateReviewPrompt()
         self:SetScript("OnUpdate", UpdateTooltipPosition)
 
 
-        GameTooltip:AddLine("Время проведенное в игре", 0.9, 0.8, 0.5)
+        GameTooltip:AddLine("Время ", 0.9, 0.8, 0.5)
         GameTooltip:AddLine(" ")
 
         if tip and tip.median and tip.playedTime then
+            local LABEL_WIDTH = 100    -- ширина колонки «Метка»
+            local TIME_WIDTH  =  50    -- ширина колонки «Время» (подбираешь под свой текст)
+            local SPACING     =   6    -- отступ между колонками
+
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
                 GameTooltip:AddDoubleLine(label, SecondsToTime(value), lr, lg, lb, rr, rg, rb)
+                local line    = GameTooltip:NumLines()
+                local leftFS  = _G["GameTooltipTextLeft"..line]
+                local rightFS = _G["GameTooltipTextRight"..line]
+
+                if leftFS then
+                    leftFS:SetWidth(LABEL_WIDTH)
+                    leftFS:SetJustifyH("LEFT")
+                end
+                if rightFS and leftFS then
+                    rightFS:ClearAllPoints()
+                    -- привязываем левый край правого текста к правому краю метки + SPACING
+                    rightFS:SetPoint("LEFT", leftFS, "RIGHT", SPACING, 0)
+                    rightFS:SetJustifyH("LEFT")
+                    rightFS:SetWidth(TIME_WIDTH)  -- фиксируем ширину колонки «Время»
+                end
             end
 
             -- Right-aligned time values
             AddRow("Легенда",   tip.lower,  0.25, 1.0, 0.25, 0.25, 1.0, 0.25)
             AddRow("Быстро",          tip.median, 1.0, 1.0, 0.0,  1.0, 1.0, 0.0)
             AddRow("Средне",         tip.upper,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0)
-            AddRow("Медленно", tip.upper,  1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
+            AddRow("Медленно", tip.upper * 1.3,  1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
 
             GameTooltip:AddLine(" ")
 
