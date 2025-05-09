@@ -228,37 +228,41 @@ local function CreateReviewPrompt()
         reviewEdit = reviewEdit,
         submitButton = submitButton
     }
+    local RateTip = CreateFrame("GameTooltip", "GoAgainAH_RateTooltip", UIParent, "GameTooltipTemplate")
+    RateTip:SetPadding(8, 8)  -- если нужно внутренние отступы, как у GameTooltip
+
 
     local function UpdateTooltipPosition(self)
-        if not GameTooltip:IsOwned(self) then return end
+        if not RateTip:IsOwned(self) then return end
 
         local x, y = GetCursorPosition()
         local scale = UIParent:GetEffectiveScale()
-        GameTooltip:ClearAllPoints()
-        GameTooltip:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 12, y / scale - 12)
+        RateTip:ClearAllPoints()
+        RateTip:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 12, y / scale - 12)
     end
 
 
     playedTimeWrapper:SetScript("OnEnter", function(self)
         local tip = prompt.playedTimeTooltipData
-        GameTooltip:SetOwner(self, "ANCHOR_NONE")
-        GameTooltip:ClearLines()
+        RateTip:SetOwner(self, "ANCHOR_NONE")
+        RateTip:ClearLines()
         self:SetScript("OnUpdate", UpdateTooltipPosition)
 
 
-        GameTooltip:AddLine("Время ", 0.9, 0.8, 0.5)
-        GameTooltip:AddLine(" ")
+        RateTip:AddLine("Средние значения:", 0.9, 0.8, 0.5)
+        RateTip:AddLine(" ")
 
         if tip and tip.median and tip.playedTime then
             local LABEL_WIDTH = 100    -- ширина колонки «Метка»
-            local TIME_WIDTH  =  50    -- ширина колонки «Время» (подбираешь под свой текст)
             local SPACING     =   6    -- отступ между колонками
 
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
-                GameTooltip:AddDoubleLine(label, SecondsToTime(value), lr, lg, lb, rr, rg, rb)
-                local line    = GameTooltip:NumLines()
-                local leftFS  = _G["GameTooltipTextLeft"..line]
-                local rightFS = _G["GameTooltipTextRight"..line]
+                local timeStr = SecondsToTime(value)
+                RateTip:AddDoubleLine(label, timeStr, lr, lg, lb, rr, rg, rb)
+
+                local line    = RateTip:NumLines()
+                local leftFS  = _G["GoAgainAH_RateTooltipTextLeft"..line]
+                local rightFS = _G["GoAgainAH_RateTooltipTextRight"..line]
 
                 if leftFS then
                     leftFS:SetWidth(LABEL_WIDTH)
@@ -266,12 +270,13 @@ local function CreateReviewPrompt()
                 end
                 if rightFS and leftFS then
                     rightFS:ClearAllPoints()
-                    -- привязываем левый край правого текста к правому краю метки + SPACING
                     rightFS:SetPoint("LEFT", leftFS, "RIGHT", SPACING, 0)
                     rightFS:SetJustifyH("LEFT")
-                    rightFS:SetWidth(TIME_WIDTH)  -- фиксируем ширину колонки «Время»
+                    -- динамически подгоняем width под длину строки
+                    rightFS:SetWidth( rightFS:GetStringWidth() - 30)
                 end
             end
+
 
             -- Right-aligned time values
             AddRow("Легенда",   tip.lower,  0.25, 1.0, 0.25, 0.25, 1.0, 0.25)
@@ -279,7 +284,7 @@ local function CreateReviewPrompt()
             AddRow("Средне",         tip.upper,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0)
             AddRow("Медленно", tip.upper * 1.3,  1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
 
-            GameTooltip:AddLine(" ")
+            RateTip:AddLine(" ")
 
             -- Цвет числа ранга по времени (по сравнению с lower/median/upper)
             local played = tip.playedTime
@@ -301,22 +306,22 @@ local function CreateReviewPrompt()
             local label = "|cffffd100Ранг:|r"
             local rankStr = string.format(" %s из %s", tip.rank, tip.maxRank)
 
-            GameTooltip:AddLine(label .. rankStr, unpack(rankColor))
+            RateTip:AddLine(label .. rankStr, unpack(rankColor))
 
-            local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()]
+            local lastLine = _G["RateTipTextLeft" .. RateTip:NumLines()]
             if lastLine then
                 lastLine:SetFontObject("PKBT_Font_16")
             end
 
         else
-            GameTooltip:AddLine("Недостаточно данных для оценки", 1, 1, 1)
+            RateTip:AddLine("Недостаточно данных для оценки", 1, 1, 1)
         end
 
-        GameTooltip:Show()
+        RateTip:Show()
     end)
 
     playedTimeWrapper:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
+        RateTip:Hide()
         self:SetScript("OnUpdate", nil)
     end)
 
