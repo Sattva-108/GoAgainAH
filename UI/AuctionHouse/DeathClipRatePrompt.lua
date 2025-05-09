@@ -276,7 +276,7 @@ local function CreateReviewPrompt()
 
             -- Жёлтый текст WoW: только "Ранг:"
             local label = "|cffffd100Ранг:|r"
-            local rankStr = string.format(" %s", tip.rank)
+            local rankStr = string.format(" %s из %s", tip.rank, tip.maxRank)
 
             GameTooltip:AddLine(label .. rankStr, unpack(rankColor))
 
@@ -349,16 +349,17 @@ local function CreateReviewPrompt()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
 
-            local r, g, b, median, lower, upper, rank = ns.GetPlayedTimeColor(seconds, clip.level)
+            local r, g, b, median, lower, upper, rank, maxRank = ns.GetPlayedTimeColor(seconds, clip.level)
             self.playedTime:SetTextColor(r, g, b, 1)
 
-            -- Save for tooltip later
+            -- Save maxRank in tooltip data
             self.playedTimeTooltipData = {
                 median = median,
                 lower = lower,
                 upper = upper,
                 level = clip.level,
                 rank = rank,
+                maxRank = maxRank, -- Add this line
                 playedTime = clip.playedTime
             }
 
@@ -389,7 +390,7 @@ local function CreateReviewPrompt()
 
                             -- Colorize with clip.level (optional)
                             if clip and clip.playedTime and clip.level then
-                                local r, g, b, median, lower, upper, rank = ns.GetPlayedTimeColor(seconds, clip.level)
+                                local r, g, b, median, lower, upper, rank, maxRank = ns.GetPlayedTimeColor(seconds, clip.level)
                                 self.playedTime:SetTextColor(r, g, b, 1)
 
                                 -- Save for tooltip later
@@ -399,6 +400,7 @@ local function CreateReviewPrompt()
                                     upper = upper,
                                     level = clip.level,
                                     rank = rank,
+                                    maxRank = maxRank, -- Add this line
                                     playedTime = clip.playedTime
                                 }
                             end

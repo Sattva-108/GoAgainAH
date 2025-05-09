@@ -228,7 +228,7 @@ end
 -- Возвращает R, G, B, median, lower, upper, rank
 ns.GetPlayedTimeColor = function(seconds, level)
     if not seconds or not level then
-        return 1, 1, 1, nil, nil, nil, nil
+        return 1, 1, 1, nil, nil, nil, nil, nil
     end
 
     seconds = tonumber(seconds)
@@ -242,7 +242,7 @@ ns.GetPlayedTimeColor = function(seconds, level)
     end
 
     if #relevant < 5 then
-        return 1, 1, 1, nil, nil, nil, nil
+        return 1, 1, 1, nil, nil, nil, nil, nil
     end
 
     table.sort(relevant)
@@ -264,8 +264,8 @@ ns.GetPlayedTimeColor = function(seconds, level)
         r, g, b = 1.0, 0.25, 0.25
     end
 
-    -- Ранг: 1 = лучший, N = худший
-    local rank
+    -- Calculate rank and maxRank
+    local rank, maxRank
     for i, val in ipairs(relevant) do
         if seconds <= val then
             rank = i
@@ -273,8 +273,9 @@ ns.GetPlayedTimeColor = function(seconds, level)
         end
     end
     rank = rank or (#relevant + 1)
+    maxRank = #relevant -- Total entries
 
-    return r, g, b, median, lower, upper, rank
+    return r, g, b, median, lower, upper, rank, maxRank
 end
 
 
