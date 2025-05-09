@@ -225,21 +225,33 @@ local function CreateReviewPrompt()
         submitButton = submitButton
     }
 
-    playedTimeWrapper:SetScript("OnEnter", function()
-        local tip = prompt.playedTimeTooltipData
-        GameTooltip:SetOwner(playedTimeWrapper, "ANCHOR_TOPLEFT")
-        GameTooltip:ClearLines()
+    local function UpdateTooltipPosition(self)
+        if not GameTooltip:IsOwned(self) then return end
 
-        GameTooltip:AddLine("Время проведенное в игре", 1, 1, 1)
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        GameTooltip:ClearAllPoints()
+        GameTooltip:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 12, y / scale - 12)
+    end
+
+
+    playedTimeWrapper:SetScript("OnEnter", function(self)
+        local tip = prompt.playedTimeTooltipData
+        GameTooltip:SetOwner(self, "ANCHOR_NONE")
+        GameTooltip:ClearLines()
+        self:SetScript("OnUpdate", UpdateTooltipPosition)
+
+
+        GameTooltip:AddLine("Время проведенное в игре", 0.9, 0.8, 0.5)
         GameTooltip:AddLine(" ")
 
-        if tip and tip.median then
+        if tip and tip.median and tip.playedTime then
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
                 GameTooltip:AddDoubleLine(label, SecondsToTime(value), lr, lg, lb, rr, rg, rb)
             end
 
             -- Right-aligned time values
-            AddRow("Спидраннер",   tip.lower,  0.25, 1.0, 0.25, 0.25, 1.0, 0.25)
+            AddRow("Легенда",   tip.lower,  0.25, 1.0, 0.25, 0.25, 1.0, 0.25)
             AddRow("Быстро",          tip.median, 1.0, 1.0, 0.0,  1.0, 1.0, 0.0)
             AddRow("Средне",         tip.upper,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0)
             AddRow("Медленно", tip.upper,  1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
@@ -280,8 +292,9 @@ local function CreateReviewPrompt()
         GameTooltip:Show()
     end)
 
-    playedTimeWrapper:SetScript("OnLeave", function()
+    playedTimeWrapper:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
+        self:SetScript("OnUpdate", nil)
     end)
 
 
@@ -361,6 +374,7 @@ local function CreateReviewPrompt()
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
             self.playedTime:SetTextColor(0.6, 0.6, 0.6, 1)
+            self.playedTimeTooltipData = nil
 
             -- Start ticker only if not already running
             if not ns._ratePromptTicker then
@@ -404,6 +418,8 @@ local function CreateReviewPrompt()
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText("~10 минут")
             self.playedTime:SetTextColor(1, 1, 1, 1)
+
+            self.playedTimeTooltipData = nil
 
             -- Also stop ticker if nothing to show
             if ns._ratePromptTicker then
