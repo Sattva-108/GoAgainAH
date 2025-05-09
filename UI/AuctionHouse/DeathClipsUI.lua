@@ -471,6 +471,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     local when = _G[buttonName.."WhenText"]
     when:SetText(formatWhen(clip))
 
+    -- Colorize "When" text based on played time if available
+    if clip.playedTime and clip.level then
+        local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+        when:SetTextColor(r, g, b, 0.7)
+    else
+        when:SetTextColor(0.6, 0.6, 0.6, 0.5)  -- Gray fallback if no data
+    end
+
+
     local where = _G[buttonName.."WhereText"]
     where:SetJustifyH("LEFT")  -- Align text to the left
 

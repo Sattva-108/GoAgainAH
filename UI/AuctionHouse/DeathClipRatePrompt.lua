@@ -324,6 +324,7 @@ local function CreateReviewPrompt()
             playedLabel:Show()
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
+            self.playedTime:SetTextColor(0.6, 0.6, 0.6, 1)
 
             -- Start ticker only if not already running
             if not ns._ratePromptTicker then

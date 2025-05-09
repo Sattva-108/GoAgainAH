@@ -257,7 +257,7 @@ ns.GetPlayedTimeColor = function(seconds, level)
     if seconds <= lower then
         return 0.25, 1.0, 0.25, median, lower, upper -- Green
     elseif seconds <= median then
-        return 1.0, 1.0, 0.3, median, lower, upper -- Yellow
+        return 1.0, 1.0, 0.0, median, lower, upper   -- BRIGHT Yellow
     elseif seconds <= upper then
         return 1.0, 1.0, 1.0, median, lower, upper -- White
     else
