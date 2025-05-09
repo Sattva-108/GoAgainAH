@@ -112,15 +112,15 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", liveBtn, "EncounterTierTabTemplate")
 
     -- size & positioning
-    liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 78, -14)
+    liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 78, -12)
     liveBtn:SetText("Погибшие")
 
     compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 18, 0)
     compBtn:SetText("Выжившие")
 
     ---- size & positioning
-    liveBtn:SetSize(120,38)
-    compBtn:SetSize(120,38)
+    liveBtn:SetSize(120,40)
+    compBtn:SetSize(120,40)
 
     liveBtn.selectedGlow:SetAlpha(0.60)
     compBtn.selectedGlow:SetAlpha(0.60)
