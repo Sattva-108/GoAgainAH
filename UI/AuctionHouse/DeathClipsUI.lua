@@ -513,24 +513,27 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     local playerLv = clip.level    or 0
     local mobLvNum = clip.mobLevel or 0
 
+    local MOB_LEVEL_ALPHA = 200 / 255 -- adjust as needed
+
     if causeId == 7 and mobName ~= "" then
         -- LEVEL DIFFERENCE COLOR LOGIC: compressed center
         local diff = mobLvNum - playerLv
-        local colorTag
+        local r, g, b
         if diff >= 4 then
-            colorTag = "|cFFFF0000" -- red
+            r, g, b = 1.0, 0.0, 0.0 -- red
         elseif diff >= 2 then
-            colorTag = "|cFFFF7F00" -- orange
+            r, g, b = 1.0, 0.5, 0.0 -- orange
         elseif diff >= -1 then
-            colorTag = "|cFFFFFF00" -- yellow
+            r, g, b = 1.0, 1.0, 0.0 -- yellow
         elseif diff >= -4 then
-            colorTag = "|cFF00FF00" -- green
+            r, g, b = 0.0, 1.0, 0.0 -- green
         else
-            colorTag = "|cFF808080" -- gray
+            r, g, b = 0.5, 0.5, 0.5 -- gray
         end
 
-        clipText:SetText( colorTag .. mobName .. "|r" )
-        mobLevelText:SetText( colorTag .. mobLvNum .. "|r" )
+        clipText:SetText( string.format("|cFF%02X%02X%02X%s|r", r*255, g*255, b*255, mobName) )
+        mobLevelText:SetText(mobLvNum)
+        mobLevelText:SetTextColor(r, g, b, MOB_LEVEL_ALPHA)
     else
         -- non–creature cause: plain white text
         local causeStr = ns.DeathCauseByID[causeId] or "Неизвестно"
