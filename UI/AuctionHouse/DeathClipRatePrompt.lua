@@ -245,7 +245,8 @@ local function CreateReviewPrompt()
             local text = reviewEdit:GetText()
             if index > 0 and (text == "" or text == REVIEW_PLACEHOLDER) then
                 -- Fast submit
-                submitButton:Click()
+                submitButton:SetDisabled(false)
+                submitButton.frame:Click()
             else
                 -- Manual submit only when both are empty
                 submitButton:SetDisabled(index == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
@@ -318,13 +319,6 @@ local function CreateReviewPrompt()
         local selected = reactionWidget:GetSelected()
         submitButton:SetDisabled(selected == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
     end)
-
-
-
-
-
-
-
 
     -- Collect references for later access
     local prompt = {
@@ -693,11 +687,3 @@ ns.HideDeathClipRatePrompt = function()
         reviewPrompt:Hide()
     end
 end
-
-
-
-
-
-
-
-
