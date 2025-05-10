@@ -4,6 +4,93 @@ local L = ns.L
 
 local reviewPrompt
 
+-- Placeholder icons used temporarily for each emotion
+local REACTION_ICONS = {
+    [1] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1", -- 😂 Funny
+    [2] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_2", -- 🕯️ Sad
+    [3] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_3", -- ♿ Boring
+    [4] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_4", -- 💪 Heroic
+}
+
+local function CreateReactionWidget(config)
+    local group = AceGUI:Create("MinimalFrame")
+    group:SetHeight(config.height or 42)
+    group:SetWidth(300)
+    group:SetLayout("Flow")
+    group.selectedIndex = 0
+    group.buttons = {}
+    group:Show()
+
+    local function updateHighlight()
+        for i, btn in ipairs(group.buttons) do
+            if i == group.selectedIndex then
+                btn.border:Show()
+            else
+                btn.border:Hide()
+            end
+        end
+    end
+
+    function group:SetSelected(index)
+        self.selectedIndex = index
+        updateHighlight()
+        if config.onSelect then
+            config.onSelect(index)
+        end
+    end
+
+    function group:GetSelected()
+        return self.selectedIndex
+    end
+
+    local ICON_SIZE = config.iconSize or 32
+    for i = 1, 4 do
+        local frame = CreateFrame("Button", nil, group.frame)
+        frame:SetSize(ICON_SIZE, ICON_SIZE)
+
+        -- Explicitly anchor each icon
+        if i == 1 then
+            frame:SetPoint("LEFT", group.frame, "LEFT", 0, 0)
+        else
+            frame:SetPoint("LEFT", group.buttons[i-1], "RIGHT", 10, 0)
+        end
+
+        local tex = frame:CreateTexture(nil, "ARTWORK")
+        tex:SetAllPoints()
+        tex:SetTexture(REACTION_ICONS[i])
+        tex:SetAlpha(1)
+        tex:Show()
+        frame.texture = tex
+
+        local border = frame:CreateTexture(nil, "OVERLAY")
+        border:SetAllPoints()
+        border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+        border:SetBlendMode("ADD")
+        border:SetVertexColor(1, 1, 0)
+        border:Hide()
+        frame.border = border
+
+        frame:SetScript("OnClick", function()
+            local previous = group:GetSelected()
+            if previous == i then
+                group:SetSelected(0)
+            else
+                group:SetSelected(i)
+            end
+        end)
+
+        frame:Show()
+        table.insert(group.buttons, frame)
+    end
+
+
+
+    return group
+end
+
+
+
+
 local PaneBackdrop  = {
     bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -145,23 +232,31 @@ local function CreateReviewPrompt()
     labelPadding:SetHeight(25)
     reviewGroup:AddChild(labelPadding)
 
-    -- Star rating
-    local starRating = ns.CreateStarRatingWidget({
-        interactive = true,
-        onChange = function(rating)
-            submitButton:SetDisabled(rating == 0)
+    local reviewEdit = AceGUI:Create("MultiLineEditBoxCustom")
+
+    -- 🟨 REPLACE STAR WIDGET SETUP HERE IN PROMPT CREATION
+    -- COMMENT OUT OR DELETE THE EXISTING starRating CODE BLOCK:
+    -- local starRating = ns.CreateStarRatingWidget({...})
+    -- reviewGroup:AddChild(starRating)
+
+    -- 🔄 REPLACE WITH THIS:
+    local reactionWidget = CreateReactionWidget({
+        onSelect = function(index)
+            local text = reviewEdit:GetText()
+            if index > 0 and (text == "" or text == REVIEW_PLACEHOLDER) then
+                -- Fast submit
+                submitButton:Click()
+            else
+                -- Manual submit only when both are empty
+                submitButton:SetDisabled(index == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
+            end
         end,
-        useGreyStars = true,
-        panelHeight = 42,
-        hitboxPadY = 30,
-        hitboxPadX = 6,
-        textWidth = 26,
-        labelFont = "GameFontNormalLarge",
-        leftPadding = 5,  -- Set the left padding to 20px
+        iconSize = 32,
+        height = 48,
     })
+    reviewGroup:AddChild(reactionWidget)
 
 
-    reviewGroup:AddChild(starRating)
 
 
 
@@ -172,7 +267,7 @@ local function CreateReviewPrompt()
     --reviewGroup:AddChild(labelPadding)
 
     -- Comment box
-    local reviewEdit = AceGUI:Create("MultiLineEditBoxCustom")
+
     reviewEdit:SetLabel("")
     reviewEdit:SetWidth(400)
 
@@ -217,6 +312,20 @@ local function CreateReviewPrompt()
     --frame:AddChild(bottomPadding)
 
 
+    -- 🧠 Hook textbox too, to refresh button enable state
+    reviewEdit.editBox:SetScript("OnTextChanged", function(self)
+        local text = reviewEdit:GetText()
+        local selected = reactionWidget:GetSelected()
+        submitButton:SetDisabled(selected == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
+    end)
+
+
+
+
+
+
+
+
     -- Collect references for later access
     local prompt = {
         frame = frame,
@@ -224,7 +333,9 @@ local function CreateReviewPrompt()
         targetLabel = targetLabel,
         labelFontString = labelFontString,
         playedTime = playedTime,
-        starRating = starRating,
+        --starRating = starRating,
+        -- 🟥 Modify prompt object refs (add this where `prompt = { ... }` is built)
+        reactionWidget = reactionWidget,
         reviewEdit = reviewEdit,
         submitButton = submitButton
     }
@@ -473,7 +584,10 @@ local function CreateReviewPrompt()
     ----------------------------------------------------------------------------
     function prompt:OnSubmit(callback)
         self.submitButton:SetCallback("OnClick", function()
-            callback(self.starRating.rating, self.reviewEdit:GetText())
+            -- 🟥 In prompt:OnSubmit block, replace:
+            -- callback(self.starRating.rating, self.reviewEdit:GetText())
+            -- 🔄 With:
+            callback(self.reactionWidget:GetSelected(), self.reviewEdit:GetText())
         end)
     end
 
@@ -527,7 +641,9 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
     local prompt = GetReviewPrompt()
 
     -- Reset the form
-    prompt.starRating:SetRating(existingRating or 0)
+    --prompt.starRating:SetRating(existingRating or 0)
+    -- 🟥 In prompt:Show or review loader, set selection if review exists:
+    prompt.reactionWidget:SetSelected(existingRating or 0) -- reusing `rating` field for now
     prompt.reviewEdit:SetText(existingText or REVIEW_PLACEHOLDER)
 
     -- Reset button state
@@ -577,3 +693,11 @@ ns.HideDeathClipRatePrompt = function()
         reviewPrompt:Hide()
     end
 end
+
+
+
+
+
+
+
+

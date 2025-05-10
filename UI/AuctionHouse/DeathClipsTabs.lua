@@ -21,7 +21,7 @@ local function UpdateDeathClipsLayout()
     --end
 
     if ns.isCompletedTabActive then
-        OFDeathClipsClipSort:SetText("Время прохождения")
+        OFDeathClipsClipSort:SetText("      Время прохождения")
         -- When completed tab is active, hide the level sort button
         levelSort:Hide()
 
@@ -48,7 +48,7 @@ local function UpdateDeathClipsLayout()
         raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)   -- Position it immediately to the right of ClassSort
 
     else
-        OFDeathClipsClipSort:SetText("Причина смерти")
+        OFDeathClipsClipSort:SetText("       Причина смерти")
         levelSort:Show()
         streamerSort:SetWidth(90)
 
