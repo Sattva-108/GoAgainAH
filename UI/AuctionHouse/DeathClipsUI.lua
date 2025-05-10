@@ -318,31 +318,44 @@ local function UpdateLayout(buttonName)
         level:Show()
         name:SetWidth(100)  -- Reset to original width (adjust if needed)
 
-        -- Re-anchor the clip to the right of level
-        clipFrame:ClearAllPoints()
-        clipFrame:SetPoint("LEFT", level, "RIGHT", 2, 0)  -- Position Clip to the right of Level
-
-        -- Show WhereText again
+        -- Re-anchor the whereText to the right of level (was clipFrame before)
+        whereText:ClearAllPoints()
+        whereText:SetPoint("LEFT", level, "RIGHT", 2, 0)
         whereText:Show()
+
+        -- Move the clipFrame where whereText was
+        clipFrame:ClearAllPoints()
+        clipFrame:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
 
         -- Reset the width of ClassText and RaceText to original sizes (adjust as needed)
         classText:SetWidth(55)  -- Adjust to original width as needed
         raceText:SetWidth(55)   -- Adjust to original width as needed
 
-        -- Re-anchor the ClassText and RaceText buttons back to the right of WhereText
+        -- Re-anchor the ClassText and RaceText to the right of clipFrame
         classText:ClearAllPoints()
         raceText:ClearAllPoints()
 
-        -- Anchor ClassText immediately to the right of WhereText
-        classText:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
+        -- Anchor ClassText immediately to the right of Clip (was WhereText before)
+        classText:SetPoint("LEFT", clipFrame, "RIGHT", 15, 0)
 
         -- Anchor RaceText immediately to the right of ClassText
         raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
-        -- Set font for ClassText and RaceText in the completed tab
-        classText:SetFontObject("GameFontHighlightSmall")  -- Example font for completed tab
-        raceText:SetFontObject("GameFontHighlightSmall")   -- Example font for completed tab
+
+        -- Set font and alignment for ClassText and RaceText in the live tab
+        classText:SetFontObject("GameFontHighlightSmall")  -- Example font for live tab
+        raceText:SetFontObject("GameFontHighlightSmall")   -- Example font for live tab
         classText:SetJustifyH("RIGHT")
         raceText:SetJustifyH("LEFT")
+
+        -- Re-anchor WhenText to the right of RaceText
+        local whenText = _G[buttonName.."WhenText"]
+        whenText:ClearAllPoints()
+        whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
+
+        -- Re-anchor Rating frame to the right of WhenText
+        local rating = _G[buttonName.."Rating"]
+        rating:ClearAllPoints()
+        rating:SetPoint("LEFT", whenText, "RIGHT", 5, 0)
 
     end
 end

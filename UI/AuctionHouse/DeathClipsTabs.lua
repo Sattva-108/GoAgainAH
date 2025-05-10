@@ -49,26 +49,26 @@ local function UpdateDeathClipsLayout()
 
     else
         OFDeathClipsClipSort:SetText("Причина смерти")
-        -- If live tab is active, show the level sort button again
         levelSort:Show()
+        streamerSort:SetWidth(90)
 
-        -- Reset StreamerSort width and re-anchor ClipSort to its original position
-        streamerSort:SetWidth(90)  -- Reset to original width (adjust if needed)
-        clipSort:ClearAllPoints()
-        clipSort:SetPoint("LEFT", levelSort, "RIGHT", 2, 0)  -- Position it immediately to the right of LevelSort
-
-        -- Show the WhereSort button again
+        -- New header order: Level -> Where -> Clip -> Class -> Race
         whereSort:Show()
 
-        -- Reset the width of ClassSort and RaceSort
-        classSort:SetWidth(55)  -- Reset to original width (adjust if needed)
-        raceSort:SetWidth(60)   -- Reset to original width (adjust if needed)
+        whereSort:ClearAllPoints()
+        whereSort:SetPoint("LEFT", levelSort, "RIGHT", 2, 0)
 
-        -- Re-anchor the ClassSort and RaceSort buttons back to the right of WhereSort
+        clipSort:ClearAllPoints()
+        clipSort:SetPoint("LEFT", whereSort, "RIGHT", 2, 0)
+
+        classSort:SetWidth(55)
+        raceSort:SetWidth(60)
+
         classSort:ClearAllPoints()
+        classSort:SetPoint("LEFT", clipSort, "RIGHT", 2, 0)
+
         raceSort:ClearAllPoints()
-        classSort:SetPoint("LEFT", whereSort, "RIGHT", 2, 0)  -- Position it immediately to the right of WhereSort
-        raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)   -- Position it immediately to the right of ClassSort
+        raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)
     end
 end
 

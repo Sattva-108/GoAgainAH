@@ -1395,25 +1395,25 @@
 						</Scripts>
 					</Button>
 
-					<!-- CLIP LINK -->
-					<Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="Причина смерти">
-						<Size><AbsDimension x="215" y="19" /></Size>
+					<!-- WHERE (moved before) -->
+					<Button name="OFDeathClipsWhereSort" inherits="OFAuctionSortButtonTemplate" text="Где умер">
+						<Size><AbsDimension x="125" y="19" /></Size>
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="OFDeathClipsLevelSort" relativePoint="RIGHT" />
 						</Anchors>
 						<Scripts>
-							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "clip")</OnClick>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "where")</OnClick>
 						</Scripts>
 					</Button>
 
-					<!-- WHERE -->
-					<Button name="OFDeathClipsWhereSort" inherits="OFAuctionSortButtonTemplate" text="Где умер">
-						<Size><AbsDimension x="125" y="19" /></Size>
+					<!-- CLIP LINK (moved after) -->
+					<Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="Причина смерти">
+						<Size><AbsDimension x="215" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsClipSort" relativePoint="RIGHT" />
+							<Anchor point="LEFT" relativeTo="OFDeathClipsWhereSort" relativePoint="RIGHT" />
 						</Anchors>
 						<Scripts>
-							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "where")</OnClick>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "clip")</OnClick>
 						</Scripts>
 					</Button>
 
@@ -1421,7 +1421,7 @@
 					<Button name="OFDeathClipsClassSort" inherits="OFAuctionSortButtonTemplate" text="CLASS">
 						<Size><AbsDimension x="55" y="19" /></Size>
 						<Anchors>
-							<Anchor point="LEFT" relativeTo="OFDeathClipsWhereSort" relativePoint="RIGHT" />
+							<Anchor point="LEFT" relativeTo="OFDeathClipsClipSort" relativePoint="RIGHT" />
 						</Anchors>
 						<Scripts>
 							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "class")</OnClick>
