@@ -97,18 +97,23 @@
                 </Anchors>
                 <Layers>
                     <Layer>
-                        <FontString name="$parentText" inherits="GameFontNormal" justifyH="LEFT">
-                            <Size><AbsDimension x="175" y="32" /></Size>
+                        <!-- Mob Level on the left -->
+                        <FontString name="$parentMobLevel" inherits="GameFontNormalLarge" justifyH="RIGHT">
+                            <Size><AbsDimension x="25" y="32" /></Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
                                     <Offset><AbsDimension x="0" y="0" /></Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
-                        <FontString name="$parentMobLevel" inherits="GameFontNormalLarge" justifyH="LEFT">
-                            <Size><AbsDimension x="25" y="32" /></Size>
+
+                        <!-- ClipText (mob name) to the right of Mob Level with 15px spacing -->
+                        <FontString name="$parentText" inherits="GameFontNormal" justifyH="LEFT">
+                            <Size><AbsDimension x="170" y="32" /></Size>
                             <Anchors>
-                                <Anchor point="LEFT" relativeTo="$parentText" relativePoint="RIGHT" x="5" y="0"/>
+                                <Anchor point="LEFT" relativeTo="$parentMobLevel" relativePoint="RIGHT">
+                                    <Offset><AbsDimension x="5" y="0" /></Offset>
+                                </Anchor>
                             </Anchors>
                         </FontString>
                     </Layer>
