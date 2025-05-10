@@ -231,6 +231,12 @@ local function CreateReviewPrompt()
     local RateTip = CreateFrame("GameTooltip", "GoAgainAH_RateTooltip", UIParent, "GameTooltipTemplate")
     RateTip:SetPadding(8, 8)  -- если нужно внутренние отступы, как у GameTooltip
 
+    -- создаём FontString для заголовка
+    local RateTipHeader = RateTip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    RateTipHeader:SetPoint("TOP", RateTip, "TOP", 0, -6)   -- 6px вниз от верхней рамки
+    RateTipHeader:SetJustifyH("CENTER")                   -- выравниваем по центру
+    RateTipHeader:SetFontObject("PKBT_Font_16")
+
 
     local function UpdateTooltipPosition(self)
         if not RateTip:IsOwned(self) then return end
@@ -248,18 +254,18 @@ local function CreateReviewPrompt()
         RateTip:ClearLines()
         self:SetScript("OnUpdate", UpdateTooltipPosition)
 
-
-        RateTip:AddLine("Средние значения:", 0.9, 0.8, 0.5)
+        -- заголовок
+        -- ► задаём текст заголовка и его цвет
+        RateTipHeader:SetText("Средние значения:")
+        RateTipHeader:SetTextColor(0.9, 0.8, 0.5)
+        RateTip:AddLine(" ")
         RateTip:AddLine(" ")
 
         if tip and tip.median and tip.playedTime then
-            local LABEL_WIDTH = 100    -- ширина колонки «Метка»
-            local SPACING     =   6    -- отступ между колонками
-
+            local LABEL_WIDTH, SPACING = 100, 6
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
                 local timeStr = SecondsToTime(value)
                 RateTip:AddDoubleLine(label, timeStr, lr, lg, lb, rr, rg, rb)
-
                 local line    = RateTip:NumLines()
                 local leftFS  = _G["GoAgainAH_RateTooltipTextLeft"..line]
                 local rightFS = _G["GoAgainAH_RateTooltipTextRight"..line]
@@ -272,7 +278,6 @@ local function CreateReviewPrompt()
                     rightFS:ClearAllPoints()
                     rightFS:SetPoint("LEFT", leftFS, "RIGHT", SPACING, 0)
                     rightFS:SetJustifyH("LEFT")
-                    -- динамически подгоняем width под длину строки
                     rightFS:SetWidth( rightFS:GetStringWidth() - 30)
                 end
             end
@@ -308,9 +313,12 @@ local function CreateReviewPrompt()
 
             RateTip:AddLine(label .. rankStr, unpack(rankColor))
 
-            local lastLine = _G["RateTipTextLeft" .. RateTip:NumLines()]
+            local lastLine = _G["GoAgainAH_RateTooltipTextLeft" .. RateTip:NumLines()]
             if lastLine then
                 lastLine:SetFontObject("PKBT_Font_16")
+                lastLine:ClearAllPoints()
+                lastLine:SetPoint("BOTTOM", RateTip, "BOTTOM", 0, 12)
+                lastLine:SetJustifyH("CENTER")
             end
 
         else
