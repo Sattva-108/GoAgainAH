@@ -233,7 +233,7 @@ local function CreateReviewPrompt()
 
     -- создаём FontString для заголовка
     local RateTipHeader = RateTip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    RateTipHeader:SetPoint("TOP", RateTip, "TOP", 0, -6)   -- 6px вниз от верхней рамки
+    RateTipHeader:SetPoint("TOP", RateTip, "TOP", 0, -16)   -- 6px вниз от верхней рамки
     RateTipHeader:SetJustifyH("CENTER")                   -- выравниваем по центру
     RateTipHeader:SetFontObject("PKBT_Font_16")
 
@@ -265,7 +265,7 @@ local function CreateReviewPrompt()
             local LABEL_WIDTH, SPACING = 100, 6
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
                 local timeStr = SecondsToTime(value)
-                RateTip:AddDoubleLine(label, timeStr, lr, lg, lb, rr, rg, rb)
+                RateTip:AddDoubleLine(("     "):rep(1) .. label, timeStr, lr, lg, lb, rr, rg, rb)
                 local line    = RateTip:NumLines()
                 local leftFS  = _G["GoAgainAH_RateTooltipTextLeft"..line]
                 local rightFS = _G["GoAgainAH_RateTooltipTextRight"..line]
@@ -317,12 +317,12 @@ local function CreateReviewPrompt()
             if lastLine then
                 lastLine:SetFontObject("PKBT_Font_16")
                 lastLine:ClearAllPoints()
-                lastLine:SetPoint("BOTTOM", RateTip, "BOTTOM", 0, 12)
+                lastLine:SetPoint("BOTTOM", RateTip, "BOTTOM", 0, 16)
                 lastLine:SetJustifyH("CENTER")
             end
 
         else
-            RateTip:AddLine("Недостаточно данных для оценки", 1, 1, 1)
+            RateTip:AddLine("    Недостаточно данных для оценки", 1, 1, 1)
         end
 
         RateTip:Show()
