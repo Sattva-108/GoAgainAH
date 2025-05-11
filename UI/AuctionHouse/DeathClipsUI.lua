@@ -568,13 +568,23 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
 
     -- Update Rating Widget
-    local ratingWidget = _G[buttonName.."Rating"].ratingWidget
-    if clip.id == nil then
-        ratingWidget:Show()
-        ratingWidget:SetRating(0)
-    else
-        ratingWidget:Show()
-        ratingWidget:SetRating(ns.GetRatingAverage(ratings))
+    local ratingFrame = _G[buttonName.."Rating"]
+    if ratingFrame and ratingFrame.label then
+        if clip.id == nil then
+            ratingFrame.label:SetText("")
+
+        else
+            --print("🧪 ns.GetDeathClipReviewState =", ns.GetDeathClipReviewState)
+            --local state = ns.GetDeathClipReviewState and ns.GetDeathClipReviewState()
+--            print("🧪 state =", state)
+--            print("🧪 state.state =", state and state.state)
+
+            local topReactions = ns.GetTopReactions(clip.id, 2)
+            local summary = ns.GetReactionSummaryString(topReactions)
+            ratingFrame.label:SetText(summary or "")
+--            print("⛏️ summary for", clip.id, "=", summary or "nil")
+
+        end
     end
 
     local clipButton = _G[buttonName] -- Get the button itself
@@ -739,20 +749,11 @@ end
 
 
 function OFDeathClipsRatingWidget_OnLoad(self)
-    local starRating = ns.CreateStarRatingWidget({
-        starSize = 12,
-        panelHeight = 12,
-        marginBetweenStarsX = 2,
-        textWidth = 22,
-        leftMargin = 1,
-        disableMouse = true,
-        hideText = true
-    })
-    self.ratingWidget = starRating
-    starRating.frame:SetParent(self)
-    starRating.frame:SetPoint("LEFT", self, "LEFT", -2, 0)
-    starRating:SetRating(3.5)
-    starRating.frame:Show()
+    local label = self:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    label:SetPoint("LEFT", self, "LEFT", 0, 0)
+    label:SetJustifyH("LEFT")
+    label:SetText("")
+    self.label = label
 end
 
 function OFAuctionFrameDeathClips_OnHide()
