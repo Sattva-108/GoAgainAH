@@ -44,15 +44,21 @@ local function CreateReactionWidget(config)
     end
 
     local ICON_SIZE = config.iconSize or 32
+    local iconWrapper = CreateFrame("Frame", nil, group.frame)
+    iconWrapper:SetSize((ICON_SIZE + 16) * 4, ICON_SIZE)
+    iconWrapper:SetPoint("TOP", group.frame, "TOP", 0, -8) -- Top padding
+
+    group.iconWrapper = iconWrapper
+
     for i = 1, 4 do
-        local frame = CreateFrame("Button", nil, group.frame)
+        local frame = CreateFrame("Button", nil, iconWrapper)
         frame:SetSize(ICON_SIZE, ICON_SIZE)
 
-        -- Explicitly anchor each icon
+        -- Position icons with spacing
         if i == 1 then
-            frame:SetPoint("LEFT", group.frame, "LEFT", 0, 0)
+            frame:SetPoint("LEFT", iconWrapper, "LEFT", 0, 0)
         else
-            frame:SetPoint("LEFT", group.buttons[i-1], "RIGHT", 10, 0)
+            frame:SetPoint("LEFT", group.buttons[i - 1], "RIGHT", 16, 0)
         end
 
         local tex = frame:CreateTexture(nil, "ARTWORK")
@@ -82,6 +88,7 @@ local function CreateReactionWidget(config)
         frame:Show()
         table.insert(group.buttons, frame)
     end
+
 
 
 
