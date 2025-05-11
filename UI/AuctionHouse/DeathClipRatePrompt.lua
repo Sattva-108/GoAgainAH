@@ -43,18 +43,17 @@ local function CreateReactionWidget(config)
         return self.selectedIndex
     end
 
-    local ICON_SIZE = config.iconSize or 32
+    local ICON_SIZE = config.iconSize or 40
     local iconWrapper = CreateFrame("Frame", nil, group.frame)
     iconWrapper:SetSize((ICON_SIZE + 16) * 4, ICON_SIZE)
-    iconWrapper:SetPoint("TOP", group.frame, "TOP", 0, -8) -- Top padding
-
+    iconWrapper:SetPoint("TOP", group.frame, "TOP", 0, -8)
     group.iconWrapper = iconWrapper
 
     for i = 1, 4 do
         local frame = CreateFrame("Button", nil, iconWrapper)
         frame:SetSize(ICON_SIZE, ICON_SIZE)
 
-        -- Position icons with spacing
+        -- Position with spacing
         if i == 1 then
             frame:SetPoint("LEFT", iconWrapper, "LEFT", 0, 0)
         else
@@ -68,13 +67,8 @@ local function CreateReactionWidget(config)
         tex:Show()
         frame.texture = tex
 
-        local border = frame:CreateTexture(nil, "OVERLAY")
-        border:SetAllPoints()
-        border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-        border:SetBlendMode("ADD")
-        border:SetVertexColor(1, 1, 0)
-        border:Hide()
-        frame.border = border
+        -- Remove border entirely
+        frame.border = nil
 
         frame:SetScript("OnClick", function()
             local previous = group:GetSelected()
@@ -88,6 +82,30 @@ local function CreateReactionWidget(config)
         frame:Show()
         table.insert(group.buttons, frame)
     end
+
+    -- 🔁 Replace updateHighlight() with tint logic
+    local function updateHighlight()
+        for i, btn in ipairs(group.buttons) do
+            if i == group.selectedIndex then
+                btn.texture:SetVertexColor(1, 1, 1) -- full color
+            else
+                btn.texture:SetVertexColor(0.7, 0.7, 0.7)
+            end
+        end
+    end
+
+    function group:SetSelected(index, silent)
+        self.selectedIndex = index
+        updateHighlight()
+        if not silent and config.onSelect then
+            config.onSelect(index)
+        end
+    end
+
+    function group:GetSelected()
+        return self.selectedIndex
+    end
+
 
 
 
@@ -259,7 +277,7 @@ local function CreateReviewPrompt()
                 submitButton:SetDisabled(index == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
             end
         end,
-        iconSize = 32,
+        iconSize = 40,
         height = 48,
     })
     reviewGroup:AddChild(reactionWidget)

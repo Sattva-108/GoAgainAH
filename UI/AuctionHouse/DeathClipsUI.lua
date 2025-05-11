@@ -569,21 +569,14 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
     -- Update Rating Widget
     local ratingFrame = _G[buttonName.."Rating"]
-    if ratingFrame and ratingFrame.label then
+    if ratingFrame and ratingFrame.SetReactions then
         if clip.id == nil then
             ratingFrame.label:SetText("")
-
         else
-            --print("🧪 ns.GetDeathClipReviewState =", ns.GetDeathClipReviewState)
-            --local state = ns.GetDeathClipReviewState and ns.GetDeathClipReviewState()
---            print("🧪 state =", state)
---            print("🧪 state.state =", state and state.state)
-
             local topReactions = ns.GetTopReactions(clip.id, 2)
-            local summary = ns.GetReactionSummaryString(topReactions)
-            ratingFrame.label:SetText(summary or "")
---            print("⛏️ summary for", clip.id, "=", summary or "nil")
-
+            if ratingFrame.SetReactions then
+                ratingFrame:SetReactions(topReactions)
+            end
         end
     end
 
@@ -749,12 +742,63 @@ end
 
 
 function OFDeathClipsRatingWidget_OnLoad(self)
-    local label = self:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    label:SetPoint("LEFT", self, "LEFT", 0, 0)
-    label:SetJustifyH("LEFT")
-    label:SetText("")
-    self.label = label
+    self.reactionIcons = {}
+
+    for i = 1, 2 do
+        local icon = self:CreateTexture(nil, "ARTWORK")
+        icon:SetSize(20, 20)
+
+        if i == 1 then
+            icon:SetPoint("LEFT", self, "LEFT", 0, 0)
+        else
+            icon:SetPoint("LEFT", self.reactionIcons[i - 1].count, "RIGHT", 12, 0)
+        end
+
+        icon:Hide()
+
+        local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        count:SetPoint("LEFT", icon, "RIGHT", 4, 0)
+        count:SetTextColor(1, 1, 1, 0.8)
+        count:Hide()
+
+        self.reactionIcons[i] = {
+            icon = icon,
+            count = count,
+        }
+    end
+
+    function self:SetReactions(data)
+        local paths = {
+            [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",
+            [2] = "Interface\\AddOns\\GoAgainAH\\Media\\candle_64x64.tga",
+            [3] = "Interface\\AddOns\\GoAgainAH\\Media\\wheelchair_64x64.tga",
+            [4] = "Interface\\AddOns\\GoAgainAH\\Media\\bicep_64x64.tga",
+        }
+
+        for i = 1, 2 do
+            local slot = self.reactionIcons[i]
+            if data and data[i] then
+                local id = data[i].id
+                local count = data[i].count
+                local path = paths[id]
+
+                slot.icon:SetTexture(path)
+                slot.icon:Show()
+
+                slot.count:SetText(count)
+                slot.count:Show()
+            else
+                slot.icon:Hide()
+                slot.count:Hide()
+            end
+        end
+    end
 end
+
+
+
+
+
 
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then
