@@ -6,10 +6,10 @@ local reviewPrompt
 
 -- Placeholder icons used temporarily for each emotion
 local REACTION_ICONS = {
-    [1] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1", -- 😂 Funny
-    [2] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_2", -- 🕯️ Sad
-    [3] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_3", -- ♿ Boring
-    [4] = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_4", -- 💪 Heroic
+    [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",       -- 😂 Funny
+    [2] = "Interface\\AddOns\\GoAgainAH\\Media\\candle_64x64.tga",      -- 🕯️ Sad
+    [3] = "Interface\\AddOns\\GoAgainAH\\Media\\wheelchair_64x64.tga", -- ♿ Boring
+    [4] = "Interface\\AddOns\\GoAgainAH\\Media\\bicep_64x64.tga",       -- 💪 Heroic
 }
 
 local function CreateReactionWidget(config)
@@ -31,10 +31,10 @@ local function CreateReactionWidget(config)
         end
     end
 
-    function group:SetSelected(index)
+    function group:SetSelected(index, silent)
         self.selectedIndex = index
         updateHighlight()
-        if config.onSelect then
+        if not silent and config.onSelect then
             config.onSelect(index)
         end
     end
@@ -637,7 +637,7 @@ function ns.ShowDeathClipRatePrompt(clip, overrideUser)
     -- Reset the form
     --prompt.starRating:SetRating(existingRating or 0)
     -- 🟥 In prompt:Show or review loader, set selection if review exists:
-    prompt.reactionWidget:SetSelected(existingRating or 0) -- reusing `rating` field for now
+    prompt.reactionWidget:SetSelected(existingRating or 0, true)
     prompt.reviewEdit:SetText(existingText or REVIEW_PLACEHOLDER)
 
     -- Reset button state

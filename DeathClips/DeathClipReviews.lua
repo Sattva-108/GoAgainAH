@@ -261,10 +261,10 @@ end
 
 function ns.GetReactionSummaryString(topReactions)
     local ICONS = {
-        [1] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:16:16:0:0|t",
-        [2] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_2:16:16:0:0|t",
-        [3] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_3:16:16:0:0|t",
-        [4] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4:16:16:0:0|t"
+        [1] = "|TInterface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga:16:16:0:0|t",
+        [2] = "|TInterface\\AddOns\\GoAgainAH\\Media\\candle_64x64.tga:16:16:0:0|t",
+        [3] = "|TInterface\\AddOns\\GoAgainAH\\Media\\wheelchair_64x64.tga:16:16:0:0|t",
+        [4] = "|TInterface\\AddOns\\GoAgainAH\\Media\\bicep_64x64.tga:16:16:0:0|t",
     }
 
     local parts = {}
