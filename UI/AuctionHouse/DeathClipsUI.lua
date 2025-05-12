@@ -361,6 +361,7 @@ local function UpdateLayout(buttonName)
 
     end
 end
+ns.ApplyClipLayout = UpdateLayout
 
 local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
 
@@ -634,7 +635,8 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         return -- Skip if this button has already been updated
     end
 
-    UpdateLayout(buttonName)
+    -- no longer need to call it here, we do it once in: OnSubTabChanged - for all buttons on tab changed
+    --UpdateLayout(buttonName)
 
     -- Mark this button as updated
     ns.updatedButtons[buttonName] = true

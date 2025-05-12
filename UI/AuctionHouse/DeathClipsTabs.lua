@@ -98,6 +98,11 @@ local function OnSubTabChanged(frame, newTab)
 
         UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
     end
+    -- Применить макет к каждой из 9 видимых строк (NUM_CLIPS_TO_DISPLAY = 9)
+    for i = 1, 9 do
+        print("called")
+        ns.ApplyClipLayout("OFDeathClipsButton" .. i)
+    end
 end
 
 
