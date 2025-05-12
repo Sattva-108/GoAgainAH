@@ -319,7 +319,6 @@ local function UpdateLayout(buttonName)
 
         whenText:ClearAllPoints()
         whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
-
     else
         -- If live tab is active, show the level again and reset the name width
         level:Show()
@@ -816,12 +815,6 @@ function OFDeathClipsRatingWidget_OnLoad(self)
         end
     end
 end
-
-
-
-
-
-
 
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then

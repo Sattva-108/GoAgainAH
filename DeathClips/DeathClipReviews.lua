@@ -258,19 +258,3 @@ function ns.GetTopReactions(clipID, maxIcons)
 
     return result
 end
-
-function ns.GetReactionSummaryString(topReactions)
-    local ICONS = {
-        [1] = "|TInterface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga:16:16:0:0|t",
-        [2] = "|TInterface\\AddOns\\GoAgainAH\\Media\\candle_64x64.tga:16:16:0:0|t",
-        [3] = "|TInterface\\AddOns\\GoAgainAH\\Media\\wheelchair_64x64.tga:16:16:0:0|t",
-        [4] = "|TInterface\\AddOns\\GoAgainAH\\Media\\bicep_64x64.tga:16:16:0:0|t",
-    }
-
-    local parts = {}
-    for _, entry in ipairs(topReactions or {}) do
-        local icon = ICONS[entry.id] or ""
-        table.insert(parts, icon .. " " .. entry.count)
-    end
-    return table.concat(parts, " ")
-end
