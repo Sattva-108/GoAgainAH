@@ -276,6 +276,10 @@ local function UpdateLayout(buttonName)
     local classText = _G[buttonName.."ClassText"]
     local whereText = _G[buttonName.."WhereText"]
     local raceText = _G[buttonName.."RaceText"]
+    -- Re-anchor WhenText to the right of RaceText
+    local whenText = _G[buttonName.."WhenText"]
+    -- Re-anchor Rating frame to the right of WhenText
+    local rating = _G[buttonName.."Rating"]
 
     if ns.isCompletedTabActive then
         -- When completed tab is active, hide the level and expand the name
@@ -313,6 +317,9 @@ local function UpdateLayout(buttonName)
         classText:SetJustifyH("CENTER")
         raceText:SetJustifyH("CENTER")
 
+        whenText:ClearAllPoints()
+        whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
+
     else
         -- If live tab is active, show the level again and reset the name width
         level:Show()
@@ -336,7 +343,7 @@ local function UpdateLayout(buttonName)
         raceText:ClearAllPoints()
 
         -- Anchor ClassText immediately to the right of Clip (was WhereText before)
-        classText:SetPoint("LEFT", clipFrame, "RIGHT", -10, 0)
+        classText:SetPoint("LEFT", clipFrame, "RIGHT", -15, 0)
 
         -- Anchor RaceText immediately to the right of ClassText
         raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
@@ -347,13 +354,9 @@ local function UpdateLayout(buttonName)
         classText:SetJustifyH("RIGHT")
         raceText:SetJustifyH("LEFT")
 
-        -- Re-anchor WhenText to the right of RaceText
-        local whenText = _G[buttonName.."WhenText"]
         whenText:ClearAllPoints()
-        whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
+        whenText:SetPoint("LEFT", raceText, "RIGHT", -10, 0)
 
-        -- Re-anchor Rating frame to the right of WhenText
-        local rating = _G[buttonName.."Rating"]
         rating:ClearAllPoints()
         rating:SetPoint("LEFT", whenText, "RIGHT", 5, 0)
 
@@ -401,7 +404,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         if ns.isCompletedTabActive then
             if clip.race == "Ночноро\nждённый" then
                 clip.race = "Ночнорождённый"
-            elseif clip.race == "Озарён. дреней" then
+            elseif clip.race == "Озар. дреней" then
                 clip.race = "Озарённый дреней"
             elseif clip.race == "Дворф Ч. Железа" then
                 clip.race = "Дворф Чёрного Железа"
@@ -745,7 +748,7 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     -- Create single large icon texture
     local icon = self:CreateTexture(nil, "ARTWORK")
     icon:SetSize(40, 26) -- fill most of the rating column
-    icon:SetPoint("LEFT", self, "LEFT", 0, -1)
+    icon:SetPoint("LEFT", self, "LEFT", 0, 0)
     icon:Hide()
 
     -- Общая обрезка
