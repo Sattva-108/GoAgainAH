@@ -202,7 +202,7 @@
 
             <!-- Rating Frame -->
             <Frame name="$parentRating" enableMouse="false">
-                <Size><AbsDimension x="80" y="32" /></Size>
+                <Size><AbsDimension x="42" y="32" /></Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentWhen" relativePoint="RIGHT" x="5"/>
                 </Anchors>

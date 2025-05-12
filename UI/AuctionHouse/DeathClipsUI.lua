@@ -294,8 +294,8 @@ local function UpdateLayout(buttonName)
         local halfWhereWidth = whereWidth / 2
 
         -- Increase the width of ClassText and RaceText by half of WhereText's width
-        classText:SetWidth(classText:GetWidth() + halfWhereWidth)
-        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth)
+        classText:SetWidth(classText:GetWidth() + halfWhereWidth -20)
+        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth -20)
 
         -- Re-anchor the ClassText and RaceText to slide them to the right of Clip
         classText:ClearAllPoints()
@@ -328,15 +328,15 @@ local function UpdateLayout(buttonName)
         clipFrame:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
 
         -- Reset the width of ClassText and RaceText to original sizes (adjust as needed)
-        classText:SetWidth(55)  -- Adjust to original width as needed
-        raceText:SetWidth(55)   -- Adjust to original width as needed
+        classText:SetWidth(84)  -- Adjust to original width as needed
+        raceText:SetWidth(84)   -- Adjust to original width as needed
 
         -- Re-anchor the ClassText and RaceText to the right of clipFrame
         classText:ClearAllPoints()
         raceText:ClearAllPoints()
 
         -- Anchor ClassText immediately to the right of Clip (was WhereText before)
-        classText:SetPoint("LEFT", clipFrame, "RIGHT", 15, 0)
+        classText:SetPoint("LEFT", clipFrame, "RIGHT", -10, 0)
 
         -- Anchor RaceText immediately to the right of ClassText
         raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
@@ -459,9 +459,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
                 -- do nothing
             else
                 if classKey == "WARLOCK" then
-                    localizedName = "Черно\nкнижник"
+                    localizedName = "Варлок"
                 elseif classKey == "ROGUE" then
-                    localizedName = "Разбой\nник"
+                    localizedName = "Разбойник"
                 end
             end
         end
@@ -744,18 +744,20 @@ end
 function OFDeathClipsRatingWidget_OnLoad(self)
     -- Create single large icon texture
     local icon = self:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(36, 20) -- fill most of the rating column
-    icon:SetPoint("CENTER", self, "CENTER", 0, 0)
+    icon:SetSize(40, 26) -- fill most of the rating column
+    icon:SetPoint("LEFT", self, "LEFT", 0, -1)
     icon:Hide()
 
-    -- Crop edges to make icon tighter
-    icon:SetTexCoord(0.1, 0.9, 0.25, 0.65) -- balanced, shows eyes + mouth (starting point)
+    -- Общая обрезка
+    icon:SetTexCoord(0.1, 0.9, 0.34, 0.74)
+    icon:SetVertexColor(0.5, 0.5, 0.5) -- slightly dimmed, full color
+
 
     -- Create count text overlaid on icon
     local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     count:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-    count:SetTextColor(1, 1, 1, 0.9)
-    count:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -3, 3)
+    count:SetTextColor(1, 1, 1, 0.6)
+    count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -12, 6)
     count:Hide()
 
     -- Store references
@@ -773,6 +775,21 @@ function OFDeathClipsRatingWidget_OnLoad(self)
 
         if data and data[1] then
             local id = data[1].id
+
+            -- Спецпозиции и обрезки
+            if id == 3 then
+                -- 🤡 Клоун: немного вверх
+                icon:SetTexCoord(0.1, 0.9, 0.30, 0.72)
+
+            elseif id == 4 then
+                -- 🔥 Огонь: обрезать до самого верха
+                icon:SetTexCoord(0.1, 0.9, 0.12, 0.66)
+
+            else
+                -- Остальные по центру
+                icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
+            end
+
             local countValue = data[1].count
             local path = paths[id]
 

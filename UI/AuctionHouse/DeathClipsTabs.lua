@@ -61,7 +61,7 @@ local function UpdateDeathClipsLayout()
         clipSort:ClearAllPoints()
         clipSort:SetPoint("LEFT", whereSort, "RIGHT", 2, 0)
 
-        classSort:SetWidth(55)
+        classSort:SetWidth(60)
         raceSort:SetWidth(60)
 
         classSort:ClearAllPoints()
