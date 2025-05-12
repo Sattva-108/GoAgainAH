@@ -3,7 +3,6 @@ local L = ns.L
 
 -- Keep track if the sort hook has been applied to avoid duplicates
 local sortHookApplied = false
-ns.updatedButtons = {}
 
 local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
@@ -11,13 +10,15 @@ local CLIPS_BUTTON_HEIGHT = 37
 
 -- This must match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …> in Bindings.xml
 -- 1) Key-Bindings header and friendly name
-_G.BINDING_HEADER_GoAgainAH            = "GoAgainAH"
+_G.BINDING_HEADER_GoAgainAH = "GoAgainAH"
 _G.BINDING_NAME_GOAGAINAH_TOGGLE_CLIPS = "Показать панель смертей"
 
 -- 2) This must exactly match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …>
 function GOAGAINAH_TOGGLE_CLIPS()
     local af = _G["OFAuctionFrame"]
-    if not af then return end
+    if not af then
+        return
+    end
 
     -- if visible, just hide and exit
     if af:IsShown() then
@@ -41,9 +42,6 @@ function GOAGAINAH_TOGGLE_CLIPS()
     end
 end
 
-
-
-
 local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsStreamerSort, "clips", "streamer")
     OFSortButton_UpdateArrow(OFDeathClipsRaceSort, "clips", "race")
@@ -58,6 +56,32 @@ end
 function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.page = 0
     OFAuctionFrame_SetSort("clips", "when", false)
+
+    -- —— КЭШ КНОПОК ——
+    ns.clipButtonElements = {}
+    for i = 1, NUM_CLIPS_TO_DISPLAY do
+        local button = _G["OFDeathClipsButton" .. i]
+        local buttonName = button:GetName()
+
+        ns.clipButtonElements[i] = {
+            button = button,
+            highlight = _G[buttonName .. "Highlight"],
+            name = _G[buttonName .. "Name"],
+            level = _G[buttonName .. "Level"],
+            raceText = _G[buttonName .. "RaceText"],
+            itemIconTexture = _G[buttonName .. "ItemIconTexture"],
+            classText = _G[buttonName .. "ClassText"],
+            whenText = _G[buttonName .. "WhenText"],
+            whereText = _G[buttonName .. "WhereText"],
+            clipText = _G[buttonName .. "ClipText"],
+            clipMobLevel = _G[buttonName .. "ClipMobLevel"],
+            rating = _G[buttonName .. "Rating"],
+            clipFrame = _G[buttonName .. "Clip"],
+        }
+
+        -- Хайлайт создаём один раз
+        ns.SetupClipHighlight(button)
+    end
 
     --C_Timer:After(3, function()
     --    -- Hook the “Live” tab:
@@ -195,7 +219,6 @@ function ns.SetupClipHighlight(button)
     end
 end
 
-
 local initialized = false
 function OFAuctionFrameDeathClips_OnShow()
     OFAuctionFrameDeathClips_Update()
@@ -207,7 +230,6 @@ function OFAuctionFrameDeathClips_OnShow()
                 OFAuctionFrameDeathClips_Update()
             end
         end
-
 
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE, update)
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_STATE_SYNCED, update)
@@ -255,11 +277,11 @@ function OFAuctionFrameDeathClips_OnShow()
 end
 
 local function ResizeEntry(button, numBatchAuctions, totalAuctions)
-    local buttonHighlight = _G[button:GetName().."Highlight"]
-    if ( numBatchAuctions < NUM_CLIPS_TO_DISPLAY ) then
+    local buttonHighlight = _G[button:GetName() .. "Highlight"]
+    if (numBatchAuctions < NUM_CLIPS_TO_DISPLAY) then
         button:SetWidth(793)
         buttonHighlight:SetWidth(758)
-    elseif ( numBatchAuctions == NUM_CLIPS_TO_DISPLAY and totalAuctions <= NUM_CLIPS_TO_DISPLAY ) then
+    elseif (numBatchAuctions == NUM_CLIPS_TO_DISPLAY and totalAuctions <= NUM_CLIPS_TO_DISPLAY) then
         button:SetWidth(793)
         buttonHighlight:SetWidth(758)
     else
@@ -270,16 +292,16 @@ end
 
 local function UpdateLayout(buttonName)
     -- Fetch elements for Name, Level, Clip, ClassText, WhereText, and RaceText
-    local name = _G[buttonName.."Name"]
-    local level = _G[buttonName.."Level"]
-    local clipFrame = _G[buttonName.."Clip"]
-    local classText = _G[buttonName.."ClassText"]
-    local whereText = _G[buttonName.."WhereText"]
-    local raceText = _G[buttonName.."RaceText"]
+    local name = _G[buttonName .. "Name"]
+    local level = _G[buttonName .. "Level"]
+    local clipFrame = _G[buttonName .. "Clip"]
+    local classText = _G[buttonName .. "ClassText"]
+    local whereText = _G[buttonName .. "WhereText"]
+    local raceText = _G[buttonName .. "RaceText"]
     -- Re-anchor WhenText to the right of RaceText
-    local whenText = _G[buttonName.."WhenText"]
+    local whenText = _G[buttonName .. "WhenText"]
     -- Re-anchor Rating frame to the right of WhenText
-    local rating = _G[buttonName.."Rating"]
+    local rating = _G[buttonName .. "Rating"]
 
     if ns.isCompletedTabActive then
         -- When completed tab is active, hide the level and expand the name
@@ -298,8 +320,8 @@ local function UpdateLayout(buttonName)
         local halfWhereWidth = whereWidth / 2
 
         -- Increase the width of ClassText and RaceText by half of WhereText's width
-        classText:SetWidth(classText:GetWidth() + halfWhereWidth -20)
-        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth -20)
+        classText:SetWidth(classText:GetWidth() + halfWhereWidth - 20)
+        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth - 20)
 
         -- Re-anchor the ClassText and RaceText to slide them to the right of Clip
         classText:ClearAllPoints()
@@ -365,281 +387,192 @@ ns.ApplyClipLayout = UpdateLayout
 
 local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatchClips, totalClips)
 
-    local buttonName = button:GetName()
+    local elements = ns.clipButtonElements[i]          -- кэш
+    if not elements then
+        return
+    end                    -- защита
+
     local overrides = state:GetClipOverrides(clip.id)
-    local copy = {}
+    local merged = {}
     for k, v in pairs(clip) do
-        copy[k] = v
+        merged[k] = v
     end
     for k, v in pairs(overrides) do
-        copy[k] = v
+        merged[k] = v
     end
-    clip = copy
+    clip = merged
 
     ResizeEntry(button, numBatchClips, totalClips)
 
-    local name = _G[buttonName.."Name"]
+    --------------------------------------------------
+    --  ЧТЕНИЕ UI-ЭЛЕМЕНТОВ ЧЕРЕЗ КЭШ
+    --------------------------------------------------
+    local name = elements.name
+    local race = elements.raceText
+    local levelFS = elements.level
+    local classFS = elements.classText
+    local whenFS = elements.whenText
+    local whereFS = elements.whereText
+    local clipTextFS = elements.clipText
+    local mobLevelFS = elements.clipMobLevel
+    local iconTexture = elements.itemIconTexture
+    local ratingFrame = elements.rating
+    local clipFrame = elements.clipFrame
+    local clipButton = elements.button
+    --------------------------------------------------
+
+    -- ===== NAME =====
     if clip.characterName then
-        -- Get the class color using the player's class
-        local classColor = RAID_CLASS_COLORS[clip.class] -- 'clip.class' should be the player's class (e.g., "WARRIOR", "MAGE", etc.)
-
-        if classColor then
-            -- Set class color for the name
-            name:SetTextColor(classColor.r, classColor.g, classColor.b)
-        else
-            -- Fallback to a default color (light gray) if the class color is not found
-            name:SetTextColor(0.85, 0.85, 0.85)
-        end
-
+        local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
+        name:SetTextColor(clr.r, clr.g, clr.b)
         name:SetText(clip.characterName)
     else
-        name:SetTextColor(0.85, 0.85, 0.85)   -- Light grayish white for unknown
+        name:SetTextColor(.85, .85, .85)
         name:SetText(L["Unknown"])
     end
 
-    local race = _G[buttonName.."RaceText"]
-
-    -- Only shorten Warlock and Rogue for Russian clients
-    if GetLocale() == "ruRU" then
-        if ns.isCompletedTabActive then
-            if clip.race == "Ночноро\nждённый" then
-                clip.race = "Ночнорождённый"
-            elseif clip.race == "Озар. дреней" then
-                clip.race = "Озарённый дреней"
-            elseif clip.race == "Дворф Ч. Железа" then
-                clip.race = "Дворф Чёрного Железа"
-            end
-        else
-            -- do nothing
+    -- ===== RACE =====
+    if GetLocale() == "ruRU" and ns.isCompletedTabActive then
+        if clip.race == "Ночноро\nждённый" then
+            clip.race = "Ночнорождённый"
+        elseif clip.race == "Озар. дреней" then
+            clip.race = "Озарённый дреней"
+        elseif clip.race == "Дворф Ч. Железа" then
+            clip.race = "Дворф Чёрного Железа"
         end
     end
-
     race:SetText(clip.race or L["Unknown"])
-
-    -- Faction-based color logic for the race text
     if clip.faction == "Horde" then
-        race:SetTextColor(0.8, 0.3, 0.3)  -- Soft red for Horde
+        race:SetTextColor(.8, .3, .3)
     elseif clip.faction == "Alliance" then
-        race:SetTextColor(0.4, 0.6, 1)    -- Soft blue for Alliance
+        race:SetTextColor(.4, .6, 1)
     else
-        race:SetTextColor(0.9, 0.9, 0.4)  -- Soft yellow for Neutral or unknown faction
+        race:SetTextColor(.9, .9, .4)
     end
 
-
-    local iconTexture = _G[buttonName.."ItemIconTexture"]
+    -- ===== CLASS ICON =====
     if clip.class and CLASS_ICON_TCOORDS[clip.class] then
         iconTexture:SetTexture("Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES")
         iconTexture:SetTexCoord(unpack(CLASS_ICON_TCOORDS[clip.class]))
     else
-        iconTexture:SetTexture("interface/icons/inv_misc_questionmark")
-        iconTexture:SetTexCoord(0, 1, 0, 1)  -- reset tex coords
+        iconTexture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+        iconTexture:SetTexCoord(0, 1, 0, 1)
     end
 
-    local level = _G[buttonName.."Level"]
+    -- ===== LEVEL =====
     local lvl = clip.level or 1
+    local q = GetQuestDifficultyColor(lvl)
+    levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
 
-    -- Получаем цвет по уровню сложности
-    local color = GetQuestDifficultyColor(lvl)
-
-    -- Переводим RGB в шестнадцатеричный код
-    local hex = string.format("|cff%02x%02x%02x", color.r * 255, color.g * 255, color.b * 255)
-
-    -- Устанавливаем цветной текст
-    level:SetText(hex .. lvl .. "|r")
-
-
-    local class = _G[buttonName.."ClassText"]
+    -- ===== CLASS TEXT =====
     if clip.class then
-        -- Convert to uppercase for consistent lookups
-        local classKey = string.upper(clip.class)
-
-        -- Get localized full name
-        local localizedName = LOCALIZED_CLASS_NAMES_MALE[classKey] or clip.class
-
-        -- Only shorten Warlock and Rogue for Russian clients
-        if GetLocale() == "ruRU" then
-            if ns.isCompletedTabActive then
-                -- do nothing
-            else
-                if classKey == "WARLOCK" then
-                    localizedName = "Варлок"
-                elseif classKey == "ROGUE" then
-                    localizedName = "Разбойник"
-                end
+        local key = string.upper(clip.class)
+        local txt = LOCALIZED_CLASS_NAMES_MALE[key] or clip.class
+        if GetLocale() == "ruRU" and not ns.isCompletedTabActive then
+            if key == "WARLOCK" then
+                txt = "Варлок"
+            elseif key == "ROGUE" then
+                txt = "Разбойник"
             end
         end
-
-        -- Set class color from RAID_CLASS_COLORS
-        local classColor = RAID_CLASS_COLORS[classKey]
-        if classColor then
-            class:SetTextColor(classColor.r, classColor.g, classColor.b)
-        else
-            class:SetTextColor(1, 1, 1) -- Fallback to white
-        end
-
-        class:SetText(localizedName)
+        local cc = RAID_CLASS_COLORS[key] or { r = 1, g = 1, b = 1 }
+        classFS:SetTextColor(cc.r, cc.g, cc.b)
+        classFS:SetText(txt)
     else
-        -- Unknown class handling
-        class:SetTextColor(1, 1, 1)
-        class:SetText(L["Unknown"])
+        classFS:SetTextColor(1, 1, 1);
+        classFS:SetText(L["Unknown"])
     end
 
-    local when = _G[buttonName.."WhenText"]
-    when:SetText(formatWhen(clip))
-
-    -- Colorize "When" text based on played time if available
+    -- ===== WHEN =====
+    whenFS:SetText(formatWhen(clip))
     if clip.playedTime and clip.level then
         local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-        when:SetTextColor(r, g, b, 0.7)
+        whenFS:SetTextColor(r, g, b, .7)
     else
-        when:SetTextColor(0.6, 0.6, 0.6, 0.5)  -- Gray fallback if no data
+        whenFS:SetTextColor(.6, .6, .6, .5)
     end
 
-
-    local where = _G[buttonName.."WhereText"]
-    where:SetJustifyH("LEFT")  -- Align text to the left
-
-    local whereStr
-    if clip.mapId then
-        whereStr = C_Map.GetMapInfo(clip.mapId).name
+    -- ===== WHERE =====
+    whereFS:SetJustifyH("LEFT")
+    local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where
+    if zone == "Полуостров Адского Пламени" then
+        zone = "Полуостров\nАдского Пламени"
     end
-    if not whereStr then
-        whereStr = clip.where
-    end
-    -- Optional: override long zone names for better line wrapping
-    local ZONE_NAME_OVERRIDES = {
-        ["Полуостров Адского Пламени"] = "Полуостров\nАдского Пламени",
-    }
+    whereFS:SetText(zone or L["Unknown"])
 
-    if whereStr and ZONE_NAME_OVERRIDES[whereStr] then
-        whereStr = ZONE_NAME_OVERRIDES[whereStr]
-    end
-
-    where:SetText(whereStr or L["Unknown"])
-
-    local clipText     = _G[buttonName.."ClipText"]
-    local mobLevelText = _G[buttonName.."ClipMobLevel"]
-
-    local causeId  = clip.causeCode or 0
-    local mobName  = clip.deathCause or ""
-    local playerLv = clip.level    or 0
-    local mobLvNum = clip.mobLevel or 0
-
-    local MOB_LEVEL_ALPHA = 200 / 255 -- adjust as needed
-
-    if causeId == 7 and mobName ~= "" then
-        -- LEVEL DIFFERENCE COLOR LOGIC: compressed center
-        local diff = mobLvNum - playerLv
-        local r, g, b
+    -- ===== CAUSE / MOB LEVEL =====
+    local causeId = clip.causeCode or 0
+    if causeId == 7 and clip.deathCause ~= "" then
+        local diff = (clip.mobLevel or 0) - lvl
+        local r, g, b = 0, 1, 0
         if diff >= 4 then
-            r, g, b = 1.0, 0.0, 0.0 -- red
+            r, g, b = 1, 0, 0
         elseif diff >= 2 then
-            r, g, b = 1.0, 0.5, 0.0 -- orange
+            r, g, b = 1, .5, 0
         elseif diff >= -1 then
-            r, g, b = 1.0, 1.0, 0.0 -- yellow
+            r, g, b = 1, 1, 0
         elseif diff >= -4 then
-            r, g, b = 0.0, 1.0, 0.0 -- green
+            r, g, b = 0, 1, 0
         else
-            r, g, b = 0.5, 0.5, 0.5 -- gray
+            r, g, b = .5, .5, .5
         end
-
-        clipText:SetText( string.format("|cFF%02X%02X%02X%s|r", r*255, g*255, b*255, mobName) )
-        mobLevelText:SetText(mobLvNum)
-        mobLevelText:SetTextColor(r, g, b, MOB_LEVEL_ALPHA)
+        clipTextFS:SetText(string.format("|cFF%02X%02X%02X%s|r", r * 255, g * 255, b * 255, clip.deathCause))
+        mobLevelFS:SetText(clip.mobLevel);
+        mobLevelFS:SetTextColor(r, g, b, 200 / 255)
     else
-        -- non–creature cause: plain white text
-        local causeStr = ns.DeathCauseByID[causeId] or "Неизвестно"
-        clipText:SetText( "|cFFFFFFFF" .. causeStr .. "|r" )
-        mobLevelText:SetText( "" )
+        clipTextFS:SetText("|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r")
+        mobLevelFS:SetText("")
     end
+    mobLevelFS:SetJustifyH("CENTER")
 
-    mobLevelText:SetJustifyH("CENTER")
-
-
-
+    -- ===== COMPLETED TIMER =====
     if clip.completed and clip.playedTime then
-        clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
-        -- Convert playedTime (in seconds) to D H M S format
-        local seconds = clip.playedTime or 0
-        local days = math.floor(seconds / 86400)  -- 1 day = 86400 seconds
-        local hours = math.floor((seconds % 86400) / 3600)  -- 1 hour = 3600 seconds
-        local minutes = math.floor((seconds % 3600) / 60)  -- 1 minute = 60 seconds
-        local remainingSeconds = seconds % 60  -- Remaining seconds
-
-        -- Format the string to D H M S
-        local formattedTime = string.format("%dд %dч %dм %dс", days, hours, minutes, remainingSeconds)
-
-        -- Set the formatted time to the clipText
-        clipText:SetText(("%s"):format(formattedTime))
-    elseif clip.completed and not clip.playedTime then
-        clipText:SetFontObject("GameFontNormalLarge")   -- Fallback font for live tab
-        clipText:SetText("Грузится")
+        clipTextFS:SetFontObject("GameFontNormalLarge")
+        local s = clip.playedTime
+        clipTextFS:SetFormattedText("%dд %dч %dм %dс",
+                math.floor(s / 86400), math.floor(s % 86400 / 3600),
+                math.floor(s % 3600 / 60), s % 60)
+    elseif clip.completed then
+        clipTextFS:SetFontObject("GameFontNormalLarge")
+        clipTextFS:SetText("Грузится")
     else
-        clipText:SetFontObject("GameFontNormal")   -- Fallback font for live tab
+        clipTextFS:SetFontObject("GameFontNormal")
     end
 
-
-    -- Update Rating Widget
-    local ratingFrame = _G[buttonName.."Rating"]
+    -- ===== RATING WIDGET =====
     if ratingFrame and ratingFrame.SetReactions then
-        if clip.id == nil then
-            ratingFrame.label:SetText("")
+        if clip.id then
+            ratingFrame:SetReactions(ns.GetTopReactions(clip.id, 1))
         else
-            local topReactions = ns.GetTopReactions(clip.id, 1)
-            if ratingFrame.SetReactions then
-                ratingFrame:SetReactions(topReactions)
-            end
+            ratingFrame.label:SetText("")
         end
     end
 
-    local clipButton = _G[buttonName] -- Get the button itself
+    -- ===== CLICK HANDLER (один раз) =====
+    if not clipButton._clickBound then
+        clipButton:SetScript("OnClick", function(self)
+            local c = self.clipData
+            if not c or not c.id then
+                return
+            end
+            local wasOpen = (OFAuctionFrameDeathClips.openedPromptClipID == c.id)
+            ns.HideAllClipPrompts()
+            if not wasOpen then
+                ns.ShowDeathClipReviewsPrompt(c)
+                OFAuctionFrameDeathClips.openedPromptClipID = c.id
+            end
+            OFAuctionFrameDeathClips_Update()
+        end)
+        clipButton._clickBound = true
+    end
+    clipButton.clipData = clip     -- актуальные данные в кнопке
 
-    -- === OPTIMIZED OnClick ===
-    clipButton:SetScript("OnClick", function()
-        -- Ensure we have a valid clip and ID to work with
-        if not clip or not clip.id then return end
-
-        local clickedClipId = clip.id
-        local wasOpen = OFAuctionFrameDeathClips.openedPromptClipID and OFAuctionFrameDeathClips.openedPromptClipID == clickedClipId
-
-        -- Always hide any potentially open prompt first.
-        -- This simplifies logic - we hide regardless, and then decide whether to show again.
-        ns.HideAllClipPrompts() -- The hook will set openedPromptClipID to nil
-
-        -- If the clicked clip's prompt was NOT the one open, show the appropriate prompt.
-        if not wasOpen then
-            -- Let ShowDeathClipReviewsPrompt handle the logic:
-            -- It checks if the player has rated and shows either the
-            -- reviews prompt or calls ShowDeathClipRatePrompt itself.
-            ns.ShowDeathClipReviewsPrompt(clip)
-
-            -- Mark this clip's prompt as the one that is now open
-            OFAuctionFrameDeathClips.openedPromptClipID = clickedClipId
-        end
-        -- If it *was* open, HideAllClipPrompts already closed it, and openedPromptClipID is nil,
-        -- so we don't re-open it, achieving the toggle-off behavior.
-
-        -- Update highlights immediately after click logic
-        OFAuctionFrameDeathClips_Update()
-    end)
-
-
-    -- Update button highlight based on whether its prompt is open
-    if OFAuctionFrameDeathClips.openedPromptClipID and OFAuctionFrameDeathClips.openedPromptClipID == clip.id then
+    -- ===== ХАЙЛАЙТ =====
+    if OFAuctionFrameDeathClips.openedPromptClipID == clip.id then
         button:LockHighlight()
     else
         button:UnlockHighlight()
     end
-    -- Check if the button has already been updated
-    if ns.updatedButtons[buttonName] then
-        return -- Skip if this button has already been updated
-    end
-
-    -- no longer need to call it here, we do it once in: OnSubTabChanged - for all buttons on tab changed
-    --UpdateLayout(buttonName)
-
-    -- Mark this button as updated
-    ns.updatedButtons[buttonName] = true
 end
 
 local function FilterHiddenClips(state, clips)
@@ -662,9 +595,9 @@ function OFAuctionFrameDeathClips_Update()
     --------------------------------------------------------------
     --  Build the list that feeds FauxScrollFrame  (Approach A)
     --------------------------------------------------------------
-    local rawPool  = ns.GetLiveDeathClips()             -- every clip in DB
-    local pool     = ns.FilterClipsThisRealm(rawPool)   -- realm-filtered once
-    local clips    = {}                                 -- final list for this tab
+    local rawPool = ns.GetLiveDeathClips()             -- every clip in DB
+    local pool = ns.FilterClipsThisRealm(rawPool)   -- realm-filtered once
+    local clips = {}                                 -- final list for this tab
 
     if frame.currentSubTab == "completed" then
         -- Completed tab → keep only completed clips
@@ -703,7 +636,7 @@ function OFAuctionFrameDeathClips_Update()
 
     -- Update the displayed buttons for each clip
     for i = 1, NUM_CLIPS_TO_DISPLAY do
-        local button = _G["OFDeathClipsButton"..i]
+        local button = _G["OFDeathClipsButton" .. i]
         local clip = visibleClips[i]
         button.clip = clip
 
@@ -752,7 +685,6 @@ function OFAuctionFrameDeathClips_Update()
         FauxScrollFrame_Update(OFDeathClipsScroll, numBatchClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
     end
 end
-
 
 function OFDeathClipsRatingWidget_OnLoad(self)
     -- Create single large icon texture
