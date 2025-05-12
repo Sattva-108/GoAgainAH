@@ -573,7 +573,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         if clip.id == nil then
             ratingFrame.label:SetText("")
         else
-            local topReactions = ns.GetTopReactions(clip.id, 2)
+            local topReactions = ns.GetTopReactions(clip.id, 1)
             if ratingFrame.SetReactions then
                 ratingFrame:SetReactions(topReactions)
             end
@@ -742,58 +742,52 @@ end
 
 
 function OFDeathClipsRatingWidget_OnLoad(self)
-    self.reactionIcons = {}
+    -- Create single large icon texture
+    local icon = self:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(36, 20) -- fill most of the rating column
+    icon:SetPoint("CENTER", self, "CENTER", 0, 0)
+    icon:Hide()
 
-    for i = 1, 2 do
-        local icon = self:CreateTexture(nil, "ARTWORK")
-        icon:SetSize(20, 20)
+    -- Crop edges to make icon tighter
+    icon:SetTexCoord(0.1, 0.9, 0.25, 0.65) -- balanced, shows eyes + mouth (starting point)
 
-        if i == 1 then
-            icon:SetPoint("LEFT", self, "LEFT", 0, 0)
-        else
-            icon:SetPoint("LEFT", self.reactionIcons[i - 1].count, "RIGHT", 12, 0)
-        end
+    -- Create count text overlaid on icon
+    local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    count:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    count:SetTextColor(1, 1, 1, 0.9)
+    count:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -3, 3)
+    count:Hide()
 
-        icon:Hide()
+    -- Store references
+    self.reactionIcon = icon
+    self.reactionCount = count
 
-        local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        count:SetPoint("LEFT", icon, "RIGHT", 4, 0)
-        count:SetTextColor(1, 1, 1, 0.8)
-        count:Hide()
-
-        self.reactionIcons[i] = {
-            icon = icon,
-            count = count,
-        }
-    end
-
+    -- Assign SetReactions function
     function self:SetReactions(data)
         local paths = {
             [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",
-            [2] = "Interface\\AddOns\\GoAgainAH\\Media\\candle_64x64.tga",
-            [3] = "Interface\\AddOns\\GoAgainAH\\Media\\wheelchair_64x64.tga",
-            [4] = "Interface\\AddOns\\GoAgainAH\\Media\\bicep_64x64.tga",
+            [2] = "Interface\\AddOns\\GoAgainAH\\Media\\frozen_64x64.tga",
+            [3] = "Interface\\AddOns\\GoAgainAH\\Media\\clown_64x64.tga",
+            [4] = "Interface\\AddOns\\GoAgainAH\\Media\\fire_64x64.tga",
         }
 
-        for i = 1, 2 do
-            local slot = self.reactionIcons[i]
-            if data and data[i] then
-                local id = data[i].id
-                local count = data[i].count
-                local path = paths[id]
+        if data and data[1] then
+            local id = data[1].id
+            local countValue = data[1].count
+            local path = paths[id]
 
-                slot.icon:SetTexture(path)
-                slot.icon:Show()
+            self.reactionIcon:SetTexture(path)
+            self.reactionIcon:Show()
 
-                slot.count:SetText(count)
-                slot.count:Show()
-            else
-                slot.icon:Hide()
-                slot.count:Hide()
-            end
+            self.reactionCount:SetText(countValue)
+            self.reactionCount:Show()
+        else
+            self.reactionIcon:Hide()
+            self.reactionCount:Hide()
         end
     end
 end
+
 
 
 
