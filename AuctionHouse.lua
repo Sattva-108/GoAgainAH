@@ -69,7 +69,7 @@ ns.RaceInfoByID = {
     [21] = { name = "Вульпера", faction = "Neutral" },
     [22] = { name = "Пандарен", faction = "Neutral" },
     [23] = { name = "Зандалар", faction = "Horde" },
-    [24] = { name = "Озарён. дреней", faction = "Alliance" },
+    [24] = { name = "Озар. дреней", faction = "Alliance" },
     [25] = { name = "Эредар", faction = "Horde" },
     [26] = { name = "Дворф Ч. Железа", faction = "Alliance" },
     [27] = { name = "Драктир", faction = "Horde" }
@@ -1274,7 +1274,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 realmID, -- [8]
                 c.level or 0, -- [9]
                 c.getPlayedTry or 0, -- [10]
-                tonumber(c.playedTime) or 0, -- [11]
+                tonumber(c.playedTime) or nil, -- [11]
                 (not c.completed and causeCode == 7) and mobName or "", -- [12]
             }
 

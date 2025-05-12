@@ -1408,7 +1408,7 @@
 
 					<!-- CLIP LINK (moved after) -->
 					<Button name="OFDeathClipsClipSort" inherits="OFAuctionSortButtonTemplate" text="Причина смерти">
-						<Size><AbsDimension x="215" y="19" /></Size>
+						<Size><AbsDimension x="210" y="19" /></Size>
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="OFDeathClipsWhereSort" relativePoint="RIGHT" />
 						</Anchors>
@@ -1440,7 +1440,7 @@
 					</Button>
 
 					<!-- WHEN -->
-					<Button name="OFDeathClipsWhenSort" inherits="OFAuctionSortButtonTemplate" text="L_WHEN">
+					<Button name="OFDeathClipsWhenSort" inherits="OFAuctionSortButtonTemplate" text="Когда">
 						<Size><AbsDimension x="55" y="19" /></Size>
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="OFDeathClipsRaceSort" relativePoint="RIGHT" />
@@ -1451,8 +1451,8 @@
 					</Button>
 
 					<!-- RATING -->
-					<Button name="OFDeathClipsRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
-						<Size><AbsDimension x="83" y="19" /></Size>
+					<Button name="OFDeathClipsRatingSort" inherits="OFAuctionSortButtonTemplate" text="Реакция">
+						<Size><AbsDimension x="66" y="19" /></Size>
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="OFDeathClipsWhenSort" relativePoint="RIGHT" />
 						</Anchors>

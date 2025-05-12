@@ -229,3 +229,32 @@ ns.GetRatingAverage = function(ratings)
     end
     return sum / #ratings
 end
+
+function ns.GetTopReactions(clipID, maxIcons)
+    local state = ns.GetDeathClipReviewState()
+    local reviews = state and state.persisted and state.persisted.state
+    if not reviews then return {} end
+
+    local counts = {}
+    for _, r in pairs(reviews) do
+        if r.clipID == clipID and type(r.rating) == "number" and r.rating >= 1 and r.rating <= 4 then
+            counts[r.rating] = (counts[r.rating] or 0) + 1
+        end
+    end
+
+    local list = {}
+    for id, count in pairs(counts) do
+        table.insert(list, { id = id, count = count })
+    end
+
+    table.sort(list, function(a, b)
+        return a.count > b.count
+    end)
+
+    local result = {}
+    for i = 1, math.min(maxIcons or 2, #list) do
+        table.insert(result, list[i])
+    end
+
+    return result
+end

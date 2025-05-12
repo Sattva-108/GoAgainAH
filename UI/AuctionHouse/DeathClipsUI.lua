@@ -122,7 +122,7 @@ local function formatWhen(clip)
     return ns.PrettyDuration(timeDiff)
 end
 
-function SetupClipHighlight(button)
+function ns.SetupClipHighlight(button)
     if not button.glow then
         -- ✨ Glow
         local glow = button:CreateTexture(nil, 'OVERLAY')
@@ -276,6 +276,10 @@ local function UpdateLayout(buttonName)
     local classText = _G[buttonName.."ClassText"]
     local whereText = _G[buttonName.."WhereText"]
     local raceText = _G[buttonName.."RaceText"]
+    -- Re-anchor WhenText to the right of RaceText
+    local whenText = _G[buttonName.."WhenText"]
+    -- Re-anchor Rating frame to the right of WhenText
+    local rating = _G[buttonName.."Rating"]
 
     if ns.isCompletedTabActive then
         -- When completed tab is active, hide the level and expand the name
@@ -294,8 +298,8 @@ local function UpdateLayout(buttonName)
         local halfWhereWidth = whereWidth / 2
 
         -- Increase the width of ClassText and RaceText by half of WhereText's width
-        classText:SetWidth(classText:GetWidth() + halfWhereWidth)
-        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth)
+        classText:SetWidth(classText:GetWidth() + halfWhereWidth -20)
+        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth -20)
 
         -- Re-anchor the ClassText and RaceText to slide them to the right of Clip
         classText:ClearAllPoints()
@@ -313,6 +317,8 @@ local function UpdateLayout(buttonName)
         classText:SetJustifyH("CENTER")
         raceText:SetJustifyH("CENTER")
 
+        whenText:ClearAllPoints()
+        whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
     else
         -- If live tab is active, show the level again and reset the name width
         level:Show()
@@ -328,15 +334,15 @@ local function UpdateLayout(buttonName)
         clipFrame:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
 
         -- Reset the width of ClassText and RaceText to original sizes (adjust as needed)
-        classText:SetWidth(55)  -- Adjust to original width as needed
-        raceText:SetWidth(55)   -- Adjust to original width as needed
+        classText:SetWidth(84)  -- Adjust to original width as needed
+        raceText:SetWidth(84)   -- Adjust to original width as needed
 
         -- Re-anchor the ClassText and RaceText to the right of clipFrame
         classText:ClearAllPoints()
         raceText:ClearAllPoints()
 
         -- Anchor ClassText immediately to the right of Clip (was WhereText before)
-        classText:SetPoint("LEFT", clipFrame, "RIGHT", 15, 0)
+        classText:SetPoint("LEFT", clipFrame, "RIGHT", -15, 0)
 
         -- Anchor RaceText immediately to the right of ClassText
         raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
@@ -347,13 +353,9 @@ local function UpdateLayout(buttonName)
         classText:SetJustifyH("RIGHT")
         raceText:SetJustifyH("LEFT")
 
-        -- Re-anchor WhenText to the right of RaceText
-        local whenText = _G[buttonName.."WhenText"]
         whenText:ClearAllPoints()
-        whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
+        whenText:SetPoint("LEFT", raceText, "RIGHT", -10, 0)
 
-        -- Re-anchor Rating frame to the right of WhenText
-        local rating = _G[buttonName.."Rating"]
         rating:ClearAllPoints()
         rating:SetPoint("LEFT", whenText, "RIGHT", 5, 0)
 
@@ -401,7 +403,7 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         if ns.isCompletedTabActive then
             if clip.race == "Ночноро\nждённый" then
                 clip.race = "Ночнорождённый"
-            elseif clip.race == "Озарён. дреней" then
+            elseif clip.race == "Озар. дреней" then
                 clip.race = "Озарённый дреней"
             elseif clip.race == "Дворф Ч. Железа" then
                 clip.race = "Дворф Чёрного Железа"
@@ -459,9 +461,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
                 -- do nothing
             else
                 if classKey == "WARLOCK" then
-                    localizedName = "Черно\nкнижник"
+                    localizedName = "Варлок"
                 elseif classKey == "ROGUE" then
-                    localizedName = "Разбой\nник"
+                    localizedName = "Разбойник"
                 end
             end
         end
@@ -503,6 +505,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     if not whereStr then
         whereStr = clip.where
     end
+    -- Optional: override long zone names for better line wrapping
+    local ZONE_NAME_OVERRIDES = {
+        ["Полуостров Адского Пламени"] = "Полуостров\nАдского Пламени",
+    }
+
+    if whereStr and ZONE_NAME_OVERRIDES[whereStr] then
+        whereStr = ZONE_NAME_OVERRIDES[whereStr]
+    end
+
     where:SetText(whereStr or L["Unknown"])
 
     local clipText     = _G[buttonName.."ClipText"]
@@ -568,13 +579,16 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 
 
     -- Update Rating Widget
-    local ratingWidget = _G[buttonName.."Rating"].ratingWidget
-    if clip.id == nil then
-        ratingWidget:Show()
-        ratingWidget:SetRating(0)
-    else
-        ratingWidget:Show()
-        ratingWidget:SetRating(ns.GetRatingAverage(ratings))
+    local ratingFrame = _G[buttonName.."Rating"]
+    if ratingFrame and ratingFrame.SetReactions then
+        if clip.id == nil then
+            ratingFrame.label:SetText("")
+        else
+            local topReactions = ns.GetTopReactions(clip.id, 1)
+            if ratingFrame.SetReactions then
+                ratingFrame:SetReactions(topReactions)
+            end
+        end
     end
 
     local clipButton = _G[buttonName] -- Get the button itself
@@ -692,7 +706,7 @@ function OFAuctionFrameDeathClips_Update()
         button.clip = clip
 
         -- 🔥 Add highlight support
-        SetupClipHighlight(button)
+        ns.SetupClipHighlight(button)
 
         if not clip then
             button:Hide()
@@ -739,20 +753,67 @@ end
 
 
 function OFDeathClipsRatingWidget_OnLoad(self)
-    local starRating = ns.CreateStarRatingWidget({
-        starSize = 12,
-        panelHeight = 12,
-        marginBetweenStarsX = 2,
-        textWidth = 22,
-        leftMargin = 1,
-        disableMouse = true,
-        hideText = true
-    })
-    self.ratingWidget = starRating
-    starRating.frame:SetParent(self)
-    starRating.frame:SetPoint("LEFT", self, "LEFT", -2, 0)
-    starRating:SetRating(3.5)
-    starRating.frame:Show()
+    -- Create single large icon texture
+    local icon = self:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(40, 26) -- fill most of the rating column
+    icon:SetPoint("LEFT", self, "LEFT", 0, 0)
+    icon:Hide()
+
+    -- Общая обрезка
+    icon:SetTexCoord(0.1, 0.9, 0.34, 0.74)
+    icon:SetVertexColor(0.5, 0.5, 0.5) -- slightly dimmed, full color
+
+
+    -- Create count text overlaid on icon
+    local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    count:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    count:SetTextColor(1, 1, 1, 0.6)
+    count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -12, 6)
+    count:Hide()
+
+    -- Store references
+    self.reactionIcon = icon
+    self.reactionCount = count
+
+    -- Assign SetReactions function
+    function self:SetReactions(data)
+        local paths = {
+            [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",
+            [2] = "Interface\\AddOns\\GoAgainAH\\Media\\frozen_64x64.tga",
+            [3] = "Interface\\AddOns\\GoAgainAH\\Media\\clown_64x64.tga",
+            [4] = "Interface\\AddOns\\GoAgainAH\\Media\\fire_64x64.tga",
+        }
+
+        if data and data[1] then
+            local id = data[1].id
+
+            -- Спецпозиции и обрезки
+            if id == 3 then
+                -- 🤡 Клоун: немного вверх
+                icon:SetTexCoord(0.1, 0.9, 0.30, 0.72)
+
+            elseif id == 4 then
+                -- 🔥 Огонь: обрезать до самого верха
+                icon:SetTexCoord(0.1, 0.9, 0.12, 0.66)
+
+            else
+                -- Остальные по центру
+                icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
+            end
+
+            local countValue = data[1].count
+            local path = paths[id]
+
+            self.reactionIcon:SetTexture(path)
+            self.reactionIcon:Show()
+
+            self.reactionCount:SetText(countValue)
+            self.reactionCount:Show()
+        else
+            self.reactionIcon:Hide()
+            self.reactionCount:Hide()
+        end
+    end
 end
 
 function OFAuctionFrameDeathClips_OnHide()
