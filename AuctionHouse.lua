@@ -1274,7 +1274,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 realmID, -- [8]
                 c.level or 0, -- [9]
                 c.getPlayedTry or 0, -- [10]
-                tonumber(c.playedTime) or 0, -- [11]
+                tonumber(c.playedTime) or nil, -- [11]
                 (not c.completed and causeCode == 7) and mobName or "", -- [12]
             }
 
