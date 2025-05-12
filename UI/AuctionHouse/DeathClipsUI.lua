@@ -122,7 +122,7 @@ local function formatWhen(clip)
     return ns.PrettyDuration(timeDiff)
 end
 
-function SetupClipHighlight(button)
+function ns.SetupClipHighlight(button)
     if not button.glow then
         -- ✨ Glow
         local glow = button:CreateTexture(nil, 'OVERLAY')
@@ -506,6 +506,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
     if not whereStr then
         whereStr = clip.where
     end
+    -- Optional: override long zone names for better line wrapping
+    local ZONE_NAME_OVERRIDES = {
+        ["Полуостров Адского Пламени"] = "Полуостров\nАдского Пламени",
+    }
+
+    if whereStr and ZONE_NAME_OVERRIDES[whereStr] then
+        whereStr = ZONE_NAME_OVERRIDES[whereStr]
+    end
+
     where:SetText(whereStr or L["Unknown"])
 
     local clipText     = _G[buttonName.."ClipText"]
@@ -698,7 +707,7 @@ function OFAuctionFrameDeathClips_Update()
         button.clip = clip
 
         -- 🔥 Add highlight support
-        SetupClipHighlight(button)
+        ns.SetupClipHighlight(button)
 
         if not clip then
             button:Hide()

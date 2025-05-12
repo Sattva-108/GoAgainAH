@@ -198,6 +198,11 @@
                         </FontString>
                     </Layer>
                 </Layers>
+<!--                <Scripts>-->
+<!--                    <OnLoad>-->
+<!--                        self:SetScale(1.5)-->
+<!--                    </OnLoad>-->
+<!--                </Scripts>-->
             </Frame>
 
             <!-- Rating Frame -->
