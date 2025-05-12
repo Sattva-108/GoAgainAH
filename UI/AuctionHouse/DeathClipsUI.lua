@@ -745,9 +745,41 @@ end
 
 
 function OFDeathClipsRatingWidget_OnLoad(self)
+    -- Border first (on top)
+    local border = self:CreateTexture(nil, "OVERLAY")
+    border:SetPoint("TOPLEFT", self, "TOPLEFT", -3, 1)
+    border:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -5, -1)
+
+    border:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+    border:SetTexCoord(0.2, 0.8, 0.2, 0.8)
+    border:SetVertexColor(1.0, 0.82, 0.0, 0.4)
+    self.reactionBorder = border
+
+    -- Outer border (surrounds the gold one)
+    local outerBorder = self:CreateTexture(nil, "BACKGROUND")
+    outerBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+    outerBorder:SetTexCoord(0.2, 0.8, 0.2, 0.8)
+    outerBorder:SetVertexColor(0, 0, 0, 1) -- red for testing
+    outerBorder:ClearAllPoints()
+
+    self.reactionOuterBorder = outerBorder
+
+
+
+
+    -- Create background using white texture
+    local bg = self:CreateTexture(nil, "BACKGROUND")
+    bg:SetTexture("Interface\\Buttons\\WHITE8x8") -- built-in 1x1 white texture
+    bg:SetVertexColor(0, 0, 0, 0.4) -- solid black background (no alpha now)
+    bg:ClearAllPoints()
+    bg:SetAllPoints(border) -- ✅ same exact bounds
+
+    self.reactionBG = bg
+
+
     -- Create single large icon texture
     local icon = self:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(40, 26) -- fill most of the rating column
+    icon:SetSize(self:GetWidth() - 10, self:GetHeight() - 10)
     icon:SetPoint("LEFT", self, "LEFT", 0, 0)
     icon:Hide()
 
@@ -755,12 +787,24 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     icon:SetTexCoord(0.1, 0.9, 0.34, 0.74)
     icon:SetVertexColor(0.5, 0.5, 0.5) -- slightly dimmed, full color
 
+    border:ClearAllPoints()
+    border:SetPoint("CENTER", icon, "CENTER", 0, 0)
+    border:SetSize(icon:GetWidth() + 6, icon:GetHeight() + 3)
+
+    -- Anchor to center of gold border
+    outerBorder:SetPoint("CENTER", border, "CENTER", 0, 0)
+
+    -- Make it +4px wider and taller than the gold border
+    outerBorder:SetSize(border:GetWidth() + 1, border:GetHeight() + 1)
+
+
+
 
     -- Create count text overlaid on icon
     local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     count:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-    count:SetTextColor(1, 1, 1, 0.6)
-    count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -12, 6)
+    count:SetTextColor(1, 1, 1, 0.4)
+    count:SetPoint("BOTTOM", icon, "TOPRIGHT", 8, -6)
     count:Hide()
 
     -- Store references
