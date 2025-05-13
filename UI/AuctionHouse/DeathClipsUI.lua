@@ -81,6 +81,23 @@ function OFAuctionFrameDeathClips_OnLoad()
 
         -- Хайлайт создаём один раз
         ns.SetupClipHighlight(button)
+
+        -- OnClick создаём один раз
+        button:SetScript("OnClick", function(self)
+            local c = self.clipData
+            if not c or not c.id then return end
+
+            local wasOpen = (OFAuctionFrameDeathClips.openedPromptClipID == c.id)
+            ns.HideAllClipPrompts()
+
+            if not wasOpen then
+                ns.ShowDeathClipReviewsPrompt(c)
+                OFAuctionFrameDeathClips.openedPromptClipID = c.id
+            end
+
+            OFAuctionFrameDeathClips_Update()
+        end)
+
     end
 
     --C_Timer:After(3, function()
@@ -546,24 +563,6 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         else
             ratingFrame.label:SetText("")
         end
-    end
-
-    -- ===== CLICK HANDLER (один раз) =====
-    if not clipButton._clickBound then
-        clipButton:SetScript("OnClick", function(self)
-            local c = self.clipData
-            if not c or not c.id then
-                return
-            end
-            local wasOpen = (OFAuctionFrameDeathClips.openedPromptClipID == c.id)
-            ns.HideAllClipPrompts()
-            if not wasOpen then
-                ns.ShowDeathClipReviewsPrompt(c)
-                OFAuctionFrameDeathClips.openedPromptClipID = c.id
-            end
-            OFAuctionFrameDeathClips_Update()
-        end)
-        clipButton._clickBound = true
     end
     clipButton.clipData = clip     -- актуальные данные в кнопке
 
