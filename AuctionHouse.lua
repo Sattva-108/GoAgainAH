@@ -437,9 +437,10 @@ ns.T_PENDING_TRANSACTION_ACK = T_PENDING_TRANSACTION_ACK
 
 local knownAddonVersions = {}
 
-local ADMIN_USERS = {
+ns.ADMIN_USERS = {
     --["Athenegpt-Soulseeker"] = 1,
     -- ["Maralle-Soulseeker"] = 1,
+    ["Lenkomag"]  = true,
 }
 
 -- Constants
@@ -573,14 +574,17 @@ local CHANNEL_WHITELIST = {
     [ns.T_PENDING_TRANSACTION_STATE] = { [W] = 1 },
 }
 
-local function getFullName(name)
-    local shortName, realmName = string.split("-", name)
-    return shortName .. "-" .. (realmName or GetRealmName())
+-- make isMessageAllowed use name-only
+local function getFullName(unitName)
+    return unitName   -- since UnitName("player") is just the name
 end
 
 local function isMessageAllowed(sender, channel, messageType)
     local fullName = getFullName(sender)
-    if ADMIN_USERS[fullName] then
+    if messageType == ns.T_ADMIN_UPDATE_CLIP_OVERRIDES then
+        return ns.ADMIN_USERS[sender] == true
+    end
+    if ns.ADMIN_USERS[fullName] then
         return true
     end
     if not CHANNEL_WHITELIST[messageType] then
@@ -731,6 +735,11 @@ function AuctionHouse:Initialize()
     end)
     clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, function(payload)
         if payload.fromNetwork then
+            return
+        end
+        local me = UnitName("player")
+        if not ns.ADMIN_USERS[me] then
+            -- non-admins never broadcast override messages
             return
         end
         self:BroadcastMessage(Addon:Serialize({ ns.T_ADMIN_UPDATE_CLIP_OVERRIDES, { clipID = payload.clipID, overrides = payload.overrides } }))
@@ -1473,6 +1482,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local reviewState = ns.GetDeathClipReviewState()
         reviewState:UpdateReviewFromNetwork(review)
     elseif dataType == ns.T_ADMIN_UPDATE_CLIP_OVERRIDES then
+        if not ns.ADMIN_USERS[sender] then
+            -- drop any override from someone who is not admin
+            return
+        end
         local reviewState = ns.GetDeathClipReviewState()
         reviewState:UpdateClipOverrides(payload.clipID, payload.overrides, true)
     elseif dataType == ns.T_ADMIN_REMOVE_CLIP then
@@ -2194,10 +2207,6 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
     -- 4. Prepend our marker
     local msg        = "DF:" .. encoded
-
-    C_Timer:After(10, function()
-        print(("🔍DBG Encoded login-sync payload starts with “%s”"):format(msg:sub(1,20)))
-    end)
 
     -- 5. Send it off
     self:BroadcastMessage(msg)
