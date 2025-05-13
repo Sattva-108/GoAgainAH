@@ -233,7 +233,7 @@ function OFAuctionFrameDeathClips_OnShow()
 
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE, update)
         state:RegisterEvent(ns.EV_DEATH_CLIP_REVIEW_STATE_SYNCED, update)
-        state:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, update)
+        --state:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, update)
 
         -- Hook HideAllClipPrompts ONCE to reset our state tracker
         hooksecurefunc(ns, "HideAllClipPrompts", function()
@@ -392,15 +392,15 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
         return
     end                    -- защита
 
-    local overrides = state:GetClipOverrides(clip.id)
-    local merged = {}
-    for k, v in pairs(clip) do
-        merged[k] = v
-    end
-    for k, v in pairs(overrides) do
-        merged[k] = v
-    end
-    clip = merged
+    --local overrides = state:GetClipOverrides(clip.id)
+    --local merged = {}
+    --for k, v in pairs(clip) do
+    --    merged[k] = v
+    --end
+    --for k, v in pairs(overrides) do
+    --    merged[k] = v
+    --end
+    --clip = merged
 
     ResizeEntry(button, numBatchClips, totalClips)
 
@@ -576,15 +576,9 @@ local function UpdateClipEntry(state, i, offset, button, clip, ratings, numBatch
 end
 
 local function FilterHiddenClips(state, clips)
-    local filtered = {}
-    for _, clip in ipairs(clips) do
-        local overrides = state:GetClipOverrides(clip.id)
-        if not overrides.hidden then
-            table.insert(filtered, clip)
-        end
-    end
-    return filtered
+    return clips   -- overrides больше нет → ничего не скрываем
 end
+
 
 -- Updates clip entries based on which tab is active
 function OFAuctionFrameDeathClips_Update()
