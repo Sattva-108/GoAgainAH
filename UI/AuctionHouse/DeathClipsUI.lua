@@ -96,25 +96,21 @@ local function updateSortArrows() -- New name to avoid conflict if original is e
     -- To make arrows work, OFSortButton_UpdateArrow needs to be aware of OFAuctionFrameDeathClips.clipsSortKey and .clipsSortAscending
 end
 
--- Function OFAuctionFrameDeathClips_OnLoad (Complete)
--- Function OFAuctionFrameDeathClips_OnLoad (Complete and NO GOTO)
 function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.page = 0
 
     -- Initialize INTERNAL sort state variables
-    OFAuctionFrameDeathClips.clipsSortKey = "when"      -- Initial default sort key
-    OFAuctionFrameDeathClips.clipsSortAscending = false -- Initial default sort direction (false for descending)
+    OFAuctionFrameDeathClips.clipsSortKey = "when"      -- Initial default for "live" tab
+    OFAuctionFrameDeathClips.clipsSortAscending = false -- Initial default for "live" tab (descending)
     OFAuctionFrameDeathClips.currentSubTab = "live"     -- Initial default subTab
-    ns.isCompletedTabActive = false                     -- Ensure layout flag matches initial tab
+    if ns then ns.isCompletedTabActive = false end      -- Ensure layout flag matches initial tab
 
     OFAuctionFrameDeathClips.currentDisplayableClips = {}
-    OFAuctionFrameDeathClips.needsDataRefresh = true -- Force initial data load
+    OFAuctionFrameDeathClips.needsDataRefresh = true -- Force initial data load and sort
 
-    ns.clipButtonElements = {} -- Ensure ns.clipButtonElements is initialized
+    ns.clipButtonElements = {}
     for i = 1, NUM_CLIPS_TO_DISPLAY do
         local button = _G["OFDeathClipsButton" .. i]
-        local buttonProcessedSuccessfully = false -- Flag to track if this button iteration was okay
-
         if button then
             local buttonName = button:GetName()
             if (_G[buttonName .. "Highlight"] and _G[buttonName .. "Name"] and _G[buttonName .. "Level"] and
@@ -123,95 +119,80 @@ function OFAuctionFrameDeathClips_OnLoad()
                     _G[buttonName .. "ClipMobLevel"] and _G[buttonName .. "Rating"] and _G[buttonName .. "Clip"]) then
 
                 ns.clipButtonElements[i] = {
-                    button = button,
-                    highlight = _G[buttonName .. "Highlight"],
-                    name = _G[buttonName .. "Name"],
-                    level = _G[buttonName .. "Level"],
-                    raceText = _G[buttonName .. "RaceText"],
-                    itemIconTexture = _G[buttonName .. "ItemIconTexture"],
-                    classText = _G[buttonName .. "ClassText"],
-                    whenText = _G[buttonName .. "WhenText"],
-                    whereText = _G[buttonName .. "WhereText"],
-                    clipText = _G[buttonName .. "ClipText"],
-                    clipMobLevel = _G[buttonName .. "ClipMobLevel"],
-                    rating = _G[buttonName .. "Rating"],
-                    clipFrame = _G[buttonName .. "Clip"],
+                    button = button, highlight = _G[buttonName .. "Highlight"], name = _G[buttonName .. "Name"],
+                    level = _G[buttonName .. "Level"], raceText = _G[buttonName .. "RaceText"],
+                    itemIconTexture = _G[buttonName .. "ItemIconTexture"], classText = _G[buttonName .. "ClassText"],
+                    whenText = _G[buttonName .. "WhenText"], whereText = _G[buttonName .. "WhereText"],
+                    clipText = _G[buttonName .. "ClipText"], clipMobLevel = _G[buttonName .. "ClipMobLevel"],
+                    rating = _G[buttonName .. "Rating"], clipFrame = _G[buttonName .. "Clip"],
                 }
-                button.displayedClipID = nil -- Initialize for conditional updates
-
-                ns.SetupClipHighlight(button) -- Assuming ns.SetupClipHighlight is defined
+                button.displayedClipID = nil
+                if ns and ns.SetupClipHighlight then ns.SetupClipHighlight(button) end
 
                 button:SetScript("OnClick", function(self)
                     local c = self.clipData
                     if not c or not c.id then return end
                     local wasOpen = (OFAuctionFrameDeathClips.openedPromptClipID == c.id)
-                    ns.HideAllClipPrompts()
+                    if ns and ns.HideAllClipPrompts then ns.HideAllClipPrompts() end
                     if not wasOpen then
-                        ns.ShowDeathClipReviewsPrompt(c)
+                        if ns and ns.ShowDeathClipReviewsPrompt then ns.ShowDeathClipReviewsPrompt(c) end
                         OFAuctionFrameDeathClips.openedPromptClipID = c.id
                     end
                     OFAuctionFrameDeathClips_Update()
                 end)
-                buttonProcessedSuccessfully = true -- Mark as processed
             else
-                ns.DebugLog(addonName .. ": Critical Error - Child elements missing for " .. buttonName .. " in OnLoad!")
+                if ns and ns.DebugLog then ns.DebugLog(addonName .. ": Critical Error - Child elements missing for " .. buttonName .. " in OnLoad!") end
             end
         else
-            ns.DebugLog(addonName .. ": Critical Error - OFDeathClipsButton" .. i .. " not found in OnLoad!")
+            if ns and ns.DebugLog then ns.DebugLog(addonName .. ": Critical Error - OFDeathClipsButton" .. i .. " not found in OnLoad!") end
         end
-
-        -- If this button was not processed successfully, ns.clipButtonElements[i] will remain nil or undefined.
-        -- The _Update function already has a check for 'if buttonElements then ...' which will handle this.
     end
 
-    ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
-        OFAuctionFrameDeathClips.needsDataRefresh = true
-        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
-            OFAuctionFrameDeathClips_Update()
-        end
-    end)
+    if ns and ns.AuctionHouseAPI then
+        ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
+            OFAuctionFrameDeathClips.needsDataRefresh = true
+            if OFAuctionFrame and OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips and OFAuctionFrameDeathClips:IsShown() then
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
 
     OFAuctionFrameDeathClips.openedPromptClipID = nil
     OFAuctionFrameDeathClips._highlightedClips = OFAuctionFrameDeathClips._highlightedClips or {}
 
     if not sortHookApplied then
         if type(OFAuctionFrame_SetSort) == "function" then
-            -- This hook now becomes the PRIMARY way to set OUR internal sort state for clips
             hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
                 if type == "clips" then
-                    print(string.format("DEBUG_SORT_HOOK: OFAuctionFrame_SetSort called for 'clips'. New sort - Key: %s, Ascending: %s. Updating internal state.", tostring(key), tostring(ascending)))
+                    print(string.format("DEBUG_SORT_HOOK: OFAuctionFrame_SetSort received for 'clips'. Key: %s, Ascending: %s.", tostring(key), tostring(ascending)))
 
                     OFAuctionFrameDeathClips.clipsSortKey = key
-                    OFAuctionFrameDeathClips.clipsSortAscending = ascending
+                    OFAuctionFrameDeathClips.clipsSortAscending = ascending -- Store the value AS RECEIVED
 
                     OFAuctionFrameDeathClips.page = 0
-                    FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-                    if OFDeathClipsScrollScrollBar then
-                        OFDeathClipsScrollScrollBar:SetValue(0)
-                    end
+                    if OFDeathClipsScroll then FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0) end
+                    if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
                     OFAuctionFrameDeathClips.needsDataRefresh = true
 
-                    if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
-                        OFAuctionFrameDeathClips_Update() -- Trigger update with new internal state
+                    if OFAuctionFrame and OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips and OFAuctionFrameDeathClips:IsShown() then
+                        OFAuctionFrameDeathClips_Update()
                     end
                 end
             end)
             sortHookApplied = true
         else
-            ns.DebugLog(addonName .. ": Error - Could not find OFAuctionFrame_SetSort to hook for clip sorting.")
-            -- If OFAuctionFrame_SetSort cannot be hooked, you MUST have your sort header buttons
-            -- call a custom function like MySetClipsSort("level", true) directly.
+            if ns and ns.DebugLog then ns.DebugLog(addonName .. ": Error - Could not find OFAuctionFrame_SetSort to hook for clip sorting.") end
         end
     end
 
-    -- Tab click handlers now also call OFAuctionFrame_SetSort to go through the centralized logic
+    -- Tab click handlers
     if OFDeathClipsTabLive and OFDeathClipsTabLive.HookScript then
         OFDeathClipsTabLive:HookScript("OnClick", function()
             if OFAuctionFrameDeathClips.currentSubTab ~= "live" then
                 OFAuctionFrameDeathClips.currentSubTab = "live"
                 if ns then ns.isCompletedTabActive = false end
-                -- OFAuctionFrameDeathClips.needsDataRefresh = true; -- SetSort will handle this
-                OFAuctionFrame_SetSort("clips", "when", false) -- Set default sort for this tab
+                print("DEBUG_TAB_CLICK: Switched to LIVE tab. Setting sort to 'when', false (desc).")
+                OFAuctionFrame_SetSort("clips", "when", false) -- This call will trigger the hook
             end
         end)
     end
@@ -220,15 +201,24 @@ function OFAuctionFrameDeathClips_OnLoad()
             if OFAuctionFrameDeathClips.currentSubTab ~= "completed" then
                 OFAuctionFrameDeathClips.currentSubTab = "completed"
                 if ns then ns.isCompletedTabActive = true end
-                -- OFAuctionFrameDeathClips.needsDataRefresh = true; -- SetSort will handle this
-                OFAuctionFrame_SetSort("clips", "clip", true) -- Set default sort for this tab
+                print("DEBUG_TAB_CLICK: Switched to COMPLETED tab. Setting sort to 'clip', true (asc).")
+                OFAuctionFrame_SetSort("clips", "clip", true) -- This call will trigger the hook
             end
         end)
     end
 
-    -- Call OFAuctionFrame_SetSort once at the end of OnLoad to establish the initial sort state
-    -- This ensures the hook fires and sets up lastSortKey etc. correctly if they are still used by updateSortArrows
-    OFAuctionFrame_SetSort("clips", OFAuctionFrameDeathClips.clipsSortKey, OFAuctionFrameDeathClips.clipsSortAscending)
+    -- Explicitly call OFAuctionFrame_SetSort at the end of OnLoad to set the initial state
+    -- This ensures the hook fires and variables are primed.
+    if type(OFAuctionFrame_SetSort) == "function" then
+        OFAuctionFrame_SetSort("clips", OFAuctionFrameDeathClips.clipsSortKey, OFAuctionFrameDeathClips.clipsSortAscending)
+    else
+        -- If OFAuctionFrame_SetSort isn't available, we have to manually trigger a refresh if UI is shown
+        -- This path is less ideal as it bypasses the hook logic for initialization
+        OFAuctionFrameDeathClips.needsDataRefresh = true;
+        if OFAuctionFrame and OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips and OFAuctionFrameDeathClips:IsShown() then
+            OFAuctionFrameDeathClips_Update()
+        end
+    end
 end
 
 local function formatWhen(clip)
@@ -663,71 +653,75 @@ local function FilterHiddenClips(state, clips)
 end
 
 
--- Updates clip entries based on which tab is active
--- Function OFAuctionFrameDeathClips_Update (Revised for internal sort state)
 function OFAuctionFrameDeathClips_Update()
     local frame = OFAuctionFrameDeathClips
-    local state = ns.GetDeathClipReviewState()
-    local ratingsByClip = state:GetRatingsByClip()
+    if not frame then return end -- Safety
 
-    -- Use our INTERNALLY managed sort state
+    local state = ns.GetDeathClipReviewState()
+    local ratingsByClip = state and state:GetRatingsByClip() or {}
+
+    -- Use our INTERNALLY managed sort state, which was set by the hook
     local currentSortKey = frame.clipsSortKey
     local currentSortAscending = frame.clipsSortAscending
 
-    -- The needsDataRefresh flag is now primarily set by:
-    -- 1. The OFAuctionFrame_SetSort hook (when sort changes via header click or tab default)
-    -- 2. Tab click handlers (indirectly, by calling OFAuctionFrame_SetSort)
-    -- 3. EV_DEATH_CLIPS_CHANGED event
-    -- print(string.format("DEBUG: Update Start. Current Sort: Key: %s, Asc: %s. SubTab: %s. NeedsRefresh: %s",
-    --    tostring(currentSortKey), tostring(currentSortAscending), tostring(frame.currentSubTab), tostring(frame.needsDataRefresh)))
+    print(string.format("DEBUG_UPDATE_ENTRY: Tab: %s, CurrentInternalSort: Key=%s, Asc=%s. NeedsRefresh: %s. ns.isCompletedTabActive: %s",
+            tostring(frame.currentSubTab), tostring(currentSortKey), tostring(currentSortAscending), tostring(frame.needsDataRefresh), tostring(ns and ns.isCompletedTabActive)))
 
     local forceFullRowUpdate = false
     if frame.needsDataRefresh then
-        -- print("DEBUG: Update - needsDataRefresh is true. Refreshing full clip data.")
-        local rawPool = ns.GetLiveDeathClips()
-        local pool = ns.FilterClipsThisRealm(rawPool)
+        print("DEBUG_UPDATE: needsDataRefresh is true. Refreshing full clip data.")
+
+        local rawPool = ns.GetLiveDeathClips and ns.GetLiveDeathClips() or {}
+        local pool = ns.FilterClipsThisRealm and ns.FilterClipsThisRealm(rawPool) or {}
         local tempClips = {}
 
         if frame.currentSubTab == "completed" then
+            -- print("DEBUG_UPDATE: Filtering for COMPLETED clips.")
             for _, clip in ipairs(pool) do
                 if clip.completed then table.insert(tempClips, clip) end
             end
         else -- "live" or default
+            -- print("DEBUG_UPDATE: Filtering for LIVE clips.")
             for _, clip in ipairs(pool) do
                 if not clip.completed then table.insert(tempClips, clip) end
             end
         end
+        print(string.format("DEBUG_UPDATE: Filtered %d clips for tab '%s'.", #tempClips, frame.currentSubTab))
 
         local sortParamsForSortFunction
         if currentSortKey then
+            -- Remember: your sorter uses 'reverse'. If ascending is true, reverse is false.
             sortParamsForSortFunction = {{column = currentSortKey, reverse = not currentSortAscending}}
         else
-            -- This case should ideally not be hit if initialized properly
             sortParamsForSortFunction = {{column = "when", reverse = true}}
-            -- print("DEBUG: Update - currentSortKey was nil in _Update, using default 'when' sort.")
+            print("DEBUG_UPDATE: currentSortKey was nil, defaulting to 'when' descending.")
         end
 
-        tempClips = ns.SortDeathClips(tempClips, sortParamsForSortFunction)
+        print(string.format("DEBUG_UPDATE: About to sort %d clips. Sort Key: %s, Sort Ascending (from internal state): %s -> reverse: %s. (ns.isCompletedTabActive: %s)",
+                #tempClips, tostring(currentSortKey), tostring(currentSortAscending), tostring(sortParamsForSortFunction[1].reverse), tostring(ns and ns.isCompletedTabActive)))
+
+        if ns.SortDeathClips then
+            tempClips = ns.SortDeathClips(tempClips, sortParamsForSortFunction)
+        else
+            print("DEBUG_UPDATE: ns.SortDeathClips not found!")
+        end
+        print(string.format("DEBUG_UPDATE: Sorting done. Resulting clips: %d", #tempClips))
 
         frame.currentDisplayableClips = tempClips
-        frame.needsDataRefresh = false -- Reset the flag
+        frame.needsDataRefresh = false -- Reset the flag AFTER processing
         forceFullRowUpdate = true
 
-        -- frame.page = 0 -- page reset is now handled by the SetSort hook or tab click
-        -- FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0) -- also handled by SetSort hook
+        -- Resetting page/offset is done by the SetSort hook or if explicitly needed on data change
+        -- FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
         -- if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
-        -- print(string.format("DEBUG: Update - Data refreshed. Total displayable clips: %d", #frame.currentDisplayableClips))
     end
 
-    local clipsToDisplay = frame.currentDisplayableClips
+    local clipsToDisplay = frame.currentDisplayableClips or {}
     local totalClips = #clipsToDisplay
-    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+    local offset = (OFDeathClipsScroll and FauxScrollFrame_GetOffset(OFDeathClipsScroll)) or 0
 
-    updateSortArrows() -- This function MUST be updated to use frame.clipsSortKey and frame.clipsSortAscending
+    if updateSortArrows then updateSortArrows() end
 
-    -- ... (the rest of your OFAuctionFrameDeathClips_Update function for displaying rows remains the same:
-    --      the 'for i = 1, NUM_CLIPS_TO_DISPLAY do' loop, FauxScrollFrame_Update, and pagination logic)
-    --      Just ensure UpdateClipEntry is called correctly as before.
     local numActuallyDisplayed = 0
     for i = 1, NUM_CLIPS_TO_DISPLAY do
         local buttonElements = ns.clipButtonElements and ns.clipButtonElements[i]
@@ -747,39 +741,47 @@ function OFAuctionFrameDeathClips_Update()
 
                 local ratingsForThisClip = (clip.id and ratingsByClip and ratingsByClip[clip.id]) or {}
 
-                ns.TryExcept(
-                        function()
-                            UpdateClipEntry(state, i, offset, buttonElements, clip, ratingsForThisClip, totalClips, totalClips, forceFullRowUpdate)
-                        end,
-                        function(err)
-                            button:Hide()
-                            ns.DebugLog("Error updating clip entry for clip.id " .. tostring(clip and clip.id) .. ": " .. err)
-                        end
-                )
+                if ns.TryExcept then
+                    ns.TryExcept(
+                            function()
+                                UpdateClipEntry(state, i, offset, buttonElements, clip, ratingsForThisClip, totalClips, totalClips, forceFullRowUpdate)
+                            end,
+                            function(err)
+                                button:Hide()
+                                if ns.DebugLog then ns.DebugLog("Error updating clip entry for clip.id " .. tostring(clip and clip.id) .. ": " .. err) end
+                            end
+                    )
+                else -- No TryExcept, call directly
+                    UpdateClipEntry(state, i, offset, buttonElements, clip, ratingsForThisClip, totalClips, totalClips, forceFullRowUpdate)
+                end
             end
         else
             -- ns.DebugLog(addonName .. ": Warning - ns.clipButtonElements[" .. i .. "] is nil in _Update.")
         end
     end
 
-    FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
+    if OFDeathClipsScroll then FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT) end
 
     if totalClips > NUM_CLIPS_TO_DISPLAY then
-        OFDeathClipsPrevPageButton:SetEnabled(offset > 0)
-        OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
+        if OFDeathClipsPrevPageButton then OFDeathClipsPrevPageButton:SetEnabled(offset > 0) end
+        if OFDeathClipsNextPageButton then OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips) end
 
         if OFDeathClipsSearchCountText then
             OFDeathClipsSearchCountText:Show()
             local itemsMin = offset + 1
             local itemsMax = offset + numActuallyDisplayed
-            OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
+            if NUMBER_OF_RESULTS_TEMPLATE then
+                OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
+            else
+                OFDeathClipsSearchCountText:SetText(itemsMin .. "-" .. itemsMax .. " / " .. totalClips)
+            end
         end
     else
-        OFDeathClipsPrevPageButton:Disable()
-        OFDeathClipsNextPageButton:Disable()
+        if OFDeathClipsPrevPageButton then OFDeathClipsPrevPageButton:Disable() end
+        if OFDeathClipsNextPageButton then OFDeathClipsNextPageButton:Disable() end
         if OFDeathClipsSearchCountText then OFDeathClipsSearchCountText:Hide() end
     end
-    -- print(string.format("DEBUG: Update End. Offset: %d, TotalClips: %d", offset, totalClips))
+    -- print(string.format("DEBUG_UPDATE_END: Offset: %d, TotalClips: %d, Displayed: %d", offset, totalClips, numActuallyDisplayed))
 end
 
 function OFDeathClipsRatingWidget_OnLoad(self)
