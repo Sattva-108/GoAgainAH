@@ -261,35 +261,53 @@ function OFAuctionFrameDeathClips_OnShow()
             end
         end)
     end
-    OFAuctionFrameDeathClips._whenUpdateTicker = C_Timer:NewTicker(1, function()
-        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
-            for i = 1, NUM_CLIPS_TO_DISPLAY do
-                local button = _G["OFDeathClipsButton" .. i]
-                local clip = button and button.clip
-                if button and button:IsShown() and clip then
-                    local when = _G[button:GetName() .. "WhenText"]
-                    if when and clip.ts then
-                        local age = GetServerTime() - clip.ts
-                        when:SetText(formatWhen(clip))
+    -- —— When-Ticker: обновляет «Когда» и триггерит подсветку новых строк ——
+    do
+        local frame = OFAuctionFrameDeathClips
+        frame._highlightedClips = frame._highlightedClips or {}
 
-                        local highlighted = OFAuctionFrameDeathClips._highlightedClips
+        -- остановить прежний тикер, если был
+        if frame._whenUpdateTicker then
+            frame._whenUpdateTicker:Cancel()
+        end
 
-                        if age < 60 and not highlighted[clip.id] then
-                            highlighted[clip.id] = true
+        frame._whenUpdateTicker = C_Timer:NewTicker(1, function()
+            -- панель аукциона или под-фрейм скрыты → пропуск
+            if not (OFAuctionFrame:IsShown() and frame:IsShown()) then return end
 
-                            if button.glow then
-                                button.glow.animation:Play()
-                            end
-                            if button.shine then
-                                button.shine.animation:Play()
-                            end
-                        end
+            for i = 1, NUM_CLIPS_TO_DISPLAY do                -- всегда 9 строк
+                local el     = ns.clipButtonElements[i]        -- кэш (Шаг 1)
+                local button = el and el.button
+                local clip   = button and button.clipData      -- актуальные данные
 
+                if button and button:IsShown() and clip and clip.ts then
+                    ------------------------------------------------------
+                    -- 1) «Когда»
+                    ------------------------------------------------------
+                    local whenFS = el.whenText
+                    whenFS:SetText(formatWhen(clip))
+
+                    if clip.playedTime and clip.level then
+                        local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                        whenFS:SetTextColor(r,g,b,.7)
+                    else
+                        whenFS:SetTextColor(.6,.6,.6,.5)
+                    end
+
+                    ------------------------------------------------------
+                    -- 2) Подсветка новых клипов (меньше 60 с)
+                    ------------------------------------------------------
+                    local age = GetServerTime() - clip.ts
+                    if age < 60 and not frame._highlightedClips[clip.id] then
+                        frame._highlightedClips[clip.id] = true
+
+                        if button.glow  then button.glow.animation:Play()  end
+                        if button.shine then button.shine.animation:Play() end
                     end
                 end
             end
-        end
-    end)
+        end)
+    end
 
 end
 
