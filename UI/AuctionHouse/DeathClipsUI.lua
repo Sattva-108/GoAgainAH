@@ -65,7 +65,8 @@ local function CallApplyClipLayoutForAllButtons()
     end
     for i = 1, NUM_CLIPS_TO_DISPLAY do
         local elements = ns.clipButtonElements[i]
-        if elements and elements.button then -- Check if 'elements' itself is valid
+        if elements and elements.button then
+            -- Check if 'elements' itself is valid
             -- print(string.format("DEBUG: Applying layout to button %s", elements.button:GetName()))
             ns.ApplyClipLayout(elements.button:GetName())
             -- else
@@ -78,23 +79,24 @@ end
 
 function OFAuctionFrameDeathClips_OnLoad()
     -- print("DEBUG: OFAuctionFrameDeathClips_OnLoad START")
-    OFAuctionFrameDeathClips.page = 0
+    OFAuctionFrameDeathClips.page = 0 -- Current logical page index (0-based)
 
-    OFAuctionFrameDeathClips.currentDisplayableClips = {}
-    OFAuctionFrameDeathClips.needsDataRefresh = true
+    OFAuctionFrameDeathClips.fullMasterList = {} -- Stores ALL filtered and sorted clips
+    OFAuctionFrameDeathClips.currentDisplayableClips = {} -- Stores ONLY the clips for the current page (max NUM_CLIPS_PER_PAGE)
+    OFAuctionFrameDeathClips.needsDataRefresh = true -- True if fullMasterList needs regeneration (filter/sort)
+    OFAuctionFrameDeathClips.needsPageRender = true -- True if currentDisplayableClips needs to be repopulated from fullMasterList
 
     OFAuctionFrameDeathClips.currentSortKey = "when"
     OFAuctionFrameDeathClips.currentSortAscending = false
     OFAuctionFrameDeathClips.lastSortKeyApplied = nil
     OFAuctionFrameDeathClips.lastSortAscendingApplied = nil
-    OFAuctionFrameDeathClips.currentSubTab = "live" -- Default initial tab
-    OFAuctionFrameDeathClips.lastSubTabApplied = OFAuctionFrameDeathClips.currentSubTab -- Init last applied tab
+    OFAuctionFrameDeathClips.currentSubTab = "live"
+    OFAuctionFrameDeathClips.lastSubTabApplied = OFAuctionFrameDeathClips.currentSubTab
 
-    -- Initialize ns.clipButtonElements FIRST
-    ns.clipButtonElements = {} -- Ensure it's a table
+    ns.clipButtonElements = {}
     for i = 1, NUM_CLIPS_TO_DISPLAY do
         local button = _G["OFDeathClipsButton" .. i]
-        if button then -- Only proceed if the button actually exists in _G
+        if button then
             local buttonName = button:GetName()
             ns.clipButtonElements[i] = {
                 button = button,
@@ -110,31 +112,27 @@ function OFAuctionFrameDeathClips_OnLoad()
                 clipMobLevel = _G[buttonName .. "ClipMobLevel"],
                 rating = _G[buttonName .. "Rating"],
                 clipFrame = _G[buttonName .. "Clip"],
-            }
-            button.displayedClipID = nil
+            }            button.displayedClipID = nil
             ns.SetupClipHighlight(button)
             button:SetScript("OnClick", function(self)
                 local c = self.clipData
-                if not c or not c.id then return end
+                if not c or not c.id then
+                    return
+                end
                 local wasOpen = (OFAuctionFrameDeathClips.openedPromptClipID == c.id)
                 ns.HideAllClipPrompts()
                 if not wasOpen then
                     ns.ShowDeathClipReviewsPrompt(c)
                     OFAuctionFrameDeathClips.openedPromptClipID = c.id
                 end
-                OFAuctionFrameDeathClips_Update() -- This ensures highlights are updated
+                OFAuctionFrameDeathClips_Update()
             end)
-        else
-            -- This case means your XML doesn't define up to NUM_CLIPS_TO_DISPLAY buttons
-            -- or their naming is inconsistent.
-            -- print(string.format("DEBUG: OFDeathClipsButton%d not found in _G during OnLoad.", i))
         end
     end
-    -- print("DEBUG: ns.clipButtonElements populated.")
 
-    -- NOW set up hooks that might call CallApplyClipLayoutForAllButtons
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
         OFAuctionFrameDeathClips.needsDataRefresh = true
+        OFAuctionFrameDeathClips.needsPageRender = true -- Also need to re-render the current page from new data
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()
         end
@@ -150,9 +148,12 @@ function OFAuctionFrameDeathClips_OnLoad()
                     OFAuctionFrameDeathClips.currentSortKey = key
                     OFAuctionFrameDeathClips.currentSortAscending = ascending
                     OFAuctionFrameDeathClips.needsDataRefresh = true
+                    OFAuctionFrameDeathClips.needsPageRender = true -- New sort means new page 0 content
+                    OFAuctionFrameDeathClips.page = 0 -- Reset to first page on sort
                     FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-                    if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
-                    OFAuctionFrameDeathClips.page = 0
+                    if OFDeathClipsScrollScrollBar then
+                        OFDeathClipsScrollScrollBar:SetValue(0)
+                    end
                     OFAuctionFrameDeathClips_Update()
                 end
             end)
@@ -167,8 +168,8 @@ function OFAuctionFrameDeathClips_OnLoad()
             if OFAuctionFrameDeathClips.currentSubTab ~= "live" then
                 OFAuctionFrameDeathClips.currentSubTab = "live"
                 ns.isCompletedTabActive = false
-                OFAuctionFrame_SetSort("clips", "when", false) -- This triggers hook, sets needsRefresh, calls Update
-                CallApplyClipLayoutForAllButtons() -- Call after SetSort, which itself calls Update
+                OFAuctionFrame_SetSort("clips", "when", false) -- This triggers hook
+                CallApplyClipLayoutForAllButtons()
             end
         end)
     end
@@ -177,17 +178,45 @@ function OFAuctionFrameDeathClips_OnLoad()
             if OFAuctionFrameDeathClips.currentSubTab ~= "completed" then
                 OFAuctionFrameDeathClips.currentSubTab = "completed"
                 ns.isCompletedTabActive = true
-                OFAuctionFrame_SetSort("clips", "clip", true) -- This triggers hook, sets needsRefresh, calls Update
-                CallApplyClipLayoutForAllButtons() -- Call after SetSort
+                OFAuctionFrame_SetSort("clips", "clip", true) -- This triggers hook
+                CallApplyClipLayoutForAllButtons()
             end
         end)
     end
 
-    -- Set initial sort AFTER hooks are established and clipButtonElements are populated
     OFAuctionFrame_SetSort("clips", OFAuctionFrameDeathClips.currentSortKey, OFAuctionFrameDeathClips.currentSortAscending)
-    -- And apply initial layout
     CallApplyClipLayoutForAllButtons()
 
+    -- Setup Next/Prev Page Button OnClick Handlers
+    if OFDeathClipsPrevPageButton then
+        OFDeathClipsPrevPageButton:SetScript("OnClick", function()
+            if OFAuctionFrameDeathClips.page > 0 then
+                OFAuctionFrameDeathClips.page = OFAuctionFrameDeathClips.page - 1
+                OFAuctionFrameDeathClips.needsPageRender = true -- Need to load new page data
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0) -- Reset scroll for new page
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
+
+    if OFDeathClipsNextPageButton then
+        OFDeathClipsNextPageButton:SetScript("OnClick", function()
+            local totalPages = ceil(#OFAuctionFrameDeathClips.fullMasterList / NUM_CLIPS_PER_PAGE) - 1
+            if OFAuctionFrameDeathClips.page < totalPages then
+                OFAuctionFrameDeathClips.page = OFAuctionFrameDeathClips.page + 1
+                OFAuctionFrameDeathClips.needsPageRender = true
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
+
+    -- Ensure the FauxScrollFrame's OnVerticalScroll calls your update function
+    if OFDeathClipsScroll then
+        OFDeathClipsScroll:SetScript("OnVerticalScroll", function(self, newOffset)
+            FauxScrollFrame_OnVerticalScroll(self, newOffset, CLIPS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)
+        end)
+    end
     -- print("DEBUG: OFAuctionFrameDeathClips_OnLoad END")
 end
 
@@ -319,12 +348,15 @@ function OFAuctionFrameDeathClips_OnShow()
 
         frame._whenUpdateTicker = C_Timer:NewTicker(1, function()
             -- панель аукциона или под-фрейм скрыты → пропуск
-            if not (OFAuctionFrame:IsShown() and frame:IsShown()) then return end
+            if not (OFAuctionFrame:IsShown() and frame:IsShown()) then
+                return
+            end
 
-            for i = 1, NUM_CLIPS_TO_DISPLAY do                -- всегда 9 строк
-                local el     = ns.clipButtonElements[i]        -- кэш (Шаг 1)
+            for i = 1, NUM_CLIPS_TO_DISPLAY do
+                -- всегда 9 строк
+                local el = ns.clipButtonElements[i]        -- кэш (Шаг 1)
                 local button = el and el.button
-                local clip   = button and button.clipData      -- актуальные данные
+                local clip = button and button.clipData      -- актуальные данные
 
                 if button and button:IsShown() and clip and clip.ts then
                     ------------------------------------------------------
@@ -334,10 +366,10 @@ function OFAuctionFrameDeathClips_OnShow()
                     whenFS:SetText(formatWhen(clip))
 
                     if clip.playedTime and clip.level then
-                        local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-                        whenFS:SetTextColor(r,g,b,.7)
+                        local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                        whenFS:SetTextColor(r, g, b, .7)
                     else
-                        whenFS:SetTextColor(.6,.6,.6,.5)
+                        whenFS:SetTextColor(.6, .6, .6, .5)
                     end
 
                     ------------------------------------------------------
@@ -347,8 +379,12 @@ function OFAuctionFrameDeathClips_OnShow()
                     if age < 60 and not frame._highlightedClips[clip.id] then
                         frame._highlightedClips[clip.id] = true
 
-                        if button.glow  then button.glow.animation:Play()  end
-                        if button.shine then button.shine.animation:Play() end
+                        if button.glow then
+                            button.glow.animation:Play()
+                        end
+                        if button.shine then
+                            button.shine.animation:Play()
+                        end
                     end
                 end
             end
@@ -466,7 +502,7 @@ local function UpdateLayout(buttonName)
 end
 ns.ApplyClipLayout = UpdateLayout
 
-local MAX_DEATH_CAUSE_LEN = 45 -- Adjust based on your UI space for the clip text
+local MAX_DEATH_CAUSE_LEN = 200 -- Adjust based on your UI space for the clip text
 
 local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBatchClips, totalClips, forceFullUpdate)
     -- numBatchClips and totalClips are less relevant now with cached full list.
@@ -495,38 +531,54 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
 
         -- ===== NAME =====
         local newNameText = clip.characterName or L["Unknown"]
-        if nameFS:GetText() ~= newNameText then nameFS:SetText(newNameText) end
+        if nameFS:GetText() ~= newNameText then
+            nameFS:SetText(newNameText)
+        end
         local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
         -- Simple color check (more precise would compare all r,g,b individually)
         local curR, curG, curB = nameFS:GetTextColor()
-        if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then nameFS:SetTextColor(clr.r, clr.g, clr.b) end
+        if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then
+            nameFS:SetTextColor(clr.r, clr.g, clr.b)
+        end
 
 
         -- ===== RACE =====
         local newRaceText = clip.race or L["Unknown"]
         if GetLocale() == "ruRU" and ns.isCompletedTabActive then
-            if newRaceText == "Ночноро\nждённый" then newRaceText = "Ночнорождённый"
-            elseif newRaceText == "Озар. дреней" then newRaceText = "Озарённый дреней"
-            elseif newRaceText == "Дворф Ч. Железа" then newRaceText = "Дворф Чёрного Железа"
+            if newRaceText == "Ночноро\nждённый" then
+                newRaceText = "Ночнорождённый"
+            elseif newRaceText == "Озар. дреней" then
+                newRaceText = "Озарённый дреней"
+            elseif newRaceText == "Дворф Ч. Железа" then
+                newRaceText = "Дворф Чёрного Железа"
             end
         end
-        if raceFS:GetText() ~= newRaceText then raceFS:SetText(newRaceText) end
+        if raceFS:GetText() ~= newRaceText then
+            raceFS:SetText(newRaceText)
+        end
 
-        local rF,gF,bF = 0.9, 0.9, 0.4 -- Default color
-        if clip.faction == "Horde" then rF,gF,bF = 0.8, 0.3, 0.3
-        elseif clip.faction == "Alliance" then rF,gF,bF = 0.4, 0.6, 1 end
+        local rF, gF, bF = 0.9, 0.9, 0.4 -- Default color
+        if clip.faction == "Horde" then
+            rF, gF, bF = 0.8, 0.3, 0.3
+        elseif clip.faction == "Alliance" then
+            rF, gF, bF = 0.4, 0.6, 1
+        end
         local curRF, curGF, curBF = raceFS:GetTextColor()
-        if curRF ~= rF or curGF ~= gF or curBF ~= bF then raceFS:SetTextColor(rF,gF,bF) end
+        if curRF ~= rF or curGF ~= gF or curBF ~= bF then
+            raceFS:SetTextColor(rF, gF, bF)
+        end
 
 
         -- ===== CLASS ICON =====
         local newTexture = "Interface\\Icons\\INV_Misc_QuestionMark"
-        local newCoords = {0, 1, 0, 1}
+        local newCoords = { 0, 1, 0, 1 }
         if clip.class and CLASS_ICON_TCOORDS[clip.class] then
             newTexture = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
             newCoords = CLASS_ICON_TCOORDS[clip.class]
         end
-        if iconTexture:GetTexture() ~= newTexture then iconTexture:SetTexture(newTexture) end
+        if iconTexture:GetTexture() ~= newTexture then
+            iconTexture:SetTexture(newTexture)
+        end
         -- Comparing tex coords is harder, might just set them if texture changed or always
         iconTexture:SetTexCoord(unpack(newCoords))
 
@@ -544,36 +596,53 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
         local key = clip.class and string.upper(clip.class) or "UNKNOWN"
         local newClassText = LOCALIZED_CLASS_NAMES_MALE[key] or clip.class or L["Unknown"]
         if GetLocale() == "ruRU" and not ns.isCompletedTabActive then
-            if key == "WARLOCK" then newClassText = "Варлок"
-            elseif key == "ROGUE" then newClassText = "Разбойник" end
+            if key == "WARLOCK" then
+                newClassText = "Варлок"
+            elseif key == "ROGUE" then
+                newClassText = "Разбойник"
+            end
         end
-        if classFS:GetText() ~= newClassText then classFS:SetText(newClassText) end
+        if classFS:GetText() ~= newClassText then
+            classFS:SetText(newClassText)
+        end
         local cc = RAID_CLASS_COLORS[key] or { r = 1, g = 1, b = 1 }
         local curCCR, curCCG, curCCB = classFS:GetTextColor()
-        if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then classFS:SetTextColor(cc.r, cc.g, cc.b) end
+        if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then
+            classFS:SetTextColor(cc.r, cc.g, cc.b)
+        end
 
         -- ===== WHERE =====
         whereFS:SetJustifyH("LEFT")
         local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
-        if zone == "Полуостров Адского Пламени" then zone = "Полуостров\nАдского Пламени" end
-        if whereFS:GetText() ~= zone then whereFS:SetText(zone) end
+        if zone == "Полуостров Адского Пламени" then
+            zone = "Полуостров\nАдского Пламени"
+        end
+        if whereFS:GetText() ~= zone then
+            whereFS:SetText(zone)
+        end
 
         -- ===== CAUSE / MOB LEVEL (Clip Text) =====
         local causeId = clip.causeCode or 0
         local newClipDisplayText = ""
         local newMobLevelText = ""
-        local mr, mg, mb = 0,0,0 -- mob color
+        local mr, mg, mb = 0, 0, 0 -- mob color
 
         if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
             local mobLvl = clip.mobLevel or 0
             local playerLvl = lvl
             local diff = mobLvl - playerLvl
             mr, mg, mb = 0, 1, 0
-            if diff >= 4 then mr, mg, mb = 1, 0, 0
-            elseif diff >= 2 then mr, mg, mb = 1, .5, 0
-            elseif diff >= -1 then mr, mg, mb = 1, 1, 0
-            elseif diff >= -4 then mr, mg, mb = 0, 1, 0
-            else mr, mg, mb = .5, .5, .5 end
+            if diff >= 4 then
+                mr, mg, mb = 1, 0, 0
+            elseif diff >= 2 then
+                mr, mg, mb = 1, .5, 0
+            elseif diff >= -1 then
+                mr, mg, mb = 1, 1, 0
+            elseif diff >= -4 then
+                mr, mg, mb = 0, 1, 0
+            else
+                mr, mg, mb = .5, .5, .5
+            end
 
             local displayDeathCause = clip.deathCause
             if string.len(displayDeathCause) > MAX_DEATH_CAUSE_LEN then
@@ -581,32 +650,42 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
             end
             newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, displayDeathCause)
             newMobLevelText = tostring(mobLvl)
-            mobLevelFS:SetTextColor(mr, mg, mb, 200/255)
+            mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
         else
             newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
             newMobLevelText = ""
         end
 
-        if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
-        if mobLevelFS:GetText() ~= newMobLevelText then mobLevelFS:SetText(newMobLevelText) end
+        if clipTextFS:GetText() ~= newClipDisplayText then
+            clipTextFS:SetText(newClipDisplayText)
+        end
+        if mobLevelFS:GetText() ~= newMobLevelText then
+            mobLevelFS:SetText(newMobLevelText)
+        end
         mobLevelFS:SetJustifyH("CENTER")
 
 
         -- ===== COMPLETED TIMER (also uses clipTextFS) =====
         if clip.completed then
             -- Ensure FontObject is only set if it changed
-            if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
+            if clipTextFS:GetFontObject() ~= GameFontNormalLarge then
+                clipTextFS:SetFontObject("GameFontNormalLarge")
+            end
             if clip.playedTime then
                 local s = clip.playedTime
                 local completedText = string.format("%dд %dч %dм %dс",
                         math.floor(s / 86400), math.floor(s % 86400 / 3600),
                         math.floor(s % 3600 / 60), s % 60)
-                if clipTextFS:GetText() ~= completedText then clipTextFS:SetText(completedText) end
+                if clipTextFS:GetText() ~= completedText then
+                    clipTextFS:SetText(completedText)
+                end
             elseif clipTextFS:GetText() ~= "Грузится" then
                 clipTextFS:SetText("Грузится")
             end
         else
-            if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
+            if clipTextFS:GetFontObject() ~= GameFontNormal then
+                clipTextFS:SetFontObject("GameFontNormal")
+            end
             -- If not completed, the cause text was already set above, so no need to reset it here
             -- unless the font change cleared it or changed its appearance.
         end
@@ -622,10 +701,15 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
     if ratingFrame and ratingFrame.SetReactions then
         if clip.id then
             ratingFrame:SetReactions(ns.GetTopReactions(clip.id, 1))
-        elseif ratingFrame.label:GetText() ~= "" then -- Clear if no clip.id
+        elseif ratingFrame.label:GetText() ~= "" then
+            -- Clear if no clip.id
             ratingFrame.label:SetText("")
-            if ratingFrame.reactionIcon and ratingFrame.reactionIcon:IsShown() then ratingFrame.reactionIcon:Hide() end
-            if ratingFrame.reactionCount and ratingFrame.reactionCount:IsShown() then ratingFrame.reactionCount:Hide() end
+            if ratingFrame.reactionIcon and ratingFrame.reactionIcon:IsShown() then
+                ratingFrame.reactionIcon:Hide()
+            end
+            if ratingFrame.reactionCount and ratingFrame.reactionCount:IsShown() then
+                ratingFrame.reactionCount:Hide()
+            end
         end
     end
 
@@ -643,82 +727,7 @@ end
 
 
 -- Updates clip entries based on which tab is active
-function OFAuctionFrameDeathClips_Update()
-    local frame = OFAuctionFrameDeathClips
-    local state = ns.GetDeathClipReviewState()
-    local ratingsByClip = state:GetRatingsByClip()
-
-    -- Check if the applied sort/tab state differs from the current target state
-    if frame.lastSortKeyApplied ~= frame.currentSortKey or
-            frame.lastSortAscendingApplied ~= frame.currentSortAscending or
-            frame.lastSubTabApplied ~= frame.currentSubTab then
-        frame.needsDataRefresh = true
-        -- print(string.format("DEBUG: Change detected. Current target sort: %s %s. Tab: %s", frame.currentSortKey, tostring(frame.currentSortAscending), frame.currentSubTab))
-    end
-
-    local forceFullRowUpdate = false
-    if frame.needsDataRefresh then
-        -- print(string.format("DEBUG: Refreshing full clip data. Target Sort: Key=%s, Asc=%s. Target Tab: %s",
-        --    frame.currentSortKey, tostring(frame.currentSortAscending), frame.currentSubTab))
-
-        local rawPool = ns.GetLiveDeathClips()
-        local pool = ns.FilterClipsThisRealm(rawPool)
-        local tempClips = {}
-
-        if frame.currentSubTab == "completed" then
-            for _, clip in ipairs(pool) do if clip.completed then table.insert(tempClips, clip) end end
-        else -- "live" or default
-            for _, clip in ipairs(pool) do if not clip.completed then table.insert(tempClips, clip) end end
-        end
-
-        -- ***** CRITICAL FIX FOR SORTING *****
-        -- Create the sortParams table in the format ns.SortDeathClips expects: array of sort criteria
-        local sortParamsForSortFunction = {
-            {column = frame.currentSortKey, reverse = not frame.currentSortAscending} -- 'reverse = true' means descending. Your sorter uses 'desc'. 'reverse = not ascending'
-        }
-        -- If your CreateClipsSorter uses 'desc' where true means descending:
-        -- local sortParamsForSortFunction = {
-        --    {column = frame.currentSortKey, desc = frame.currentSortAscending == false}
-        -- }
-        -- Adjust 'reverse' or 'desc' based on how CreateClipsSorter interprets it.
-        -- From your CreateClipsSorter: `local desc = sortParams[i].reverse`
-        -- So `reverse = true` means descending. `ascending = false` means descending.
-        -- Thus, `reverse = not frame.currentSortAscending` is correct if `ascending=true` means A-Z, 0-9.
-        -- Let's assume `ascending = true` means sort A->Z or smallest->largest.
-        -- If `frame.currentSortAscending` is `true` (ascending), then `reverse` should be `false`.
-        -- If `frame.currentSortAscending` is `false` (descending), then `reverse` should be `true`.
-        -- So: `reverse = (frame.currentSortAscending == false)` or `reverse = not frame.currentSortAscending`
-        sortParamsForSortFunction[1].reverse = (frame.currentSortAscending == false)
-
-
-        -- print(string.format("DEBUG: Calling ns.SortDeathClips with Key: %s, Reverse: %s", sortParamsForSortFunction[1].column, tostring(sortParamsForSortFunction[1].reverse)))
-        tempClips = ns.SortDeathClips(tempClips, sortParamsForSortFunction)
-        -- ***********************************
-
-        frame.currentDisplayableClips = tempClips
-        frame.needsDataRefresh = false
-        forceFullRowUpdate = true
-
-        -- Important: Reset scroll and internal page only if data was *actually* refreshed
-        -- The SetSort hook already does this, but a tab switch might not if sort params were the same.
-        if forceFullRowUpdate then -- Check if data was actually regenerated
-            FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-            if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
-            frame.page = 0
-        end
-
-        -- Update last KNOWN APPLIED sort/tab state
-        frame.lastSortKeyApplied = frame.currentSortKey
-        frame.lastSortAscendingApplied = frame.currentSortAscending
-        frame.lastSubTabApplied = frame.currentSubTab
-    end
-
-    local clipsToDisplay = frame.currentDisplayableClips
-    local totalClips = #clipsToDisplay
-    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-
-    -- updateSortArrows() -- This should be called by OFAuctionFrame_SetSort hook or here if needed
-    -- It's fine here to ensure arrows are always correct after any update.
+local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsStreamerSort, "clips", "streamer")
     OFSortButton_UpdateArrow(OFDeathClipsRaceSort, "clips", "race")
     OFSortButton_UpdateArrow(OFDeathClipsLevelSort, "clips", "level")
@@ -727,55 +736,133 @@ function OFAuctionFrameDeathClips_Update()
     OFSortButton_UpdateArrow(OFDeathClipsRatingSort, "clips", "rating")
     OFSortButton_UpdateArrow(OFDeathClipsWhereSort, "clips", "where")
     OFSortButton_UpdateArrow(OFDeathClipsClipSort, "clips", "clip")
+end
 
+function OFAuctionFrameDeathClips_Update()
+    local frame = OFAuctionFrameDeathClips
+    local state = ns.GetDeathClipReviewState()
+    local ratingsByClip = state:GetRatingsByClip()
+
+    local currentSortKey = frame.currentSortKey or "when"
+    local currentSortAscending = (frame.currentSortAscending == true)
+
+    if frame.lastSortKeyApplied ~= currentSortKey or
+            frame.lastSortAscendingApplied ~= currentSortAscending or
+            frame.lastSubTabApplied ~= frame.currentSubTab then
+        frame.needsDataRefresh = true
+        frame.needsPageRender = true -- If master list changes, current page content also changes
+        frame.page = 0 -- Reset to first page when sort/tab changes
+    end
+
+    local forceFullRowUpdate = false
+    if frame.needsDataRefresh then
+        -- print(string.format("DEBUG: Regenerating fullMasterList. Sort: %s, Asc: %s, Tab: %s", currentSortKey, tostring(currentSortAscending), frame.currentSubTab or "live"))
+        local rawPool = ns.GetLiveDeathClips()
+        local pool = ns.FilterClipsThisRealm(rawPool)
+        local tempClips = {}
+
+        if frame.currentSubTab == "completed" then
+            for _, clip in ipairs(pool) do
+                if clip.completed then
+                    table.insert(tempClips, clip)
+                end
+            end
+        else
+            for _, clip in ipairs(pool) do
+                if not clip.completed then
+                    table.insert(tempClips, clip)
+                end
+            end
+        end
+
+        local sortParamsForSortFunction = { { column = currentSortKey, reverse = (currentSortAscending == false) } }
+        tempClips = ns.SortDeathClips(tempClips, sortParamsForSortFunction)
+
+        frame.fullMasterList = tempClips -- Store the complete sorted list
+        frame.needsDataRefresh = false
+        forceFullRowUpdate = true -- Rows will get new data from the new page slice
+
+        frame.lastSortKeyApplied = currentSortKey
+        frame.lastSortAscendingApplied = currentSortAscending
+        frame.lastSubTabApplied = frame.currentSubTab
+    end
+
+    if frame.needsPageRender then
+        -- This flag is set if page changes or master list regenerated
+        -- print(string.format("DEBUG: Slicing page %d for display.", frame.page))
+        frame.currentDisplayableClips = {} -- Clear previous page's clips
+        local pageStartIndex = (frame.page * NUM_CLIPS_PER_PAGE) + 1
+        local pageEndIndex = math.min(#frame.fullMasterList, pageStartIndex + NUM_CLIPS_PER_PAGE - 1)
+
+        if pageStartIndex <= pageEndIndex then
+            for i = pageStartIndex, pageEndIndex do
+                table.insert(frame.currentDisplayableClips, frame.fullMasterList[i])
+            end
+        end
+        frame.needsPageRender = false
+        forceFullRowUpdate = true -- New page data means full row update
+        -- FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0) -- Already done by Page buttons or Sort hook
+    end
+
+    local clipsForThisPage = frame.currentDisplayableClips
+    local totalClipsOnThisPage = #clipsForThisPage -- Max NUM_CLIPS_PER_PAGE
+    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+
+    updateSortArrows()
 
     local numActuallyPopulatedInView = 0
     for i = 1, NUM_CLIPS_TO_DISPLAY do
-        local buttonElements = ns.clipButtonElements[i] -- <<<<< THIS LINE
-        -- Add a check here BEFORE trying to access buttonElements.button
+        local buttonElements = ns.clipButtonElements[i]
         if buttonElements then
             local button = buttonElements.button
             local dataIdx = offset + i
-            local clip = clipsToDisplay[dataIdx]
+            local clip = clipsForThisPage[dataIdx] -- Get from the current page's slice
 
             if not clip then
                 button:Hide()
                 button.displayedClipID = nil
             else
-                -- ... rest of your display logic ...
                 numActuallyPopulatedInView = numActuallyPopulatedInView + 1
                 button:Show()
                 button.clipData = clip
-
                 local ratings = (clip.id and ratingsByClip[clip.id]) or {}
                 ns.TryExcept(
                         function()
-                            UpdateClipEntry(state, i, offset, buttonElements, clip, ratings, totalClips, totalClips, forceFullRowUpdate)
+                            UpdateClipEntry(state, i, offset, buttonElements, clip, ratings, totalClipsOnThisPage, #frame.fullMasterList, forceFullRowUpdate)
                         end,
                         function(err)
-                            button:Hide(); ns.DebugLog("Error updating clip entry: " .. err)
+                            button:Hide();
+                            ns.DebugLog("Error updating clip entry: " .. err)
                         end
                 )
             end
         else
-            -- This means ns.clipButtonElements[i] was not created/found in OnLoad
-            -- print(string.format("DEBUG: OFAuctionFrameDeathClips_Update - ns.clipButtonElements[%d] is nil. Button likely not defined in XML or NUM_CLIPS_TO_DISPLAY too high.", i))
+            -- print("DEBUG: buttonElements for index " .. i .. " is nil in _Update loop.")
         end
     end
 
-    FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
+    -- FauxScrollFrame is now updated with the number of items ON THE CURRENT PAGE
+    FauxScrollFrame_Update(OFDeathClipsScroll, totalClipsOnThisPage, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
 
-    if totalClips > 0 then
+    -- Pagination text and button enabled state should be based on the FULL master list
+    local totalMasterClips = #frame.fullMasterList
+    if totalMasterClips > 0 then
         OFDeathClipsSearchCountText:Show()
-        local itemsMin = offset + 1
-        local itemsMax = offset + numActuallyPopulatedInView
-        OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
+        -- Displaying items X-Y of Z (where Z is totalMasterClips)
+        local displayMin = (frame.page * NUM_CLIPS_PER_PAGE) + offset + 1
+        local displayMax = (frame.page * NUM_CLIPS_PER_PAGE) + offset + numActuallyPopulatedInView
+        OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, displayMin, displayMax, totalMasterClips)
     else
         OFDeathClipsSearchCountText:Hide()
     end
 
-    OFDeathClipsPrevPageButton:SetEnabled(offset > 0)
-    OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
+    local totalPages = ceil(totalMasterClips / NUM_CLIPS_PER_PAGE) - 1
+    if totalPages < 0 then
+        totalPages = 0
+    end -- Handle empty list
+
+    OFDeathClipsPrevPageButton:SetEnabled(frame.page > 0)
+    OFDeathClipsNextPageButton:SetEnabled(frame.page < totalPages)
 end
 
 function OFDeathClipsRatingWidget_OnLoad(self)
