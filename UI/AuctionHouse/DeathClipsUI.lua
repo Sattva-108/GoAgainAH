@@ -506,7 +506,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         button.displayedClipID = clip.id
         -- button.clipData is already set by OFAuctionFrameDeathClips_Update
 
-        ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips) -- ResizeEntry needs definition
+        ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips)
 
         local nameFS = elements.name
         local raceFS = elements.raceText
@@ -526,7 +526,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
 
         -- ===== RACE =====
         local newRaceText = clip.race or L["Unknown"]
-        if GetLocale() == "ruRU" and ns.isCompletedTabActive then -- ns.isCompletedTabActive needs to be set by tab click
+        if GetLocale() == "ruRU" and ns.isCompletedTabActive then
             if newRaceText == "Ночноро\nждённый" then newRaceText = "Ночнорождённый"
             elseif newRaceText == "Озар. дреней" then newRaceText = "Озарённый дреней"
             elseif newRaceText == "Дворф Ч. Железа" then newRaceText = "Дворф Чёрного Железа" end
@@ -566,74 +566,75 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         if not curCCR or curCCR ~= cc.r or not curCCG or curCCG ~= cc.g or not curCCB or curCCB ~= cc.b then classFS:SetTextColor(cc.r, cc.g, cc.b) end
 
         -- ===== WHERE =====
-        if whereFS then -- Check if whereFS exists
+        if whereFS then
             whereFS:SetJustifyH("LEFT")
             local zone = (clip.mapId and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(clip.mapId) and C_Map.GetMapInfo(clip.mapId).name) or clip.where or L["Unknown"]
             if zone == "Полуостров Адского Пламени" then zone = "Полуостров\nАдского Пламени" end
             if whereFS:GetText() ~= zone then whereFS:SetText(zone) end
         end
 
-        -- ===== CAUSE / MOB LEVEL (Clip Text) =====
+        -- ===== DETERMINE MOB LEVEL and INITIAL Clip Text (Death Cause) =====
         local causeId = clip.causeCode or 0
-        local newClipDisplayText = ""
+        local initialClipText = "" -- This will hold the death cause text
         local newMobLevelText = ""
-        local mr, mg, mb = 0,0,0
+        local mr, mg, mb = 1,1,1 -- Default color for mob level if not colored by diff
 
         if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
             local mobLvl = clip.mobLevel or 0
             local playerLvl = lvl
             local diff = mobLvl - playerLvl
-            mr, mg, mb = 0, 1, 0
-            if diff >= 4 then mr, mg, mb = 1, 0, 0
-            elseif diff >= 2 then mr, mg, mb = 1, .5, 0
-            elseif diff >= -1 then mr, mg, mb = 1, 1, 0
-            elseif diff >= -4 then mr, mg, mb = 0, 1, 0
-            else mr, mg, mb = .5, .5, .5 end
+            mr, mg, mb = 0, 1, 0 -- Green as default
+            if diff >= 4 then mr, mg, mb = 1, 0, 0         -- Red
+            elseif diff >= 2 then mr, mg, mb = 1, .5, 0    -- Orange
+            elseif diff >= -1 then mr, mg, mb = 1, 1, 0    -- Yellow
+                -- elseif diff >= -4 then mr, mg, mb = 0, 1, 0 -- Green (already default)
+            else mr, mg, mb = .5, .5, .5                   -- Grey
+            end
 
             local displayDeathCause = clip.deathCause
             if string.len(displayDeathCause) > MAX_DEATH_CAUSE_LEN then
                 displayDeathCause = string.sub(displayDeathCause, 1, MAX_DEATH_CAUSE_LEN - 3) .. "..."
             end
-            newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, displayDeathCause)
+            initialClipText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, displayDeathCause)
             newMobLevelText = tostring(mobLvl)
-            local curMobR, curMobG, curMobB = mobLevelFS:GetTextColor()
-            if not curMobR or curMobR ~= mr or not curMobG or curMobG ~= mg or not curMobB or curMobB ~= mb then
-                mobLevelFS:SetTextColor(mr, mg, mb, 200/255)
-            end
+            mobLevelFS:SetTextColor(mr, mg, mb, 200/255)
         else
-            newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
+            initialClipText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
             newMobLevelText = ""
+            mobLevelFS:SetTextColor(1,1,1,1) -- Reset color if no mob level
         end
 
-        if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
         if mobLevelFS:GetText() ~= newMobLevelText then mobLevelFS:SetText(newMobLevelText) end
         if mobLevelFS.SetJustifyH then mobLevelFS:SetJustifyH("CENTER") end
 
-        -- ===== COMPLETED TIMER (also uses clipTextFS) =====
-        local gameFontNormalLarge = _G.GameFontNormalLarge -- Assuming GameFontNormalLarge is a global font object
-        local gameFontNormal = _G.GameFontNormal       -- Assuming GameFontNormal is a global font object
+        -- ===== FINAL TEXT FOR clipTextFS based on clip.completed status =====
+        local gameFontNormalLarge = _G.GameFontNormalLarge
+        local gameFontNormal = _G.GameFontNormal
+        local finalClipTextForDisplay = ""
 
         if clip.completed then
             if gameFontNormalLarge and clipTextFS:GetFontObject() ~= gameFontNormalLarge then clipTextFS:SetFontObject(gameFontNormalLarge) end
             if clip.playedTime then
                 local s = clip.playedTime
-                local completedText = string.format("%dд %dч %dм %дс", -- Changed %dс for seconds from Russian 'м'
+                finalClipTextForDisplay = string.format("%dд %dч %dм %дс",
                         math.floor(s / 86400), math.floor(s % 86400 / 3600),
                         math.floor(s % 3600 / 60), s % 60)
-                if clipTextFS:GetText() ~= completedText then clipTextFS:SetText(completedText) end
-            elseif clipTextFS:GetText() ~= "Грузится" then -- "Loading" in Russian
-                clipTextFS:SetText("Грузится")
+            else -- clip.completed is true, but no playedTime
+                finalClipTextForDisplay = "Грузится" -- "Loading" in Russian
             end
-        else
+        else -- NOT clip.completed (i.e., live clip)
             if gameFontNormal and clipTextFS:GetFontObject() ~= gameFontNormal then clipTextFS:SetFontObject(gameFontNormal) end
-            if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
+            finalClipTextForDisplay = initialClipText -- Use the death cause
         end
-    end
+
+        if clipTextFS:GetText() ~= finalClipTextForDisplay then clipTextFS:SetText(finalClipTextForDisplay) end
+
+    end -- End of full data update block (if displayedClipID ~= clip.id or forceFullUpdate)
 
     -- ===== RATING WIDGET (Always update) =====
     if ratingFrame and ratingFrame.SetReactions then
         if clip and clip.id then
-            local currentReactions = ns.GetTopReactions(clip.id, 1) -- ns.GetTopReactions needs to be defined
+            local currentReactions = ns.GetTopReactions(clip.id, 1)
             ratingFrame:SetReactions(currentReactions)
         else
             ratingFrame:SetReactions(nil)
