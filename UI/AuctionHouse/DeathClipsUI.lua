@@ -432,39 +432,38 @@ ns.ApplyClipLayout = UpdateLayout
 
 local MAX_DEATH_CAUSE_LEN = 45 -- Adjust based on your UI space for the clip text
 
-local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBatchClips, totalClips, forceFullUpdate)
-    -- numBatchClips and totalClips are less relevant now with cached full list.
-    -- We use totalClips from the main update function for ResizeEntry if needed.
+local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
+    -- 'clip' is the newClipData for this row
+    -- 'ratingsFromParent' is the pre-fetched ratings for this specific clip.id, passed from OFAuctionFrameDeathClips_Update
+    -- However, your original code called state:GetRatingsByClip() and then ns.GetTopReactions(clip.id, 1) inside here.
+    -- Let's stick to calling ns.GetTopReactions directly if that's how it was.
 
     local button = elements.button
+    local ratingFrame = elements.rating -- Get from cached elements
 
-    -- Only update if the clip displayed by this button changes, or if a full update is forced
+    -- Only update static fields if the clip displayed by this button changes, or if a full update is forced
     if button.displayedClipID ~= clip.id or forceFullUpdate then
-        -- Store the ID of the clip this button is now displaying
-        -- button.clipData = clip -- Already set in OFAuctionFrameDeathClips_Update
         button.displayedClipID = clip.id
+        -- button.clipData is set in the calling function (OFAuctionFrameDeathClips_Update)
 
-        ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips) -- Pass total from cached list
+         ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips)
+        -- Assuming ResizeEntry is handled correctly elsewhere or as part of layout
 
         local nameFS = elements.name
         local raceFS = elements.raceText
         local levelFS = elements.level
         local classFS = elements.classText
-        -- local whenFS = elements.whenText -- 'when' is updated by the ticker primarily
         local whereFS = elements.whereText
         local clipTextFS = elements.clipText
         local mobLevelFS = elements.clipMobLevel
         local iconTexture = elements.itemIconTexture
-        local ratingFrame = elements.rating
 
         -- ===== NAME =====
         local newNameText = clip.characterName or L["Unknown"]
         if nameFS:GetText() ~= newNameText then nameFS:SetText(newNameText) end
         local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
-        -- Simple color check (more precise would compare all r,g,b individually)
         local curR, curG, curB = nameFS:GetTextColor()
         if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then nameFS:SetTextColor(clr.r, clr.g, clr.b) end
-
 
         -- ===== RACE =====
         local newRaceText = clip.race or L["Unknown"]
@@ -475,13 +474,11 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
             end
         end
         if raceFS:GetText() ~= newRaceText then raceFS:SetText(newRaceText) end
-
-        local rF,gF,bF = 0.9, 0.9, 0.4 -- Default color
+        local rF,gF,bF = 0.9, 0.9, 0.4
         if clip.faction == "Horde" then rF,gF,bF = 0.8, 0.3, 0.3
         elseif clip.faction == "Alliance" then rF,gF,bF = 0.4, 0.6, 1 end
         local curRF, curGF, curBF = raceFS:GetTextColor()
         if curRF ~= rF or curGF ~= gF or curBF ~= bF then raceFS:SetTextColor(rF,gF,bF) end
-
 
         -- ===== CLASS ICON =====
         local newTexture = "Interface\\Icons\\INV_Misc_QuestionMark"
@@ -491,9 +488,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
             newCoords = CLASS_ICON_TCOORDS[clip.class]
         end
         if iconTexture:GetTexture() ~= newTexture then iconTexture:SetTexture(newTexture) end
-        -- Comparing tex coords is harder, might just set them if texture changed or always
         iconTexture:SetTexCoord(unpack(newCoords))
-
 
         -- ===== LEVEL =====
         local lvl = clip.level or 1
@@ -502,7 +497,6 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
         -- FontStrings don't have GetFormattedText, so we compare with a stored value or just update
         -- For simplicity, let's assume level might change or its color might due to player level, so update.
         levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
-
 
         -- ===== CLASS TEXT =====
         local key = clip.class and string.upper(clip.class) or "UNKNOWN"
@@ -526,7 +520,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
         local causeId = clip.causeCode or 0
         local newClipDisplayText = ""
         local newMobLevelText = ""
-        local mr, mg, mb = 0,0,0 -- mob color
+        local mr, mg, mb = 0,0,0
 
         if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
             local mobLvl = clip.mobLevel or 0
@@ -555,10 +549,8 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
         if mobLevelFS:GetText() ~= newMobLevelText then mobLevelFS:SetText(newMobLevelText) end
         mobLevelFS:SetJustifyH("CENTER")
 
-
         -- ===== COMPLETED TIMER (also uses clipTextFS) =====
         if clip.completed then
-            -- Ensure FontObject is only set if it changed
             if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
             if clip.playedTime then
                 local s = clip.playedTime
@@ -571,25 +563,36 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratings, numBat
             end
         else
             if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
-            -- If not completed, the cause text was already set above, so no need to reset it here
-            -- unless the font change cleared it or changed its appearance.
+            -- If not completed, the cause text was already set above by the "CAUSE / MOB LEVEL" block.
+            -- Only re-set it if the font change somehow blanked it or if it differs from newClipDisplayText
+            if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
         end
-
-        -- Apply general layout changes if tab changed (moved from here to a separate call)
-        -- ns.ApplyClipLayout(button:GetName()) -- This should be called ONCE per tab switch for all buttons
-    end
-
-    -- Fields that update even if clip.id is the same (like 'when' or dynamic ratings)
-    -- 'when' text is handled by the ticker primarily.
+    end -- END of "if button.displayedClipID ~= clip.id or forceFullUpdate then"
 
     -- ===== RATING WIDGET =====
+    -- This part should ALWAYS run to reflect potential live updates to ratings,
+    -- or to clear ratings if the clip is no longer valid or has no ratings.
     if ratingFrame and ratingFrame.SetReactions then
-        if clip.id then
-            ratingFrame:SetReactions(ns.GetTopReactions(clip.id, 1))
-        elseif ratingFrame.label:GetText() ~= "" then -- Clear if no clip.id
-            ratingFrame.label:SetText("")
-            if ratingFrame.reactionIcon and ratingFrame.reactionIcon:IsShown() then ratingFrame.reactionIcon:Hide() end
-            if ratingFrame.reactionCount and ratingFrame.reactionCount:IsShown() then ratingFrame.reactionCount:Hide() end
+        if clip and clip.id then -- Make sure 'clip' itself is valid and has an id
+            -- Get fresh reaction data for this clip
+            local currentReactions = ns.GetTopReactions(clip.id, 1)
+            ratingFrame:SetReactions(currentReactions)
+            -- Debug print:
+            -- if currentReactions and #currentReactions > 0 then
+            --     print(string.format("DEBUG: Clip %s, Reaction ID: %s, Count: %s", clip.id, currentReactions[1].id, currentReactions[1].count))
+            -- elseif clip and clip.id then
+            --     print(string.format("DEBUG: Clip %s, No reactions found by GetTopReactions", clip.id))
+            -- end
+        else
+            -- If clip is nil or has no id (e.g. an empty row being processed, though Update should hide button)
+            -- Ensure the rating is cleared.
+            -- Your ratingFrame:SetReactions(nil) should handle this gracefully.
+            ratingFrame:SetReactions(nil)
+            -- Or, if SetReactions(nil) doesn't explicitly clear:
+            -- if ratingFrame.label and ratingFrame.label:GetText() ~= "" then ratingFrame.label:SetText("") end
+            -- if ratingFrame.reactionIcon and ratingFrame.reactionIcon:IsShown() then ratingFrame.reactionIcon:Hide() end
+            -- if ratingFrame.reactionCount and ratingFrame.reactionCount:IsShown() then ratingFrame.reactionCount:Hide() end
+            -- print(string.format("DEBUG: No valid clip or clip.id for rating widget. Clip ID: %s", tostring(clip and clip.id)))
         end
     end
 
