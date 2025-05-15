@@ -758,22 +758,26 @@ function OFAuctionFrameDeathClips_Update()
     -- numItemsPerPage is NUM_CLIPS_TO_DISPLAY
     FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
 
+    OFDeathClipsPrevPageButton:Hide()
+    OFDeathClipsNextPageButton:Hide()
+
     -- Pagination button logic (using totalClips from the cached list)
+    -- Keep it for later, don't delete this code.
     local displayableItemsInCurrentView = totalClips - offset
     if totalClips > NUM_CLIPS_TO_DISPLAY then -- Only show pagination if total items exceed one page view
-        local currentScrollPage = floor(offset / NUM_CLIPS_TO_DISPLAY) -- Page based on scroll offset
-        local totalScrollPages = ceil(totalClips / NUM_CLIPS_TO_DISPLAY) -1
-
-        OFDeathClipsPrevPageButton:SetEnabled(offset > 0)
-        OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
+        --local currentScrollPage = floor(offset / NUM_CLIPS_TO_DISPLAY) -- Page based on scroll offset
+        --local totalScrollPages = ceil(totalClips / NUM_CLIPS_TO_DISPLAY) -1
+        --
+        --OFDeathClipsPrevPageButton:SetEnabled(offset > 0)
+        --OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
 
         OFDeathClipsSearchCountText:Show()
         local itemsMin = offset + 1
         local itemsMax = offset + numActuallyDisplayed
         OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
     else
-        OFDeathClipsPrevPageButton:Disable()
-        OFDeathClipsNextPageButton:Disable()
+--        OFDeathClipsPrevPageButton:Disable()
+--        OFDeathClipsNextPageButton:Disable()
         OFDeathClipsSearchCountText:Hide()
     end
 end
