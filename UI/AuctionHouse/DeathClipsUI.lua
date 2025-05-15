@@ -8,6 +8,24 @@ local NUM_CLIPS_TO_DISPLAY = 9
 local NUM_CLIPS_PER_PAGE = 50
 local CLIPS_BUTTON_HEIGHT = 37
 
+local function formatWhen(clip)
+    if clip.ts == nil then
+        return L["Unknown"]
+    end
+    local serverTime = GetServerTime()
+    local timeDiff = serverTime - clip.ts
+
+    if timeDiff < 0 then
+        --print(string.format(
+        --        "Time sync issue - Server: %d, Clip: %d, Diff: %d (Clip ID: %s)",
+        --        serverTime, clip.ts, timeDiff, clip.id or "nil"
+        --))
+        timeDiff = 0  -- Ensure we never show negative time
+    end
+
+    return ns.PrettyDuration(timeDiff)
+end
+
 -- This must match your <Binding name="GOAGAINAH_TOGGLE_CLIPS" …> in Bindings.xml
 -- 1) Key-Bindings header and friendly name
 _G.BINDING_HEADER_GoAgainAH = "GoAgainAH"
@@ -102,6 +120,25 @@ function OFAuctionFrameDeathClips_OnLoad()
         end)
     end
 
+    -- Быстрое обновление столбца «Когда» сразу после любого обновления списка
+    hooksecurefunc("OFAuctionFrameDeathClips_Update", function()
+        for i = 1, NUM_CLIPS_TO_DISPLAY do
+            local el = ns.clipButtonElements[i]
+            local clip = el and el.button.clipData
+            if clip and clip.ts then
+                local whenFS = el.whenText
+                whenFS:SetText(formatWhen(clip))
+                if clip.playedTime and clip.level then
+                    local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                    whenFS:SetTextColor(r, g, b, .7)
+                else
+                    whenFS:SetTextColor(.6, .6, .6, .5)
+                end
+            end
+        end
+    end)
+
+
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
         OFAuctionFrameDeathClips.needsDataRefresh = true -- Mark data as needing refresh
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
@@ -122,7 +159,7 @@ function OFAuctionFrameDeathClips_OnLoad()
                         OFDeathClipsScrollScrollBar:SetValue(0)
                     end
                     OFAuctionFrameDeathClips.needsDataRefresh = true -- Sort changed, needs data refresh
-                    -- OFAuctionFrameDeathClips_Update() -- Update will be called by scroll or other events
+                     --OFAuctionFrameDeathClips_Update() -- Update will be called by scroll or other events
                 end
             end)
             sortHookApplied = true
@@ -153,25 +190,46 @@ function OFAuctionFrameDeathClips_OnLoad()
             end
         end)
     end
+    ---- Быстрое обновление колонки «Когда» при скролле, сортировке и смене вкладок
+    --local function RefreshWhenColumn()
+    --    for i = 1, NUM_CLIPS_TO_DISPLAY do
+    --        local el = ns.clipButtonElements[i]
+    --        local clip = el and el.button.clipData
+    --        if clip and clip.ts then
+    --            local whenFS = el.whenText
+    --            whenFS:SetText(formatWhen(clip))
+    --            if clip.playedTime and clip.level then
+    --                local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+    --                whenFS:SetTextColor(r, g, b, .7)
+    --            else
+    --                whenFS:SetTextColor(.6, .6, .6, .5)
+    --            end
+    --        end
+    --    end
+    --end
+
+    ---- при скролле
+    --OFDeathClipsScroll:HookScript("OnVerticalScroll", function(self, offset)
+    --    RefreshWhenColumn()
+    --end)
+    --
+    ---- сразу после сортировки
+    --hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
+    --    if type == "clips" then
+    --        print("refresh")
+    --        RefreshWhenColumn()
+    --    end
+    --end)
+    --
+    ---- при переключении подп вкладок (если они есть)
+    --if OFDeathClipsTabLive and OFDeathClipsTabCompleted then
+    --    OFDeathClipsTabLive:HookScript("OnClick", RefreshWhenColumn)
+    --    OFDeathClipsTabCompleted:HookScript("OnClick", RefreshWhenColumn)
+    --end
+
 end
 
-local function formatWhen(clip)
-    if clip.ts == nil then
-        return L["Unknown"]
-    end
-    local serverTime = GetServerTime()
-    local timeDiff = serverTime - clip.ts
 
-    if timeDiff < 0 then
-        --print(string.format(
-        --        "Time sync issue - Server: %d, Clip: %d, Diff: %d (Clip ID: %s)",
-        --        serverTime, clip.ts, timeDiff, clip.id or "nil"
-        --))
-        timeDiff = 0  -- Ensure we never show negative time
-    end
-
-    return ns.PrettyDuration(timeDiff)
-end
 
 function ns.SetupClipHighlight(button)
     if not button.glow then
@@ -641,14 +699,14 @@ function OFAuctionFrameDeathClips_Update()
             end
         end
 
-        tempClips = ns.SortDeathClips(tempClips, {key = currentSortKey, ascending = currentSortAscending}) -- Pass sort object
-        -- tempClips = FilterHiddenClips(state, tempClips) -- Assuming this does nothing or is intended
+        local _, sortKey, sortAscending = OFGetCurrentSortParams("clips")
+        tempClips = ns.SortDeathClips(tempClips, OFGetCurrentSortParams("clips"))
 
         frame.currentDisplayableClips = tempClips
         frame.needsDataRefresh = false
-        forceFullRowUpdate = true -- Force update of all fields in rows because data source changed
+        forceFullRowUpdate = true
 
-        -- Reset pagination and scroll on full data refresh
+        -- сброс пагинации и скролла
         frame.page = 0
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
         if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
