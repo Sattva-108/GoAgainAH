@@ -72,15 +72,18 @@ local function updateSortArrows()
 end
 
 function OFAuctionFrameDeathClips_OnLoad()
-    OFAuctionFrameDeathClips.page = 0
-    OFAuctionFrame_SetSort("clips", "when", false) -- Initial sort
+    OFAuctionFrameDeathClips.logicalPage = 0       -- 0-indexed current logical page
+    OFAuctionFrameDeathClips.allFilteredSortedClips = {} -- Our "master list"
+    OFAuctionFrameDeathClips.itemsForCurrentLogicalPage = {} -- Data for the FauxScrollFrame
 
-    -- Initialize state variables for data caching
-    OFAuctionFrameDeathClips.currentDisplayableClips = {}
-    OFAuctionFrameDeathClips.needsDataRefresh = true -- Force initial data load
-    OFAuctionFrameDeathClips.lastSortKey = "when"
-    OFAuctionFrameDeathClips.lastSortAscending = false
-    OFAuctionFrameDeathClips.lastSubTab = OFAuctionFrameDeathClips.currentSubTab or "live" -- Assuming 'live' is default
+    OFAuctionFrameDeathClips.needsFullDataRefresh = true  -- Flag to rebuild allFilteredSortedClips
+    OFAuctionFrameDeathClips.needsCurrentPageSlice = true -- Flag to rebuild itemsForCurrentLogicalPage
+
+    -- Store current view parameters to detect changes
+    OFAuctionFrameDeathClips.currentSortKey = "when"    -- Initial default
+    OFAuctionFrameDeathClips.currentSortAscending = false -- Initial default
+    OFAuctionFrameDeathClips.currentSubTab = OFAuctionFrameDeathClips.currentSubTab or "live"
+    ns.isCompletedTabActive = (OFAuctionFrameDeathClips.currentSubTab == "completed") -- For UpdateLayout
 
     -- —— КЭШ КНОПОК ——
     ns.clipButtonElements = {}
@@ -140,7 +143,8 @@ function OFAuctionFrameDeathClips_OnLoad()
 
 
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
-        OFAuctionFrameDeathClips.needsDataRefresh = true -- Mark data as needing refresh
+        OFAuctionFrameDeathClips.needsFullDataRefresh = true
+        OFAuctionFrameDeathClips.needsCurrentPageSlice = true -- If full data changes, current page is also stale
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()
         end
@@ -149,17 +153,23 @@ function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.openedPromptClipID = nil
     OFAuctionFrameDeathClips._highlightedClips = OFAuctionFrameDeathClips._highlightedClips or {}
 
+    -- Sort Hook
     if not sortHookApplied then
         if type(OFAuctionFrame_SetSort) == "function" then
             hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
-                if type == "clips" then -- Only react to sorts for our "clips" type
-                    OFAuctionFrameDeathClips.page = 0
-                    FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-                    if OFDeathClipsScrollScrollBar then
-                        OFDeathClipsScrollScrollBar:SetValue(0)
+                if type == "clips" then
+                    -- Only trigger full refresh if sort actually changed
+                    if OFAuctionFrameDeathClips.currentSortKey ~= key or OFAuctionFrameDeathClips.currentSortAscending ~= ascending then
+                        OFAuctionFrameDeathClips.currentSortKey = key
+                        OFAuctionFrameDeathClips.currentSortAscending = ascending
+
+                        OFAuctionFrameDeathClips.needsFullDataRefresh = true
+                        OFAuctionFrameDeathClips.needsCurrentPageSlice = true
+                        OFAuctionFrameDeathClips.logicalPage = 0 -- Reset to first page on sort
+                        FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+                        if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
+                        OFAuctionFrameDeathClips_Update()
                     end
-                    OFAuctionFrameDeathClips.needsDataRefresh = true -- Sort changed, needs data refresh
-                     --OFAuctionFrameDeathClips_Update() -- Update will be called by scroll or other events
                 end
             end)
             sortHookApplied = true
@@ -168,15 +178,21 @@ function OFAuctionFrameDeathClips_OnLoad()
         end
     end
 
-    -- Hook tab clicks to set needsDataRefresh
-    -- Assuming OFDeathClipsTabLive and OFDeathClipsTabCompleted are global or accessible
+    -- Tab Click Hooks
     if OFDeathClipsTabLive then
         OFDeathClipsTabLive:HookScript("OnClick", function()
             if OFAuctionFrameDeathClips.currentSubTab ~= "live" then
                 OFAuctionFrameDeathClips.currentSubTab = "live"
-                OFAuctionFrameDeathClips.needsDataRefresh = true
-                OFAuctionFrame_SetSort("clips", "when", false) -- Reset sort for live tab
-                -- OFAuctionFrameDeathClips_Update() will be called by FauxScrollFrame or other mechanisms
+                ns.isCompletedTabActive = false
+                OFAuctionFrame_SetSort("clips", "when", false) -- Attempt to set sort
+
+                -- Force refresh even if sort parameters didn't change, as tab did
+                OFAuctionFrameDeathClips.needsFullDataRefresh = true
+                OFAuctionFrameDeathClips.needsCurrentPageSlice = true
+                OFAuctionFrameDeathClips.logicalPage = 0
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+                if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
+                OFAuctionFrameDeathClips_Update()
             end
         end)
     end
@@ -184,49 +200,55 @@ function OFAuctionFrameDeathClips_OnLoad()
         OFDeathClipsTabCompleted:HookScript("OnClick", function()
             if OFAuctionFrameDeathClips.currentSubTab ~= "completed" then
                 OFAuctionFrameDeathClips.currentSubTab = "completed"
-                OFAuctionFrameDeathClips.needsDataRefresh = true
-                OFAuctionFrame_SetSort("clips", "clip", true) -- Reset sort for completed tab
-                -- OFAuctionFrameDeathClips_Update()
+                ns.isCompletedTabActive = true
+                OFAuctionFrame_SetSort("clips", "clip", true) -- Attempt to set sort
+
+                -- Force refresh even if sort parameters didn't change, as tab did
+                OFAuctionFrameDeathClips.needsFullDataRefresh = true
+                OFAuctionFrameDeathClips.needsCurrentPageSlice = true
+                OFAuctionFrameDeathClips.logicalPage = 0
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+                if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
+                OFAuctionFrameDeathClips_Update()
             end
         end)
     end
-    ---- Быстрое обновление колонки «Когда» при скролле, сортировке и смене вкладок
-    --local function RefreshWhenColumn()
-    --    for i = 1, NUM_CLIPS_TO_DISPLAY do
-    --        local el = ns.clipButtonElements[i]
-    --        local clip = el and el.button.clipData
-    --        if clip and clip.ts then
-    --            local whenFS = el.whenText
-    --            whenFS:SetText(formatWhen(clip))
-    --            if clip.playedTime and clip.level then
-    --                local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-    --                whenFS:SetTextColor(r, g, b, .7)
-    --            else
-    --                whenFS:SetTextColor(.6, .6, .6, .5)
-    --            end
-    --        end
-    --    end
-    --end
 
-    ---- при скролле
-    --OFDeathClipsScroll:HookScript("OnVerticalScroll", function(self, offset)
-    --    RefreshWhenColumn()
-    --end)
-    --
-    ---- сразу после сортировки
-    --hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
-    --    if type == "clips" then
-    --        print("refresh")
-    --        RefreshWhenColumn()
-    --    end
-    --end)
-    --
-    ---- при переключении подп вкладок (если они есть)
-    --if OFDeathClipsTabLive and OFDeathClipsTabCompleted then
-    --    OFDeathClipsTabLive:HookScript("OnClick", RefreshWhenColumn)
-    --    OFDeathClipsTabCompleted:HookScript("OnClick", RefreshWhenColumn)
-    --end
+    -- Initial Sort Call (after hooks are set)
+    OFAuctionFrame_SetSort("clips", OFAuctionFrameDeathClips.currentSortKey, OFAuctionFrameDeathClips.currentSortAscending)
 
+    -- Add Page Navigation Button Logic
+    if OFDeathClipsPrevPageButton then
+        OFDeathClipsPrevPageButton:SetScript("OnClick", function()
+            if OFAuctionFrameDeathClips.logicalPage > 0 then
+                OFAuctionFrameDeathClips.logicalPage = OFAuctionFrameDeathClips.logicalPage - 1
+                OFAuctionFrameDeathClips.needsCurrentPageSlice = true -- Need to load new page data
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)      -- Reset scroll for new page
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
+
+    if OFDeathClipsNextPageButton then
+        OFDeathClipsNextPageButton:SetScript("OnClick", function()
+            local totalLogicalPages = ceil(#OFAuctionFrameDeathClips.allFilteredSortedClips / NUM_CLIPS_PER_PAGE) - 1
+            if totalLogicalPages < 0 then totalLogicalPages = 0 end
+
+            if OFAuctionFrameDeathClips.logicalPage < totalLogicalPages then
+                OFAuctionFrameDeathClips.logicalPage = OFAuctionFrameDeathClips.logicalPage + 1
+                OFAuctionFrameDeathClips.needsCurrentPageSlice = true
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
+
+    -- FauxScrollFrame OnVerticalScroll
+    if OFDeathClipsScroll then
+        OFDeathClipsScroll:SetScript("OnVerticalScroll", function(self, newOffset)
+            FauxScrollFrame_OnVerticalScroll(self, newOffset, CLIPS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)
+        end)
+    end
 end
 
 
@@ -493,8 +515,8 @@ local MAX_DEATH_CAUSE_LEN = 45 -- Adjust based on your UI space for the clip tex
 local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
     -- 'clip' is the newClipData for this row
     -- 'ratingsFromParent' is the pre-fetched ratings for this specific clip.id, passed from OFAuctionFrameDeathClips_Update
-    -- However, your original code called state:GetRatingsByClip() and then ns.GetTopReactions(clip.id, 1) inside here.
-    -- Let's stick to calling ns.GetTopReactions directly if that's how it was.
+    -- 'numBatchClips' is the number of items on the current logical page (for ResizeEntry)
+    -- 'totalClips' is the total number of items in allFilteredSortedClips (not directly used here but passed)
 
     local button = elements.button
     local ratingFrame = elements.rating -- Get from cached elements
@@ -504,8 +526,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         button.displayedClipID = clip.id
         -- button.clipData is set in the calling function (OFAuctionFrameDeathClips_Update)
 
-         ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips)
-        -- Assuming ResizeEntry is handled correctly elsewhere or as part of layout
+        ResizeEntry(button, numBatchClips, numBatchClips) -- Corrected: numBatchClips is count of items on current logical page
 
         local nameFS = elements.name
         local raceFS = elements.raceText
@@ -551,9 +572,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         -- ===== LEVEL =====
         local lvl = clip.level or 1
         local q = GetQuestDifficultyColor(lvl)
-        local newLevelText = string.format("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
-        -- FontStrings don't have GetFormattedText, so we compare with a stored value or just update
-        -- For simplicity, let's assume level might change or its color might due to player level, so update.
+        -- local newLevelText = string.format("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
         levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
 
         -- ===== CLASS TEXT =====
@@ -612,7 +631,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
             if clip.playedTime then
                 local s = clip.playedTime
-                local completedText = string.format("%dд %dч %dм %dс",
+                local completedText = string.format("%dд %дч %dм %дс",
                         math.floor(s / 86400), math.floor(s % 86400 / 3600),
                         math.floor(s % 3600 / 60), s % 60)
                 if clipTextFS:GetText() ~= completedText then clipTextFS:SetText(completedText) end
@@ -621,36 +640,17 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             end
         else
             if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
-            -- If not completed, the cause text was already set above by the "CAUSE / MOB LEVEL" block.
-            -- Only re-set it if the font change somehow blanked it or if it differs from newClipDisplayText
             if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
         end
     end -- END of "if button.displayedClipID ~= clip.id or forceFullUpdate then"
 
     -- ===== RATING WIDGET =====
-    -- This part should ALWAYS run to reflect potential live updates to ratings,
-    -- or to clear ratings if the clip is no longer valid or has no ratings.
     if ratingFrame and ratingFrame.SetReactions then
-        if clip and clip.id then -- Make sure 'clip' itself is valid and has an id
-            -- Get fresh reaction data for this clip
+        if clip and clip.id then
             local currentReactions = ns.GetTopReactions(clip.id, 1)
             ratingFrame:SetReactions(currentReactions)
-            -- Debug print:
-            -- if currentReactions and #currentReactions > 0 then
-            --     print(string.format("DEBUG: Clip %s, Reaction ID: %s, Count: %s", clip.id, currentReactions[1].id, currentReactions[1].count))
-            -- elseif clip and clip.id then
-            --     print(string.format("DEBUG: Clip %s, No reactions found by GetTopReactions", clip.id))
-            -- end
         else
-            -- If clip is nil or has no id (e.g. an empty row being processed, though Update should hide button)
-            -- Ensure the rating is cleared.
-            -- Your ratingFrame:SetReactions(nil) should handle this gracefully.
             ratingFrame:SetReactions(nil)
-            -- Or, if SetReactions(nil) doesn't explicitly clear:
-            -- if ratingFrame.label and ratingFrame.label:GetText() ~= "" then ratingFrame.label:SetText("") end
-            -- if ratingFrame.reactionIcon and ratingFrame.reactionIcon:IsShown() then ratingFrame.reactionIcon:Hide() end
-            -- if ratingFrame.reactionCount and ratingFrame.reactionCount:IsShown() then ratingFrame.reactionCount:Hide() end
-            -- print(string.format("DEBUG: No valid clip or clip.id for rating widget. Clip ID: %s", tostring(clip and clip.id)))
         end
     end
 
@@ -672,22 +672,16 @@ function OFAuctionFrameDeathClips_Update()
     local frame = OFAuctionFrameDeathClips
     local state = ns.GetDeathClipReviewState()
     local ratingsByClip = state:GetRatingsByClip()
+    local forceVisualRowUpdate = false -- For UpdateClipEntry optimization
 
-    -- Check if sort parameters or tab changed to trigger data refresh
-    local currentSortType, currentSortKey, currentSortAscending = OFGetCurrentSortParams("clips")
-    if frame.lastSortKey ~= currentSortKey or frame.lastSortAscending ~= currentSortAscending or frame.lastSubTab ~= frame.currentSubTab then
-        frame.needsDataRefresh = true
-        frame.lastSortKey = currentSortKey
-        frame.lastSortAscending = currentSortAscending
-        frame.lastSubTab = frame.currentSubTab
-    end
-
-    local forceFullRowUpdate = false
-    if frame.needsDataRefresh then
-        -- print("DEBUG: Refreshing full clip data")
+    -- Phase 1: Rebuild the full list if necessary (filters/sorts changed)
+    if frame.needsFullDataRefresh then
+        -- print("DEBUG: Rebuilding allFilteredSortedClips")
         local rawPool = ns.GetLiveDeathClips()
         local pool = ns.FilterClipsThisRealm(rawPool)
         local tempClips = {}
+
+        ns.isCompletedTabActive = (frame.currentSubTab == "completed")
 
         if frame.currentSubTab == "completed" then
             for _, clip in ipairs(pool) do
@@ -699,88 +693,116 @@ function OFAuctionFrameDeathClips_Update()
             end
         end
 
-        local _, sortKey, sortAscending = OFGetCurrentSortParams("clips")
-        tempClips = ns.SortDeathClips(tempClips, OFGetCurrentSortParams("clips"))
+        local sortParams = { { column = frame.currentSortKey, reverse = (frame.currentSortAscending == false) } }
+        frame.allFilteredSortedClips = ns.SortDeathClips(tempClips, sortParams)
 
-        frame.currentDisplayableClips = tempClips
-        frame.needsDataRefresh = false
-        forceFullRowUpdate = true
+        frame.needsFullDataRefresh = false
+        frame.needsCurrentPageSlice = true
+        forceVisualRowUpdate = true
 
-        -- сброс пагинации и скролла
-        frame.page = 0
-        FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-        if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
-    end
-
-    local clipsToDisplay = frame.currentDisplayableClips
-    local totalClips = #clipsToDisplay
-    local page = frame.page or 0
-    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-
-    -- Calculate start and end indices for the current view
-    -- Note: FauxScrollFrame_GetOffset gives the index of the *first visible item* (0-based for logic, 1-based for lua tables)
-    -- If we are using pure pagination (page * NUM_CLIPS_PER_PAGE), then offset should align with that.
-    -- For simplicity, let's assume offset is the primary driver from the scrollbar, and page is for next/prev buttons.
-    -- The FauxScrollFrame handles the actual "view window" based on its total items and item height.
-    -- The number of items to actually process for display is NUM_CLIPS_TO_DISPLAY.
-    -- The items we get are from clipsToDisplay[offset + 1] to clipsToDisplay[offset + NUM_CLIPS_TO_DISPLAY]
-
-    updateSortArrows()
-
-    local numActuallyDisplayed = 0
-    for i = 1, NUM_CLIPS_TO_DISPLAY do
-        local buttonElements = ns.clipButtonElements[i]
-        local button = buttonElements.button
-        local dataIdx = offset + i
-        local clip = clipsToDisplay[dataIdx]
-
-        if not clip then
-            button:Hide()
-            button.displayedClipID = nil -- Clear stored ID
-        else
-            numActuallyDisplayed = numActuallyDisplayed + 1
-            button:Show()
-            -- Store the current clip data on the button for the ticker to use
-            button.clipData = clip
-
-            local ratings = (clip.id and ratingsByClip[clip.id]) or {}
-            ns.TryExcept(
-                    function()
-                        -- Pass forceFullRowUpdate to UpdateClipEntry
-                        UpdateClipEntry(state, i, offset, buttonElements, clip, ratings, totalClips, totalClips, forceFullRowUpdate)
-                    end,
-                    function(err)
-                        button:Hide()
-                        ns.DebugLog("Error updating clip entry: " .. err)
-                    end
-            )
+        if ns.clipButtonElements then
+            for i = 1, NUM_CLIPS_TO_DISPLAY do
+                local elements = ns.clipButtonElements[i]
+                if elements and elements.button then
+                    ns.ApplyClipLayout(elements.button:GetName())
+                end
+            end
         end
     end
 
-    -- Pagination and Scrollbar Update
-    -- FauxScrollFrame_Update(scrollFrame, numItemsTotal, numItemsPerPage, itemHeight)
-    -- numItemsTotal is totalClips
-    -- numItemsPerPage is NUM_CLIPS_TO_DISPLAY
-    FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
+    -- Phase 2: Get the slice for the current logical page if necessary
+    if frame.needsCurrentPageSlice then
+        -- print(string.format("DEBUG: Slicing logical page %d for display.", frame.logicalPage))
+        frame.itemsForCurrentLogicalPage = {}
+        local pageStartIndex = (frame.logicalPage * NUM_CLIPS_PER_PAGE) + 1
+        local pageEndIndex = math.min(#frame.allFilteredSortedClips, pageStartIndex + NUM_CLIPS_PER_PAGE - 1)
 
-    -- Pagination button logic (using totalClips from the cached list)
-    local displayableItemsInCurrentView = totalClips - offset
-    if totalClips > NUM_CLIPS_TO_DISPLAY then -- Only show pagination if total items exceed one page view
-        local currentScrollPage = floor(offset / NUM_CLIPS_TO_DISPLAY) -- Page based on scroll offset
-        local totalScrollPages = ceil(totalClips / NUM_CLIPS_TO_DISPLAY) -1
-
-        OFDeathClipsPrevPageButton:SetEnabled(offset > 0)
-        OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
-
-        OFDeathClipsSearchCountText:Show()
-        local itemsMin = offset + 1
-        local itemsMax = offset + numActuallyDisplayed
-        OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
-    else
-        OFDeathClipsPrevPageButton:Disable()
-        OFDeathClipsNextPageButton:Disable()
-        OFDeathClipsSearchCountText:Hide()
+        if pageStartIndex <= pageEndIndex and #frame.allFilteredSortedClips > 0 then
+            for i = pageStartIndex, pageEndIndex do
+                table.insert(frame.itemsForCurrentLogicalPage, frame.allFilteredSortedClips[i])
+            end
+        end
+        frame.needsCurrentPageSlice = false
+        forceVisualRowUpdate = true
     end
+
+    -- Phase 3: Update the FauxScrollFrame and visible buttons
+    local clipsToScrollThrough = frame.itemsForCurrentLogicalPage
+    local totalClipsOnThisLogicalPage = #clipsToScrollThrough
+    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+
+    updateSortArrows()
+
+    local numActuallyPopulatedInView = 0
+    for i = 1, NUM_CLIPS_TO_DISPLAY do
+        local buttonElements = ns.clipButtonElements[i]
+        if buttonElements and buttonElements.button then
+            local button = buttonElements.button
+            local dataIdx = offset + i
+            local clip = clipsToScrollThrough[dataIdx]
+
+            if not clip then
+                button:Hide()
+                button.displayedClipID = nil
+            else
+                numActuallyPopulatedInView = numActuallyPopulatedInView + 1
+                button:Show()
+                button.clipData = clip
+                local currentClipRatings = (clip.id and ratingsByClip[clip.id]) or {}
+                ns.TryExcept(
+                        function()
+                            UpdateClipEntry(state, i, offset, buttonElements, clip, currentClipRatings,
+                                    totalClipsOnThisLogicalPage,
+                                    #frame.allFilteredSortedClips,
+                                    forceVisualRowUpdate)
+                        end,
+                        function(err)
+                            button:Hide()
+                            ns.DebugLog("Error updating clip entry: " .. err)
+                        end
+                )
+            end
+        end
+    end
+
+    FauxScrollFrame_Update(OFDeathClipsScroll, totalClipsOnThisLogicalPage, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
+
+    -- Update Pagination text and button enabled state
+    local totalMasterClips = #frame.allFilteredSortedClips
+    local totalLogicalPages = ceil(totalMasterClips / NUM_CLIPS_PER_PAGE) - 1
+    if totalLogicalPages < 0 then totalLogicalPages = 0 end
+
+    -- Determine if we are on the last logical page
+    local isLastLogicalPage = (frame.logicalPage == totalLogicalPages)
+
+    -- Debug prints to check values:
+    -- print(string.format("TotalMasterClips: %d, LogicalPage: %d, TotalLogicalPages: %d, IsLastLogicalPage: %s",
+    --       totalMasterClips, frame.logicalPage, totalLogicalPages, tostring(isLastLogicalPage)))
+
+    if totalMasterClips > 0 and isLastLogicalPage then
+        -- print("Showing OFDeathClipsSearchCountText")
+        OFDeathClipsSearchCountText:Show()
+        local displayMin = (frame.logicalPage * NUM_CLIPS_PER_PAGE) + offset + 1
+        local displayMax = (frame.logicalPage * NUM_CLIPS_PER_PAGE) + offset + numActuallyPopulatedInView
+
+        if numActuallyPopulatedInView == 0 then
+            if displayMin > totalMasterClips and totalMasterClips > 0 then -- Check added for totalMasterClips > 0
+                OFDeathClipsSearchCountText:Hide() -- Hide if trying to display past the end
+            elseif totalMasterClips == 0 then -- If no master clips, definitely hide
+                OFDeathClipsSearchCountText:Hide()
+            else -- Otherwise, show 0 of Z or similar if appropriate
+                OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, 0, 0, totalMasterClips)
+            end
+        else
+            OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, displayMin, displayMax, totalMasterClips)
+        end
+    else
+        -- print("Hiding OFDeathClipsSearchCountText")
+        OFDeathClipsSearchCountText:Hide() -- Hide on all other pages or if no clips
+    end
+
+    OFDeathClipsPrevPageButton:SetEnabled(frame.logicalPage > 0)
+    OFDeathClipsNextPageButton:SetEnabled(frame.logicalPage < totalLogicalPages)
 end
 
 function OFDeathClipsRatingWidget_OnLoad(self)

@@ -1358,17 +1358,16 @@
                             </Anchors>
                         </FontString>
                     </Layer>
-                    <Layer>
-                        <FontString name="OFDeathClipsSearchCountText" inherits="GameFontHighlightSmall">
-                            <Anchors>
-                                <Anchor point="BOTTOM">
-                                    <Offset>
-                                        <AbsDimension x="0" y="53" />
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                    </Layer>
+					<Layer> <!-- Or whatever layer it's in -->
+						<FontString name="OFDeathClipsSearchCountText" inherits="GameFontHighlightSmall" text="DEBUG TEXT - SHOULD HIDE">
+							<Size x="200" y="20"/> <!-- Give it a fixed size for now -->
+							<Anchors>
+								<Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
+									<Offset x="0" y="14"/> <!-- Position it above Prev/Next buttons, adjust X to center roughly -->
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
                 </Layers>
                 <Frames>
 					<!-- Streamer sort remains first -->
