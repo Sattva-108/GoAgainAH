@@ -76,7 +76,6 @@ end
 -- 1) Helper: what to do when the sub-tab changes
 local function OnSubTabChanged(frame, newTab)
 
-    ns.updatedButtons = {}
     -- Reset the page number
     OFAuctionFrameDeathClips.page = 0
     -- Always reset the scroll frame offset (important for data loading)
@@ -97,6 +96,10 @@ local function OnSubTabChanged(frame, newTab)
         OFAuctionFrame_SetSort("clips", "when", false)
 
         UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
+    end
+    -- Применить макет к каждой из 9 видимых строк (NUM_CLIPS_TO_DISPLAY = 9)
+    for i = 1, 9 do
+        ns.ApplyClipLayout("OFDeathClipsButton" .. i)
     end
 end
 

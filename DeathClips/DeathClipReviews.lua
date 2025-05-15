@@ -2,7 +2,7 @@ local addonName, ns = ...
 
 ns.EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE = "EV_DEATH_CLIP_REVIEW_ADD_OR_UPDATE"
 ns.EV_DEATH_CLIP_REVIEW_STATE_SYNCED = "EV_DEATH_CLIP_REVIEW_STATE_SYNCED"
-ns.EV_DEATH_CLIP_OVERRIDE_UPDATED = "EV_DEATH_CLIP_OVERRIDE_UPDATED"
+--ns.EV_DEATH_CLIP_OVERRIDE_UPDATED = "EV_DEATH_CLIP_OVERRIDE_UPDATED"
 
 
 local function CreateSyncedState(name)
@@ -171,13 +171,28 @@ local function CreateDeathClipReviewState()
     end
 
     function state:UpdateClipOverrides(clipID, overrides, fromNetwork)
-        self.persisted.clipOverrides[clipID] = overrides
-        self:MarkDirty()
-        self:FireEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, {clipID=clipID, overrides=overrides, fromNetwork=fromNetwork})
+        --self.persisted.clipOverrides[clipID] = overrides
+        --self:MarkDirty()
+        --self:FireEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, {clipID=clipID, overrides=overrides, fromNetwork=fromNetwork})
     end
 
     function state:GetClipOverrides(clipID)
         return self.persisted.clipOverrides[clipID] or {}
+    end
+
+    -- 2) Strip overrides out of the outbound payload
+    local baseGetSyncedState = state.GetSyncedState
+    function state:GetSyncedState()
+        local synced = baseGetSyncedState(self)
+        synced.clipOverrides = {}
+        return synced
+    end
+
+    -- 3) Drop all incoming overrides before merging
+    local baseSyncState = state.SyncState
+    function state:SyncState(remotePersisted)
+        remotePersisted.clipOverrides = {}
+        baseSyncState(self, remotePersisted)
     end
 
     return state

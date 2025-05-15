@@ -498,7 +498,7 @@ ns.T_DEATH_CLIPS_STATE_REQUEST = "DEATH_CLIPS_STATE_REQUEST"
 ns.T_DEATH_CLIPS_STATE = "DEATH_CLIPS_STATE"
 ns.T_ADMIN_REMOVE_CLIP = "ADMIN_REMOVE_CLIP"
 ns.EV_DEATH_CLIPS_CHANGED = "DEATH_CLIPS_CHANGED"
-ns.T_ADMIN_UPDATE_CLIP_OVERRIDES = "ADMIN_UPDATE_CLIP_OVERRIDES"
+--ns.T_ADMIN_UPDATE_CLIP_OVERRIDES = "ADMIN_UPDATE_CLIP_OVERRIDES"
 ns.T_DEATH_CLIP_ADDED = "DEATH_CLIP_ADDED"
 
 ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST = "DEATH_CLIP_REVIEW_STATE_REQUEST"
@@ -545,7 +545,7 @@ local CHANNEL_WHITELIST = {
     [ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST] = { [G] = 1 },
     [ns.T_DEATH_CLIP_REVIEW_STATE] = { [W] = 1 },
     [ns.T_DEATH_CLIP_REVIEW_UPDATED] = { [G] = 1 },
-    [ns.T_ADMIN_UPDATE_CLIP_OVERRIDES] = {}, --admin only
+    --[ns.T_ADMIN_UPDATE_CLIP_OVERRIDES] = {}, --admin only
     [ns.T_DEATH_CLIP_ADDED] = { [G] = 1 },
 
 
@@ -573,9 +573,9 @@ local CHANNEL_WHITELIST = {
     [ns.T_PENDING_TRANSACTION_STATE] = { [W] = 1 },
 }
 
-local function getFullName(name)
-    local shortName, realmName = string.split("-", name)
-    return shortName .. "-" .. (realmName or GetRealmName())
+-- make isMessageAllowed use name-only
+local function getFullName(unitName)
+    return unitName   -- since UnitName("player") is just the name
 end
 
 local function isMessageAllowed(sender, channel, messageType)
@@ -729,12 +729,12 @@ function AuctionHouse:Initialize()
         --print("SENDING REVIEW", payload.review and payload.review.id)
         self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_UPDATED, { review = payload.review } }))
     end)
-    clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, function(payload)
-        if payload.fromNetwork then
-            return
-        end
-        self:BroadcastMessage(Addon:Serialize({ ns.T_ADMIN_UPDATE_CLIP_OVERRIDES, { clipID = payload.clipID, overrides = payload.overrides } }))
-    end)
+    --clipReviewState:RegisterEvent(ns.EV_DEATH_CLIP_OVERRIDE_UPDATED, function(payload)
+    --    if payload.fromNetwork then
+    --        return
+    --    end
+    --    self:BroadcastMessage(Addon:Serialize({ ns.T_ADMIN_UPDATE_CLIP_OVERRIDES, { clipID = payload.clipID, overrides = payload.overrides } }))
+    --end)
 
     -- Initialize UI
     ns.TradeAPI:OnInitialize()
@@ -1472,9 +1472,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local review = payload.review
         local reviewState = ns.GetDeathClipReviewState()
         reviewState:UpdateReviewFromNetwork(review)
-    elseif dataType == ns.T_ADMIN_UPDATE_CLIP_OVERRIDES then
-        local reviewState = ns.GetDeathClipReviewState()
-        reviewState:UpdateClipOverrides(payload.clipID, payload.overrides, true)
+    --elseif dataType == ns.T_ADMIN_UPDATE_CLIP_OVERRIDES then
+    --    local reviewState = ns.GetDeathClipReviewState()
+    --    reviewState:UpdateClipOverrides(payload.clipID, payload.overrides, true)
     elseif dataType == ns.T_ADMIN_REMOVE_CLIP then
         ns.RemoveDeathClip(payload.clipID)
     elseif dataType == ns.T_DEATH_CLIP_ADDED then
@@ -2194,10 +2194,6 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
     -- 4. Prepend our marker
     local msg        = "DF:" .. encoded
-
-    C_Timer:After(10, function()
-        print(("🔍DBG Encoded login-sync payload starts with “%s”"):format(msg:sub(1,20)))
-    end)
 
     -- 5. Send it off
     self:BroadcastMessage(msg)
