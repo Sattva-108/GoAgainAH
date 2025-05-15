@@ -488,7 +488,6 @@ local function UpdateLayout(buttonName)
 end
 ns.ApplyClipLayout = UpdateLayout
 
-local MAX_DEATH_CAUSE_LEN = 45 -- Adjust based on your UI space for the clip text
 
 local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
     -- 'clip' is the newClipData for this row
@@ -591,11 +590,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             elseif diff >= -4 then mr, mg, mb = 0, 1, 0
             else mr, mg, mb = .5, .5, .5 end
 
-            local displayDeathCause = clip.deathCause
-            if string.len(displayDeathCause) > MAX_DEATH_CAUSE_LEN then
-                displayDeathCause = string.sub(displayDeathCause, 1, MAX_DEATH_CAUSE_LEN - 3) .. "..."
-            end
-            newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, displayDeathCause)
+            newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
             newMobLevelText = tostring(mobLvl)
             mobLevelFS:SetTextColor(mr, mg, mb, 200/255)
         else
