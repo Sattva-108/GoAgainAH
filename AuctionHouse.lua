@@ -3312,18 +3312,30 @@ function AuctionHouse:BuildRatingsTable()
     return ratings
 end
 
-function AuctionHouse:BuildDeathClipsTable(now)
+local LH = LibStub("LibHash-1.0") -- Ensure LibHash is loaded
+
+-- Function 1: Requester - Builds the table of known clip hashes
+-- (This is a method of the AuctionHouse class)
+function AuctionHouse:BuildDeathClipsTable(now) -- 'self' is implied if called as self:BuildDeathClipsTable
     local allClips = ns.GetLiveDeathClips()
-    local fromTs = now - ns.GetConfig().deathClipsSyncWindow
-    local clips = {}
+    local configSyncWindow = ns.GetConfig().deathClipsSyncWindow
+    local fromTsValue = now - configSyncWindow -- Clips older than this are not included in the hash list
+
+    local clipIdHashesMap = {} -- This will be { [sha256_hex_hash_of_clipID] = true, ... }
+
     for clipID, clip in pairs(allClips) do
-        if clip.ts and clip.ts >= fromTs then
-            clips[clipID] = true
+        if clip.ts and clip.ts >= fromTsValue then -- Only include clips within the sync window
+            local hash = LH.sha256(clipID) -- Calculate SHA256 hex hash of the full clipID string
+            clipIdHashesMap[hash] = true    -- Use the hash as the key in the map
         end
     end
 
-    local payload = { fromTs = fromTs, clips = clips }
-    return payload
+    -- Return a table containing the fromTs used for this hash generation, and the map of hashes
+    local payloadToReturn = {
+        fromTs = fromTsValue,
+        clips = clipIdHashesMap
+    }
+    return payloadToReturn
 end
 
 -- Build a table of LFG entries for a request
@@ -3379,7 +3391,12 @@ function AuctionHouse:RequestLatestRatingsState()
     self:BroadcastMessage(msg)
 end
 
-function AuctionHouse:RequestLatestDeathClipState(now)
+local LH = LibStub("LibHash-1.0") -- Ensure LibHash is loaded
+
+
+-- Function 2: Requester - Initiates the state request
+-- (This is a method of the AuctionHouse class)
+function AuctionHouse:RequestLatestDeathClipState(now) -- 'self' is implied
     -- ── DEBUG TICKET ──
     -- assign a unique ID and enqueue this run's start time
     self.benchDebugCounter = (self.benchDebugCounter or 0) + 1
@@ -3391,17 +3408,28 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     -- unchanged print
     print(("|cff00ff00>> Bench[%d]: DeathClip sync requested at %s|r")
             :format(dbgID, date("%H:%M")))
+    -- ... (your existing benchmarking code can remain here if you wish) ...
+    -- self.benchDebugCounter = (self.benchDebugCounter or 0) + 1
+    -- local dbgID            = self.benchDebugCounter
+    -- print(("|cff00ff00>> Bench[%d]: DeathClip sync requested at %s|r"):format(dbgID, date("%H:%M")))
 
-    local clips   = self:BuildDeathClipsTable(now)
-    local payload = {
+    -- Call the modified BuildDeathClipsTable
+    local clips_payload_from_builder = self:BuildDeathClipsTable(now)
+    -- clips_payload_from_builder is now {fromTs=TIMESTAMP, clips={ [HASH]=true, ... }}
+
+    local payload_to_send = {
         ns.T_DEATH_CLIPS_STATE_REQUEST,
-        { since = ns.GetLastDeathClipTimestamp(), clips = clips }
+        {
+            since = ns.GetLastDeathClipTimestamp(),          -- Requester's overall last known sync point
+            clips = clips_payload_from_builder.clips,        -- The map of {HASH=true}
+            fromTsForKnown = clips_payload_from_builder.fromTs -- The 'fromTs' used to generate the above 'clips' hash map
+        }
     }
 
     -- 1. Serialize
-    local serialized = Addon:Serialize(payload)
+    local serialized = Addon:Serialize(payload_to_send)
     -- 2. Compress (raw bytes)
-    local compressionConfigs = {level = 9}
+    local compressionConfigs = {level = 9} -- Using level 9 as per your last test
     local compressed = LibDeflate:CompressDeflate(serialized, compressionConfigs)
     -- 3. Encode (ASCII-safe)
     local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
@@ -3409,7 +3437,7 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     local msg        = "DF:" .. encoded
 
     -- 5. Send it off
-    self:BroadcastMessage(msg)
+    self:BroadcastMessage(msg) -- 'self' implies this is an AuctionHouse method
 end
 
 function AuctionHouse:RequestLatestLFGState()

@@ -9,6 +9,7 @@
   <Include file="Libs\AceEvent-3.0\AceEvent-3.0.xml"/>
   <Include file="Libs\AceLocale-3.0\AceLocale-3.0.xml"/>
   <Include file="Libs\AceSerializer-3.0\AceSerializer-3.0.xml"/>
+  <Include file="Libs\LibHash-1.0\LibHash-1.0.xml"/>
   <Include file="Libs\LibDeflate\lib.xml"/>
   <Include file="Libs\LibSerialize-1.2.1\lib.xml"/>
   <Include file="Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>

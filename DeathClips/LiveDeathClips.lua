@@ -117,61 +117,86 @@ ns.GetLastDeathClipTimestamp = function()
     return ts
 end
 
-ns.GetNewDeathClips = function(since, existing)
-    local allClips = ns.GetLiveDeathClips()
+local LH = LibStub("LibHash-1.0") -- Ensure LibHash is loaded
 
-    -- FULL‐SYNC: if since is zero or nil, return every clip unfiltered
-    if not since or since == 0 then
-        local full = {}
-        for _, clip in pairs(allClips) do
-            full[#full+1] = clip
+
+-- Function 3: Sender - Processes the request and determines which clips to send
+-- (This is a function in your 'ns' namespace)
+ns.GetNewDeathClips = function(requestSince, requesterPayload)
+    -- requesterPayload is { since=TS, clips={HASH=true,...}, fromTsForKnown=TS }
+    -- Note: the 'since' inside requesterPayload is requestSince, passed directly.
+
+    local allMyClips = ns.GetLiveDeathClips() -- Sender's own list of all clips
+
+    -- FULL‐SYNC: if requestSince (the global sync marker) is zero or nil, return every clip unfiltered by the requester's known hashes
+    if not requestSince or requestSince == 0 then
+        local fullSyncList = {}
+        for _, clip in pairs(allMyClips) do
+            fullSyncList[#fullSyncList+1] = clip
         end
-        table.sort(full, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
-        return full
+        -- Sorting here is fine for a full sync, or it can be done later by the caller
+        table.sort(fullSyncList, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
+        return fullSyncList
     end
 
     -- Otherwise, do the normal incremental sync logic:
 
-    -- 1) collect clips newer than `since`
-    local newClips = {}
-    local seen     = {}
-    for _, clip in pairs(allClips) do
-        if clip.ts > since then
-            newClips[#newClips+1] = clip
-            seen[clip.id]         = true
+    local clipsToSend = {}
+    local senderProcessedClipIDs = {} -- Tracks full clip.id of clips sender decides to send OR already processed for this pass
+
+    -- Part 1: Get clips newer than the requester's global `since` timestamp.
+    -- These are candidates the requester *definitely* doesn't have based on its last successful broad sync.
+    local candidatesNewerThanSince = {}
+    for myClipID, myClip in pairs(allMyClips) do
+        if myClip.ts and myClip.ts > requestSince then
+            table.insert(candidatesNewerThanSince, myClip)
+            senderProcessedClipIDs[myClipID] = true -- Mark as initially considered
         end
     end
 
-    -- 2) cap to the latest 100
-    if #newClips > 100 then
-        table.sort(newClips, function(a, b) return (a.ts or 0) < (b.ts or 0) end)
-        local capped = {}
-        local capSeen = {}
-        for i = #newClips - 99, #newClips do
-            local c = newClips[i]
-            capped[#capped+1] = c
-            capSeen[c.id]     = true
+    -- Part 2: If too many "new since last global sync", cap to the latest N (e.g., 100).
+    -- This capping is on the sender side to limit the size of individual response batches if there's a huge backlog.
+    if #candidatesNewerThanSince > 100 then
+        table.sort(candidatesNewerThanSince, function(a, b) return (a.ts or 0) < (b.ts or 0) end) -- Sort to get latest
+        local cappedList = {}
+        senderProcessedClipIDs = {} -- Reset for the capped list
+        for i = #candidatesNewerThanSince - 99, #candidatesNewerThanSince do
+            local c = candidatesNewerThanSince[i]
+            if c then -- Ensure clip exists (paranoid check)
+                table.insert(cappedList, c)
+                senderProcessedClipIDs[c.id] = true
+            end
         end
-        newClips, seen = capped, capSeen
+        clipsToSend = cappedList -- These are the primary clips to send
+    else
+        clipsToSend = candidatesNewerThanSince -- All clips newer than 'since' are primary candidates
     end
 
-    -- 3) merge back any clips ≥ since that the receiver doesn’t already have
-    if existing then
-        local fromTs      = existing.fromTs or since
-        local existingMap = existing.clips or existing
+    -- Part 3: Consider other clips the sender has that are within the requester's "known hash window",
+    -- but were *not* caught by the `requestSince` check above (e.g. if `requestSince` is slightly behind
+    -- the `fromTsForKnown` due to sync timings or if a clip's ts == requestSince).
+    -- Only add them if the requester *doesn't* have their hash.
+    if requesterPayload and requesterPayload.clips and requesterPayload.fromTsForKnown then
+        local fromTsForRequesterHashes = requesterPayload.fromTsForKnown
+        local requesterKnownClipHashesMap = requesterPayload.clips -- This is { [hash]=true }
 
-        for id, clip in pairs(allClips) do
-            if clip.ts >= fromTs
-                    and not seen[id]
-                    and not existingMap[id]
-            then
-                newClips[#newClips+1] = clip
-                seen[id]             = true
+        for myClipID, myClip in pairs(allMyClips) do
+            -- Check if:
+            -- 1. This clip hasn't already been added via the `requestSince` logic (not in senderProcessedClipIDs)
+            -- 2. This clip's timestamp falls within or after the window the requester used for its hash list
+            if not senderProcessedClipIDs[myClipID] and myClip.ts and myClip.ts >= fromTsForRequesterHashes then
+                local myClipHash = LH.sha256(myClipID) -- Calculate hash of sender's clip.id
+                if not requesterKnownClipHashesMap[myClipHash] then
+                    -- Requester does not have the hash for this clip, and it wasn't picked by 'since' logic, so add it.
+                    table.insert(clipsToSend, myClip)
+                    senderProcessedClipIDs[myClipID] = true -- Mark as processed
+                end
             end
         end
     end
 
-    return newClips
+    -- The final list of clips to send will be sorted by the caller (T_DEATH_CLIPS_STATE_REQUEST handler)
+    return clipsToSend
 end
 
 ns.AddNewDeathClips = function(newClips)
