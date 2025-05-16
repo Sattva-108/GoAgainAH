@@ -628,6 +628,32 @@ SlashCmdList["CAUSE7"] = function(msg, editbox)
 end
 
 
+SLASH_GOAHCLIPS1 = "/goahclips"
+SlashCmdList["GOAHCLIPS"] = function(msg)
+    local num = tonumber(msg)
+    if not num then
+        print("Usage: /goahclips <number>")
+        return
+    end
+
+    local clips = LiveDeathClips or {}
+    local t = {}
+    for _, c in pairs(clips) do
+        if c.ts then
+            t[#t+1] = c
+        end
+    end
+    table.sort(t, function(a, b) return a.ts > b.ts end)
+
+    for i = num + 1, #t do
+        clips[t[i].id] = nil
+    end
+
+    print(string.format("Оставлено %d последних клипов (удалено %d)", math.min(num, #t), math.max(0, #t - num)))
+end
+
+
+
 -- TODO FIXME before release 3.3.5
 -- a little hack to not get warning when running testing script:
 -- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
