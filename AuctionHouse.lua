@@ -2542,8 +2542,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         -- serialize & send
         local serialized = Addon:Serialize(rows)
         print((">> DEBUG: serialized rows = %d bytes"):format(#serialized))
-        local compressed = LibDeflate:CompressDeflate(serialized)
-        print((">> DEBUG: compressed rows = %d bytes"):format(#compressed))
+        local compressionConfigs = {level = 9}
+        local compressed = LibDeflate:CompressDeflate(serialized, compressionConfigs)
+        print((">> DEBUG: compressed rows = %d bytes (Level 9)"):format(#compressed))
 
         local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
         self:SendDm(msg, sender, "BULK")
@@ -3400,7 +3401,8 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     -- 1. Serialize
     local serialized = Addon:Serialize(payload)
     -- 2. Compress (raw bytes)
-    local compressed = LibDeflate:CompressDeflate(serialized)
+    local compressionConfigs = {level = 9}
+    local compressed = LibDeflate:CompressDeflate(serialized, compressionConfigs)
     -- 3. Encode (ASCII-safe)
     local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
     -- 4. Prepend our marker
