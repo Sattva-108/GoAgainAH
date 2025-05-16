@@ -2444,16 +2444,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             end
             local mobData
             if causeCode == 7 and mobName ~= "" then
-                local mobID = ns.MobIDByName[mobName]
-                if mobID then
-                    mobData = mobID
-                else
-                    mobData = mobName
-                    -- SIMPLE DEBUG PRINT for unmapped mob
-                    print(("[UNMAPPED MOB SENT AS STRING] Mob: '%s' (Char: %s)"):format(mobName, c.characterName or "N/A"))
-                end
+                mobData = ns.MobIDByName[mobName] or mobName -- Assign ID if found, otherwise fallback to mobName string
             else
-                mobData = ""
+                mobData = "" -- Assign empty string if not causeCode 7 or mobName is empty
             end
 
             -- zone → ID + fallback string
