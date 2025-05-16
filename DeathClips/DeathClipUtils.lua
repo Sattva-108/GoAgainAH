@@ -584,6 +584,50 @@ SlashCmdList["CHECKHC"] = function()
 
 end
 
+
+SLASH_CAUSE71 = "/cause7" -- Your slash command
+
+SlashCmdList["CAUSE7"] = function(msg, editbox)
+    -- Define the name for the new table
+    local newTableName = "mobNames"
+    -- Schedule the function to run after 10 seconds
+    C_Timer:After(3, function()
+        -- Initialize the new table if it doesn't exist or clear it for a fresh run
+        AuctionHouseDBSaved[newTableName] = {} -- This will overwrite if it exists, ensuring a fresh list
+
+        local addedCount = 0
+        local uniqueMobNamesAdded = {} -- Helper table to track unique names for *this run*
+
+        -- Iterate through the LiveDeathClips
+        for key, clip in pairs(LiveDeathClips) do
+            if clip.causeCode == 7 and clip.deathCause and clip.deathCause ~= "" then
+                local mobName = clip.deathCause
+
+                -- Check if this mobName has already been added in *this run*
+                if not uniqueMobNamesAdded[mobName] then
+                    tinsert(AuctionHouseDBSaved[newTableName], mobName)
+                    uniqueMobNamesAdded[mobName] = true -- Mark as added for this run
+                    addedCount = addedCount + 1
+                end
+            end
+        end
+
+        -- Sort the table alphabetically (optional, but good for consistency)
+        table.sort(AuctionHouseDBSaved[newTableName])
+
+        -- Print the number of unique mob names added
+        print("Added " .. addedCount .. " unique mob names with causeCode = 7 to AuctionHouseDBSaved." .. newTableName)
+        if addedCount > 0 then
+            print("The table AuctionHouseDBSaved." .. newTableName .. " has been populated.")
+        else
+            print("No new unique mob names with causeCode = 7 found to add.")
+        end
+    end)
+
+    print("Processing causeCode 7 mob names for AuctionHouseDBSaved[" .. newTableName .. "] in 3 seconds...")
+end
+
+
 -- TODO FIXME before release 3.3.5
 -- a little hack to not get warning when running testing script:
 -- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
