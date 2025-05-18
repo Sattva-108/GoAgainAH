@@ -109,7 +109,9 @@ function OFAuctionFrameDeathClips_OnLoad()
 
         button:SetScript("OnClick", function(self)
             local c = self.clipData
-            if not c or not c.id then return end
+            if not c or not c.id then
+                return
+            end
             local wasOpen = (OFAuctionFrameDeathClips.openedPromptClipID == c.id)
             ns.HideAllClipPrompts()
             if not wasOpen then
@@ -129,7 +131,7 @@ function OFAuctionFrameDeathClips_OnLoad()
                 local whenFS = el.whenText
                 whenFS:SetText(formatWhen(clip))
                 if clip.playedTime and clip.level then
-                    local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                    local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
                     whenFS:SetTextColor(r, g, b, .7)
                 else
                     whenFS:SetTextColor(.6, .6, .6, .5)
@@ -137,7 +139,6 @@ function OFAuctionFrameDeathClips_OnLoad()
             end
         end
     end)
-
 
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
         OFAuctionFrameDeathClips.needsDataRefresh = true -- Mark data as needing refresh
@@ -152,14 +153,15 @@ function OFAuctionFrameDeathClips_OnLoad()
     if not sortHookApplied then
         if type(OFAuctionFrame_SetSort) == "function" then
             hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
-                if type == "clips" then -- Only react to sorts for our "clips" type
+                if type == "clips" then
+                    -- Only react to sorts for our "clips" type
                     OFAuctionFrameDeathClips.page = 0
                     FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
                     if OFDeathClipsScrollScrollBar then
                         OFDeathClipsScrollScrollBar:SetValue(0)
                     end
                     OFAuctionFrameDeathClips.needsDataRefresh = true -- Sort changed, needs data refresh
-                     --OFAuctionFrameDeathClips_Update() -- Update will be called by scroll or other events
+                    --OFAuctionFrameDeathClips_Update() -- Update will be called by scroll or other events
                 end
             end)
             sortHookApplied = true
@@ -228,8 +230,6 @@ function OFAuctionFrameDeathClips_OnLoad()
     --end
 
 end
-
-
 
 function ns.SetupClipHighlight(button)
     if not button.glow then
@@ -341,12 +341,15 @@ function OFAuctionFrameDeathClips_OnShow()
 
         frame._whenUpdateTicker = C_Timer:NewTicker(1, function()
             -- панель аукциона или под-фрейм скрыты → пропуск
-            if not (OFAuctionFrame:IsShown() and frame:IsShown()) then return end
+            if not (OFAuctionFrame:IsShown() and frame:IsShown()) then
+                return
+            end
 
-            for i = 1, NUM_CLIPS_TO_DISPLAY do                -- всегда 9 строк
-                local el     = ns.clipButtonElements[i]        -- кэш (Шаг 1)
+            for i = 1, NUM_CLIPS_TO_DISPLAY do
+                -- всегда 9 строк
+                local el = ns.clipButtonElements[i]        -- кэш (Шаг 1)
                 local button = el and el.button
-                local clip   = button and button.clipData      -- актуальные данные
+                local clip = button and button.clipData      -- актуальные данные
 
                 if button and button:IsShown() and clip and clip.ts then
                     ------------------------------------------------------
@@ -356,10 +359,10 @@ function OFAuctionFrameDeathClips_OnShow()
                     whenFS:SetText(formatWhen(clip))
 
                     if clip.playedTime and clip.level then
-                        local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-                        whenFS:SetTextColor(r,g,b,.7)
+                        local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                        whenFS:SetTextColor(r, g, b, .7)
                     else
-                        whenFS:SetTextColor(.6,.6,.6,.5)
+                        whenFS:SetTextColor(.6, .6, .6, .5)
                     end
 
                     ------------------------------------------------------
@@ -369,8 +372,12 @@ function OFAuctionFrameDeathClips_OnShow()
                     if age < 60 and not frame._highlightedClips[clip.id] then
                         frame._highlightedClips[clip.id] = true
 
-                        if button.glow  then button.glow.animation:Play()  end
-                        if button.shine then button.shine.animation:Play() end
+                        if button.glow then
+                            button.glow.animation:Play()
+                        end
+                        if button.shine then
+                            button.shine.animation:Play()
+                        end
                     end
                 end
             end
@@ -488,7 +495,6 @@ local function UpdateLayout(buttonName)
 end
 ns.ApplyClipLayout = UpdateLayout
 
-
 local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
     -- 'clip' is the newClipData for this row
     -- 'ratingsFromParent' is the pre-fetched ratings for this specific clip.id, passed from OFAuctionFrameDeathClips_Update
@@ -503,7 +509,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         button.displayedClipID = clip.id
         -- button.clipData is set in the calling function (OFAuctionFrameDeathClips_Update)
 
-         ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips)
+        ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips)
         -- Assuming ResizeEntry is handled correctly elsewhere or as part of layout
 
         local nameFS = elements.name
@@ -517,34 +523,50 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
 
         -- ===== NAME =====
         local newNameText = clip.characterName or L["Unknown"]
-        if nameFS:GetText() ~= newNameText then nameFS:SetText(newNameText) end
+        if nameFS:GetText() ~= newNameText then
+            nameFS:SetText(newNameText)
+        end
         local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
         local curR, curG, curB = nameFS:GetTextColor()
-        if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then nameFS:SetTextColor(clr.r, clr.g, clr.b) end
+        if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then
+            nameFS:SetTextColor(clr.r, clr.g, clr.b)
+        end
 
         -- ===== RACE =====
         local newRaceText = clip.race or L["Unknown"]
         if GetLocale() == "ruRU" and ns.isCompletedTabActive then
-            if newRaceText == "Ночноро\nждённый" then newRaceText = "Ночнорождённый"
-            elseif newRaceText == "Озар. дреней" then newRaceText = "Озарённый дреней"
-            elseif newRaceText == "Дворф Ч. Железа" then newRaceText = "Дворф Чёрного Железа"
+            if newRaceText == "Ночноро\nждённый" then
+                newRaceText = "Ночнорождённый"
+            elseif newRaceText == "Озар. дреней" then
+                newRaceText = "Озарённый дреней"
+            elseif newRaceText == "Дворф Ч. Железа" then
+                newRaceText = "Дворф Чёрного Железа"
             end
         end
-        if raceFS:GetText() ~= newRaceText then raceFS:SetText(newRaceText) end
-        local rF,gF,bF = 0.9, 0.9, 0.4
-        if clip.faction == "Horde" then rF,gF,bF = 0.8, 0.3, 0.3
-        elseif clip.faction == "Alliance" then rF,gF,bF = 0.4, 0.6, 1 end
+        if raceFS:GetText() ~= newRaceText then
+            raceFS:SetText(newRaceText)
+        end
+        local rF, gF, bF = 0.9, 0.9, 0.4
+        if clip.faction == "Horde" then
+            rF, gF, bF = 0.8, 0.3, 0.3
+        elseif clip.faction == "Alliance" then
+            rF, gF, bF = 0.4, 0.6, 1
+        end
         local curRF, curGF, curBF = raceFS:GetTextColor()
-        if curRF ~= rF or curGF ~= gF or curBF ~= bF then raceFS:SetTextColor(rF,gF,bF) end
+        if curRF ~= rF or curGF ~= gF or curBF ~= bF then
+            raceFS:SetTextColor(rF, gF, bF)
+        end
 
         -- ===== CLASS ICON =====
         local newTexture = "Interface\\Icons\\INV_Misc_QuestionMark"
-        local newCoords = {0, 1, 0, 1}
+        local newCoords = { 0, 1, 0, 1 }
         if clip.class and CLASS_ICON_TCOORDS[clip.class] then
             newTexture = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
             newCoords = CLASS_ICON_TCOORDS[clip.class]
         end
-        if iconTexture:GetTexture() ~= newTexture then iconTexture:SetTexture(newTexture) end
+        if iconTexture:GetTexture() ~= newTexture then
+            iconTexture:SetTexture(newTexture)
+        end
         iconTexture:SetTexCoord(unpack(newCoords))
 
         -- ===== LEVEL =====
@@ -559,66 +581,95 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         local key = clip.class and string.upper(clip.class) or "UNKNOWN"
         local newClassText = LOCALIZED_CLASS_NAMES_MALE[key] or clip.class or L["Unknown"]
         if GetLocale() == "ruRU" and not ns.isCompletedTabActive then
-            if key == "WARLOCK" then newClassText = "Варлок"
-            elseif key == "ROGUE" then newClassText = "Разбойник" end
+            if key == "WARLOCK" then
+                newClassText = "Варлок"
+            elseif key == "ROGUE" then
+                newClassText = "Разбойник"
+            end
         end
-        if classFS:GetText() ~= newClassText then classFS:SetText(newClassText) end
+        if classFS:GetText() ~= newClassText then
+            classFS:SetText(newClassText)
+        end
         local cc = RAID_CLASS_COLORS[key] or { r = 1, g = 1, b = 1 }
         local curCCR, curCCG, curCCB = classFS:GetTextColor()
-        if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then classFS:SetTextColor(cc.r, cc.g, cc.b) end
+        if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then
+            classFS:SetTextColor(cc.r, cc.g, cc.b)
+        end
 
         -- ===== WHERE =====
         whereFS:SetJustifyH("LEFT")
         local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
-        if zone == "Полуостров Адского Пламени" then zone = "Полуостров\nАдского Пламени" end
-        if whereFS:GetText() ~= zone then whereFS:SetText(zone) end
+        if zone == "Полуостров Адского Пламени" then
+            zone = "Полуостров\nАдского Пламени"
+        end
+        if whereFS:GetText() ~= zone then
+            whereFS:SetText(zone)
+        end
 
         -- ===== CAUSE / MOB LEVEL (Clip Text) =====
         local causeId = clip.causeCode or 0
         local newClipDisplayText = ""
         local newMobLevelText = ""
-        local mr, mg, mb = 0,0,0
+        local mr, mg, mb = 0, 0, 0
 
         if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
             local mobLvl = clip.mobLevel or 0
             local playerLvl = lvl
             local diff = mobLvl - playerLvl
             mr, mg, mb = 0, 1, 0
-            if diff >= 4 then mr, mg, mb = 1, 0, 0
-            elseif diff >= 2 then mr, mg, mb = 1, .5, 0
-            elseif diff >= -1 then mr, mg, mb = 1, 1, 0
-            elseif diff >= -4 then mr, mg, mb = 0, 1, 0
-            else mr, mg, mb = .5, .5, .5 end
+            if diff >= 4 then
+                mr, mg, mb = 1, 0, 0
+            elseif diff >= 2 then
+                mr, mg, mb = 1, .5, 0
+            elseif diff >= -1 then
+                mr, mg, mb = 1, 1, 0
+            elseif diff >= -4 then
+                mr, mg, mb = 0, 1, 0
+            else
+                mr, mg, mb = .5, .5, .5
+            end
 
             newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
             newMobLevelText = tostring(mobLvl)
-            mobLevelFS:SetTextColor(mr, mg, mb, 200/255)
+            mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
         else
             newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
             newMobLevelText = ""
         end
 
-        if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
-        if mobLevelFS:GetText() ~= newMobLevelText then mobLevelFS:SetText(newMobLevelText) end
+        if clipTextFS:GetText() ~= newClipDisplayText then
+            clipTextFS:SetText(newClipDisplayText)
+        end
+        if mobLevelFS:GetText() ~= newMobLevelText then
+            mobLevelFS:SetText(newMobLevelText)
+        end
         mobLevelFS:SetJustifyH("CENTER")
 
         -- ===== COMPLETED TIMER (also uses clipTextFS) =====
         if clip.completed then
-            if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
+            if clipTextFS:GetFontObject() ~= GameFontNormalLarge then
+                clipTextFS:SetFontObject("GameFontNormalLarge")
+            end
             if clip.playedTime then
                 local s = clip.playedTime
                 local completedText = string.format("%dд %dч %dм %dс",
                         math.floor(s / 86400), math.floor(s % 86400 / 3600),
                         math.floor(s % 3600 / 60), s % 60)
-                if clipTextFS:GetText() ~= completedText then clipTextFS:SetText(completedText) end
+                if clipTextFS:GetText() ~= completedText then
+                    clipTextFS:SetText(completedText)
+                end
             elseif clipTextFS:GetText() ~= "Грузится" then
                 clipTextFS:SetText("Грузится")
             end
         else
-            if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
+            if clipTextFS:GetFontObject() ~= GameFontNormal then
+                clipTextFS:SetFontObject("GameFontNormal")
+            end
             -- If not completed, the cause text was already set above by the "CAUSE / MOB LEVEL" block.
             -- Only re-set it if the font change somehow blanked it or if it differs from newClipDisplayText
-            if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
+            if clipTextFS:GetText() ~= newClipDisplayText then
+                clipTextFS:SetText(newClipDisplayText)
+            end
         end
     end -- END of "if button.displayedClipID ~= clip.id or forceFullUpdate then"
 
@@ -626,7 +677,8 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
     -- This part should ALWAYS run to reflect potential live updates to ratings,
     -- or to clear ratings if the clip is no longer valid or has no ratings.
     if ratingFrame and ratingFrame.SetReactions then
-        if clip and clip.id then -- Make sure 'clip' itself is valid and has an id
+        if clip and clip.id then
+            -- Make sure 'clip' itself is valid and has an id
             -- Get fresh reaction data for this clip
             local currentReactions = ns.GetTopReactions(clip.id, 1)
             ratingFrame:SetReactions(currentReactions)
@@ -686,11 +738,16 @@ function OFAuctionFrameDeathClips_Update()
 
         if frame.currentSubTab == "completed" then
             for _, clip in ipairs(pool) do
-                if clip.completed then table.insert(tempClips, clip) end
+                if clip.completed then
+                    table.insert(tempClips, clip)
+                end
             end
-        else -- "live" or default
+        else
+            -- "live" or default
             for _, clip in ipairs(pool) do
-                if not clip.completed then table.insert(tempClips, clip) end
+                if not clip.completed then
+                    table.insert(tempClips, clip)
+                end
             end
         end
 
@@ -704,7 +761,9 @@ function OFAuctionFrameDeathClips_Update()
         -- сброс пагинации и скролла
         frame.page = 0
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-        if OFDeathClipsScrollScrollBar then OFDeathClipsScrollScrollBar:SetValue(0) end
+        if OFDeathClipsScrollScrollBar then
+            OFDeathClipsScrollScrollBar:SetValue(0)
+        end
     end
 
     local clipsToDisplay = frame.currentDisplayableClips
@@ -764,7 +823,8 @@ function OFAuctionFrameDeathClips_Update()
     -- Pagination button logic (using totalClips from the cached list)
     -- Keep it for later, don't delete this code.
     local displayableItemsInCurrentView = totalClips - offset
-    if totalClips > NUM_CLIPS_TO_DISPLAY then -- Only show pagination if total items exceed one page view
+    if totalClips > NUM_CLIPS_TO_DISPLAY then
+        -- Only show pagination if total items exceed one page view
         --local currentScrollPage = floor(offset / NUM_CLIPS_TO_DISPLAY) -- Page based on scroll offset
         --local totalScrollPages = ceil(totalClips / NUM_CLIPS_TO_DISPLAY) -1
         --
@@ -776,8 +836,8 @@ function OFAuctionFrameDeathClips_Update()
         local itemsMax = offset + numActuallyDisplayed
         OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
     else
---        OFDeathClipsPrevPageButton:Disable()
---        OFDeathClipsNextPageButton:Disable()
+        --        OFDeathClipsPrevPageButton:Disable()
+        --        OFDeathClipsNextPageButton:Disable()
         OFDeathClipsSearchCountText:Hide()
     end
 end
@@ -798,7 +858,6 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     count:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     count:SetTextColor(1, 1, 1, 0.6)
-    count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -12, 6)
     count:Hide()
 
     -- Store references
@@ -809,7 +868,7 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     function self:SetReactions(data)
         local paths = {
             [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",
-            [2] = "Interface\\AddOns\\GoAgainAH\\Media\\frozen_64x64.tga",
+            [2] = "Interface\\AddOns\\GoAgainAH\\Media\\eyes_64x64.tga",
             [3] = "Interface\\AddOns\\GoAgainAH\\Media\\clown_64x64.tga",
             [4] = "Interface\\AddOns\\GoAgainAH\\Media\\fire_64x64.tga",
         }
@@ -818,17 +877,36 @@ function OFDeathClipsRatingWidget_OnLoad(self)
             local id = data[1].id
 
             -- Спецпозиции и обрезки
-            if id == 3 then
+            if id == 2 then
+                count:ClearAllPoints()
+                -- Eyes
+                icon:SetTexCoord(0, 1, 0, 1)
+                icon:SetSize(40, 40) -- fill most of the rating column
+                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 12)
+
+            elseif id == 3 then
                 -- 🤡 Клоун: немного вверх
                 icon:SetTexCoord(0.1, 0.9, 0.30, 0.72)
+                icon:SetSize(40, 26)
+                count:ClearAllPoints()
+                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 6)
+
 
             elseif id == 4 then
                 -- 🔥 Огонь: обрезать до самого верха
                 icon:SetTexCoord(0.1, 0.9, 0.12, 0.66)
+                icon:SetSize(40, 26)
+                count:ClearAllPoints()
+                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 6)
 
-            else
+
+            elseif id == 1 then
                 -- Остальные по центру
                 icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
+                icon:SetSize(40, 26)
+                count:ClearAllPoints()
+                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 6)
+
             end
 
             local countValue = data[1].count

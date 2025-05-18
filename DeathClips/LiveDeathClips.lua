@@ -583,7 +583,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
     if prefix == "ASMSG_HARDCORE_DEATH" then
         local admin = UnitName("player")
         if admin == "Lenkomag" then
-            PlaySoundFile("Sound\\interface\\MapPing.wav")
+            --PlaySoundFile("Sound\\interface\\MapPing.wav")
         end
         local name = msg:match("^([^:]+)")
         if name then

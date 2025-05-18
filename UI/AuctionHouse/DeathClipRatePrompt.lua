@@ -7,7 +7,7 @@ local reviewPrompt
 -- Placeholder icons used temporarily for each emotion
 local REACTION_ICONS = {
     [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",       -- 😂 Funny
-    [2] = "Interface\\AddOns\\GoAgainAH\\Media\\frozen_64x64.tga",      -- 🕯️ Sad
+    [2] = "Interface\\AddOns\\GoAgainAH\\Media\\eyes_64x64.tga",      -- 🕯️ Sad
     [3] = "Interface\\AddOns\\GoAgainAH\\Media\\clown_64x64.tga",       -- ♿ Boring
     [4] = "Interface\\AddOns\\GoAgainAH\\Media\\fire_64x64.tga",        -- 💪 Heroic
 }
