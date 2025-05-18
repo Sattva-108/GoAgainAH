@@ -845,19 +845,15 @@ end
 function OFDeathClipsRatingWidget_OnLoad(self)
     -- Create single large icon texture
     local icon = self:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(40, 26) -- fill most of the rating column
+    icon:SetSize(40, 26)
     icon:SetPoint("LEFT", self, "LEFT", 0, 0)
     icon:Hide()
-
-    -- Общая обрезка
     icon:SetTexCoord(0.1, 0.9, 0.34, 0.74)
-    icon:SetVertexColor(0.5, 0.5, 0.5) -- slightly dimmed, full color
-
 
     -- Create count text overlaid on icon
     local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     count:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-    count:SetTextColor(1, 1, 1, 0.6)
+    count:SetTextColor(1, 1, 1, 0.6, 0.8)
     count:Hide()
 
     -- Store references
@@ -875,54 +871,44 @@ function OFDeathClipsRatingWidget_OnLoad(self)
 
         if data and data[1] then
             local id = data[1].id
+            local path = paths[id]
+            local countValue = data[1].count
 
-            -- Спецпозиции и обрезки
+            -- Defaults
+            icon:SetSize(40, 26)
+            icon:SetVertexColor(0.5, 0.5, 0.5, 0.8)
+            icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
+            count:ClearAllPoints()
+            count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -3, 6)
+
             if id == 2 then
-                count:ClearAllPoints()
-                -- Eyes
+                icon:SetSize(40, 40)
                 icon:SetTexCoord(0, 1, 0, 1)
-                icon:SetSize(40, 40) -- fill most of the rating column
-                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 12)
+                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -3, 12)
 
             elseif id == 3 then
-                -- 🤡 Клоун: немного вверх
                 icon:SetTexCoord(0.1, 0.9, 0.30, 0.72)
-                icon:SetSize(40, 26)
-                count:ClearAllPoints()
-                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 6)
-
 
             elseif id == 4 then
-                -- 🔥 Огонь: обрезать до самого верха
                 icon:SetTexCoord(0.1, 0.9, 0.12, 0.66)
-                icon:SetSize(40, 26)
-                count:ClearAllPoints()
-                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 6)
-
 
             elseif id == 1 then
-                -- Остальные по центру
+                icon:SetVertexColor(0.5, 0.5, 0.5, 1.0)
                 icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
-                icon:SetSize(40, 26)
-                count:ClearAllPoints()
-                count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -0, 6)
-
             end
 
-            local countValue = data[1].count
-            local path = paths[id]
+            icon:SetTexture(path)
+            icon:Show()
 
-            self.reactionIcon:SetTexture(path)
-            self.reactionIcon:Show()
-
-            self.reactionCount:SetText(countValue)
-            self.reactionCount:Show()
+            count:SetText(countValue)
+            count:Show()
         else
-            self.reactionIcon:Hide()
-            self.reactionCount:Hide()
+            icon:Hide()
+            count:Hide()
         end
     end
 end
+
 
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then
