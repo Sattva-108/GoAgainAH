@@ -915,4 +915,7 @@ function OFAuctionFrameDeathClips_OnHide()
         OFAuctionFrameDeathClips._whenUpdateTicker:Cancel()
         OFAuctionFrameDeathClips._whenUpdateTicker = nil
     end
+    if ns.HideAllClipPrompts then
+        ns.HideAllClipPrompts()
+    end
 end

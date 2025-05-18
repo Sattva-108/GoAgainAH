@@ -620,12 +620,20 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                         if type(clip) == "table" then
                                             if clip.completed and clip.playedTime == nil then
                                                 clip.playedTime = tm
-                                                print(("%s's playedTime updated to: %d"):format(n, tm), "|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
+
+                                                -- 🔔 Fire event to notify UI
+                                                ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
+
+                                                print("|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
                                             elseif not clip.completed and clip.playedTime == nil then -- Added nil check based on debug analysis
                                                 clip.playedTime = tm
+
+                                                -- 🔔 Fire event to notify UI
+                                                ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
+
                                                 print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tm)) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil

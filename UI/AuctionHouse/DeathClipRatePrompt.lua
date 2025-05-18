@@ -621,12 +621,22 @@ local function CreateReviewPrompt()
             callback()
         end)
     end
+    ns.AuctionHouseAPI:RegisterEvent(ns.EV_PLAYED_TIME_UPDATED, function(id)
+        if not id or not prompt or not prompt.frame:IsShown() then return end
+        if OFAuctionFrameDeathClips.openedPromptClipID ~= id then return end
+        print("found prompt")
+
+        local clip = ns.GetLiveDeathClips()[id]
+        if clip and clip.playedTime then
+            print("Accepted Played Time Update Event")
+            prompt:SetPlayedTime(clip.playedTime, clip)
+        end
+    end)
+
 
     return prompt
 end
 
--- Create a singleton instance
-local reviewPrompt
 
 local function GetReviewPrompt()
     if not reviewPrompt then
@@ -710,5 +720,9 @@ end
 ns.HideDeathClipRatePrompt = function()
     if reviewPrompt and reviewPrompt.frame:IsShown() then
         reviewPrompt:Hide()
+    end
+    if ns._ratePromptTicker then
+        ns._ratePromptTicker:Cancel()
+        ns._ratePromptTicker = nil
     end
 end

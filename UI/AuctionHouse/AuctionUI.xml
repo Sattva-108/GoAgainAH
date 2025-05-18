@@ -1360,7 +1360,7 @@
                     </Layer>
 					<Layer> <!-- Or whatever layer it's in -->
 						<FontString name="OFDeathClipsSearchCountText" inherits="GameFontHighlightSmall" text="">
-							<Size x="200" y="20"/> <!-- Give it a fixed size for now -->
+							<Size x="400" y="20"/> <!-- Give it a fixed size for now -->
 							<Anchors>
 								<Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
 									<Offset x="0" y="14"/> <!-- Position it above Prev/Next buttons, adjust X to center roughly -->
