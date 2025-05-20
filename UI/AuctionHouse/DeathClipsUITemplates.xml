@@ -76,8 +76,25 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnEnter>self:GetParent():LockHighlight()</OnEnter>
-                    <OnLeave>self:GetParent():UnlockHighlight()</OnLeave>
+                    <OnLoad>
+                        self:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                    </OnLoad>
+                    <OnEnter>
+                        -- 'self' is $parentItem
+                        -- 'self:GetParent()' is OFDeathClipsButtonN which should have clipData
+                        GoAgainAH_ClipItem_OnEnter(self);
+                        self:GetParent():LockHighlight();
+                    </OnEnter>
+                    <OnLeave>
+                        GoAgainAH_ClipItem_OnLeave(self);
+                        self:GetParent():UnlockHighlight();
+                    </OnLeave>
+                    <OnClick>
+                        -- 'self' is $parentItem
+                        -- 'button' is the global variable WoW provides in OnClick handlers
+                        -- for the mouse button name ("LeftButton", "RightButton", "MiddleButton", etc.)
+                        GoAgainAH_ClipItem_OnClick(self, button)
+                    </OnClick>
                 </Scripts>
                 <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
                     <Size><AbsDimension x="60" y="60" /></Size>
