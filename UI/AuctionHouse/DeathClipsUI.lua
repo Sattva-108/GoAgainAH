@@ -924,7 +924,7 @@ end
 
 -- Session-only tables
 ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
-ns.notifiedLowLevelFriendsThisSession = ns.notifiedLowLevelFriendsThisSession or {}
+ns.playerNotificationStatus = ns.playerNotificationStatus or {}
 
 -- State for AddFriend Error Handling
 local suppressPlayerNotFoundSystemMessageActive = false
@@ -933,8 +933,7 @@ ns.expectingFriendAddSystemMessageFor = nil
 ns.capturedFriendAddSystemMessage = nil
 
 -- Constants for Notification
-local MIN_LEVEL_FOR_NOTIFICATION = 10
-local MAP_PING_SOUND_FILE = "Sound\\interface\\MapPing.wav" -- Using PlaySoundFile
+local MAP_PING_SOUND_FILE = "Sound\\interface\\MapPing.wav"
 
 -- Fallback Class Names
 ns.fallbackClassNames = {
@@ -944,26 +943,40 @@ ns.fallbackClassNames = {
     ["РЫЦАРЬ СМЕРТИ"] = "Рыцарь смерти"
 }
 
+-- Flag to indicate that the custom status tooltip was just shown due to a click
+ns.statusTooltipJustShown = false
+
 -- Custom Status Tooltip Management
 local function ShowStatusTooltip(line1, line2, line3)
     local tooltip = _G["GoAgainAH_StatusTooltip"]
-    if not tooltip then return end
+    if not tooltip then print(addonName .. " Error: GoAgainAH_StatusTooltip frame not found!"); return end
     local parentFrame = tooltip:GetParent()
-    if not parentFrame or not parentFrame:IsShown() then tooltip:Hide(); return end
+    if not parentFrame then print(addonName.." Error: StatusTooltip has no parent!"); tooltip:Hide(); return end
+    if not parentFrame:IsShown() then tooltip:Hide(); return end
+
     local l1, l2, l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
-    if not (l1 and l2 and l3) then return end
-    l1:SetText(line1 or ""); l2:SetText(line2 or ""); l3:SetText(line3 or "")
+    if not (l1 and l2 and l3) then print(addonName.." Error: StatusTooltip lines not found!"); return end
+
+    l1:SetText(""); l2:SetText(""); l3:SetText("")
+    l1:SetText(line1 or ""); if line2 and line2 ~= "" then l2:SetText(line2) else l2:SetText("") end; if line3 and line3 ~= "" then l3:SetText(line3) else l3:SetText("") end
     local textRegionHeight = 0; local lineCount = 0
     if line1 and line1 ~= "" then textRegionHeight = textRegionHeight + l1:GetHeight(); lineCount = lineCount + 1; end
     if line2 and line2 ~= "" then textRegionHeight = textRegionHeight + l2:GetHeight(); lineCount = lineCount + 1; end
     if line3 and line3 ~= "" then textRegionHeight = textRegionHeight + l3:GetHeight(); lineCount = lineCount + 1; end
     local newHeight = 16 + textRegionHeight; if lineCount > 1 then newHeight = newHeight + ((lineCount - 1) * 2) end
-    tooltip:SetHeight(math.max(35, newHeight)); tooltip:Show()
+    tooltip:SetHeight(math.max(35, newHeight));
+    tooltip:Show()
+    ns.statusTooltipJustShown = true -- Set flag when shown
 end
 
 local function HideStatusTooltip()
     local tooltip = _G["GoAgainAH_StatusTooltip"]
-    if tooltip and tooltip:IsShown() then tooltip:Hide() end
+    if tooltip and tooltip:IsShown() then
+        tooltip:Hide()
+    end
+    -- ns.statusTooltipJustShown = false; -- Clear flag when explicitly hidden,
+    -- or OnLeave can also clear it.
+    -- Let's clear it in OnClick (before showing new) and OnLeave.
 end
 
 local function IsPlayerOnFriendsList(characterName)
@@ -982,47 +995,40 @@ local function IsPlayerOnFriendsList(characterName)
     return false, false, nil, nil, nil
 end
 
--- Modified Notify function: now takes an optional 'context' for debugging/slightly different messages
-local function NotifyPlayerOnlineUnderLevel(name, level, classToken, area, context)
+local function NotifyPlayerLevelDrop(name, currentLevel, clipLevel, classToken, area, context)
     local lowerName = string.lower(name)
-    if ns.notifiedLowLevelFriendsThisSession[lowerName] then return end
-
-    if level and level < MIN_LEVEL_FOR_NOTIFICATION then
-        PlaySoundFile(MAP_PING_SOUND_FILE) -- Changed sound call
-
+    ns.playerNotificationStatus[lowerName] = ns.playerNotificationStatus[lowerName] or {}
+    if ns.playerNotificationStatus[lowerName].notifiedForLevelDrop then return end
+    if currentLevel and clipLevel and currentLevel < clipLevel then
+        PlaySoundFile(MAP_PING_SOUND_FILE)
         local className = (classToken and type(classToken) == "string" and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[string.upper(classToken)]) or
                 (classToken and type(classToken) == "string" and ns.fallbackClassNames[string.upper(classToken)]) or
                 (classToken and type(classToken) == "string" and classToken) or "Неизвестный класс"
         local zoneName = area and area ~= "" and area or "Неизвестная зона"
         local clickableName = "|Hplayer:"..name.."|h|cff00ff00["..name.."]|h|r"
-
-        local eventDescription = "замечен онлайн"
-        if context == "added" then
-            eventDescription = "добавлен и замечен онлайн"
-        elseif context == "already_friend_online" then
-            eventDescription = "уже друг и замечен онлайн"
-        end
-
-        local message = string.format("%s (Уровень: %d, %s) %s в |cffffff00%s|r!", clickableName, level, className, eventDescription, zoneName)
-
-        if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-            DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message)
-        else print(addonName .. ": " .. message) end
-        ns.notifiedLowLevelFriendsThisSession[lowerName] = true
+        local intro = "|cffFFD700Возрождение Легенды!|r"
+        local message = string.format("%s %s начал(а) свой путь заново! Уровень: %d (был %d, %s) в |cffffff00%s|r.",
+                intro, clickableName, currentLevel, clipLevel, className, zoneName)
+        if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message) else print(addonName .. ": " .. message) end
+        ns.playerNotificationStatus[lowerName].notifiedForLevelDrop = true
     end
 end
 
 function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
-    HideStatusTooltip()
+    HideStatusTooltip() -- Hide any previous status tooltip
+    ns.statusTooltipJustShown = false -- Clear flag at the start of a new click action
+
     local mainRowButton = iconFrameElement:GetParent()
     if not mainRowButton or not mainRowButton.clipData then return end
     local clipData = mainRowButton.clipData
-    if not clipData.characterName then return end
+    if not clipData.characterName or not clipData.level then return end
 
     local characterToAdd = clipData.characterName
     local characterToAddLower = string.lower(characterToAdd)
+    local originalClipLevel = clipData.level
     local targetClipFaction = clipData.faction
     local playerFaction = UnitFactionGroup("player")
+    local line1, line2, line3 = "", "", ""
 
     if targetClipFaction ~= playerFaction then
         ShowStatusTooltip("|cffff0000Нельзя взаимодействовать:|r " .. characterToAdd, "(Разные фракции)", nil)
@@ -1033,14 +1039,16 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
         if ChatFrame_SendTell then ChatFrame_SendTell(characterToAdd) end
     elseif receivedMouseButton == "RightButton" then
         if AddFriend then
-            local wasAlreadyFriend, wasConnected, currentLevel, currentClass, currentArea = IsPlayerOnFriendsList(characterToAdd)
+            local wasAlreadyFriend, wasConnected, currentActualLevel, currentClass, currentArea = IsPlayerOnFriendsList(characterToAdd)
+
+            ns.playerNotificationStatus[characterToAddLower] = ns.playerNotificationStatus[characterToAddLower] or {}
+            ns.playerNotificationStatus[characterToAddLower].clipLevel = originalClipLevel
 
             if wasAlreadyFriend then
-                ShowStatusTooltip(
-                        string.format("%s |cff00ff00уже в друзьях.", characterToAdd),
-                        wasConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r", nil
-                )
-                if wasConnected then NotifyPlayerOnlineUnderLevel(characterToAdd, currentLevel, currentClass, currentArea, "already_friend_online") end
+                line1 = string.format("%s |cff00ff00уже в друзьях.", characterToAdd)
+                line2 = wasConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r"
+                ShowStatusTooltip(line1, line2, nil)
+                if wasConnected then NotifyPlayerLevelDrop(characterToAdd, currentActualLevel, originalClipLevel, currentClass, currentArea, "already_friend_online") end
                 if iconFrameElement:IsMouseOver() then GoAgainAH_ClipItem_OnEnter(iconFrameElement) end
                 return
             end
@@ -1055,14 +1063,13 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
             end)
 
             C_Timer:After(0.3, function()
-                local isNowFriend, isConnected, friendLevel, friendClass, friendArea = IsPlayerOnFriendsList(characterToAdd)
-                local line1, line2, line3 = "", "", ""
+                local isNowFriend, isConnected, friendActualLevel, friendClass, friendArea = IsPlayerOnFriendsList(characterToAdd)
 
                 if isNowFriend then
                     line1 = string.format("|cff00ff00Добавлен в друзьях:|r %s", characterToAdd)
                     if isConnected then
                         line2 = "|cff69ccf0В сети|r"
-                        NotifyPlayerOnlineUnderLevel(characterToAdd, friendLevel, friendClass, friendArea, "added")
+                        NotifyPlayerLevelDrop(characterToAdd, friendActualLevel, originalClipLevel, friendClass, friendArea, "added")
                     else
                         line2 = "|cff888888Не в сети|r"
                     end
@@ -1089,12 +1096,21 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
 end
 
 function GoAgainAH_ClipItem_OnEnter(iconButton)
-    HideStatusTooltip()
+    if ns.statusTooltipJustShown then
+        -- If our custom status tooltip was just shown by a click,
+        -- don't immediately replace it with the hover GameTooltip.
+        -- The flag will be cleared by OnLeave or the next OnClick.
+        return
+    end
+
+    HideStatusTooltip() -- Hide custom status tooltip if it was somehow left open
     if GameTooltip:IsShown() and GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end
+
     local mainRowButton = iconButton:GetParent()
     if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then return end
     local clipData = mainRowButton.clipData
     local characterNameLower = string.lower(clipData.characterName)
+
     GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
     GameTooltip:AddLine(clipData.characterName)
     local playerFaction = UnitFactionGroup("player")
@@ -1103,14 +1119,12 @@ function GoAgainAH_ClipItem_OnEnter(iconButton)
     if targetFaction ~= playerFaction then
         GameTooltip:AddLine("|cffff2020(Другая фракция)|r")
     else
-        local isFriend, isConnected, friendLevel, friendClass, friendArea = IsPlayerOnFriendsList(clipData.characterName)
+        local isFriend, isConnected, friendActualLevel, friendClass, friendArea = IsPlayerOnFriendsList(clipData.characterName)
         GameTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
         if isFriend then
             GameTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
             if isConnected then
-                GameTooltip:AddLine("|cff69ccf0(В сети)|r")
-                -- No automatic notification on hover to prevent spam, OnClick is better
-                -- NotifyPlayerOnlineUnderLevel(clipData.characterName, friendLevel, friendClass, friendArea, "already_friend_online_hover")
+                GameTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", friendActualLevel or 0))
             else GameTooltip:AddLine("|cff888888(Не в сети)|r") end
         elseif ns.sessionFailedFriendAdds and ns.sessionFailedFriendAdds[characterNameLower] then
             GameTooltip:AddLine("ПКМ: |cffffff80В друзья (неудачно)|r")
@@ -1123,6 +1137,9 @@ end
 
 function GoAgainAH_ClipItem_OnLeave(iconButton)
     if GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end
+    ns.statusTooltipJustShown = false -- Clear the flag when mouse leaves
+    -- Optionally, also hide the status tooltip here if you want it to disappear on mouse out
+    -- HideStatusTooltip()
 end
 
 -- Chat Message Filter Function
@@ -1142,41 +1159,35 @@ local function FriendAddSystemMessageFilter(self, event, msg, ...)
     end
     return false
 end
-
--- Event Handler for FRIENDLIST_UPDATE
+-- Make sure OnFriendListUpdate is defined if it's referenced in the event handler
 local function OnFriendListUpdate()
-    -- print(addonName .. " DEBUG: FRIENDLIST_UPDATE triggered.") -- Optional Debug
     -- Iterate through all friends to see who just came online or whose info changed.
-    -- This event fires for various reasons (login, logout, bnet status change, note change).
     for i = 1, GetNumFriends() do
-        local name, level, classToken, area, connected, status = GetFriendInfo(i)
-        if name and connected and status == "" then -- status == "" often means "Online" (not AFK/DND)
+        local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i)
+        if name and connected then -- Check if 'connected' is true
             local lowerName = string.lower(name)
-            -- We want to notify if they are:
-            -- 1. Now online
-            -- 2. Under level 10
-            -- 3. Haven't been notified this session for being low level and online
-            -- This check will naturally happen if their 'connected' status changed to true.
-            -- The NotifyPlayerOnlineUnderLevel function itself contains the ns.notifiedLowLevelFriendsThisSession check.
-            if level then -- Ensure level is available
-                NotifyPlayerOnlineUnderLevel(name, level, classToken, area, "friend_online_event")
+            ns.playerNotificationStatus[lowerName] = ns.playerNotificationStatus[lowerName] or {}
+
+            if ns.playerNotificationStatus[lowerName].clipLevel then
+                NotifyPlayerLevelDrop(name, currentActualLevel, ns.playerNotificationStatus[lowerName].clipLevel, classToken, area, "friend_online_event")
             end
         end
     end
 end
 
-
 -- Event Handling & Filter Registration
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
-eventFrame:RegisterEvent("FRIENDLIST_UPDATE") -- New event for friend online status
+eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
 
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == addonName then
         ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
-        ns.notifiedLowLevelFriendsThisSession = ns.notifiedLowLevelFriendsThisSession or {}
+        ns.playerNotificationStatus = ns.playerNotificationStatus or {}
+        ns.statusTooltipJustShown = false -- Initialize flag
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
     elseif event == "FRIENDLIST_UPDATE" then
-        OnFriendListUpdate()
+        OnFriendListUpdate() -- Ensure OnFriendListUpdate is defined
     end
 end)
+
