@@ -907,146 +907,128 @@ function OFDeathClipsRatingWidget_OnLoad(self)
             count:Hide()
         end
     end
+end
 
 
+function GoAgainAH_ClipItemActions_Popup_OnLoad(popupFrame)
+    local popupFrameName = popupFrame:GetName()
 
+    local action1Button = _G[popupFrameName .. "Action1"]
+    local action2Button = _G[popupFrameName .. "Action2"] -- We'll rename this in XML to Action2
+    local titleText = _G[popupFrameName .. "Title"]
 
-    -- (addonName, ns, and L are assumed to be defined at the top of your file)
+    if not action1Button or not action2Button or not titleText then
+        print(addonName .. ": Error: One or more child frames of OFClipItemActionsPopup not found during OnLoad setup.")
+        return
+    end
 
-    -- ns.currentClipActionsIconOwner = nil (This should also be defined once, likely near your ns table creation)
-
-    -- This function will be called by the popup's OnLoad in XML
-    function GoAgainAH_ClipItemActions_Popup_OnLoad(popupFrame)
-        -- popupFrame is the OFClipItemActionsPopup frame
-        local popupFrameName = popupFrame:GetName()
-
-        -- Using ns.L directly as L is already in the file's scope via ns.L
-        local L_POPUP = ns.L
-
-        local action1Button = _G[popupFrameName .. "Action1"]
-        local copyIDButton = _G[popupFrameName .. "CopyIDButton"]
-        local titleText = _G[popupFrameName .. "Title"]
-
-        if not action1Button or not copyIDButton or not titleText then
-            print(addonName .. ": Error: One or more child frames of OFClipItemActionsPopup not found during OnLoad setup.")
-            return
+    -- Action 1: Whisper Character ("Шёпот")
+    action1Button:SetScript("OnClick", function(self)
+        local owningPopup = self:GetParent()
+        if owningPopup.clipData and owningPopup.clipData.characterName then
+            local characterToWhisper = owningPopup.clipData.characterName
+            if ChatFrame_SendTell then
+                ChatFrame_SendTell(characterToWhisper)
+                -- print(addonName .. ": Initiated whisper to " .. characterToWhisper)
+            end
         end
+        owningPopup:Hide()
+        ns.currentClipActionsIconOwner = nil
+    end)
 
-        -- Setup Action 1 Button: Whisper Character
-        action1Button:SetScript("OnClick", function(self)
-            local owningPopup = self:GetParent() -- OFClipItemActionsPopup
-            if owningPopup.clipData and owningPopup.clipData.characterName then
-                local characterToWhisper = owningPopup.clipData.characterName
-                if ChatFrame_SendTell then -- Check if the function exists (it should in 3.3.5a)
-                    ChatFrame_SendTell(characterToWhisper)
-                    print(addonName .. ": Initiated whisper to " .. characterToWhisper)
-                else
-                    print(addonName .. ": ChatFrame_SendTell function not found.")
+    -- Action 2: Add Friend ("Добавить в друзья")
+    action2Button:SetScript("OnClick", function(self)
+        local owningPopup = self:GetParent()
+        if owningPopup.clipData and owningPopup.clipData.characterName then
+            local characterToAdd = owningPopup.clipData.characterName
+            if AddFriend then -- Check if the Blizzard API function exists
+                AddFriend(characterToAdd)
+                -- You might want to print a confirmation or use SendSystemMessage
+                print(addonName .. ": Attempted to add " .. characterToAdd .. " as a friend.")
+                if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("Предложение дружбы отправлено %s.", characterToAdd))
                 end
-            elseif owningPopup.clipData then
-                print(addonName .. ": Cannot whisper, characterName not found in clipData. Clip ID: " .. tostring(owningPopup.clipData.id))
             else
-                print(addonName .. ": Cannot whisper, no clipData available.")
+                print(addonName .. ": AddFriend function not found.")
             end
-            owningPopup:Hide()
-            ns.currentClipActionsIconOwner = nil
-        end)
+        elseif owningPopup.clipData then
+            print(addonName .. ": Cannot add friend, characterName not found in clipData. Clip ID: " .. tostring(owningPopup.clipData.id))
+        else
+            print(addonName .. ": Cannot add friend, no clipData available.")
+        end
+        owningPopup:Hide()
+        ns.currentClipActionsIconOwner = nil
+    end)
 
-        -- Setup Copy ID Button (remains the same)
-        copyIDButton:SetScript("OnClick", function(self)
-            local owningPopup = self:GetParent()
-            if owningPopup.clipData and owningPopup.clipData.id then
-                if ChatEdit_SetText then
-                    ChatEdit_SetText(DEFAULT_CHAT_FRAME.editBox, owningPopup.clipData.id)
-                    DEFAULT_CHAT_FRAME.editBox:AddMessage(string.format(L_POPUP["CLIP_ID_COPIED_MSG"] or "Clip ID (%s) copied.", owningPopup.clipData.id))
-                    PlaySound(SOUNDKIT.UI_CHAT_MSG_ADDRESSED_TO_SELF)
-                end
-            end
-            owningPopup:Hide()
-            ns.currentClipActionsIconOwner = nil
-        end)
+    -- Set initial texts (these will be updated in OnClick if dynamic text is needed)
+    titleText:SetText("Действия") -- "Actions"
+    action1Button:SetText("Шёпот")  -- "Whisper"
+    action2Button:SetText("Добавить в друзья") -- "Add to Friends"
+end
 
-        -- Set initial texts
-        titleText:SetText(L_POPUP["L_CLIP_ACTIONS_TITLE"] or "Clip Actions")
-        action1Button:SetText(L_POPUP["L_ACTION1_WHISPER_TEXT"] or "Whisper") -- New localization key
-        copyIDButton:SetText(L_POPUP["L_COPY_CLIP_ID_TEXT"] or "Copy ID")
+-- GoAgainAH_ClipItemActions_OnClick function (needs a small update for the Action1 button text if dynamic)
+function GoAgainAH_ClipItemActions_OnClick(iconButton)
+    local popup = _G["OFClipItemActionsPopup"]
+    if not popup then
+        print(addonName .. ": OFClipItemActionsPopup frame not found.")
+        return
     end
 
-    -- GoAgainAH_ClipItemActions_OnClick function (needs a small update for the Action1 button text if dynamic)
-    function GoAgainAH_ClipItemActions_OnClick(iconButton)
-        -- (L_POPUP is ns.L, defined within this function or accessible)
-        local L_POPUP = ns.L
+    local popupFrameName = popup:GetName()
+    local titleText = _G[popupFrameName .. "Title"]
+    local action1Button = _G[popupFrameName .. "Action1"]
+    local action2Button = _G[popupFrameName .. "Action2"] -- Will be Action2 after XML change
 
-        local popup = _G["OFClipItemActionsPopup"]
-        if not popup then
-            print(addonName .. ": OFClipItemActionsPopup frame not found.")
-            return
-        end
-
-        local popupFrameName = popup:GetName()
-        local titleText = _G[popupFrameName .. "Title"]
-        local action1Button = _G[popupFrameName .. "Action1"]
-        local copyIDButton = _G[popupFrameName .. "CopyIDButton"]
-
-        if not titleText or not action1Button or not copyIDButton then
-            print(addonName .. ": Error: One or more child frames of OFClipItemActionsPopup not found during OnClick.")
-            return
-        end
-
-        local mainRowButton = iconButton:GetParent()
-        local clipData = mainRowButton and mainRowButton.clipData
-
-        if not clipData then
-            popup:Hide()
-            ns.currentClipActionsIconOwner = nil
-            print(addonName .. ": No clipData for actions popup.")
-            return
-        end
-
-        if popup:IsShown() and ns.currentClipActionsIconOwner == iconButton then
-            popup:Hide()
-            ns.currentClipActionsIconOwner = nil
-            return
-        elseif popup:IsShown() then
-            popup:Hide()
-        end
-
-        popup.clipData = clipData
-
-        titleText:SetText(L_POPUP["L_CLIP_ACTIONS_TITLE"] or "Clip Actions")
-
-        -- Update Action1 button text to be more specific if desired
-        if clipData.characterName then
-            action1Button:SetText(string.format(L_POPUP["L_ACTION1_WHISPER_PLAYER_TEXT"] or "Whisper %s", clipData.characterName))
-        else
-            action1Button:SetText(L_POPUP["L_ACTION1_WHISPER_TEXT"] or "Whisper") -- Fallback
-        end
-        action1Button:SetEnabled(clipData.characterName ~= nil) -- Enable only if there's a name
-
-        if clipData.id then
-            copyIDButton:SetText(string.format(L_POPUP["L_COPY_CLIP_ID_TEXT_FORMATTED"] or "Copy ID: %s", clipData.id))
-            copyIDButton:Show()
-        else
-            copyIDButton:Hide()
-        end
-
-        popup:ClearAllPoints()
-        popup:SetPoint("TOPLEFT", iconButton, "BOTTOMLEFT", 0, -2)
-        popup:SetFrameLevel(iconButton:GetFrameLevel() + 10)
-        popup:Show()
-
-        ns.currentClipActionsIconOwner = iconButton
+    if not titleText or not action1Button or not action2Button then
+        print(addonName .. ": Error: One or more child frames of OFClipItemActionsPopup not found during OnClick.")
+        return
     end
 
-    -- (The rest of the helper functions like GoAgainAH_ClipItemActions_GetNamespace and ns.HideClipActionsPopupIfShown remain the same)
+    local mainRowButton = iconButton:GetParent()
+    local clipData = mainRowButton and mainRowButton.clipData
 
-    -- Add/Update relevant localization strings to your ns.L table:
-    -- ns.L["L_CLIP_ACTIONS_TITLE"] = "Clip Options"
-    -- ns.L["L_ACTION1_WHISPER_TEXT"] = "Whisper" -- General text for OnLoad
-    -- ns.L["L_ACTION1_WHISPER_PLAYER_TEXT"] = "Whisper %s" -- Specific text when player name is known
-    -- ns.L["L_COPY_CLIP_ID_TEXT_FORMATTED"] = "Copy ID: %s"
-    -- ns.L["L_COPY_CLIP_ID_TEXT"] = "Copy ID"
-    -- ns.L["CLIP_ID_COPIED_MSG"] = "Clip ID (%s) copied to chat."
+    if not clipData then
+        popup:Hide()
+        ns.currentClipActionsIconOwner = nil
+        print(addonName .. ": No clipData for actions popup.")
+        return
+    end
+
+    if popup:IsShown() and ns.currentClipActionsIconOwner == iconButton then
+        popup:Hide()
+        ns.currentClipActionsIconOwner = nil
+        return
+    elseif popup:IsShown() then
+        popup:Hide()
+    end
+
+    popup.clipData = clipData
+
+    titleText:SetText("Действия") -- "Actions"
+
+    -- Update Action1 (Whisper) button
+    if clipData.characterName then
+        action1Button:SetText(string.format("Шёпот: %s", clipData.characterName))
+    else
+        action1Button:SetText("Шёпот")
+    end
+    action1Button:SetEnabled(clipData.characterName ~= nil)
+
+    -- Update Action2 (Add Friend) button
+    if clipData.characterName then
+        action2Button:SetText(string.format("В друзья: %s", clipData.characterName))
+    else
+        action2Button:SetText("Добавить в друзья")
+    end
+    action2Button:SetEnabled(clipData.characterName ~= nil)
+
+
+    popup:ClearAllPoints()
+    popup:SetPoint("TOPLEFT", iconButton, "BOTTOMLEFT", 0, -2)
+    popup:SetFrameLevel(iconButton:GetFrameLevel() + 10)
+    popup:Show()
+
+    ns.currentClipActionsIconOwner = iconButton
 end
 
 
