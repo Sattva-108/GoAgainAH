@@ -1,62 +1,80 @@
-<Ui xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\Blizzard_SharedXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
+<Ui xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\Blizzard_SharedXML\UI.xsd"
+    xmlns="http://www.blizzard.com/wow/ui/">
     <Button name="OFDeathClipsButtonTemplate" virtual="true" hidden="true">
         <Size>
-            <AbsDimension x="793" y="37" />
+            <AbsDimension x="793" y="37"/>
         </Size>
         <Layers>
             <Layer level="BACKGROUND">
                 <!-- Name -->
                 <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
-                    <Size><AbsDimension x="100" y="32" /></Size>
+                    <Size>
+                        <AbsDimension x="100" y="32"/>
+                    </Size>
                     <Anchors>
                         <Anchor point="TOPLEFT">
-                            <Offset><AbsDimension x="41" y="0" /></Offset>
+                            <Offset>
+                                <AbsDimension x="41" y="0"/>
+                            </Offset>
                         </Anchor>
                     </Anchors>
                 </FontString>
 
                 <!-- Level -->
                 <FontString name="$parentLevel" inherits="GameFontNormalLarge">
-                    <Size><AbsDimension x="50" y="32" /></Size>
+                    <Size>
+                        <AbsDimension x="50" y="32"/>
+                    </Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" x="-10" />
+                        <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT" x="-10"/>
                     </Anchors>
                 </FontString>
 
                 <!-- Decorative Textures -->
                 <Texture name="$parentLeft" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-                    <Size><AbsDimension x="10" y="32" /></Size>
+                    <Size>
+                        <AbsDimension x="10" y="32"/>
+                    </Size>
                     <Anchors>
                         <Anchor point="LEFT">
-                            <Offset><AbsDimension x="34" y="2" /></Offset>
+                            <Offset>
+                                <AbsDimension x="34" y="2"/>
+                            </Offset>
                         </Anchor>
                     </Anchors>
-                    <TexCoords left="0" right="0.078125" top="0" bottom="1" />
+                    <TexCoords left="0" right="0.078125" top="0" bottom="1"/>
                 </Texture>
                 <Texture name="$parentRight" file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-                    <Size><AbsDimension x="10" y="32" /></Size>
+                    <Size>
+                        <AbsDimension x="10" y="32"/>
+                    </Size>
                     <Anchors>
                         <Anchor point="RIGHT">
-                            <Offset><AbsDimension x="0" y="2" /></Offset>
+                            <Offset>
+                                <AbsDimension x="0" y="2"/>
+                            </Offset>
                         </Anchor>
                     </Anchors>
-                    <TexCoords left="0.75" right="0.828125" top="0" bottom="1" />
+                    <TexCoords left="0.75" right="0.828125" top="0" bottom="1"/>
                 </Texture>
                 <Texture file="Interface\AuctionFrame\UI-AuctionItemNameFrame">
-                    <Size><AbsDimension x="10" y="32" /></Size>
+                    <Size>
+                        <AbsDimension x="10" y="32"/>
+                    </Size>
                     <Anchors>
                         <Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
                             <Offset>
-                                <AbsDimension x="0" y="0" />
+                                <AbsDimension x="0" y="0"/>
                             </Offset>
                         </Anchor>
                         <Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
                             <Offset>
-                                <AbsDimension x="0" y="0" />
+                                <AbsDimension x="0" y="0"/>
                             </Offset>
                         </Anchor>
                     </Anchors>
-                    <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
+                    <TexCoords left="0.078125" right="0.75" top="0" bottom="1"/>
                 </Texture>
             </Layer>
         </Layers>
@@ -64,15 +82,20 @@
         <Frames>
             <!-- Icon Button -->
             <Button name="$parentItem">
-                <Size><AbsDimension x="32" y="32" /></Size>
+                <Size>
+                    <AbsDimension x="32" y="32"/>
+                </Size>
                 <Anchors>
                     <Anchor point="TOPLEFT">
-                        <Offset><AbsDimension x="0" y="0" /></Offset>
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
                     </Anchor>
                 </Anchors>
                 <Layers>
                     <Layer level="BORDER">
-                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01" alphaMode="BLEND" alpha="0.60" />
+                        <Texture name="$parentIconTexture" file="interface/icons/inv_misc_bone_humanskull_01"
+                                 alphaMode="BLEND" alpha="0.60"/>
                     </Layer>
                 </Layers>
                 <Scripts>
@@ -92,96 +115,102 @@
                     </OnClick>
                 </Scripts>
                 <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
-                    <Size><AbsDimension x="60" y="60" /></Size>
+                    <Size>
+                        <AbsDimension x="60" y="60"/>
+                    </Size>
                     <Anchors>
-                        <Anchor point="CENTER"><Offset><AbsDimension x="0" y="0" /></Offset></Anchor>
+                        <Anchor point="CENTER">
+                            <Offset>
+                                <AbsDimension x="0" y="0"/>
+                            </Offset>
+                        </Anchor>
                     </Anchors>
                 </NormalTexture>
-                <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
-                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+                <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
             </Button>
 
-            <!-- Custom Actions Popup Frame (can be in the same file or a separate one) -->
-            <Frame name="OFClipItemActionsPopup" parent="UIParent" hidden="true" frameStrata="DIALOG" clampedToScreen="true">
-                <Size x="200" y="100"/> <!-- Adjusted size for 2 buttons + title -->
-                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
-                          edgeFile="Interface\DialogFrame\UI-DialogBox-Border"
-                          tile="true">
-                    <EdgeSize val="32"/>
-                    <TileSize val="32"/>
-                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>
-                </Backdrop>
+            <Frame name="OFClipItemActionsPopup" parent="UIParent" hidden="true" frameStrata="DIALOG"
+                   clampedToScreen="true" inherits="InsetFrameTemplate">
+                <Size x="220" y="95"/>
                 <Layers>
                     <Layer level="ARTWORK">
-                        <FontString name="$parentTitle" inherits="GameFontNormal" text="CLIP_ACTIONS_TITLE_PLACEHOLDER">
+                        <FontString name="$parentTitle" inherits="GameFontNormal" text="Действия">
                             <Anchors>
-                                <Anchor point="TOP" x="0" y="-12"/>
+                                <Anchor point="TOP" x="0" y="-8"/>
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
                 <Frames>
-                    <Button name="$parentAction1" inherits="UIPanelButtonTemplate" text="ACTION1_PLACEHOLDER">
-                        <Size x="170" y="22"/>
+                    <Button name="$parentAction1" inherits="UIPanelButtonTemplate" text="Шёпот">
+                        <Size x="180" y="22"/>
                         <Anchors>
-                            <Anchor point="TOP" relativeTo="$parentTitle" relativePoint="BOTTOM" x="0" y="-10"/>
+                            <Anchor point="TOPLEFT" x="18" y="-28"/>
                         </Anchors>
                     </Button>
-                    <Button name="$parentAction2" inherits="UIPanelButtonTemplate" text="COPY_ID_PLACEHOLDER">
-                        <Size x="170" y="22"/>
+                    <Button name="$parentAction2" inherits="UIPanelButtonTemplate" text="Добавить в друзья">
+                        <Size x="180" y="22"/>
                         <Anchors>
                             <Anchor point="TOP" relativeTo="$parentAction1" relativePoint="BOTTOM" x="0" y="-5"/>
                         </Anchors>
                     </Button>
+                    <Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" x="-6" y="-5"/>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                self:GetParent():Hide();
+                                -- Resetting owner directly in Lua via the Hide() hook is cleaner
+                            </OnClick>
+                        </Scripts>
+                    </Button>
                 </Frames>
                 <Scripts>
                     <OnLoad>
-
-
-<!--                        self:SetPropagateKeyboardInput(true);-->
-                        C_Timer:After(10, function()
-                        self:EnableKeyboard(true);
-
-                        GoAgainAH_ClipItemActions_Popup_OnLoad(self); -- Call Lua setup for this popup
-
-                        end)
+                        GoAgainAH_ClipItemActions_Popup_OnLoad(self);
                     </OnLoad>
-                    <OnKeyDown>
-                        if key == "ESCAPE" and self:IsShown() then
-                        self:Hide();
-                        if _G.GoAgainAH_ClipItemActions_GetNamespace and _G.GoAgainAH_ClipItemActions_GetNamespace().currentClipActionsIconOwner then
-                        _G.GoAgainAH_ClipItemActions_GetNamespace().currentClipActionsIconOwner = nil;
-                        end
-<!--                        PlaySound(SOUNDKIT.UI_IG_MAINMENU_OPTION_CHECKBOX_ON);-->
-                        end
-                    </OnKeyDown>
+                    <!-- OnShow and OnHide are removed from here, will be hooked in Lua -->
+                    <!-- OnKeyDown can be removed if ESC handling is done differently or not needed on this frame -->
                 </Scripts>
             </Frame>
 
+
             <!-- Clip Link -->
             <Frame name="$parentClip">
-                <Size><AbsDimension x="200" y="32" /></Size>
+                <Size>
+                    <AbsDimension x="200" y="32"/>
+                </Size>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="0" />
+                    <Anchor point="LEFT" relativeTo="$parentLevel" relativePoint="RIGHT" x="0"/>
                 </Anchors>
                 <Layers>
                     <Layer>
                         <!-- Mob Level on the left -->
                         <FontString name="$parentMobLevel" inherits="GameFontNormalLarge" justifyH="RIGHT">
-                            <Size><AbsDimension x="25" y="32" /></Size>
+                            <Size>
+                                <AbsDimension x="25" y="32"/>
+                            </Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset><AbsDimension x="0" y="0" /></Offset>
+                                    <Offset>
+                                        <AbsDimension x="0" y="0"/>
+                                    </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
 
                         <!-- ClipText (mob name) to the right of Mob Level with 15px spacing -->
                         <FontString name="$parentText" inherits="GameFontNormal" justifyH="LEFT">
-                            <Size><AbsDimension x="170" y="32" /></Size>
+                            <Size>
+                                <AbsDimension x="170" y="32"/>
+                            </Size>
                             <Anchors>
                                 <Anchor point="LEFT" relativeTo="$parentMobLevel" relativePoint="RIGHT">
-                                    <Offset><AbsDimension x="5" y="0" /></Offset>
+                                    <Offset>
+                                        <AbsDimension x="5" y="0"/>
+                                    </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
@@ -191,17 +220,23 @@
 
             <!-- Where -->
             <Frame name="$parentWhere">
-                <Size><AbsDimension x="135" y="32"/></Size>
+                <Size>
+                    <AbsDimension x="135" y="32"/>
+                </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentClip" relativePoint="RIGHT" x="10"/>
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontNormal">
-                            <Size><AbsDimension x="125" y="32"/></Size>
+                            <Size>
+                                <AbsDimension x="125" y="32"/>
+                            </Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset><AbsDimension x="5" y="0"/></Offset>
+                                    <Offset>
+                                        <AbsDimension x="5" y="0"/>
+                                    </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
@@ -211,17 +246,23 @@
 
             <!-- Class -->
             <Frame name="$parentClass">
-                <Size><AbsDimension x="55" y="32"/></Size>
+                <Size>
+                    <AbsDimension x="55" y="32"/>
+                </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentWhere" relativePoint="RIGHT" x="-10"/>
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-                            <Size><AbsDimension x="55" y="32"/></Size>
+                            <Size>
+                                <AbsDimension x="55" y="32"/>
+                            </Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                    <Offset>
+                                        <AbsDimension x="0" y="0"/>
+                                    </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
@@ -231,17 +272,23 @@
 
             <!-- Race -->
             <Frame name="$parentRace">
-                <Size><AbsDimension x="55" y="32"/></Size>
+                <Size>
+                    <AbsDimension x="55" y="32"/>
+                </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentClass" relativePoint="RIGHT" x="5"/>
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                            <Size><AbsDimension x="55" y="32"/></Size>
+                            <Size>
+                                <AbsDimension x="55" y="32"/>
+                            </Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                    <Offset>
+                                        <AbsDimension x="0" y="0"/>
+                                    </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
@@ -251,37 +298,45 @@
 
             <!-- When -->
             <Frame name="$parentWhen">
-                <Size><AbsDimension x="55" y="32"/></Size>
+                <Size>
+                    <AbsDimension x="55" y="32"/>
+                </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentRace" relativePoint="RIGHT" x="0"/>
                 </Anchors>
                 <Layers>
                     <Layer>
                         <FontString name="$parentText" inherits="GameFontNormalLarge">
-                            <Size><AbsDimension x="55" y="32"/></Size>
+                            <Size>
+                                <AbsDimension x="55" y="32"/>
+                            </Size>
                             <Anchors>
                                 <Anchor point="TOPLEFT">
-                                    <Offset><AbsDimension x="0" y="0"/></Offset>
+                                    <Offset>
+                                        <AbsDimension x="0" y="0"/>
+                                    </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
-<!--                <Scripts>-->
-<!--                    <OnLoad>-->
-<!--                        self:SetScale(1.5)-->
-<!--                    </OnLoad>-->
-<!--                </Scripts>-->
+                <!--                <Scripts>-->
+                <!--                    <OnLoad>-->
+                <!--                        self:SetScale(1.5)-->
+                <!--                    </OnLoad>-->
+                <!--                </Scripts>-->
             </Frame>
 
             <!-- Rating Frame -->
             <Frame name="$parentRating" enableMouse="false">
-                <Size><AbsDimension x="42" y="32" /></Size>
+                <Size>
+                    <AbsDimension x="42" y="32"/>
+                </Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentWhen" relativePoint="RIGHT" x="5"/>
                 </Anchors>
                 <Scripts>
-                    <OnLoad function="OFDeathClipsRatingWidget_OnLoad" />
+                    <OnLoad function="OFDeathClipsRatingWidget_OnLoad"/>
                 </Scripts>
             </Frame>
         </Frames>
@@ -293,22 +348,22 @@
         </Scripts>
         <HighlightTexture name="$parentHighlight" file="Interface\HelpFrame\HelpFrameButton-Highlight" alphaMode="ADD">
             <Size>
-                <AbsDimension x="761" y="32" />
+                <AbsDimension x="761" y="32"/>
             </Size>
             <Anchors>
                 <Anchor point="TOPLEFT">
                     <Offset>
-                        <AbsDimension x="33" y="0" />
+                        <AbsDimension x="33" y="0"/>
                     </Offset>
                 </Anchor>
             </Anchors>
-            <TexCoords left="0" right="1" top="0" bottom="0.578125" />
+            <TexCoords left="0" right="1" top="0" bottom="0.578125"/>
         </HighlightTexture>
     </Button>
 
     <Frame name="OFDeathClipReviewEntryTemplate" virtual="true" hidden="true">
         <Size>
-            <AbsDimension x="350" y="80" />
+            <AbsDimension x="350" y="80"/>
         </Size>
         <Layers>
             <Layer level="BACKGROUND">
@@ -323,10 +378,10 @@
                 <Scripts>
                     <OnLoad>
                         self:SetBackdrop({
-                            bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-                            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-                            tile = true, tileSize = 16, edgeSize = 16,
-                            insets = { left = 3, right = 3, top = 5, bottom = 3 }
+                        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+                        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                        tile = true, tileSize = 16, edgeSize = 16,
+                        insets = { left = 3, right = 3, top = 5, bottom = 3 }
                         })
                         self:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
                         self:SetBackdropBorderColor(0.4, 0.4, 0.4)
@@ -335,8 +390,8 @@
             </Frame>
             <Frame parentKey="content">
                 <Anchors>
-                    <Anchor point="TOPLEFT" />
-                    <Anchor point="BOTTOMRIGHT" />
+                    <Anchor point="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT"/>
                 </Anchors>
                 <Layers>
                     <Layer level="ARTWORK">
@@ -346,7 +401,7 @@
                                 <Anchor point="TOPLEFT" x="5" y="-5"/>
                             </Anchors>
                         </Texture>
-                       <FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
+                        <FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
                             <Anchors>
                                 <Anchor point="TOPLEFT" x="7" y="-7"/>
                             </Anchors>
@@ -363,10 +418,11 @@
                     <Frame parentKey="ratingFrame">
                         <Size x="90" y="32"/>
                         <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="$parentFactionIcon" relativePoint="BOTTOMLEFT" x="2" y="20"/>
+                            <Anchor point="TOPLEFT" relativeTo="$parentFactionIcon" relativePoint="BOTTOMLEFT" x="2"
+                                    y="20"/>
                         </Anchors>
                     </Frame>
-               </Frames>
+                </Frames>
             </Frame>
         </Frames>
     </Frame>
@@ -386,12 +442,12 @@
         <Frames>
             <ScrollFrame parentKey="scrollFrame" inherits="FauxScrollFrameTemplate">
                 <Size>
-                    <AbsDimension x="350" y="329" />
+                    <AbsDimension x="350" y="329"/>
                 </Size>
                 <Anchors>
                     <Anchor point="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="0" y="0" />
+                            <AbsDimension x="0" y="0"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -438,10 +494,10 @@
             </Frame>
             <Button parentKey="writeReviewButton" inherits="UIPanelButtonTemplate" text="L_WRITE_REVIEW">
                 <Size>
-                    <AbsDimension x="380" y="40" />
+                    <AbsDimension x="380" y="40"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="BOTTOM" x="15" y="-50" />
+                    <Anchor point="BOTTOM" x="15" y="-50"/>
                 </Anchors>
             </Button>
         </Frames>

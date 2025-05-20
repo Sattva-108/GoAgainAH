@@ -910,45 +910,40 @@ function OFDeathClipsRatingWidget_OnLoad(self)
 end
 
 
--- (addonName, ns, and L are assumed to be defined at the top of your file)
--- (ns.currentClipActionsIconOwner should be defined once)
+-- (addonName and ns are assumed to be defined at the top of your file)
+-- (ns.currentClipActionsIconOwner should be defined once, e.g., ns.currentClipActionsIconOwner = nil)
 
 function GoAgainAH_ClipItemActions_Popup_OnLoad(popupFrame)
     local popupFrameName = popupFrame:GetName()
-    print(addonName .. ": GoAgainAH_ClipItemActions_Popup_OnLoad called for " .. popupFrameName)
+    -- print(addonName .. ": Popup_OnLoad for " .. popupFrameName) -- Optional debug
 
-    -- Child frame names based on the XML:
-    -- $parentTitle -> OFClipItemActionsPopupTitle
-    -- $parentAction1 -> OFClipItemActionsPopupAction1
-    -- $parentAction2 -> OFClipItemActionsPopupAction2  <-- Corrected
+    -- Set an initial strata and level for the popup.
+    -- GoAgainAH_ClipItemActions_OnClick will re-assert this right before showing.
+    popupFrame:SetFrameStrata("DIALOG")
+    popupFrame:SetFrameLevel(50)
 
     local titleText = _G[popupFrameName .. "Title"]
     local action1Button = _G[popupFrameName .. "Action1"]
-    local action2Button = _G[popupFrameName .. "Action2"] -- CORRECTED: Was Action2Button
-
-    -- Debugging child frame fetching
-    if not titleText then print(addonName .. ": Popup_OnLoad: Title (_G["..popupFrameName.."Title]) not found!") end
-    if not action1Button then print(addonName .. ": Popup_OnLoad: Action1 (_G["..popupFrameName.."Action1]) not found!") end
-    if not action2Button then print(addonName .. ": Popup_OnLoad: Action2 (_G["..popupFrameName.."Action2]) not found!") end -- CORRECTED
+    local action2Button = _G[popupFrameName .. "Action2"]
 
     if not titleText or not action1Button or not action2Button then
-        print(addonName .. ": Error: One or more child frames of " .. popupFrameName .. " not found during OnLoad setup.")
+        print(addonName .. ": ERROR in Popup_OnLoad: Child frames not found for " .. popupFrameName)
         return
     end
 
-    -- Action 1: Whisper Character ("Шёпот")
-    action1Button:SetScript("OnClick", function(self)
-        local owningPopup = self:GetParent()
+    action1Button:SetScript("OnClick", function(self_button)
+        local owningPopup = self_button:GetParent()
+        -- print(addonName .. ": Action1Button Clicked.") -- Optional debug
         if owningPopup.clipData and owningPopup.clipData.characterName then
             if ChatFrame_SendTell then ChatFrame_SendTell(owningPopup.clipData.characterName) end
         end
         owningPopup:Hide()
-        ns.currentClipActionsIconOwner = nil
+        if ns then ns.currentClipActionsIconOwner = nil end -- Reset owner
     end)
 
-    -- Action 2: Add Friend ("Добавить в друзья")
-    action2Button:SetScript("OnClick", function(self)
-        local owningPopup = self:GetParent()
+    action2Button:SetScript("OnClick", function(self_button)
+        local owningPopup = self_button:GetParent()
+        -- print(addonName .. ": Action2Button Clicked.") -- Optional debug
         if owningPopup.clipData and owningPopup.clipData.characterName then
             if AddFriend then
                 AddFriend(owningPopup.clipData.characterName)
@@ -958,7 +953,7 @@ function GoAgainAH_ClipItemActions_Popup_OnLoad(popupFrame)
             end
         end
         owningPopup:Hide()
-        ns.currentClipActionsIconOwner = nil
+        if ns then ns.currentClipActionsIconOwner = nil end -- Reset owner
     end)
 
     titleText:SetText("Действия")
@@ -966,169 +961,82 @@ function GoAgainAH_ClipItemActions_Popup_OnLoad(popupFrame)
     action2Button:SetText("Добавить в друзья")
 end
 
-
 function GoAgainAH_ClipItemActions_OnClick(iconButton)
+    -- print(addonName .. ": ClipItem_OnClick triggered.") -- Optional debug
     local popup = _G["OFClipItemActionsPopup"]
-    if not popup then
-        print(addonName .. ": OFClipItemActionsPopup frame not found AT ALL in OnClick.")
-        return
-    end
+    if not popup then print(addonName .. ": ERROR: OFClipItemActionsPopup frame not found AT ALL in OnClick.") return end
 
     local mainRowButton = iconButton:GetParent()
     local clipData = mainRowButton and mainRowButton.clipData
-
     if not clipData then
+        -- print(addonName .. ": No clipData found.") -- Optional debug
         if popup:IsShown() then popup:Hide() end
-        ns.currentClipActionsIconOwner = nil
+        if ns then ns.currentClipActionsIconOwner = nil end
         return
     end
 
     local playerFaction = UnitFactionGroup("player")
     local targetFaction = clipData.faction
-
     if not targetFaction or not playerFaction or (playerFaction ~= targetFaction) then
+        -- print(addonName .. ": Faction mismatch.") -- Optional debug
         if popup:IsShown() then popup:Hide() end
-        ns.currentClipActionsIconOwner = nil
+        if ns then ns.currentClipActionsIconOwner = nil end
         return
     end
 
     if popup:IsShown() and ns.currentClipActionsIconOwner == iconButton then
+        -- print(addonName .. ": Popup shown for same button. Hiding.") -- Optional debug
         popup:Hide()
-        ns.currentClipActionsIconOwner = nil
+        if ns then ns.currentClipActionsIconOwner = nil end
         return
     elseif popup:IsShown() then
-        popup:Hide()
-    end
-
-    local popupFrameName = popup:GetName()
-    local titleText = _G[popupFrameName .. "Title"]
-    local action1Button = _G[popupFrameName .. "Action1"]
-    local action2Button = _G[popupFrameName .. "Action2"] -- CORRECTED: Was Action2Button
-
-    if not titleText then print(addonName .. ": OnClick: Title (_G["..popupFrameName.."Title]) not found AFTER faction check!") end
-    if not action1Button then print(addonName .. ": OnClick: Action1 (_G["..popupFrameName.."Action1]) not found AFTER faction check!") end
-    if not action2Button then print(addonName .. ": OnClick: Action2 (_G["..popupFrameName.."Action2]) not found AFTER faction check!") end -- CORRECTED
-
-    if not titleText or not action1Button or not action2Button then
-        print(addonName .. ": Error: One or more child frames of " .. popupFrameName .. " not found during OnClick (after faction check).")
-        if popup:IsShown() then popup:Hide() end
-        ns.currentClipActionsIconOwner = nil
-        return
-    end
-
-    popup.clipData = clipData
-    titleText:SetText("Действия")
-
-    if clipData.characterName then
-        action1Button:SetText(string.format("Шёпот: %s", clipData.characterName))
-        action2Button:SetText(string.format("В друзья: %s", clipData.characterName))
-    else
-        action1Button:SetText("Шёпот")
-        action2Button:SetText("Добавить в друзья")
-    end
-    action1Button:SetEnabled(clipData.characterName ~= nil)
-    action2Button:SetEnabled(clipData.characterName ~= nil)
-
-    popup:ClearAllPoints()
-    popup:SetPoint("TOPLEFT", iconButton, "BOTTOMLEFT", 0, -2)
-    popup:SetFrameLevel(iconButton:GetFrameLevel() + 10)
-    popup:Show()
-    ns.currentClipActionsIconOwner = iconButton
-end
-
--- (GoAgainAH_ClipItemActions_GetNamespace and ns.HideClipActionsPopupIfShown remain the same)
-
--- GoAgainAH_ClipItemActions_OnClick function (needs a small update for the Action1 button text if dynamic)
--- (addonName, ns, and L are assumed to be defined at the top of your file)
--- (ns.currentClipActionsIconOwner should be defined once)
-
-function GoAgainAH_ClipItemActions_OnClick(iconButton)
-    local popup = _G["OFClipItemActionsPopup"]
-    if not popup then
-        print(addonName .. ": OFClipItemActionsPopup frame not found.")
-        return
-    end
-
-    local mainRowButton = iconButton:GetParent()
-    local clipData = mainRowButton and mainRowButton.clipData
-
-    if not clipData then
-        -- print(addonName .. ": No clipData for actions popup.") -- Potentially spammy, can be removed
-        if popup:IsShown() then popup:Hide() end
-        ns.currentClipActionsIconOwner = nil
-        return
-    end
-
-    -- Faction Check
-    local playerFaction = UnitFactionGroup("player")
-    local targetFaction = clipData.faction -- Assuming clipData.faction holds "Alliance" or "Horde"
-
-    -- For 3.3.5a, Whisper and Add Friend are typically same-faction only.
-    -- If targetFaction is nil or doesn't match, don't show the menu.
-    if not targetFaction or not playerFaction or (playerFaction ~= targetFaction) then
-        -- print(addonName .. ": Faction mismatch. Player: " .. tostring(playerFaction) .. ", Target: " .. tostring(targetFaction) .. ". Actions menu not shown.")
-        if popup:IsShown() then popup:Hide() end -- Hide if it was somehow shown for another button
-        ns.currentClipActionsIconOwner = nil
-        -- Optionally, you could show a different, very limited menu or just do nothing.
-        -- For simplicity, we'll just not show the interaction menu.
-        return
-    end
-
-    -- If we pass the faction check, proceed to toggle/show the menu
-    if popup:IsShown() and ns.currentClipActionsIconOwner == iconButton then
-        popup:Hide()
-        ns.currentClipActionsIconOwner = nil
-        return
-    elseif popup:IsShown() then
+        -- print(addonName .. ": Popup shown for different button. Hiding first.") -- Optional debug
         popup:Hide()
         -- ns.currentClipActionsIconOwner will be set below
     end
 
-    -- Get child frames of the popup (only if we're showing it)
     local popupFrameName = popup:GetName()
     local titleText = _G[popupFrameName .. "Title"]
     local action1Button = _G[popupFrameName .. "Action1"]
-    local action2Button = _G[popupFrameName .. "Action2"] -- Still using this XML name for the "Add Friend" button
+    local action2Button = _G[popupFrameName .. "Action2"]
 
     if not titleText or not action1Button or not action2Button then
-        print(addonName .. ": Error: One or more child frames of OFClipItemActionsPopup not found during OnClick (after faction check).")
+        print(addonName .. ": ERROR in OnClick: Child frames of popup not found.")
         if popup:IsShown() then popup:Hide() end
-        ns.currentClipActionsIconOwner = nil
+        if ns then ns.currentClipActionsIconOwner = nil end
         return
     end
 
     popup.clipData = clipData
-
     titleText:SetText("Действия")
-
-    -- Update Action1 (Whisper) button
     if clipData.characterName then
         action1Button:SetText(string.format("Шёпот: %s", clipData.characterName))
-    else
-        action1Button:SetText("Шёпот")
-    end
-    action1Button:SetEnabled(clipData.characterName ~= nil)
-
-    -- Update Action2 (Add Friend) button
-    if clipData.characterName then
         action2Button:SetText(string.format("В друзья: %s", clipData.characterName))
     else
+        action1Button:SetText("Шёпот")
         action2Button:SetText("Добавить в друзья")
     end
+    action1Button:SetEnabled(clipData.characterName ~= nil)
     action2Button:SetEnabled(clipData.characterName ~= nil)
 
-    popup:ClearAllPoints()
-    popup:SetPoint("TOPLEFT", iconButton, "BOTTOMLEFT", 0, -2)
-    popup:SetFrameLevel(iconButton:GetFrameLevel() + 10)
-    popup:Show()
+    popup:SetFrameStrata("DIALOG")
+    popup:SetFrameLevel(50)
 
-    ns.currentClipActionsIconOwner = iconButton
+    popup:ClearAllPoints()
+    popup:SetPoint("TOPLEFT", iconButton, "BOTTOMLEFT", 0, -5)
+    -- print(addonName .. ": Showing Popup now.") -- Optional debug
+    popup:Show()
+    if ns then ns.currentClipActionsIconOwner = iconButton end
 end
 
--- The GoAgainAH_ClipItemActions_Popup_OnLoad function remains unchanged from the previous version
--- as it only sets up the *potential* actions. The decision to show the menu
--- and what's on it (if further refined by faction) happens in GoAgainAH_ClipItemActions_OnClick.
-
+-- Can be called externally to close the popup
+ns.HideClipActionsPopupIfShown = function()
+    local popup = _G["OFClipItemActionsPopup"]
+    if popup and popup:IsShown() then
+        popup:Hide()
+        if ns then ns.currentClipActionsIconOwner = nil end -- Reset owner
+    end
+end
 
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then
