@@ -76,8 +76,20 @@
                     </Layer>
                 </Layers>
                 <Scripts>
+                    <OnLoad>
+                        -- self:GetParent() is the OFDeathClipsButtonN
+                        -- We can store a reference to the addonName and ns on the button itself
+                        -- if it helps, but it's better to call a global function.
+                    </OnLoad>
                     <OnEnter>self:GetParent():LockHighlight()</OnEnter>
                     <OnLeave>self:GetParent():UnlockHighlight()</OnLeave>
+                    <OnClick>
+                        -- Call a globally accessible function
+                        -- 'self' here is the $parentItem button
+                        if button == "LeftButton" then
+                        GoAgainAH_ClipItemActions_OnClick(self)
+                        end
+                    </OnClick>
                 </Scripts>
                 <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
                     <Size><AbsDimension x="60" y="60" /></Size>
@@ -88,6 +100,63 @@
                 <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
                 <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
             </Button>
+
+            <!-- Custom Actions Popup Frame (can be in the same file or a separate one) -->
+            <Frame name="OFClipItemActionsPopup" parent="UIParent" hidden="true" frameStrata="DIALOG" clampedToScreen="true">
+                <Size x="200" y="100"/> <!-- Adjusted size for 2 buttons + title -->
+                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
+                          edgeFile="Interface\DialogFrame\UI-DialogBox-Border"
+                          tile="true">
+                    <EdgeSize val="32"/>
+                    <TileSize val="32"/>
+                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <FontString name="$parentTitle" inherits="GameFontNormal" text="CLIP_ACTIONS_TITLE_PLACEHOLDER">
+                            <Anchors>
+                                <Anchor point="TOP" x="0" y="-12"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="$parentAction1" inherits="UIPanelButtonTemplate" text="ACTION1_PLACEHOLDER">
+                        <Size x="170" y="22"/>
+                        <Anchors>
+                            <Anchor point="TOP" relativeTo="$parentTitle" relativePoint="BOTTOM" x="0" y="-10"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="$parentCopyIDButton" inherits="UIPanelButtonTemplate" text="COPY_ID_PLACEHOLDER">
+                        <Size x="170" y="22"/>
+                        <Anchors>
+                            <Anchor point="TOP" relativeTo="$parentAction1" relativePoint="BOTTOM" x="0" y="-5"/>
+                        </Anchors>
+                    </Button>
+                </Frames>
+                <Scripts>
+                    <OnLoad>
+
+
+<!--                        self:SetPropagateKeyboardInput(true);-->
+                        C_Timer:After(10, function()
+                        self:EnableKeyboard(true);
+
+                        GoAgainAH_ClipItemActions_Popup_OnLoad(self); -- Call Lua setup for this popup
+
+                        end)
+                    </OnLoad>
+                    <OnKeyDown>
+                        if key == "ESCAPE" and self:IsShown() then
+                        self:Hide();
+                        if _G.GoAgainAH_ClipItemActions_GetNamespace and _G.GoAgainAH_ClipItemActions_GetNamespace().currentClipActionsIconOwner then
+                        _G.GoAgainAH_ClipItemActions_GetNamespace().currentClipActionsIconOwner = nil;
+                        end
+                        PlaySound(SOUNDKIT.UI_IG_MAINMENU_OPTION_CHECKBOX_ON);
+                        end
+                    </OnKeyDown>
+                </Scripts>
+            </Frame>
 
             <!-- Clip Link -->
             <Frame name="$parentClip">
