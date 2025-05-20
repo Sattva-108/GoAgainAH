@@ -909,125 +909,6 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     end
 end
 
--- INITIALIZE THE SESSION TABLE HERE
-ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
-
-local function IsPlayerOnFriendsList(characterName)
-    if not characterName or characterName == "" then return false end
-    local lowerCharacterName = string.lower(characterName)
-    for i = 1, GetNumFriends() do
-        local name, _, _, _, connected, _, _ = GetFriendInfo(i)
-        if name then
-            local lowerName = string.lower(name)
-            local friendBaseName = lowerName:match("([^%-]+)")
-
-            if friendBaseName == lowerCharacterName or lowerName == lowerCharacterName then
-                return true, connected
-            end
-        end
-    end
-    return false, false
-end
-
-function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
-    local mainRowButton = iconFrameElement:GetParent()
-    if not mainRowButton or not mainRowButton.clipData then return end
-    local clipData = mainRowButton.clipData
-    if not clipData.characterName then return end
-
-    local playerFaction = UnitFactionGroup("player")
-    local targetFaction = clipData.faction
-
-    if not targetFaction or not playerFaction or (playerFaction ~= targetFaction) then
-        GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("|cffff0000Нельзя взаимодействовать:|r " .. clipData.characterName)
-        GameTooltip:AddLine("(Разные фракции)")
-        GameTooltip:Show()
-        return
-    end
-
-    if receivedMouseButton == "LeftButton" then
-        if ChatFrame_SendTell then ChatFrame_SendTell(clipData.characterName) end
-    elseif receivedMouseButton == "RightButton" then
-        if AddFriend then
-            local characterToAdd = clipData.characterName
-            local characterToAddLower = string.lower(characterToAdd)
-
-            local wasAlreadyFriend, _ = IsPlayerOnFriendsList(characterToAdd)
-
-            AddFriend(characterToAdd)
-
-            C_Timer:After(0.1, function()
-                local isNowFriend, isConnected = IsPlayerOnFriendsList(characterToAdd)
-
-                if GameTooltip:IsOwned(iconFrameElement) then GameTooltip:Hide() end
-
-                GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
-                if isNowFriend then
-                    GameTooltip:AddLine(string.format("|cff00ff00%s:|r %s",
-                            (wasAlreadyFriend and "Уже в друзьях" or "Добавлен в друзья"),
-                            characterToAdd))
-                    if isConnected then
-                        GameTooltip:AddLine("|cff69ccf0В сети|r")
-                    else
-                        GameTooltip:AddLine("|cff888888Не в сети|r")
-                    end
-                    ns.sessionFailedFriendAdds[characterToAddLower] = nil
-                else
-                    if ns.sessionFailedFriendAdds[characterToAddLower] then
-                        GameTooltip:AddLine(string.format("|cffffff80Попытка не удалась:|r %s", characterToAdd)) -- Light Yellow
-                        GameTooltip:AddLine("|cffffff80(Ранее также не удалось)|r") -- Light Yellow
-                    else
-                        GameTooltip:AddLine(string.format("|cffffcc00Не удалось добавить:|r %s", characterToAdd)) -- Original Gold/Orange for first fail
-                        GameTooltip:AddLine("(Проверьте чат на ошибки)")
-                    end
-                    ns.sessionFailedFriendAdds[characterToAddLower] = true
-                end
-                GameTooltip:Show()
-            end)
-        end
-    end
-end
-
-function GoAgainAH_ClipItem_OnEnter(iconButton)
-    local mainRowButton = iconButton:GetParent()
-    if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then return end
-    local clipData = mainRowButton.clipData
-    local characterNameLower = string.lower(clipData.characterName)
-
-    GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
-    GameTooltip:AddLine(clipData.characterName) -- Player name in default white
-
-    local playerFaction = UnitFactionGroup("player")
-    local targetFaction = clipData.faction
-
-    if not targetFaction or not playerFaction or (playerFaction ~= targetFaction) then
-        GameTooltip:AddLine("|cffff2020(Другая фракция)|r") -- Red
-    else
-        local isFriend, isConnected = IsPlayerOnFriendsList(clipData.characterName)
-        GameTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r") -- Grey out the action text a bit
-        if isFriend then
-            GameTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r") -- Green
-            if isConnected then
-                GameTooltip:AddLine("|cff69ccf0(В сети)|r") -- Blue
-            else
-                GameTooltip:AddLine("|cff888888(Не в сети)|r") -- Grey
-            end
-        elseif ns.sessionFailedFriendAdds[characterNameLower] then
-            GameTooltip:AddLine("ПКМ: |cffffff80В друзья (неудачно)|r") -- Light Yellow for "Add Friend (failed attempt)"
-        else
-            GameTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r") -- Grey out the action text a bit
-        end
-    end
-    GameTooltip:Show()
-end
-
-function GoAgainAH_ClipItem_OnLeave(iconButton)
-    if GameTooltip:IsOwned(iconButton) then
-        GameTooltip:Hide()
-    end
-end
-
 function OFAuctionFrameDeathClips_OnHide()
     if OFAuctionFrameDeathClips._whenUpdateTicker then
         OFAuctionFrameDeathClips._whenUpdateTicker:Cancel()
@@ -1037,3 +918,309 @@ function OFAuctionFrameDeathClips_OnHide()
         ns.HideAllClipPrompts()
     end
 end
+-- (addonName and ns are assumed to be defined at the top of your file)
+
+-- Ensure the SavedVariables table and our sub-table exist
+if type(AuctionHouseDBSaved) ~= "table" then
+    _G.AuctionHouseDBSaved = {}
+end
+AuctionHouseDBSaved.pendingFriendAdds = AuctionHouseDBSaved.pendingFriendAdds or {}
+
+local RETRY_FRIEND_ADD_INTERVAL = 10
+local MAX_FRIEND_ADD_RETRIES = 10
+local MAX_PENDING_AGE = 3 * 24 * 60 * 60 -- 3 days in seconds
+
+local MIN_LEVEL_FOR_NOTIFICATION = 10
+local NOTIFICATION_SOUND_ID = SOUNDKIT and SOUNDKIT.MINIMAP_PING or 1156 -- Fallback sound ID if SOUNDKIT.MINIMAP_PING is nil
+
+local friendAddRetryTimerHandle = nil
+local suppressPlayerNotFoundSystemMessage = false
+local PLAYER_NOT_FOUND_RU = "Игрок не найден."
+
+-- Helper to ensure AuctionHouseDBSaved and its sub-table exist
+-- (This is slightly redundant with the top-level check but good for explicit calls)
+local function EnsurePendingFriendAddsTable()
+    if type(AuctionHouseDBSaved) ~= "table" then
+        _G.AuctionHouseDBSaved = {}
+    end
+    if type(AuctionHouseDBSaved.pendingFriendAdds) ~= "table" then
+        AuctionHouseDBSaved.pendingFriendAdds = {}
+    end
+end
+
+local function IsPlayerOnFriendsList(characterName)
+    if not characterName or characterName == "" then return false end
+    local lowerCharacterName = string.lower(characterName)
+    for i = 1, GetNumFriends() do
+        local name, level, classToken, area, connected, status, note = GetFriendInfo(i)
+        if name then
+            local lowerName = string.lower(name)
+            local friendBaseName = lowerName:match("([^%-]+)")
+            if friendBaseName == lowerCharacterName or lowerName == lowerCharacterName then
+                return true, connected, level, classToken, area, status, note
+            end
+        end
+    end
+    return false, false, nil, nil, nil, nil, nil
+end
+
+local function NotifyPlayerOnlineUnderLevel(name, level, classToken, area)
+    if level and level < MIN_LEVEL_FOR_NOTIFICATION then
+        if PlaySoundKitID then PlaySoundKitID(NOTIFICATION_SOUND_ID) end
+        local className = classToken and LOCALIZED_CLASS_NAMES_MALE[classToken] or "Неизвестный класс"
+        local zoneName = area and area ~= "" and area or "Неизвестная зона"
+        local message = string.format("|cff00ff00%s|r (Уровень: %d, %s) замечен онлайн в |cffffff00%s|r!", name, level, className, zoneName)
+
+        if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+            DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message)
+        else
+            print(addonName .. ": " .. message) -- Fallback print
+        end
+    end
+end
+
+local ProcessPendingFriendAdds -- Forward declaration
+ProcessPendingFriendAdds = function()
+    friendAddRetryTimerHandle = nil
+    EnsurePendingFriendAddsTable()
+
+    if not AuctionHouseDBSaved.pendingFriendAdds then return end
+
+    local currentTime = GetServerTime()
+    local playerFaction = UnitFactionGroup("player")
+    local itemsToRemove = {}
+
+    for charLowerName, data in pairs(AuctionHouseDBSaved.pendingFriendAdds) do
+        local processThisEntry = true
+        if data.added then processThisEntry = false end
+
+        if processThisEntry and data.faction ~= playerFaction then
+            -- print(addonName .. ": Pending add " .. data.name .. " is other faction. Marking done.")
+            data.added = true;
+            processThisEntry = false
+        end
+
+        if processThisEntry and (currentTime - (data.initialRequestTime or 0)) > MAX_PENDING_AGE then
+            print(addonName .. ": Removing stale pending add (max age): " .. data.name)
+            table.insert(itemsToRemove, charLowerName);
+            processThisEntry = false
+        end
+
+        if processThisEntry and (currentTime - data.lastAttemptTime) >= RETRY_FRIEND_ADD_INTERVAL then
+            if data.retryCount >= MAX_FRIEND_ADD_RETRIES then
+                print(addonName .. ": Max retries for " .. data.name .. ". Removing.")
+                table.insert(itemsToRemove, charLowerName)
+            else
+                -- print(addonName .. ": Retrying add: " .. data.name .. " (Attempt " .. (data.retryCount + 1) .. ")")
+                suppressPlayerNotFoundSystemMessage = true
+                AddFriend(data.name)
+                C_Timer:After(0.1, function() suppressPlayerNotFoundSystemMessage = false end)
+
+                data.lastAttemptTime = currentTime
+                data.retryCount = data.retryCount + 1
+
+                C_Timer:After(1.0, function()
+                    local isNowFriendRetry, isConnectedRetry, levelRetry, classRetry, areaRetry = IsPlayerOnFriendsList(data.name)
+                    if isNowFriendRetry then
+                        if AuctionHouseDBSaved.pendingFriendAdds and AuctionHouseDBSaved.pendingFriendAdds[charLowerName] then
+                            local pendingEntry = AuctionHouseDBSaved.pendingFriendAdds[charLowerName]
+                            if not pendingEntry.added then
+                                print(addonName .. ": " .. data.name .. " добавлен(а) в друзья при повторной попытке.")
+                                pendingEntry.added = true
+                                if isConnectedRetry then
+                                    NotifyPlayerOnlineUnderLevel(data.name, levelRetry, classRetry, areaRetry)
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end
+
+    for _, keyToRemove in ipairs(itemsToRemove) do AuctionHouseDBSaved.pendingFriendAdds[keyToRemove] = nil end
+
+    local hasPending = false
+    for _, data in pairs(AuctionHouseDBSaved.pendingFriendAdds) do
+        if not data.added then hasPending = true; break end
+    end
+
+    if hasPending then
+        friendAddRetryTimerHandle = C_Timer:After(RETRY_FRIEND_ADD_INTERVAL, ProcessPendingFriendAdds)
+    else
+        friendAddRetryTimerHandle = nil
+    end
+end
+
+local function AddToPendingFriends(characterName, charFaction)
+    EnsurePendingFriendAddsTable()
+    if not AuctionHouseDBSaved.pendingFriendAdds then return end
+    local charLowerName = string.lower(characterName)
+
+    if not AuctionHouseDBSaved.pendingFriendAdds[charLowerName] or AuctionHouseDBSaved.pendingFriendAdds[charLowerName].added then
+        AuctionHouseDBSaved.pendingFriendAdds[charLowerName] = {
+            name = characterName, faction = charFaction,
+            lastAttemptTime = GetServerTime() - RETRY_FRIEND_ADD_INTERVAL + 1,
+            retryCount = 0, added = false, initialRequestTime = GetServerTime()
+        }
+        if not friendAddRetryTimerHandle then
+            friendAddRetryTimerHandle = C_Timer:After(0.1, ProcessPendingFriendAdds)
+        end
+    end
+end
+
+function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
+    EnsurePendingFriendAddsTable()
+    local mainRowButton = iconFrameElement:GetParent()
+    if not mainRowButton or not mainRowButton.clipData then return end
+    local clipData = mainRowButton.clipData
+    if not clipData.characterName then return end
+
+    local characterToAdd = clipData.characterName
+    local characterToAddLower = string.lower(characterToAdd)
+    local targetClipFaction = clipData.faction
+    local playerFaction = UnitFactionGroup("player")
+
+    if targetClipFaction ~= playerFaction then
+        GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("|cffff0000Нельзя взаимодействовать:|r " .. characterToAdd)
+        GameTooltip:AddLine("(Разные фракции)")
+        GameTooltip:Show()
+        return
+    end
+
+    if receivedMouseButton == "LeftButton" then
+        if ChatFrame_SendTell then ChatFrame_SendTell(characterToAdd) end
+    elseif receivedMouseButton == "RightButton" then
+        if AddFriend then
+            local wasAlreadyFriend, wasConnected, currentLevel, currentClass, currentArea = IsPlayerOnFriendsList(characterToAdd)
+            if wasAlreadyFriend then
+                if GameTooltip:IsOwned(iconFrameElement) then GameTooltip:Hide() end
+                GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(string.format("%s |cff00ff00уже в друзьях.", characterToAdd))
+                GameTooltip:Show()
+                if wasConnected then NotifyPlayerOnlineUnderLevel(characterToAdd, currentLevel, currentClass, currentArea) end
+                return
+            end
+
+            suppressPlayerNotFoundSystemMessage = true
+            AddFriend(characterToAdd)
+            C_Timer:After(0.1, function() suppressPlayerNotFoundSystemMessage = false end)
+
+            C_Timer:After(0.3, function()
+                local isNowFriend, isConnected, friendLevel, friendClass, friendArea = IsPlayerOnFriendsList(characterToAdd)
+                if GameTooltip:IsOwned(iconFrameElement) then GameTooltip:Hide() end
+                GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
+
+                if isNowFriend then
+                    GameTooltip:AddLine(string.format("|cff00ff00Добавлен в друзьях:|r %s", characterToAdd))
+                    if isConnected then
+                        GameTooltip:AddLine("|cff69ccf0В сети|r")
+                        NotifyPlayerOnlineUnderLevel(characterToAdd, friendLevel, friendClass, friendArea)
+                    else
+                        GameTooltip:AddLine("|cff888888Не в сети|r")
+                    end
+                    if AuctionHouseDBSaved.pendingFriendAdds and AuctionHouseDBSaved.pendingFriendAdds[characterToAddLower] then
+                        AuctionHouseDBSaved.pendingFriendAdds[characterToAddLower].added = true
+                    end
+                else
+                    GameTooltip:AddLine(string.format("|cffffcc00Не удалось добавить:|r %s", characterToAdd))
+                    GameTooltip:AddLine("(Попытка будет позже)")
+                    AddToPendingFriends(characterToAdd, targetClipFaction)
+                end
+                GameTooltip:Show()
+            end)
+        end
+    end
+end
+
+function GoAgainAH_ClipItem_OnEnter(iconButton)
+    EnsurePendingFriendAddsTable()
+    local mainRowButton = iconButton:GetParent()
+    if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then return end
+    local clipData = mainRowButton.clipData
+    local characterNameLower = string.lower(clipData.characterName)
+
+    GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(clipData.characterName)
+
+    local playerFaction = UnitFactionGroup("player")
+    local targetFaction = clipData.faction
+
+    if targetFaction ~= playerFaction then
+        GameTooltip:AddLine("|cffff2020(Другая фракция)|r")
+    else
+        local isFriend, isConnected, friendLevel, friendClass, friendArea = IsPlayerOnFriendsList(clipData.characterName)
+        GameTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
+        if isFriend then
+            GameTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
+            if isConnected then
+                GameTooltip:AddLine("|cff69ccf0(В сети)|r")
+                -- Optionally notify here too if they are already a friend and meet criteria, though OnClick handles it primarily
+                -- NotifyPlayerOnlineUnderLevel(clipData.characterName, friendLevel, friendClass, friendArea)
+            else
+                GameTooltip:AddLine("|cff888888(Не в сети)|r")
+            end
+        elseif AuctionHouseDBSaved.pendingFriendAdds and AuctionHouseDBSaved.pendingFriendAdds[characterNameLower] and not AuctionHouseDBSaved.pendingFriendAdds[characterNameLower].added then
+            GameTooltip:AddLine("|cffffff80В друзья (в очереди)|r")
+        else
+            GameTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r")
+        end
+    end
+    GameTooltip:Show()
+end
+
+function GoAgainAH_ClipItem_OnLeave(iconButton)
+    if GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end
+end
+
+-- Chat Message Filter Function
+local function FriendAddSystemMessageFilter(self, event, msg, ...)
+    if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessage and msg == PLAYER_NOT_FOUND_RU then
+        return true
+    end
+    return false
+end
+
+-- Start/Stop processor functions
+local function StartFriendAddProcessor()
+    EnsurePendingFriendAddsTable()
+    if not friendAddRetryTimerHandle then
+        local hasPending = false
+        if AuctionHouseDBSaved.pendingFriendAdds then
+            for _, data in pairs(AuctionHouseDBSaved.pendingFriendAdds) do
+                if not data.added then hasPending = true; break end
+            end
+        end
+        if hasPending then
+            friendAddRetryTimerHandle = C_Timer:After(0.1, ProcessPendingFriendAdds)
+        end
+    end
+end
+
+local function StopFriendAddProcessor()
+    if friendAddRetryTimerHandle and friendAddRetryTimerHandle.Cancel then
+        friendAddRetryTimerHandle:Cancel()
+    end
+    friendAddRetryTimerHandle = nil
+end
+
+-- Event Handling & Filter Registration
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("ADDON_LOADED")
+eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("PLAYER_LOGOUT")
+
+eventFrame:SetScript("OnEvent", function(self, event, arg1)
+    if event == "ADDON_LOADED" and arg1 == addonName then
+        EnsurePendingFriendAddsTable()
+        ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
+        -- print(addonName .. ": Friend add system message filter registered.") -- Confirm
+        C_Timer:After(2.0, StartFriendAddProcessor)
+    elseif event == "PLAYER_LOGIN" then
+        EnsurePendingFriendAddsTable() -- Ensure it's ready
+        StartFriendAddProcessor()
+    elseif event == "PLAYER_LOGOUT" then
+        StopFriendAddProcessor()
+    end
+end)
