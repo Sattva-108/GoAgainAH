@@ -925,26 +925,16 @@ end
 -- Session-only tables
 ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
 ns.notifiedLowLevelFriendsThisSession = ns.notifiedLowLevelFriendsThisSession or {}
--- ns.enableLowLevelNotifications = true -- Default, can be toggled if you re-add a command
 
 -- State for AddFriend Error Handling
 local suppressPlayerNotFoundSystemMessageActive = false
 local PLAYER_NOT_FOUND_RU = "Игрок не найден."
--- Known error fragments (lowercase for matching)
-local FRIEND_ERROR_KEYWORDS = {
-    [string.lower("уже в списке ваших друзей")] = true,
-    [string.lower("Ваш список друзей полон")] = true,
-    [string.lower("игнорирует вас")] = true,
-    [string.lower("нельзя добавить в друзья")] = true, -- More generic "cannot add to friends"
-    [string.lower(PLAYER_NOT_FOUND_RU)] = true -- Also treat "player not found" as a capturable error
-}
-
-ns.expectingFriendAddSystemMessageFor = nil -- Lowercase name of player we're trying to add
-ns.capturedFriendAddSystemError = nil    -- The captured error message
+ns.expectingFriendAddSystemMessageFor = nil
+ns.capturedFriendAddSystemMessage = nil
 
 -- Constants for Notification
 local MIN_LEVEL_FOR_NOTIFICATION = 10
-local NOTIFICATION_SOUND_ID = SOUNDKIT and SOUNDKIT.MINIMAP_PING or 1156
+local MAP_PING_SOUND_FILE = "Sound\\interface\\MapPing.wav" -- Using PlaySoundFile
 
 -- Fallback Class Names
 ns.fallbackClassNames = {
@@ -960,25 +950,15 @@ local function ShowStatusTooltip(line1, line2, line3)
     if not tooltip then return end
     local parentFrame = tooltip:GetParent()
     if not parentFrame or not parentFrame:IsShown() then tooltip:Hide(); return end
-
     local l1, l2, l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
     if not (l1 and l2 and l3) then return end
-
-    l1:SetText(line1 or "")
-    l2:SetText(line2 or "")
-    l3:SetText(line3 or "")
-
-    local textRegionHeight = 0
-    local lineCount = 0
+    l1:SetText(line1 or ""); l2:SetText(line2 or ""); l3:SetText(line3 or "")
+    local textRegionHeight = 0; local lineCount = 0
     if line1 and line1 ~= "" then textRegionHeight = textRegionHeight + l1:GetHeight(); lineCount = lineCount + 1; end
     if line2 and line2 ~= "" then textRegionHeight = textRegionHeight + l2:GetHeight(); lineCount = lineCount + 1; end
     if line3 and line3 ~= "" then textRegionHeight = textRegionHeight + l3:GetHeight(); lineCount = lineCount + 1; end
-
-    local newHeight = 16 + textRegionHeight -- 8px top/bottom padding + text
-    if lineCount > 1 then newHeight = newHeight + ( (lineCount -1) * 2 ) end -- 2px spacing between lines
-
-    tooltip:SetHeight(math.max(35, newHeight)) -- Min height for aesthetics
-    tooltip:Show()
+    local newHeight = 16 + textRegionHeight; if lineCount > 1 then newHeight = newHeight + ((lineCount - 1) * 2) end
+    tooltip:SetHeight(math.max(35, newHeight)); tooltip:Show()
 end
 
 local function HideStatusTooltip()
@@ -1002,21 +982,28 @@ local function IsPlayerOnFriendsList(characterName)
     return false, false, nil, nil, nil
 end
 
-local function NotifyPlayerOnlineUnderLevel(name, level, classToken, area)
-    -- if ns.enableLowLevelNotifications == false then return end
-
+-- Modified Notify function: now takes an optional 'context' for debugging/slightly different messages
+local function NotifyPlayerOnlineUnderLevel(name, level, classToken, area, context)
     local lowerName = string.lower(name)
     if ns.notifiedLowLevelFriendsThisSession[lowerName] then return end
 
     if level and level < MIN_LEVEL_FOR_NOTIFICATION then
-        if PlaySoundKitID then PlaySoundKitID(NOTIFICATION_SOUND_ID) end
+        PlaySoundFile(MAP_PING_SOUND_FILE) -- Changed sound call
+
         local className = (classToken and type(classToken) == "string" and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[string.upper(classToken)]) or
                 (classToken and type(classToken) == "string" and ns.fallbackClassNames[string.upper(classToken)]) or
-                (classToken and type(classToken) == "string" and classToken) or
-                "Неизвестный класс"
+                (classToken and type(classToken) == "string" and classToken) or "Неизвестный класс"
         local zoneName = area and area ~= "" and area or "Неизвестная зона"
         local clickableName = "|Hplayer:"..name.."|h|cff00ff00["..name.."]|h|r"
-        local message = string.format("%s (Уровень: %d, %s) замечен онлайн в |cffffff00%s|r!", clickableName, level, className, zoneName)
+
+        local eventDescription = "замечен онлайн"
+        if context == "added" then
+            eventDescription = "добавлен и замечен онлайн"
+        elseif context == "already_friend_online" then
+            eventDescription = "уже друг и замечен онлайн"
+        end
+
+        local message = string.format("%s (Уровень: %d, %s) %s в |cffffff00%s|r!", clickableName, level, className, eventDescription, zoneName)
 
         if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
             DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message)
@@ -1038,10 +1025,7 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
     local playerFaction = UnitFactionGroup("player")
 
     if targetClipFaction ~= playerFaction then
-        ShowStatusTooltip(
-                "|cffff0000Нельзя взаимодействовать:|r " .. characterToAdd,
-                "(Разные фракции)", nil
-        )
+        ShowStatusTooltip("|cffff0000Нельзя взаимодействовать:|r " .. characterToAdd, "(Разные фракции)", nil)
         return
     end
 
@@ -1056,19 +1040,18 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         string.format("%s |cff00ff00уже в друзьях.", characterToAdd),
                         wasConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r", nil
                 )
-                if wasConnected then NotifyPlayerOnlineUnderLevel(characterToAdd, currentLevel, currentClass, currentArea) end
+                if wasConnected then NotifyPlayerOnlineUnderLevel(characterToAdd, currentLevel, currentClass, currentArea, "already_friend_online") end
+                if iconFrameElement:IsMouseOver() then GoAgainAH_ClipItem_OnEnter(iconFrameElement) end
                 return
             end
 
-            ns.capturedFriendAddSystemError = nil
+            ns.capturedFriendAddSystemMessage = nil
             ns.expectingFriendAddSystemMessageFor = characterToAddLower
             suppressPlayerNotFoundSystemMessageActive = true
-
             AddFriend(characterToAdd)
-
-            C_Timer:After(0.2, function() -- Window to catch system message and stop suppression
+            C_Timer:After(0.2, function()
                 suppressPlayerNotFoundSystemMessageActive = false
-                -- Keep ns.expectingFriendAddSystemMessageFor active until the 0.3s check processes it
+                if ns.expectingFriendAddSystemMessageFor == characterToAddLower then ns.expectingFriendAddSystemMessageFor = nil end
             end)
 
             C_Timer:After(0.3, function()
@@ -1079,26 +1062,27 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     line1 = string.format("|cff00ff00Добавлен в друзьях:|r %s", characterToAdd)
                     if isConnected then
                         line2 = "|cff69ccf0В сети|r"
-                        NotifyPlayerOnlineUnderLevel(characterToAdd, friendLevel, friendClass, friendArea)
+                        NotifyPlayerOnlineUnderLevel(characterToAdd, friendLevel, friendClass, friendArea, "added")
                     else
                         line2 = "|cff888888Не в сети|r"
                     end
                     ns.sessionFailedFriendAdds[characterToAddLower] = nil
                 else
                     line1 = string.format("|cffffcc00Не удалось добавить:|r %s", characterToAdd)
-                    if ns.capturedFriendAddSystemError then
-                        line2 = "|cffffff80Причина: " .. ns.capturedFriendAddSystemError .. "|r"
+                    if ns.capturedFriendAddSystemMessage then
+                        line2 = "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r"
                     elseif ns.sessionFailedFriendAdds[characterToAddLower] then
                         line2 = "|cffffff80(Ранее также не удалось)|r"
                     else
-                        line2 = "(Проверьте ошибки игры в чате)" -- Generic if no specific error caught
+                        line2 = "(Проверьте ошибки игры в чате)"
                     end
                     ns.sessionFailedFriendAdds[characterToAddLower] = true
                 end
                 ShowStatusTooltip(line1, line2, line3)
 
-                ns.expectingFriendAddSystemMessageFor = nil -- Important: Clear after processing
-                ns.capturedFriendAddSystemError = nil     -- Clear captured error
+                ns.expectingFriendAddSystemMessageFor = nil
+                ns.capturedFriendAddSystemMessage = nil
+                if iconFrameElement:IsMouseOver() then GoAgainAH_ClipItem_OnEnter(iconFrameElement) end
             end)
         end
     end
@@ -1106,11 +1090,11 @@ end
 
 function GoAgainAH_ClipItem_OnEnter(iconButton)
     HideStatusTooltip()
+    if GameTooltip:IsShown() and GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end
     local mainRowButton = iconButton:GetParent()
     if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then return end
     local clipData = mainRowButton.clipData
     local characterNameLower = string.lower(clipData.characterName)
-
     GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
     GameTooltip:AddLine(clipData.characterName)
     local playerFaction = UnitFactionGroup("player")
@@ -1125,7 +1109,8 @@ function GoAgainAH_ClipItem_OnEnter(iconButton)
             GameTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
             if isConnected then
                 GameTooltip:AddLine("|cff69ccf0(В сети)|r")
-                NotifyPlayerOnlineUnderLevel(clipData.characterName, friendLevel, friendClass, friendArea)
+                -- No automatic notification on hover to prevent spam, OnClick is better
+                -- NotifyPlayerOnlineUnderLevel(clipData.characterName, friendLevel, friendClass, friendArea, "already_friend_online_hover")
             else GameTooltip:AddLine("|cff888888(Не в сети)|r") end
         elseif ns.sessionFailedFriendAdds and ns.sessionFailedFriendAdds[characterNameLower] then
             GameTooltip:AddLine("ПКМ: |cffffff80В друзья (неудачно)|r")
@@ -1138,66 +1123,60 @@ end
 
 function GoAgainAH_ClipItem_OnLeave(iconButton)
     if GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end
-    -- Leaving HideStatusTooltip() commented out, so status messages persist a bit
 end
 
 -- Chat Message Filter Function
-local function FriendAddSystemMessageFilter(self, event, msg, ...) -- arg1 is msg for CHAT_MSG_SYSTEM
-    if not msg or type(msg) ~= "string" then return false end -- Basic validation
-
-    -- 1. Suppress "Игрок не найден." if suppressPlayerNotFoundSystemMessageActive is true
+local function FriendAddSystemMessageFilter(self, event, msg, ...)
+    if not msg or type(msg) ~= "string" then return false end
     if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == PLAYER_NOT_FOUND_RU then
-        if ns.expectingFriendAddSystemMessageFor then -- And if we are expecting it
-            ns.capturedFriendAddSystemError = msg -- Capture it as the error
-            -- print(addonName .. " DEBUG: Filter captured (and suppressed) 'Player not found' for " .. ns.expectingFriendAddSystemMessageFor)
-            -- ns.expectingFriendAddSystemMessageFor = nil -- Don't clear here, let the 0.3s timer do it
+        if ns.expectingFriendAddSystemMessageFor then
+            ns.capturedFriendAddSystemMessage = msg
+            ns.expectingFriendAddSystemMessageFor = nil
         end
-        return true -- Suppress this specific message
+        return true
     end
+    if event == "CHAT_MSG_SYSTEM" and ns.expectingFriendAddSystemMessageFor and not ns.capturedFriendAddSystemMessage then
+        local shortMsg = msg; if string.len(msg) > 60 then shortMsg = string.sub(msg, 1, 60) .. "..." end
+        ns.capturedFriendAddSystemMessage = shortMsg
+        ns.expectingFriendAddSystemMessageFor = nil
+    end
+    return false
+end
 
-    -- 2. Capture other relevant system errors if we are expecting a message
-    if event == "CHAT_MSG_SYSTEM" and ns.expectingFriendAddSystemMessageFor and not ns.capturedFriendAddSystemError then
-        local msgLower = string.lower(msg)
-        local expectedNameLower = ns.expectingFriendAddSystemMessageFor
-        local capturedThisTime = false
-
-        for keyword, _ in pairs(FRIEND_ERROR_KEYWORDS) do
-            if string.find(msgLower, keyword, 1, true) then
-                ns.capturedFriendAddSystemError = msg -- Capture the full original message
-                -- print(addonName .. " DEBUG: Filter captured error by keyword '" .. keyword .. "': " .. msg)
-                capturedThisTime = true
-                break -- Capture first keyword match
+-- Event Handler for FRIENDLIST_UPDATE
+local function OnFriendListUpdate()
+    -- print(addonName .. " DEBUG: FRIENDLIST_UPDATE triggered.") -- Optional Debug
+    -- Iterate through all friends to see who just came online or whose info changed.
+    -- This event fires for various reasons (login, logout, bnet status change, note change).
+    for i = 1, GetNumFriends() do
+        local name, level, classToken, area, connected, status = GetFriendInfo(i)
+        if name and connected and status == "" then -- status == "" often means "Online" (not AFK/DND)
+            local lowerName = string.lower(name)
+            -- We want to notify if they are:
+            -- 1. Now online
+            -- 2. Under level 10
+            -- 3. Haven't been notified this session for being low level and online
+            -- This check will naturally happen if their 'connected' status changed to true.
+            -- The NotifyPlayerOnlineUnderLevel function itself contains the ns.notifiedLowLevelFriendsThisSession check.
+            if level then -- Ensure level is available
+                NotifyPlayerOnlineUnderLevel(name, level, classToken, area, "friend_online_event")
             end
         end
-
-        -- If no keyword matched, but it contains the player's name, it might be relevant
-        if not capturedThisTime and string.find(msgLower, expectedNameLower, 1, true) then
-            ns.capturedFriendAddSystemError = msg
-            -- print(addonName .. " DEBUG: Filter captured error by name match: " .. msg)
-            -- capturedThisTime = true; -- No need, already set if it reaches here
-        end
-
-        -- Important: Clear expectation only if we actually captured something meaningful,
-        -- otherwise other system messages might clear it prematurely before the 0.3s timer.
-        -- The 0.3s timer will clear ns.expectingFriendAddSystemMessageFor as a final step.
-        -- If we captured an error, we can clear the expectation earlier.
-        -- if ns.capturedFriendAddSystemError then
-        --    ns.expectingFriendAddSystemMessageFor = nil
-        -- end
     end
-
-    return false -- By default, let other messages pass
 end
+
 
 -- Event Handling & Filter Registration
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
+eventFrame:RegisterEvent("FRIENDLIST_UPDATE") -- New event for friend online status
+
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == addonName then
         ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
         ns.notifiedLowLevelFriendsThisSession = ns.notifiedLowLevelFriendsThisSession or {}
-        -- No AuctionHouseDBSaved.config or slash command for notify toggle in this version
-
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
+    elseif event == "FRIENDLIST_UPDATE" then
+        OnFriendListUpdate()
     end
 end)
