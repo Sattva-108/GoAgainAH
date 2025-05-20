@@ -909,100 +909,115 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     end
 end
 
+-- INITIALIZE THE SESSION TABLE HERE
+ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
 
--- (addonName and ns are assumed to be defined at the top of your file)
+local function IsPlayerOnFriendsList(characterName)
+    if not characterName or characterName == "" then return false end
+    local lowerCharacterName = string.lower(characterName)
+    for i = 1, GetNumFriends() do
+        local name, _, _, _, connected, _, _ = GetFriendInfo(i)
+        if name then
+            local lowerName = string.lower(name)
+            local friendBaseName = lowerName:match("([^%-]+)")
+
+            if friendBaseName == lowerCharacterName or lowerName == lowerCharacterName then
+                return true, connected
+            end
+        end
+    end
+    return false, false
+end
 
 function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
-    -- iconFrameElement is 'self' from the XML (the $parentItem button)
-    -- receivedMouseButton is 'button' from the XML
-
-    print(addonName .. ": GoAgainAH_ClipItem_OnClick CALLED. Icon Element: " .. tostring(iconFrameElement and iconFrameElement:GetName()) .. ", Received Mouse Button: '" .. tostring(receivedMouseButton) .. "'")
-
-    if not receivedMouseButton then
-        print(addonName .. ": CRITICAL ERROR - receivedMouseButton is nil!")
-        return
-    end
-
     local mainRowButton = iconFrameElement:GetParent()
-    if not mainRowButton or not mainRowButton.clipData then
-        print(addonName .. ": Error - No parent or no clipData on iconButton's parent.")
-        return
-    end
-
+    if not mainRowButton or not mainRowButton.clipData then return end
     local clipData = mainRowButton.clipData
-    if not clipData.characterName then
-        print(addonName .. ": Error - No characterName in clipData. Clip ID: " .. tostring(clipData.id))
-        return
-    end
-    -- print(addonName .. ": Processing click for character: " .. clipData.characterName)
+    if not clipData.characterName then return end
 
     local playerFaction = UnitFactionGroup("player")
     local targetFaction = clipData.faction
-    -- print(addonName .. ": Faction Check - Player: " .. tostring(playerFaction) .. ", Target: " .. tostring(targetFaction))
 
     if not targetFaction or not playerFaction or (playerFaction ~= targetFaction) then
-        -- print(addonName .. ": Faction mismatch. Interaction denied.")
         GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
         GameTooltip:AddLine("|cffff0000Нельзя взаимодействовать:|r " .. clipData.characterName)
         GameTooltip:AddLine("(Разные фракции)")
         GameTooltip:Show()
-        C_Timer:After(2, function()
-            if GameTooltip:IsOwned(iconFrameElement) then GameTooltip:Hide() end
-        end)
         return
     end
-    -- print(addonName .. ": Faction check passed.")
 
     if receivedMouseButton == "LeftButton" then
-        print(addonName .. ": LeftButton condition MET.")
-        if ChatFrame_SendTell then
-            ChatFrame_SendTell(clipData.characterName)
-        else
-            print(addonName .. ": ChatFrame_SendTell not available.")
-        end
+        if ChatFrame_SendTell then ChatFrame_SendTell(clipData.characterName) end
     elseif receivedMouseButton == "RightButton" then
-        print(addonName .. ": RightButton condition MET.") -- This is the key print we need to see
         if AddFriend then
-            -- print(addonName .. ": AddFriend API available. Attempting to add: " .. clipData.characterName)
-            AddFriend(clipData.characterName)
-            -- print(addonName .. ": AddFriend(" .. clipData.characterName .. ") called.")
+            local characterToAdd = clipData.characterName
+            local characterToAddLower = string.lower(characterToAdd)
 
-            GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
-            GameTooltip:AddLine(string.format("|cff00ff00Добавлен в друзья:|r %s", clipData.characterName))
-            GameTooltip:Show()
+            local wasAlreadyFriend, _ = IsPlayerOnFriendsList(characterToAdd)
 
-            C_Timer:After(2.5, function()
-                if GameTooltip:IsOwned(iconFrameElement) then
-                    GameTooltip:Hide()
+            AddFriend(characterToAdd)
+
+            C_Timer:After(0.1, function()
+                local isNowFriend, isConnected = IsPlayerOnFriendsList(characterToAdd)
+
+                if GameTooltip:IsOwned(iconFrameElement) then GameTooltip:Hide() end
+
+                GameTooltip:SetOwner(iconFrameElement, "ANCHOR_RIGHT")
+                if isNowFriend then
+                    GameTooltip:AddLine(string.format("|cff00ff00%s:|r %s",
+                            (wasAlreadyFriend and "Уже в друзьях" or "Добавлен в друзья"),
+                            characterToAdd))
+                    if isConnected then
+                        GameTooltip:AddLine("|cff69ccf0В сети|r")
+                    else
+                        GameTooltip:AddLine("|cff888888Не в сети|r")
+                    end
+                    ns.sessionFailedFriendAdds[characterToAddLower] = nil
+                else
+                    if ns.sessionFailedFriendAdds[characterToAddLower] then
+                        GameTooltip:AddLine(string.format("|cffffff80Попытка не удалась:|r %s", characterToAdd)) -- Light Yellow
+                        GameTooltip:AddLine("|cffffff80(Ранее также не удалось)|r") -- Light Yellow
+                    else
+                        GameTooltip:AddLine(string.format("|cffffcc00Не удалось добавить:|r %s", characterToAdd)) -- Original Gold/Orange for first fail
+                        GameTooltip:AddLine("(Проверьте чат на ошибки)")
+                    end
+                    ns.sessionFailedFriendAdds[characterToAddLower] = true
                 end
+                GameTooltip:Show()
             end)
-        else
-            print(addonName .. ": AddFriend API not available.")
         end
-    else
-        print(addonName .. ": UNHANDLED MOUSE BUTTON: '" .. tostring(receivedMouseButton) .. "'")
     end
 end
 
--- OnEnter and OnLeave functions remain the same
 function GoAgainAH_ClipItem_OnEnter(iconButton)
     local mainRowButton = iconButton:GetParent()
-    if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then
-        return
-    end
+    if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then return end
     local clipData = mainRowButton.clipData
+    local characterNameLower = string.lower(clipData.characterName)
 
     GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
-    GameTooltip:AddLine(clipData.characterName)
+    GameTooltip:AddLine(clipData.characterName) -- Player name in default white
 
     local playerFaction = UnitFactionGroup("player")
     local targetFaction = clipData.faction
 
     if not targetFaction or not playerFaction or (playerFaction ~= targetFaction) then
-        GameTooltip:AddLine("|cffff2020(Другая фракция)|r")
+        GameTooltip:AddLine("|cffff2020(Другая фракция)|r") -- Red
     else
-        GameTooltip:AddLine("ЛКМ: Шёпот")
-        GameTooltip:AddLine("ПКМ: В друзья")
+        local isFriend, isConnected = IsPlayerOnFriendsList(clipData.characterName)
+        GameTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r") -- Grey out the action text a bit
+        if isFriend then
+            GameTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r") -- Green
+            if isConnected then
+                GameTooltip:AddLine("|cff69ccf0(В сети)|r") -- Blue
+            else
+                GameTooltip:AddLine("|cff888888(Не в сети)|r") -- Grey
+            end
+        elseif ns.sessionFailedFriendAdds[characterNameLower] then
+            GameTooltip:AddLine("ПКМ: |cffffff80В друзья (неудачно)|r") -- Light Yellow for "Add Friend (failed attempt)"
+        else
+            GameTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r") -- Grey out the action text a bit
+        end
     end
     GameTooltip:Show()
 end
