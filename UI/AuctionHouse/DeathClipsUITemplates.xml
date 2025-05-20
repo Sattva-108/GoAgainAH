@@ -63,12 +63,10 @@
 
         <Frames>
             <!-- Icon Button -->
-            <Button name="$parentItem">
+            <Button name="$parentItem"> <!-- Ensure this is your icon button -->
                 <Size><AbsDimension x="32" y="32" /></Size>
                 <Anchors>
-                    <Anchor point="TOPLEFT">
-                        <Offset><AbsDimension x="0" y="0" /></Offset>
-                    </Anchor>
+                    <Anchor point="TOPLEFT"><Offset x="0" y="0" /></Anchor>
                 </Anchors>
                 <Layers>
                     <Layer level="BORDER">
@@ -76,18 +74,69 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnEnter>self:GetParent():LockHighlight()</OnEnter>
-                    <OnLeave>self:GetParent():UnlockHighlight()</OnLeave>
+                    <OnLoad>
+                        self:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                    </OnLoad>
+                    <OnEnter>
+                        GoAgainAH_ClipItem_OnEnter(self);
+                        self:GetParent():LockHighlight();
+                    </OnEnter>
+                    <OnLeave>
+                        GoAgainAH_ClipItem_OnLeave(self);
+                        self:GetParent():UnlockHighlight();
+                    </OnLeave>
+                    <OnClick>
+                        GoAgainAH_ClipItem_OnClick(self, button)
+                    </OnClick>
                 </Scripts>
                 <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
-                    <Size><AbsDimension x="60" y="60" /></Size>
+                    <Size x="60" y="60" />
                     <Anchors>
-                        <Anchor point="CENTER"><Offset><AbsDimension x="0" y="0" /></Offset></Anchor>
+                        <Anchor point="CENTER" x="0" y="0" />
                     </Anchors>
                 </NormalTexture>
                 <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
                 <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
             </Button>
+
+            <Frame name="GoAgainAH_StatusTooltip" parent="OFAuctionFrameDeathClips" hidden="true" frameStrata="TOOLTIP">
+                <Size x="230" y="50"/> <!-- Adjusted size slightly for potentially longer error messages -->
+                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
+                          edgeFile="Interface\DialogFrame\UI-Tooltip-Border"
+                          tile="true">
+                    <EdgeSize val="16"/>
+                    <TileSize val="32"/>
+                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>
+                </Backdrop>
+                <Anchors>
+                    <!-- Anchor to bottom-left of parent (OFAuctionFrameDeathClips) with new offsets -->
+                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameDeathClips" relativePoint="BOTTOMLEFT">
+                        <Offset x="30" y="-15"/>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <FontString name="$parentLine1" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Size x="210" y="14"/> <!-- Adjusted width -->
+                            <Anchors>
+                                <Anchor point="TOPLEFT" x="10" y="-8"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="$parentLine2" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Size x="210" y="14"/> <!-- Adjusted width -->
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeTo="$parentLine1" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="$parentLine3" inherits="GameFontNormalSmall" justifyH="LEFT">
+                            <Size x="210" y="14"/> <!-- Adjusted width -->
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeTo="$parentLine2" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
 
             <!-- Clip Link -->
             <Frame name="$parentClip">
