@@ -225,57 +225,70 @@ ns.GetNoPlayedDeathClips = function()
     return clips
 end
 
--- Возвращает R, G, B, median, lower, upper, rank
+-- ns.GetPlayedTimeColor Function
+-- Возвращает R, G, B, median (p50), p25, p75, rank, maxRank, p10, p90
 ns.GetPlayedTimeColor = function(seconds, level)
     if not seconds or not level then
-        return 1, 1, 1, nil, nil, nil, nil, nil
+        -- r, g, b, median, p25, p75, rank, maxRank, p10, p90
+        return 1, 1, 1, nil, nil, nil, nil, nil, nil, nil -- Default to white, no stats
     end
 
     seconds = tonumber(seconds)
     level   = tonumber(level)
 
     local relevant = {}
+    -- CRUCIAL: Ensure 'completed' characters are filtered out if these stats are for *death* times at a given level.
     for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
-        if tonumber(clip.level) == level and clip.playedTime then
+        if tonumber(clip.level) == level and clip.playedTime and not clip.completed then
             table.insert(relevant, tonumber(clip.playedTime))
         end
     end
 
-    if #relevant < 5 then
-        return 1, 1, 1, nil, nil, nil, nil, nil
+    if #relevant < 10 then -- Minimum samples for reliable percentile-based categories
+        -- r, g, b, median, p25, p75, rank, maxRank, p10, p90
+        return 1, 1, 1, nil, nil, nil, nil, nil, nil, nil -- Default to white, insufficient data
     end
 
     table.sort(relevant)
-    local mid = math.floor(#relevant / 2)
-    local median = (#relevant % 2 == 1) and relevant[mid + 1]
-            or (relevant[mid] + relevant[mid + 1]) / 2
+    local count = #relevant
 
-    local lower = median * 0.7
-    local upper = median * 1.3
+    -- Calculate percentile values
+    local p10_val  = relevant[math.max(1, math.ceil(count * 0.10))]
+    local p25_val  = relevant[math.max(1, math.ceil(count * 0.25))]
 
-    local r, g, b
-    if seconds <= lower then
-        r, g, b = 0.25, 1.0, 0.25
-    elseif seconds <= median then
-        r, g, b = 1.0, 1.0, 0.0
-    elseif seconds <= upper then
-        r, g, b = 1.0, 1.0, 1.0
+    local median_idx_floor = math.floor(count / 2)
+    local median_val
+    if count % 2 == 1 then
+        median_val = relevant[median_idx_floor + 1]
     else
-        r, g, b = 1.0, 0.25, 0.25
+        median_val = (relevant[median_idx_floor] + relevant[median_idx_floor + 1]) / 2
     end
 
-    -- Calculate rank and maxRank
-    local rank, maxRank
-    for i, val in ipairs(relevant) do
-        if seconds <= val then
+    local p75_val  = relevant[math.max(1, math.ceil(count * 0.75))]
+    local p90_val  = relevant[math.max(1, math.ceil(count * 0.90))]
+
+    local r, g, b
+    if seconds <= p10_val then          -- Epic
+        r, g, b = 0.6, 0.1, 0.9  -- Vibrant Purple
+    elseif seconds <= p25_val then     -- Legendary (Легенда)
+        r, g, b = 0.0, 1.0, 0.0  -- Bright Green
+    elseif seconds <= median_val then    -- Fast (Быстро)
+        r, g, b = 1.0, 1.0, 0.0  -- Yellow
+    elseif seconds <= p75_val then     -- Average (Средне)
+        r, g, b = 1.0, 1.0, 1.0  -- White
+    else                                -- Slow (Медленно)
+        r, g, b = 1.0, 0.25, 0.25 -- Red
+    end
+
+    local rank = count + 1
+    for i, val_in_list in ipairs(relevant) do
+        if seconds <= val_in_list then
             rank = i
             break
         end
     end
-    rank = rank or (#relevant + 1)
-    maxRank = #relevant -- Total entries
 
-    return r, g, b, median, lower, upper, rank, maxRank
+    return r, g, b, median_val, p25_val, p75_val, rank, count, p10_val, p90_val
 end
 
 

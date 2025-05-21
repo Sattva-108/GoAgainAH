@@ -155,15 +155,13 @@ local function CreateReviewPrompt()
     frame.titlebg_r:Hide()
     frame:SetLayout("Flow")
     frame:SetWidth(350)
-    frame:SetHeight(250)
+    frame:SetHeight(250) -- Adjusted height to better accommodate reactions + text
 
     ns.CustomFrameSetAllPoints()
     ns.CustomFrameHideBackDrop()
 
-
-    -- Here, we're passing `true` to use custom padding
-    frame:OnWidthSet(350, true) -- Apply custom width adjustment
-    frame:OnHeightSet(250, true) -- Apply custom height adjustment
+    frame:OnWidthSet(350, true)
+    frame:OnHeightSet(250, true) -- Adjusted height
 
     frame.frame:SetScript("OnHide", function()
         if ns._ratePromptTicker then
@@ -172,92 +170,59 @@ local function CreateReviewPrompt()
         end
     end)
 
-
-    -- Close button
     local closeButton = CreateFrame("Button", "GoAHExitButtonDeathRate", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 5, 1)
     closeButton:SetScript("OnClick", function()
         frame.frame:Hide()
         OFAuctionFrameDeathClips.openedPromptClipID = nil
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
-            OFAuctionFrameDeathClips_Update() -- Refresh highlights
+            OFAuctionFrameDeathClips_Update()
         end
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
     end)
     closeButton:SetFrameLevel(frame.frame:GetFrameLevel()+10)
 
-    ---- Add top padding
-    --local topPadding = AceGUI:Create("SimpleGroup")
-    --topPadding:SetFullWidth(true)
-    --topPadding:SetHeight(4)
-    --frame:AddChild(topPadding)
-
-    ----------------------------------------------------------------------------
-    -- Review Group
-    ----------------------------------------------------------------------------
-    local submitButton
-    local reviewGroup = CreateBorderedGroup(1, 250)
+    local reviewGroup = CreateBorderedGroup(1, 250) -- Adjusted height
     reviewGroup:SetPadding(25, 20)
     frame:AddChild(reviewGroup)
 
-    ---- Static label for "Write your review for"
-    --local staticLabel = AceGUI:Create("Label")
-    --staticLabel:SetFontObject(GameFontNormalLarge) -- Using a larger font object
-    --local label = L["Write your review for"]
-    --staticLabel:SetText("|cFFFFD100".. label .. "|r")
-    --staticLabel:SetHeight(22)  -- Adjusted for larger font size
-    --reviewGroup:AddChild(staticLabel)
-    --
-    ---- Static Played Time label (this will appear below the Target Name)
-    --local rateClip = staticLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Using a larger font object
-    --rateClip:SetPoint("TOPLEFT", staticLabel.frame, "TOPRIGHT", 15, 3)
-    --rateClip:SetText("Rate Clip")
-    --rateClip:SetHeight(22)  -- Adjusted for larger font size
+    local labelPaddingTop = AceGUI:Create("MinimalFrame")
+    labelPaddingTop:SetFullWidth(true)
+    labelPaddingTop:SetHeight(10)
+    reviewGroup:AddChild(labelPaddingTop)
 
-    -- Add padding between name and star
-    local labelPadding = AceGUI:Create("MinimalFrame")
-    labelPadding:SetFullWidth(true)
-    labelPadding:SetHeight(10)
-    reviewGroup:AddChild(labelPadding)
-
-    -- Creating the target label
     local targetLabel = AceGUI:Create("Label")
-    targetLabel:SetFontObject(GameFontNormalLarge)  -- Using a larger font object
+    targetLabel:SetFontObject(GameFontNormalLarge)
     targetLabel:SetFullWidth(true)
     reviewGroup:AddChild(targetLabel)
 
-    -- Accessing the FontString and setting the text color
-    local labelFontString = targetLabel.label  -- Accessing the label field directly
+    local labelFontString = targetLabel.label
     labelFontString:SetScale(1.5)
     labelFontString:ClearAllPoints()
     labelFontString:SetPoint("LEFT", targetLabel.frame, "LEFT", 3, 0)
 
-    -- Static Played Time label (this will appear below the Target Name)
-    local playedLabel = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontDisableLarge")  -- Using a larger font object
+    local playedLabel = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontDisableLarge")
     playedLabel:SetPoint("LEFT", targetLabel.frame, "LEFT", 4, -30)
     playedLabel:SetText("Время в игре:")
 
-    -- Played time label (created dynamically with CreateFontString and aligned to the right)
-    -- Attach it to the closebutton as we need something stable, static.
-    local playedTime = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")  -- Using a larger font object
+    local playedTime = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     playedTime:SetPoint("TOPRIGHT", closeButton, "BOTTOMLEFT", -3, -36)
-    playedTime:SetText("") -- Set this dynamically later
-    playedTime:SetTextColor(1, 1, 1, 1) -- White color with full opacity
+    playedTime:SetText("")
+    playedTime:SetTextColor(1, 1, 1, 1)
 
-    -- Transparent wrapper to enable mouse interaction on playedTime
     local playedTimeWrapper = CreateFrame("Frame", nil, targetLabel.frame:GetParent())
     playedTimeWrapper:SetPoint("TOPRIGHT", closeButton, "BOTTOMLEFT", -3, -36)
-    playedTimeWrapper:SetSize(150, 20) -- Size matching the text
+    playedTimeWrapper:SetSize(150, 20)
     playedTimeWrapper:EnableMouse(true)
     playedTimeWrapper:SetFrameStrata("TOOLTIP")
 
-    -- Add padding between name and star
-    local labelPadding = AceGUI:Create("MinimalFrame")
-    labelPadding:SetFullWidth(true)
-    labelPadding:SetHeight(25)
-    reviewGroup:AddChild(labelPadding)
+    local labelPaddingMid = AceGUI:Create("MinimalFrame")
+    labelPaddingMid:SetFullWidth(true)
+    labelPaddingMid:SetHeight(25) -- Reduced from 25 to make space for reaction icons
+    reviewGroup:AddChild(labelPaddingMid)
 
     local reviewEdit = AceGUI:Create("MultiLineEditBoxCustom")
+    local submitButton -- Declare submitButton here to be accessible in reactionWidget's onSelect
 
     -- 🟨 REPLACE STAR WIDGET SETUP HERE IN PROMPT CREATION
     -- COMMENT OUT OR DELETE THE EXISTING starRating CODE BLOCK:
@@ -269,132 +234,109 @@ local function CreateReviewPrompt()
         onSelect = function(index)
             local text = reviewEdit:GetText()
             if index > 0 and (text == "" or text == REVIEW_PLACEHOLDER) then
-                -- Fast submit
                 submitButton:SetDisabled(false)
                 submitButton.frame:Click()
             else
-                -- Manual submit only when both are empty
                 submitButton:SetDisabled(index == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
             end
         end,
-        iconSize = 40,
-        height = 48,
+        iconSize = 36, -- Slightly smaller icons if needed
+        height = 42,   -- Adjusted height for reaction widget
     })
     reviewGroup:AddChild(reactionWidget)
 
-
-
-
-
-    ---- Add padding between label and name
-    --local labelPadding = AceGUI:Create("MinimalFrame")
-    --labelPadding:SetFullWidth(true)
-    --labelPadding:SetHeight(2)
-    --reviewGroup:AddChild(labelPadding)
-
-    -- Comment box
+    local paddingAfterReactions = AceGUI:Create("MinimalFrame")
+    paddingAfterReactions:SetFullWidth(true)
+    paddingAfterReactions:SetHeight(5) -- Space between reactions and text box
+    reviewGroup:AddChild(paddingAfterReactions)
 
     reviewEdit:SetLabel("")
     reviewEdit:SetWidth(400)
-
     reviewEdit:DisableButton(true)
     reviewEdit:SetMaxLetters(30)
-    --reviewEdit:SetNumLines(6)
-    reviewEdit:SetHeight(60)
+    reviewEdit:SetHeight(50) -- Adjusted height for review box
     reviewEdit.editBox:SetFontObject(GameFontNormal)
     reviewEdit.editBox:SetTextColor(1, 1, 1, 0.75)
+    reviewEdit.editBox:SetTextInsets(6, 6, 6, 6)
     reviewGroup:AddChild(reviewEdit)
 
+    local paddingAfterEditBox = AceGUI:Create("MinimalFrame")
+    paddingAfterEditBox:SetFullWidth(true)
+    paddingAfterEditBox:SetHeight(5) -- Space between text box and submit button
+    reviewGroup:AddChild(paddingAfterEditBox)
 
     submitButton = AceGUI:Create("PKBTRedButton")
     submitButton:SetFullWidth(true)
-    submitButton:SetHeight(40)
+    submitButton:SetHeight(35) -- Adjusted height for submit button
     submitButton:SetText(L["Submit Review"])
     submitButton:SetDisabled(true)
-
-    -- Submit Button
     reviewGroup:AddChild(submitButton)
 
-    -- Clear placeholder text on focus
     reviewEdit.editBox:SetScript("OnEditFocusGained", function(self)
         if reviewEdit:GetText() == REVIEW_PLACEHOLDER then
             reviewEdit:SetText("")
         end
     end)
-    -- Restore placeholder text if empty on focus lost
     reviewEdit.editBox:SetScript("OnEditFocusLost", function(self)
         if reviewEdit:GetText() == "" then
             reviewEdit:SetText(REVIEW_PLACEHOLDER)
         end
     end)
-
-    -- 1) Add some inner padding so the text sits inset
-    reviewEdit.editBox:SetTextInsets(6, 6, 6, 6)
-
-    ---- Add padding between info and review group
-    --local bottomPadding = AceGUI:Create("MinimalFrame")
-    --bottomPadding:SetFullWidth(true)
-    --bottomPadding:SetHeight(5)
-    --frame:AddChild(bottomPadding)
-
-
-    -- 🧠 Hook textbox too, to refresh button enable state
     reviewEdit.editBox:SetScript("OnTextChanged", function(self)
         local text = reviewEdit:GetText()
         local selected = reactionWidget:GetSelected()
         submitButton:SetDisabled(selected == 0 and (text == "" or text == REVIEW_PLACEHOLDER))
     end)
 
-    -- Collect references for later access
     local prompt = {
         frame = frame,
         closeButton = closeButton,
         targetLabel = targetLabel,
         labelFontString = labelFontString,
         playedTime = playedTime,
-        --starRating = starRating,
-        -- 🟥 Modify prompt object refs (add this where `prompt = { ... }` is built)
+        playedTimeWrapper = playedTimeWrapper, -- Added for potential external access if needed
         reactionWidget = reactionWidget,
         reviewEdit = reviewEdit,
-        submitButton = submitButton
+        submitButton = submitButton,
+        playedTimeTooltipData = {} -- Initialize this sub-table
     }
+
     local RateTip = CreateFrame("GameTooltip", "GoAgainAH_RateTooltip", UIParent, "GameTooltipTemplate")
-    RateTip:SetPadding(8, 8)  -- если нужно внутренние отступы, как у GameTooltip
+    RateTip:SetPadding(8, 8)
 
-    -- создаём FontString для заголовка
     local RateTipHeader = RateTip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    RateTipHeader:SetPoint("TOP", RateTip, "TOP", 0, -16)   -- 6px вниз от верхней рамки
-    RateTipHeader:SetJustifyH("CENTER")                   -- выравниваем по центру
+    RateTipHeader:SetPoint("TOP", RateTip, "TOP", 0, -16)
+    RateTipHeader:SetJustifyH("CENTER")
     RateTipHeader:SetFontObject("PKBT_Font_16")
-
 
     local function UpdateTooltipPosition(self)
         if not RateTip:IsOwned(self) then return end
-
         local x, y = GetCursorPosition()
         local scale = UIParent:GetEffectiveScale()
         RateTip:ClearAllPoints()
         RateTip:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 12, y / scale - 12)
     end
 
-
     playedTimeWrapper:SetScript("OnEnter", function(self)
+        -- The 'tip' variable here refers to prompt.playedTimeTooltipData
         local tip = prompt.playedTimeTooltipData
         RateTip:SetOwner(self, "ANCHOR_NONE")
         RateTip:ClearLines()
         self:SetScript("OnUpdate", UpdateTooltipPosition)
 
-        -- заголовок
-        -- ► задаём текст заголовка и его цвет
         RateTipHeader:SetText("Средние значения:")
         RateTipHeader:SetTextColor(0.9, 0.8, 0.5)
         RateTip:AddLine(" ")
         RateTip:AddLine(" ")
 
-        if tip and tip.median and tip.playedTime then
+        -- Check if we have the new percentile data
+        if tip and tip.median_boundary and tip.playedTime and tip.epic_boundary and tip.legendary_boundary and tip.average_boundary and tip.slow_example_display then
             local LABEL_WIDTH, SPACING = 100, 6
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
-                local timeStr = SecondsToTime(value)
+                local timeStr = "N/A"
+                if value then
+                    timeStr = SecondsToTime(value)
+                end
                 RateTip:AddDoubleLine(("     "):rep(1) .. label, timeStr, lr, lg, lb, rr, rg, rb)
                 local line    = RateTip:NumLines()
                 local leftFS  = _G["GoAgainAH_RateTooltipTextLeft"..line]
@@ -412,36 +354,39 @@ local function CreateReviewPrompt()
                 end
             end
 
-
-            -- Right-aligned time values
-            AddRow("Легенда",   tip.lower,  0.25, 1.0, 0.25, 0.25, 1.0, 0.25)
-            AddRow("Быстро",          tip.median, 1.0, 1.0, 0.0,  1.0, 1.0, 0.0)
-            AddRow("Средне",         tip.upper,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0)
-            AddRow("Медленно", tip.upper * 1.3,  1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
+            -- Updated AddRow calls with new categories and their respective colors
+            AddRow("Epic", tip.epic_boundary, 0.6, 0.1, 0.9, 0.6, 0.1, 0.9)
+            AddRow("Легенда", tip.legendary_boundary, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0)
+            AddRow("Быстро", tip.median_boundary, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0)
+            AddRow("Средне", tip.average_boundary, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+            AddRow("Медленно", tip.slow_example_display, 1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
 
             RateTip:AddLine(" ")
 
-            -- Цвет числа ранга по времени (по сравнению с lower/median/upper)
             local played = tip.playedTime
-            local rankColor = {1, 1, 1}
+            local rankColor = {1, 1, 1} -- Default white
 
-            if played and tip.lower and tip.median and tip.upper then
-                if played <= tip.lower then
-                    rankColor = {0.25, 1.0, 0.25}
-                elseif played <= tip.median then
-                    rankColor = {1.0, 1.0, 0.3}
-                elseif played <= tip.upper then
-                    rankColor = {1.0, 1.0, 1.0}
+            -- Updated rankColor logic using the new boundaries
+            if played and tip.epic_boundary and tip.legendary_boundary and tip.median_boundary and tip.average_boundary then
+                if played <= tip.epic_boundary then
+                    rankColor = {0.6, 0.1, 0.9}    -- Purple (Epic)
+                elseif played <= tip.legendary_boundary then
+                    rankColor = {0.0, 1.0, 0.0}    -- Green (Legendary)
+                elseif played <= tip.median_boundary then
+                    rankColor = {1.0, 1.0, 0.0}    -- Yellow (Fast)
+                elseif played <= tip.average_boundary then
+                    rankColor = {1.0, 1.0, 1.0}    -- White (Average)
                 else
-                    rankColor = {1.0, 0.25, 0.25}
+                    rankColor = {1.0, 0.25, 0.25}  -- Red (Slow)
                 end
             end
 
-            -- Жёлтый текст WoW: только "Ранг:"
-            local label = "|cffffd100Ранг:|r"
-            local rankStr = string.format(" %s из %s", tip.rank, tip.maxRank)
-
-            RateTip:AddLine(label .. rankStr, unpack(rankColor))
+            local rankLabel = "|cffffd100Ранг:|r"
+            local rankStr = " N/A"
+            if tip.rank and tip.maxRank then
+                rankStr = string.format(" %s из %s", tip.rank, tip.maxRank)
+            end
+            RateTip:AddLine(rankLabel .. rankStr, unpack(rankColor))
 
             local lastLine = _G["GoAgainAH_RateTooltipTextLeft" .. RateTip:NumLines()]
             if lastLine then
@@ -450,11 +395,9 @@ local function CreateReviewPrompt()
                 lastLine:SetPoint("BOTTOM", RateTip, "BOTTOM", 0, 16)
                 lastLine:SetJustifyH("CENTER")
             end
-
         else
             RateTip:AddLine("    Недостаточно данных для оценки", 1, 1, 1)
         end
-
         RateTip:Show()
     end)
 
@@ -463,25 +406,17 @@ local function CreateReviewPrompt()
         self:SetScript("OnUpdate", nil)
     end)
 
-
-    ----------------------------------------------------------------------------
-    -- Show / Hide
-    ----------------------------------------------------------------------------
     function prompt:Show()
         PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
         self.frame:Show()
-
-        -- Ensure changes after frame is rendered, 0.001 :)
         C_Timer:After(0.001, function()
             if self.labelFontString then
-                self.labelFontString:SetScale(1.5)  -- Set the scale
-                self.labelFontString:ClearAllPoints()  -- Clear any previous points
-                -- Position it 3px to the right in X-axis
+                self.labelFontString:SetScale(1.5)
+                self.labelFontString:ClearAllPoints()
                 self.labelFontString:SetPoint("LEFT", self.targetLabel.frame, "LEFT", 3, 0)
             end
         end)
     end
-
 
     function prompt:Hide()
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
@@ -492,104 +427,88 @@ local function CreateReviewPrompt()
         end
     end
 
-    ----------------------------------------------------------------------------
-    -- Setters
-    ----------------------------------------------------------------------------
-    -- Define the SetTargetName function with an additional parameter for classColor
     function prompt:SetTargetName(name, classColor)
-        -- Set the target name
         self.targetLabel:SetText(name)
-
-        -- Set the text color based on classColor (if available)
         if classColor then
-            labelFontString:SetTextColor(classColor.r, classColor.g, classColor.b)
+            self.labelFontString:SetTextColor(classColor.r, classColor.g, classColor.b)
         else
-            labelFontString:SetTextColor(1, 1, 1) -- Fallback to white
+            self.labelFontString:SetTextColor(1, 1, 1)
         end
     end
 
     function prompt:SetPlayedTime(seconds, clip)
-        if seconds then
-            -- Show actual played time
+        -- This is where prompt.playedTimeTooltipData is populated
+        self.playedTimeTooltipData = {} -- Clear previous data
+
+        if seconds and clip and clip.level then
             playedLabel:Show()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
 
-            local r, g, b, median, lower, upper, rank, maxRank = ns.GetPlayedTimeColor(seconds, clip.level)
-            self.playedTime:SetTextColor(r, g, b, 1)
+            local r_player, g_player, b_player, median_val, p25, p75, rank_val, maxRank_val, p10, p90 = ns.GetPlayedTimeColor(seconds, clip.level)
 
-            -- Save maxRank in tooltip data
-            self.playedTimeTooltipData = {
-                median = median,
-                lower = lower,
-                upper = upper,
-                level = clip.level,
-                rank = rank,
-                maxRank = maxRank, -- Add this line
-                playedTime = clip.playedTime
-            }
+            self.playedTime:SetTextColor(r_player or 1, g_player or 1, b_player or 1, 1) -- Use returned color or default to white
+
+            -- Store all relevant data for the tooltip
+            self.playedTimeTooltipData.epic_boundary = p10
+            self.playedTimeTooltipData.legendary_boundary = p25
+            self.playedTimeTooltipData.median_boundary = median_val -- Renamed from 'median' for clarity
+            self.playedTimeTooltipData.average_boundary = p75
+            self.playedTimeTooltipData.slow_example_display = p90
+
+            self.playedTimeTooltipData.level = clip.level
+            self.playedTimeTooltipData.rank = rank_val
+            self.playedTimeTooltipData.maxRank = maxRank_val
+            self.playedTimeTooltipData.playedTime = seconds -- Store the actual played time for comparison
+
+            -- For rank string color, directly use the color calculated for the player's time
+            self.playedTimeTooltipData.r_player, self.playedTimeTooltipData.g_player, self.playedTimeTooltipData.b_player = r_player, g_player, b_player
 
 
-            -- Stop any active countdown ticker
             if ns._ratePromptTicker then
                 ns._ratePromptTicker:Cancel()
                 ns._ratePromptTicker = nil
             end
         elseif ns.nextUpdateDeadline then
-            -- Show countdown to update
             playedLabel:Show()
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
             self.playedTime:SetTextColor(0.6, 0.6, 0.6, 1)
-            self.playedTimeTooltipData = nil
+            self.playedTimeTooltipData.median_boundary = nil -- Ensure no old data is used
 
-            -- Start ticker only if not already running
             if not ns._ratePromptTicker then
                 ns._ratePromptTicker = C_Timer:NewTicker(1, function()
                     if self.frame:IsShown() and ns.nextUpdateDeadline then
                         local remaining = ns.nextUpdateDeadline - time()
-
                         if remaining <= 0 then
-                            -- Countdown is over, switch to actual playedTime view
-                            playedLabel:SetText("Время в игре:")
-                            self.playedTime:SetText(SecondsToTime(clip.playedTime or 0))
-
-                            -- Colorize with clip.level (optional)
-                            if clip and clip.playedTime and clip.level then
-                                local r, g, b, median, lower, upper, rank, maxRank = ns.GetPlayedTimeColor(seconds, clip.level)
-                                self.playedTime:SetTextColor(r, g, b, 1)
-
-                                -- Save for tooltip later
-                                self.playedTimeTooltipData = {
-                                    median = median,
-                                    lower = lower,
-                                    upper = upper,
-                                    level = clip.level,
-                                    rank = rank,
-                                    maxRank = maxRank, -- Add this line
-                                    playedTime = clip.playedTime
-                                }
+                            -- Countdown over, attempt to set actual played time
+                            if clip and clip.playedTime then
+                                self:SetPlayedTime(clip.playedTime, clip) -- Recurse to set actual time and stats
+                            else
+                                playedLabel:SetText("Время в игре:")
+                                self.playedTime:SetText("N/A")
+                                self.playedTime:SetTextColor(1,0,0,1) -- Red for error/unavailable
+                                self.playedTimeTooltipData = {} -- Clear tooltip data
                             end
-
-                            -- Stop the ticker
-                            ns._ratePromptTicker:Cancel()
-                            ns._ratePromptTicker = nil
+                            if ns._ratePromptTicker then -- Check if ticker still exists before cancelling
+                                ns._ratePromptTicker:Cancel()
+                                ns._ratePromptTicker = nil
+                            end
                         else
-                            -- Still counting down
                             self.playedTime:SetText(SecondsToTime(remaining))
                         end
+                    elseif ns._ratePromptTicker then -- If frame not shown or no deadline, cancel ticker
+                        ns._ratePromptTicker:Cancel()
+                        ns._ratePromptTicker = nil
                     end
                 end)
-
             end
         else
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText("~10 минут")
             self.playedTime:SetTextColor(1, 1, 1, 1)
+            self.playedTimeTooltipData.median_boundary = nil
 
-            self.playedTimeTooltipData = nil
-
-            -- Also stop ticker if nothing to show
             if ns._ratePromptTicker then
                 ns._ratePromptTicker:Cancel()
                 ns._ratePromptTicker = nil
@@ -597,16 +516,9 @@ local function CreateReviewPrompt()
         end
     end
 
-
-    ----------------------------------------------------------------------------
-    -- Callbacks
-    ----------------------------------------------------------------------------
     function prompt:OnSubmit(callback)
         self.submitButton:SetCallback("OnClick", function()
-            -- 🟥 In prompt:OnSubmit block, replace:
-            -- callback(self.starRating.rating, self.reviewEdit:GetText())
-            -- 🔄 With:
-            callback(self.reactionWidget:GetSelected(), self.reviewEdit:GetText())
+            callback(self.reactionWidget:GetSelected(), self.reviewEdit:GetText() == REVIEW_PLACEHOLDER and "" or self.reviewEdit:GetText())
         end)
     end
 
@@ -615,24 +527,22 @@ local function CreateReviewPrompt()
             self.frame:Hide()
             OFAuctionFrameDeathClips.openedPromptClipID = nil
             if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
-                OFAuctionFrameDeathClips_Update() -- Refresh highlights
+                OFAuctionFrameDeathClips_Update()
             end
             PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
-            callback()
+            if callback then callback() end
         end)
     end
+
     ns.AuctionHouseAPI:RegisterEvent(ns.EV_PLAYED_TIME_UPDATED, function(id)
         if not id or not prompt or not prompt.frame:IsShown() then return end
         if OFAuctionFrameDeathClips.openedPromptClipID ~= id then return end
-        print("found prompt")
 
         local clip = ns.GetLiveDeathClips()[id]
         if clip and clip.playedTime then
-            print("Accepted Played Time Update Event")
             prompt:SetPlayedTime(clip.playedTime, clip)
         end
     end)
-
 
     return prompt
 end
