@@ -1136,11 +1136,12 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
         local zoneNameStr = string.format("|cffffd700%s|r", zoneName) -- Gold #FFD700
         local originalClipLevelStr = string.format("|cffffff00%d|r", watchedEntry.clipLevel) -- Yellow #FFFF00
 
-        local line2 = string.format("%s %s %s %s (прежний уровень: %s)",
+        local line2 = string.format("%s %s %s %s %s прежний уровень: %s",
                 coloredDisplayedClassName,
                 currentLevelStr,
-                separator,
+                separator,           -- First separator
                 zoneNameStr,
+                separator,           -- Second separator
                 originalClipLevelStr)
 
         if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
