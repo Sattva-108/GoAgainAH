@@ -318,8 +318,7 @@ local function CreateReviewPrompt()
     end
 
     playedTimeWrapper:SetScript("OnEnter", function(self)
-        -- The 'tip' variable here refers to prompt.playedTimeTooltipData
-        local tip = prompt.playedTimeTooltipData
+        local tip = prompt.playedTimeTooltipData       -- краткое имя
         RateTip:SetOwner(self, "ANCHOR_NONE")
         RateTip:ClearLines()
         self:SetScript("OnUpdate", UpdateTooltipPosition)
@@ -329,18 +328,18 @@ local function CreateReviewPrompt()
         RateTip:AddLine(" ")
         RateTip:AddLine(" ")
 
-        -- Check if we have the new percentile data
-        if tip and tip.median_boundary and tip.playedTime and tip.epic_boundary and tip.legendary_boundary and tip.average_boundary and tip.slow_example_display then
+        -- проверяем наличие данных
+        if tip and tip.medium_boundary and tip.legend_first then
             local LABEL_WIDTH, SPACING = 100, 6
+
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
-                local timeStr = "N/A"
-                if value then
-                    timeStr = SecondsToTime(value)
-                end
-                RateTip:AddDoubleLine(("     "):rep(1) .. label, timeStr, lr, lg, lb, rr, rg, rb)
-                local line    = RateTip:NumLines()
-                local leftFS  = _G["GoAgainAH_RateTooltipTextLeft"..line]
-                local rightFS = _G["GoAgainAH_RateTooltipTextRight"..line]
+                local timeStr = value and SecondsToTime(value) or "N/A"
+                RateTip:AddDoubleLine(("     "):rep(1)..label, timeStr,
+                        lr, lg, lb, rr, rg, rb)
+
+                local num      = RateTip:NumLines()
+                local leftFS   = _G["GoAgainAH_RateTooltipTextLeft"..num]
+                local rightFS  = _G["GoAgainAH_RateTooltipTextRight"..num]
 
                 if leftFS then
                     leftFS:SetWidth(LABEL_WIDTH)
@@ -350,41 +349,40 @@ local function CreateReviewPrompt()
                     rightFS:ClearAllPoints()
                     rightFS:SetPoint("LEFT", leftFS, "RIGHT", SPACING, 0)
                     rightFS:SetJustifyH("LEFT")
-                    rightFS:SetWidth( rightFS:GetStringWidth() - 30)
+                    rightFS:SetWidth(rightFS:GetStringWidth() - 30)
                 end
             end
 
-            -- Your existing boundary rows:
-            AddRow("Легенда",      tip.epic_boundary,       0.0, 1.0, 0.0,   0.0, 1.0, 0.0)   -- green
-            AddRow("Быстро",       tip.legendary_boundary,  1.0, 1.0, 0.0,   1.0, 1.0, 0.0)   -- yellow
-            AddRow("Средне",       tip.median_boundary,     1.0, 1.0, 1.0,   1.0, 1.0, 1.0)   -- white
-            AddRow("Медленно",     tip.average_boundary,    1.0, 0.5, 0.0,   1.0, 0.5, 0.0)   -- orange
-            AddRow("Своя волна",   tip.slow_example_display,1.0, 0.0, 0.0,   1.0, 0.0, 0.0)   -- red
+            -- ❯❯ показываем ПЕРВЫЕ значения категорий
+            AddRow("Легенда",    tip.legend_first, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0)   -- зелёный
+            AddRow("Быстро",     tip.fast_first,   1.0, 1.0, 0.0, 1.0, 1.0, 0.0)   -- жёлтый
+            AddRow("Средне",     tip.medium_first, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)   -- белый
+            AddRow("Медленно",   tip.slow_first,   1.0, 0.5, 0.0, 1.0, 0.5, 0.0)   -- оранжевый
+            AddRow("Своя волна", tip.wave_first,   1.0, 0.0, 0.0, 1.0, 0.0, 0.0)   -- красный
 
-            RateTip:AddLine(" ")  -- blank spacer
+            RateTip:AddLine(" ")
 
-            -- Recolor the rank line using those very same boundaries:
+            -- цвет строки «Ранг» по границам
             local played = tip.playedTime or 0
-            local rankColor = {1,1,1}
-            if     played <= tip.epic_boundary        then rankColor = {0.0, 1.0, 0.0}
-            elseif played <= tip.legendary_boundary   then rankColor = {1.0, 1.0, 0.0}
-            elseif played <= tip.median_boundary      then rankColor = {1.0, 1.0, 1.0}
-            elseif played <= tip.average_boundary     then rankColor = {1.0, 0.5, 0.0}
-            else                                        rankColor = {1.0, 0.0, 0.0}
+            local cr,cg,cb = 1,1,1
+            if     played <= tip.legend_boundary then cr,cg,cb = 0.0, 1.0, 0.0
+            elseif played <= tip.fast_boundary   then cr,cg,cb = 1.0, 1.0, 0.0
+            elseif played <= tip.medium_boundary then cr,cg,cb = 1.0, 1.0, 1.0
+            elseif played <= tip.slow_boundary   then cr,cg,cb = 1.0, 0.5, 0.0
+            else                                   cr,cg,cb = 1.0, 0.0, 0.0
             end
 
-            local rankLabel = "|cffffd100Ранг:|r"
-            local rankStr   = tip.rank and tip.maxRank
+            local rankStr = tip.rank and tip.maxRank
                     and string.format(" %s из %s", tip.rank, tip.maxRank)
                     or " N/A"
-            RateTip:AddLine(rankLabel .. rankStr, unpack(rankColor))
+            RateTip:AddLine("|cffffd100Ранг:|r"..rankStr, cr, cg, cb)
 
-            local lastLine = _G["GoAgainAH_RateTooltipTextLeft" .. RateTip:NumLines()]
-            if lastLine then
-                lastLine:SetFontObject("PKBT_Font_16")
-                lastLine:ClearAllPoints()
-                lastLine:SetPoint("BOTTOM", RateTip, "BOTTOM", 0, 16)
-                lastLine:SetJustifyH("CENTER")
+            local last = _G["GoAgainAH_RateTooltipTextLeft"..RateTip:NumLines()]
+            if last then
+                last:SetFontObject("PKBT_Font_16")
+                last:ClearAllPoints()
+                last:SetPoint("BOTTOM", RateTip, "BOTTOM", 0, 16)
+                last:SetJustifyH("CENTER")
             end
         else
             RateTip:AddLine("    Недостаточно данных для оценки", 1, 1, 1)
@@ -428,38 +426,44 @@ local function CreateReviewPrompt()
     end
 
     function prompt:SetPlayedTime(seconds, clip)
-        -- clear any previous tooltip data
+        -- очистить предыдущие данные
         self.playedTimeTooltipData = {}
 
         if seconds and clip and clip.level then
-            -- show the label and set its text
             playedLabel:Show()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
 
-            -- ►► only change starts here: pull our tier-colour from GetPlayedTimeColor
+            -- получаем цвет и данные от GetPlayedTimeColor
             local r_player, g_player, b_player,
-            median_val, p25, p75,
+            median_boundary, p25_boundary, p75_boundary,
             rank_val, maxRank_val,
-            epic_first, legendary_first,
-            median_first, average_first,
-            slow_first
+            legend_boundary, fast_boundary, medium_boundary, slow_boundary, wave_boundary,
+            legend_first, fast_first, medium_first, slow_first, wave_first
             = ns.GetPlayedTimeColor(seconds, clip.level)
 
-            -- apply that colour to the main text
             self.playedTime:SetTextColor(r_player, g_player, b_player, 1)
-            -- ◄◄ only change ends here
 
-            -- stash boundaries for the tooltip (unchanged)
+            -- сохранить в tip для тултипа
             local tip = self.playedTimeTooltipData
-            tip.epic_boundary        = epic_first
-            tip.legendary_boundary   = legendary_first
-            tip.median_boundary      = median_first
-            tip.average_boundary     = average_first
-            tip.slow_example_display = slow_first
-            tip.playedTime           = seconds
-            tip.rank                 = rank_val
-            tip.maxRank              = maxRank_val
+
+            -- примеры
+            tip.legend_first = legend_first
+            tip.fast_first   = fast_first
+            tip.medium_first = medium_first
+            tip.slow_first   = slow_first
+            tip.wave_first   = wave_first
+
+            -- границы
+            tip.legend_boundary = legend_boundary
+            tip.fast_boundary   = fast_boundary
+            tip.medium_boundary = medium_boundary
+            tip.slow_boundary   = slow_boundary
+            tip.wave_boundary   = wave_boundary
+
+            tip.playedTime = seconds
+            tip.rank       = rank_val
+            tip.maxRank    = maxRank_val
             tip.r_player, tip.g_player, tip.b_player = r_player, g_player, b_player
 
             -- cancel any existing countdown ticker

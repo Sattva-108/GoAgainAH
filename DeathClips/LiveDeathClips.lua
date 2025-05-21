@@ -225,26 +225,23 @@ ns.GetNoPlayedDeathClips = function()
     return clips
 end
 
--- ns.GetPlayedTimeColor Function
--- Возвращает R, G, B, median (p50), p25, p75, rank, maxRank, p10, p90
--- LiveDeathClips.lua
--- Replace your existing ns.GetPlayedTimeColor with this:
 
--- LiveDeathClips.lua
 -- Полная замена функции ns.GetPlayedTimeColor
 -- LiveDeathClips.lua
 -- Полная замена функции ns.GetPlayedTimeColor
 ns.GetPlayedTimeColor = function(seconds, level)
     if not seconds or not level then
         return 1,1,1,
-        nil,nil,nil,nil,nil,
-        nil,nil,nil,nil,nil
+        nil,nil,nil,       -- median, p25, p75
+        nil,nil,           -- rank, count
+        nil,nil,nil,nil,nil, -- boundaries
+        nil,nil,nil,nil,nil  -- firsts
     end
 
     seconds = tonumber(seconds)
     level   = tonumber(level)
 
-    -- собрать релевантные клипы текущего уровня и сервера
+    -- собрать клипы текущего уровня и сервера
     local relevant = {}
     for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if tonumber(clip.level) == level and clip.playedTime and not clip.completed then
@@ -252,8 +249,10 @@ ns.GetPlayedTimeColor = function(seconds, level)
         end
     end
 
-    if #relevant < 10 then
+    if #relevant < 5 then
         return 1,1,1,
+        nil,nil,nil,
+        nil,nil,
         nil,nil,nil,nil,nil,
         nil,nil,nil,nil,nil
     end
@@ -261,35 +260,42 @@ ns.GetPlayedTimeColor = function(seconds, level)
     table.sort(relevant)
     local count = #relevant
 
-    -- индексы персентилей
+    -- индексы перцентилей
     local idx10 = math.max(1, math.ceil(count * 0.10))
     local idx25 = math.max(1, math.ceil(count * 0.25))
     local idx50 = math.max(1, math.ceil(count * 0.50))
     local idx75 = math.max(1, math.ceil(count * 0.75))
     local idx90 = math.max(1, math.ceil(count * 0.90))
 
-    -- реальные значения персентилей
-    local p10_val    = relevant[idx10]
-    local p25_val    = relevant[idx25]
-    local median_val = relevant[idx50]
-    local p75_val    = relevant[idx75]
-    local p90_val    = relevant[idx90]
+    -- boundaries (пороги)
+    local legend_boundary  = relevant[idx10]   -- p10
+    local fast_boundary    = relevant[idx25]   -- p25
+    local medium_boundary  = relevant[idx50]   -- p50
+    local slow_boundary    = relevant[idx75]   -- p75
+    local wave_boundary    = relevant[idx90]   -- p90
 
-    -- окраска по позиции персонажа
+    -- первые значения в каждой категории
+    local legend_first  = relevant[1]
+    local fast_first    = relevant[idx10 + 1] or relevant[count]
+    local medium_first  = relevant[idx25 + 1] or relevant[count]
+    local slow_first    = relevant[idx50 + 1] or relevant[count]
+    local wave_first    = relevant[idx75 + 1] or relevant[count]
+
+    -- цвет игрока по границам
     local r,g,b
-    if seconds <= p10_val then
-        r,g,b = 0.0, 1.0, 0.0      -- зелёный
-    elseif seconds <= p25_val then
-        r,g,b = 1.0, 1.0, 0.0      -- жёлтый
-    elseif seconds <= median_val then
-        r,g,b = 1.0, 1.0, 1.0      -- белый
-    elseif seconds <= p75_val then
-        r,g,b = 1.0, 0.5, 0.0      -- оранжевый
+    if seconds <= legend_boundary then
+        r,g,b = 0.0, 1.0, 0.0
+    elseif seconds <= fast_boundary then
+        r,g,b = 1.0, 1.0, 0.0
+    elseif seconds <= medium_boundary then
+        r,g,b = 1.0, 1.0, 1.0
+    elseif seconds <= slow_boundary then
+        r,g,b = 1.0, 0.5, 0.0
     else
-        r,g,b = 1.0, 0.0, 0.0      -- красный
+        r,g,b = 1.0, 0.0, 0.0
     end
 
-    -- вычислить ранг
+    -- ранг
     local rank = count + 1
     for i, v in ipairs(relevant) do
         if seconds <= v then
@@ -298,18 +304,12 @@ ns.GetPlayedTimeColor = function(seconds, level)
         end
     end
 
-    -- вернуть ровно 10 значений после RGB в правильном порядке
+    -- вернуть 18 значений
     return r, g, b,
-    median_val,            -- p50
-    p25_val,               -- p25
-    p75_val,               -- p75
-    rank,                  -- ранг
-    count,                 -- всего
-    p10_val,               -- epic_boundary   (≤10 %)
-    p25_val,               -- legendary_boundary (≤25 %)
-    median_val,            -- median_boundary (≤50 %)
-    p75_val,               -- average_boundary (≤75 %)
-    p90_val                -- slow_boundary   (≤90 %)
+    medium_boundary, fast_boundary, slow_boundary, -- p50, p25, p75 (в прежнем порядке)
+    rank, count,                                   -- ранг, всего
+    legend_boundary, fast_boundary, medium_boundary, slow_boundary, wave_boundary,
+    legend_first, fast_first, medium_first, slow_first, wave_first
 end
 
 
