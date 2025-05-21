@@ -225,81 +225,77 @@ ns.GetNoPlayedDeathClips = function()
     return clips
 end
 
--- ns.GetPlayedTimeColor Function
--- Возвращает R, G, B, median (p50), p25, p75, rank, maxRank, p10, p90
--- LiveDeathClips.lua
--- Replace your existing ns.GetPlayedTimeColor with this:
 
+-- Полная замена функции ns.GetPlayedTimeColor
+-- LiveDeathClips.lua
+-- Полная замена функции ns.GetPlayedTimeColor
 ns.GetPlayedTimeColor = function(seconds, level)
     if not seconds or not level then
-        return 1,1,1, -- r,g,b
-        nil, -- median_val
-        nil, -- p25_val
-        nil, -- p75_val
-        nil, -- rank
-        nil, -- count
-        nil, -- p10_val
-        nil, -- p90_val
-        nil, -- epic_first
-        nil, -- legendary_first
-        nil, -- median_first
-        nil, -- average_first
-        nil  -- slow_first
+        return 1,1,1,
+        nil,nil,nil,       -- median, p25, p75
+        nil,nil,           -- rank, count
+        nil,nil,nil,nil,nil, -- boundaries
+        nil,nil,nil,nil,nil  -- firsts
     end
 
     seconds = tonumber(seconds)
     level   = tonumber(level)
 
+    -- собрать клипы текущего уровня и сервера
     local relevant = {}
     for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if tonumber(clip.level) == level and clip.playedTime and not clip.completed then
-            table.insert(relevant, tonumber(clip.playedTime))
+            relevant[#relevant + 1] = tonumber(clip.playedTime)
         end
     end
 
-    if #relevant < 10 then
-        return 1,1,1, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+    if #relevant < 5 then
+        return 1,1,1,
+        nil,nil,nil,
+        nil,nil,
+        nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil
     end
 
     table.sort(relevant)
     local count = #relevant
 
-    -- slice indices
+    -- индексы перцентилей
     local idx10 = math.max(1, math.ceil(count * 0.10))
     local idx25 = math.max(1, math.ceil(count * 0.25))
     local idx50 = math.max(1, math.ceil(count * 0.50))
     local idx75 = math.max(1, math.ceil(count * 0.75))
     local idx90 = math.max(1, math.ceil(count * 0.90))
 
-    -- fastest in each category
-    local epic_first      = relevant[1]
-    local legendary_first = relevant[idx10 + 1] or relevant[count]
-    local median_first    = relevant[idx25 + 1] or relevant[count]
-    local average_first   = relevant[idx50 + 1] or relevant[count]
-    local slow_first      = relevant[count]
+    -- boundaries (пороги)
+    local legend_boundary  = relevant[idx10]   -- p10
+    local fast_boundary    = relevant[idx25]   -- p25
+    local medium_boundary  = relevant[idx50]   -- p50
+    local slow_boundary    = relevant[idx75]   -- p75
+    local wave_boundary    = relevant[idx90]   -- p90
 
-    -- percentile thresholds for coloring
-    local p10_val   = relevant[idx10]
-    local p25_val   = relevant[idx25]
-    local median_val= relevant[idx50]
-    local p75_val   = relevant[idx75]
-    local p90_val   = relevant[idx90]
+    -- первые значения в каждой категории
+    local legend_first  = relevant[1]
+    local fast_first    = relevant[idx10 + 1] or relevant[count]
+    local medium_first  = relevant[idx25 + 1] or relevant[count]
+    local slow_first    = relevant[idx50 + 1] or relevant[count]
+    local wave_first    = relevant[idx75 + 1] or relevant[count]
 
-    -- pick a color based on where this clip falls
-    local r, g, b
-    if seconds <= p10_val then
-        r, g, b = 0.6, 0.1, 0.9
-    elseif seconds <= p25_val then
-        r, g, b = 0.0, 1.0, 0.0
-    elseif seconds <= median_val then
-        r, g, b = 1.0, 1.0, 0.0
-    elseif seconds <= p75_val then
-        r, g, b = 1.0, 1.0, 1.0
+    -- цвет игрока по границам
+    local r,g,b
+    if seconds <= legend_boundary then
+        r,g,b = 0.0, 1.0, 0.0
+    elseif seconds <= fast_boundary then
+        r,g,b = 1.0, 1.0, 0.0
+    elseif seconds <= medium_boundary then
+        r,g,b = 1.0, 1.0, 1.0
+    elseif seconds <= slow_boundary then
+        r,g,b = 1.0, 0.5, 0.0
     else
-        r, g, b = 1.0, 0.25, 0.25
+        r,g,b = 1.0, 0.0, 0.0
     end
 
-    -- determine exact rank
+    -- ранг
     local rank = count + 1
     for i, v in ipairs(relevant) do
         if seconds <= v then
@@ -308,20 +304,15 @@ ns.GetPlayedTimeColor = function(seconds, level)
         end
     end
 
+    -- вернуть 18 значений
     return r, g, b,
-    median_val,
-    p25_val,
-    p75_val,
-    rank,
-    count,
-    p10_val,
-    p90_val,
-    epic_first,
-    legendary_first,
-    median_first,
-    average_first,
-    slow_first
+    medium_boundary, fast_boundary, slow_boundary, -- p50, p25, p75 (в прежнем порядке)
+    rank, count,                                   -- ранг, всего
+    legend_boundary, fast_boundary, medium_boundary, slow_boundary, wave_boundary,
+    legend_first, fast_first, medium_first, slow_first, wave_first
 end
+
+
 
 
 
