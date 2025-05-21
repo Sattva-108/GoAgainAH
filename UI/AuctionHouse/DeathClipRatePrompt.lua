@@ -437,32 +437,38 @@ local function CreateReviewPrompt()
     end
 
     function prompt:SetPlayedTime(seconds, clip)
-        -- This is where prompt.playedTimeTooltipData is populated
-        self.playedTimeTooltipData = {} -- Clear previous data
+        self.playedTimeTooltipData = {}
 
         if seconds and clip and clip.level then
             playedLabel:Show()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
 
-            local r_player, g_player, b_player, median_val, p25, p75, rank_val, maxRank_val, p10, p90 = ns.GetPlayedTimeColor(seconds, clip.level)
+            local r, g, b,
+            median_val, p25, p75,
+            rank_val, maxRank_val,
+            p10, p90,
+            epic_first, legendary_first,
+            median_first, average_first,
+            slow_first = ns.GetPlayedTimeColor(seconds, clip.level)
 
-            self.playedTime:SetTextColor(r_player or 1, g_player or 1, b_player or 1, 1) -- Use returned color or default to white
+            self.playedTime:SetTextColor(r or 1, g or 1, b or 1, 1)
 
-            -- Store all relevant data for the tooltip
-            self.playedTimeTooltipData.epic_boundary = p10
-            self.playedTimeTooltipData.legendary_boundary = p25
-            self.playedTimeTooltipData.median_boundary = median_val -- Renamed from 'median' for clarity
-            self.playedTimeTooltipData.average_boundary = p75
-            self.playedTimeTooltipData.slow_example_display = p90
+            -- now each category shows its own fastest time (sub-rank 1),
+            -- except Slow, which shows the very slowest
+            self.playedTimeTooltipData.epic_boundary      = epic_first
+            self.playedTimeTooltipData.legendary_boundary = legendary_first
+            self.playedTimeTooltipData.median_boundary    = median_first
+            self.playedTimeTooltipData.average_boundary   = average_first
+            self.playedTimeTooltipData.slow_example_display = slow_first
 
-            self.playedTimeTooltipData.level = clip.level
-            self.playedTimeTooltipData.rank = rank_val
+            -- keep rank info for display
+            self.playedTimeTooltipData.rank    = rank_val
             self.playedTimeTooltipData.maxRank = maxRank_val
-            self.playedTimeTooltipData.playedTime = seconds -- Store the actual played time for comparison
-
-            -- For rank string color, directly use the color calculated for the player's time
-            self.playedTimeTooltipData.r_player, self.playedTimeTooltipData.g_player, self.playedTimeTooltipData.b_player = r_player, g_player, b_player
+            self.playedTimeTooltipData.playedTime = seconds
+            self.playedTimeTooltipData.r_player,
+            self.playedTimeTooltipData.g_player,
+            self.playedTimeTooltipData.b_player = r, g, b
 
 
             if ns._ratePromptTicker then
