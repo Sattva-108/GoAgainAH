@@ -1046,16 +1046,53 @@ local function IsPlayerOnFriendsList(characterName)
     return false, false, nil, nil, nil
 end
 
-local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, classToken, area)
+ns.russianClassNameToEnglishToken = {
+    -- Male (and some neutral) forms from LOCALIZED_CLASS_NAMES_MALE
+    ["Рыцарь смерти"] = "DEATHKNIGHT",
+    ["Воин"] = "WARRIOR",
+    ["Разбойник"] = "ROGUE",
+    ["Маг"] = "MAGE",
+    ["Жрец"] = "PRIEST",
+    ["Чернокнижник"] = "WARLOCK",
+    ["Охотник"] = "HUNTER",
+    ["Друид"] = "DRUID", -- Druid is often neutral
+    ["Шаман"] = "SHAMAN",
+    ["Паладин"] = "PALADIN", -- Paladin is often neutral
+
+    -- Female forms from LOCALIZED_CLASS_NAMES_FEMALE
+    -- Note: DEATHKNIGHT, WARRIOR, MAGE, DRUID, PALADIN often use same localized string for male/female,
+    -- so they might overwrite. This is fine as long as the English token is the same.
+    ["Разбойница"] = "ROGUE",
+    ["Жрица"] = "PRIEST",
+    ["Чернокнижница"] = "WARLOCK",
+    ["Охотница"] = "HUNTER",
+    ["Шаманка"] = "SHAMAN",
+
+    -- Also include uppercase versions if GetFriendInfo might return those
+    ["РЫЦАРЬ СМЕРТИ"] = "DEATHKNIGHT",
+    ["ВОИН"] = "WARRIOR",
+    ["РАЗБОЙНИК"] = "ROGUE",
+    ["МАГ"] = "MAGE",
+    ["ЖРЕЦ"] = "PRIEST",
+    ["ЧЕРНОКНИЖНИК"] = "WARLOCK",
+    ["ОХОТНИК"] = "HUNTER",
+    ["ДРУИД"] = "DRUID",
+    ["ШАМАН"] = "SHAMAN",
+    ["ПАЛАДИН"] = "PALADIN",
+    ["ОХОТНИЦА"] = "HUNTER", -- Uppercase female
+    ["РАЗБОЙНИЦА"] = "ROGUE",
+    ["ЖРИЦА"] = "PRIEST",
+    ["ЧЕРНОКНИЖНИЦА"] = "WARLOCK",
+    ["ШАМАНКА"] = "SHAMAN"
+}
+
+local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, classTokenFromGetFriendInfo, area)
     local lowerName = string.lower(name)
     AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
     local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
-    -- Only proceed if they are being watched (have a clipLevel) AND
-    -- haven't been notified for this add instance yet,
-    -- AND their current level is less than the level they were at when added via UI.
-    if watchedEntry and watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd and
-            currentLevel and currentLevel < watchedEntry.clipLevel then
+    if watchedEntry and not watchedEntry.hasBeenNotifiedForThisAdd and
+            currentLevel and watchedEntry.clipLevel and currentLevel < watchedEntry.clipLevel then
 
         local currentTime = GetTime()
         if (currentTime - lastNotificationTime) < NOTIFICATION_COOLDOWN then
@@ -1064,21 +1101,56 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
         lastNotificationTime = currentTime
 
         PlaySoundFile(MAP_PING_SOUND_FILE)
-        local className = (classToken and type(classToken) == "string" and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[string.upper(classToken)]) or
-                (classToken and type(classToken) == "string" and ns.fallbackClassNames[string.upper(classToken)]) or
-                (classToken and type(classToken) == "string" and classToken) or "Неизвестный класс"
+
+        local displayedClassName = "Неизвестный класс"
+        local classColorHex = "ffffffff" -- Default to white for color if not found
+        local englishTokenForColor = nil
+
+        if classTokenFromGetFriendInfo and type(classTokenFromGetFriendInfo) == "string" and classTokenFromGetFriendInfo ~= "" then
+            displayedClassName = classTokenFromGetFriendInfo
+
+            if ns.russianClassNameToEnglishToken then
+                englishTokenForColor = ns.russianClassNameToEnglishToken[displayedClassName]
+                if not englishTokenForColor then
+                    englishTokenForColor = ns.russianClassNameToEnglishToken[string.upper(displayedClassName)]
+                end
+            end
+
+            if englishTokenForColor and RAID_CLASS_COLORS and RAID_CLASS_COLORS[englishTokenForColor] then
+                local c = RAID_CLASS_COLORS[englishTokenForColor]
+                classColorHex = string.format("%02x%02x%02x", c.r * 255, c.g * 255, c.b * 255)
+            end
+        end
+
         local zoneName = area and area ~= "" and area or "Неизвестная зона"
-        local clickableName = "|Hplayer:"..name.."|h|cff00ff00["..name.."]|h|r"
-        local intro = "|cffFFD700Возрождение Легенды!|r"
-        local message = string.format("%s %s начал(а) свой путь заново! Уровень: %d (был %d при добавлении, %s) в |cffffff00%s|r.",
-                intro, clickableName, currentLevel, watchedEntry.clipLevel, className, zoneName)
+
+        -- Line 1: "GoAgainAH:" (grey) Name (class color) "начал новый путь." (default white)
+        local prefix = string.format("|cff888888%s:|r", addonName)
+        local clickableColoredName = string.format("|Hplayer:%s|h|cff%s[%s]|h|r", name, classColorHex, name)
+        local line1 = string.format("%s %s начал новый путь.", prefix, clickableColoredName)
+
+        -- Line 2: ClassName (class color) Level (yellow) • (light grey) Zone (gold) (прежний уровень: OriginalLevel (yellow))
+        local coloredDisplayedClassName = string.format("|cff%s%s|r", classColorHex, displayedClassName)
+        local currentLevelStr = string.format("|cffffff00%d ур.|r", currentLevel) -- Yellow #FFFF00
+        local separator = "|cffaaaaaa•|r" -- Light grey #AAAAAA
+        local zoneNameStr = string.format("|cffffd700%s|r", zoneName) -- Gold #FFD700
+        local originalClipLevelStr = string.format("|cffffff00%d|r", watchedEntry.clipLevel) -- Yellow #FFFF00
+
+        local line2 = string.format("%s %s %s %s (прежний уровень: %s)",
+                coloredDisplayedClassName,
+                currentLevelStr,
+                separator,
+                zoneNameStr,
+                originalClipLevelStr)
 
         if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-            DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message)
-        else print(addonName .. ": " .. message) end
+            DEFAULT_CHAT_FRAME:AddMessage(line1)
+            DEFAULT_CHAT_FRAME:AddMessage(line2)
+        else
+            print(line1); print(line2)
+        end
 
-        watchedEntry.hasBeenNotifiedForThisAdd = true -- Mark as notified in SavedVariables
-        -- Will be cleaned up on next PLAYER_ENTERING_WORLD
+        watchedEntry.hasBeenNotifiedForThisAdd = true
     end
 end
 
