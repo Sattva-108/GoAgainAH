@@ -100,43 +100,52 @@
             </Button>
 
             <Frame name="GoAgainAH_StatusTooltip" parent="OFAuctionFrameDeathClips" hidden="true" frameStrata="TOOLTIP">
-                <Size x="230" y="50"/> <!-- Adjusted size slightly for potentially longer error messages -->
-                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
-                          edgeFile="Interface\DialogFrame\UI-Tooltip-Border"
-                          tile="true">
-                    <EdgeSize val="16"/>
-                    <TileSize val="32"/>
-                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>
-                </Backdrop>
-                <Anchors>
-                    <!-- Anchor to bottom-left of parent (OFAuctionFrameDeathClips) with new offsets -->
-                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameDeathClips" relativePoint="BOTTOMLEFT">
-                        <Offset x="30" y="-15"/>
-                    </Anchor>
-                </Anchors>
+                <Size x="230" y="50"/>
+<!--                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"-->
+<!--                          edgeFile="Interface\DialogFrame\UI-Tooltip-Border"-->
+<!--                          tile="true">-->
+<!--                    <EdgeSize val="16"/>-->
+<!--                    <TileSize val="32"/>-->
+<!--                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>-->
+<!--                </Backdrop>-->
                 <Layers>
+<!--                    &lt;!&ndash; ── FULLY OPAQUE BLACK BACKGROUND ── &ndash;&gt;-->
+<!--                    <Layer level="BACKGROUND">-->
+<!--                        <Texture name="$parentSolidBG" file="Interface\Tooltips\UI-Tooltip-Background" tile="true">-->
+<!--                            <Color r="0" g="0" b="0" a="1"/>-->
+<!--                            <AllPoints/>-->
+<!--                        </Texture>-->
+<!--                    </Layer>-->
+                    <!-- ── YOUR TEXT LAYERS ── -->
                     <Layer level="ARTWORK">
                         <FontString name="$parentLine1" inherits="GameFontNormalSmall" justifyH="LEFT">
-                            <Size x="210" y="14"/> <!-- Adjusted width -->
+                            <Size x="210" y="14"/>
                             <Anchors>
                                 <Anchor point="TOPLEFT" x="10" y="-8"/>
                             </Anchors>
                         </FontString>
                         <FontString name="$parentLine2" inherits="GameFontNormalSmall" justifyH="LEFT">
-                            <Size x="210" y="14"/> <!-- Adjusted width -->
+                            <Size x="210" y="14"/>
                             <Anchors>
                                 <Anchor point="TOPLEFT" relativeTo="$parentLine1" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
                             </Anchors>
                         </FontString>
                         <FontString name="$parentLine3" inherits="GameFontNormalSmall" justifyH="LEFT">
-                            <Size x="210" y="14"/> <!-- Adjusted width -->
+                            <Size x="210" y="14"/>
                             <Anchors>
                                 <Anchor point="TOPLEFT" relativeTo="$parentLine2" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
                             </Anchors>
                         </FontString>
                     </Layer>
                 </Layers>
+                <Scripts>
+                    <OnLoad>
+                        self:SetScale(1.68)
+                    </OnLoad>
+                </Scripts>
+                <!-- (optional) remove the old <Anchors> block since we re-anchor in Lua anyway -->
             </Frame>
+
 
             <!-- Clip Link -->
             <Frame name="$parentClip">

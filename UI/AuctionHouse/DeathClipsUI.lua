@@ -954,76 +954,95 @@ local TOOLTIP_HORIZONTAL_PADDING = 20
 local TOOLTIP_VERTICAL_PADDING = 16
 local LINE_SPACING = 2
 
-local function ShowStatusTooltip(line1Str, line2Str, line3Str)
+local function ShowStatusTooltip(anchorFrame, line1Str, line2Str, line3Str)
     local tooltip = _G["GoAgainAH_StatusTooltip"]
-    if not tooltip then print(addonName .. " Error: GoAgainAH_StatusTooltip frame not found!"); return end
-    local parentFrame = tooltip:GetParent(); if not parentFrame then tooltip:Hide(); return end
-    if not parentFrame:IsShown() then tooltip:Hide(); return end
+    if not tooltip then
+        print(addonName .. " Error: GoAgainAH_StatusTooltip frame not found!")
+        return
+    end
+    -- if the user moved off the icon before we fire, don’t show at all
+    if anchorFrame and not anchorFrame:IsMouseOver() then
+        return
+    end
 
-    local l1, l2, l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
-    if not (l1 and l2 and l3) then print(addonName.." Error: StatusTooltip lines not found!"); return end
+    -- Variant B: Dark charcoal (#181818), fully opaque
+    if not tooltip.__bgVariantB then
+        local bg = tooltip:CreateTexture(nil, "BACKGROUND", nil, -8)
+        bg:SetAllPoints(tooltip)
+        -- RGB(24/255,24/255,24/255), alpha=1
+        bg:SetTexture(0.094, 0.094, 0.094, 1)
+        tooltip.__bgVariantB = bg
+    end
 
-    -- print(addonName .. " --- ShowStatusTooltip START ---")
-    -- print(string.format("  Input strings: L1='%.30s...', L2='%.30s...', L3='%.30s...'", tostring(line1Str or "nil"), tostring(line2Str or "nil"), tostring(line3Str or "nil")))
 
-    -- Step 1: Assume max possible content width for FontStrings to get their "ideal" wrapped height.
-    -- We'll use TOOLTIP_MAX_WIDTH - TOOLTIP_HORIZONTAL_PADDING as this initial guess.
-    local initialFontStringMaxWidth = TOOLTIP_MAX_WIDTH - TOOLTIP_HORIZONTAL_PADDING
-    l1:SetWidth(initialFontStringMaxWidth)
-    l2:SetWidth(initialFontStringMaxWidth)
-    l3:SetWidth(initialFontStringMaxWidth)
+    -- Hide if parent isn’t visible
+    local parentFrame = tooltip:GetParent()
+    if not parentFrame or not parentFrame:IsShown() then
+        tooltip:Hide()
+        return
+    end
 
+    -- Fetch our three FontStrings
+    local l1 = _G[tooltip:GetName().."Line1"]
+    local l2 = _G[tooltip:GetName().."Line2"]
+    local l3 = _G[tooltip:GetName().."Line3"]
+    if not (l1 and l2 and l3) then
+        print(addonName .. " Error: StatusTooltip lines not found!")
+        return
+    end
+
+    -- ── Measure & wrap text exactly as before ──
+    local initialMax = TOOLTIP_MAX_WIDTH - TOOLTIP_HORIZONTAL_PADDING
+    l1:SetWidth(initialMax); l2:SetWidth(initialMax); l3:SetWidth(initialMax)
     l1:SetText(line1Str or "")
     l2:SetText(line2Str or "")
     l3:SetText(line3Str or "")
 
-    -- Step 2: Now that they have text and a max width, find the actual max width used by any line *after wrapping*.
-    -- Note: GetStringWidth() still gives unconstrained width. We need to check rendered width if possible,
-    -- or rely on the fact that they won't exceed initialFontStringMaxWidth.
-    -- For simplicity, we'll find the widest GetStringWidth() again, but now we primarily care about their heights.
-    local actualMaxContentWidthUsed = 0
-    if line1Str and line1Str ~= "" then actualMaxContentWidthUsed = math.max(actualMaxContentWidthUsed, l1:GetStringWidth()) end
-    if line2Str and line2Str ~= "" then actualMaxContentWidthUsed = math.max(actualMaxContentWidthUsed, l2:GetStringWidth()) end
-    if line3Str and line3Str ~= "" then actualMaxContentWidthUsed = math.max(actualMaxContentWidthUsed, l3:GetStringWidth()) end
+    local usedW = 0
+    if line1Str and line1Str ~= "" then usedW = math.max(usedW, l1:GetStringWidth()) end
+    if line2Str and line2Str ~= "" then usedW = math.max(usedW, l2:GetStringWidth()) end
+    if line3Str and line3Str ~= "" then usedW = math.max(usedW, l3:GetStringWidth()) end
 
-    -- If the text content (even after potential wrapping within initialFontStringMaxWidth) is still very wide,
-    -- actualMaxContentWidthUsed could be large. We need to ensure our tooltip isn't too narrow.
-    local targetContentWidth = math.min(initialFontStringMaxWidth, actualMaxContentWidthUsed)
+    local contentW = math.min(initialMax, usedW)
+    local finalW = math.max(TOOLTIP_MIN_WIDTH,
+            math.min(TOOLTIP_MAX_WIDTH,
+                    contentW + TOOLTIP_HORIZONTAL_PADDING))
+    tooltip:SetWidth(finalW)
+
+    local innerW = finalW - TOOLTIP_HORIZONTAL_PADDING
+    l1:SetWidth(innerW); l2:SetWidth(innerW); l3:SetWidth(innerW)
+    l1:SetText(line1Str or ""); l2:SetText(line2Str or ""); l3:SetText(line3Str or "")
+
+    -- compute height
+    local totalH, lines = 0, 0
+    if line1Str ~= "" then totalH=totalH+l1:GetHeight(); lines=lines+1 else l1:SetText("") end
+    if line2Str ~= "" then
+        if lines>0 then totalH=totalH+LINE_SPACING end
+        totalH=totalH+l2:GetHeight(); lines=lines+1
+    else l2:SetText("") end
+    if line3Str ~= "" then
+        if lines>0 then totalH=totalH+LINE_SPACING end
+        --totalH=totalH+l3:GetHeight(); lines=lines+1
+    else l3:SetText("") end
+
+    if lines == 0 then
+        tooltip:Hide()
+        return
+    end
+
+    tooltip:SetHeight(math.max(35, TOOLTIP_VERTICAL_PADDING + totalH))
+
+    -- ── REANCHOR TO ICON BUTTON ──
+    -- new: place the bottom-left of the tooltip at the top-left of the button
+    tooltip:ClearAllPoints()
+    tooltip:SetPoint("BOTTOMLEFT", anchorFrame, "TOPLEFT", 21.5, 0)
 
 
-    local finalTooltipWidth = targetContentWidth + TOOLTIP_HORIZONTAL_PADDING
-    finalTooltipWidth = math.max(TOOLTIP_MIN_WIDTH, finalTooltipWidth)
-    finalTooltipWidth = math.min(TOOLTIP_MAX_WIDTH, finalTooltipWidth) -- Redundant if targetContentWidth respects TOOLTIP_MAX_WIDTH
 
-    tooltip:SetWidth(finalTooltipWidth)
-
-    -- Final pass on FontString widths to match the determined tooltip content width
-    local finalFontStringContentWidth = finalTooltipWidth - TOOLTIP_HORIZONTAL_PADDING
-    l1:SetWidth(finalFontStringContentWidth)
-    l2:SetWidth(finalFontStringContentWidth)
-    l3:SetWidth(finalFontStringContentWidth)
-
-    -- Re-set text one last time to ensure GetHeight is accurate with the FINAL width
-    l1:SetText(line1Str or "")
-    l2:SetText(line2Str or "")
-    l3:SetText(line3Str or "")
-    -- print("  Text re-set on l1, l2, l3 after FINAL widths were adjusted.")
-
-
-    -- Calculate total height needed
-    local totalTextHeight = 0; local linesShown = 0
-    if line1Str and line1Str ~= "" then totalTextHeight=totalTextHeight+l1:GetHeight(); linesShown=linesShown+1 else l1:SetText("") end
-    if line2Str and line2Str ~= "" then if linesShown>0 then totalTextHeight=totalTextHeight+LINE_SPACING end; totalTextHeight=totalTextHeight+l2:GetHeight(); linesShown=linesShown+1 else l2:SetText("") end
-    if line3Str and line3Str ~= "" then if linesShown>0 then totalTextHeight=totalTextHeight+LINE_SPACING end; totalTextHeight=totalTextHeight+l3:GetHeight(); linesShown=linesShown+1 else l3:SetText("") end
-
-    if linesShown == 0 then tooltip:Hide(); return end
-
-    local newTooltipHeight = TOOLTIP_VERTICAL_PADDING + totalTextHeight
-    tooltip:SetHeight(math.max(35, newTooltipHeight))
 
     tooltip:Show()
-    -- print(addonName .. " --- ShowStatusTooltip END (Shown) ---")
 end
+
 
 local function HideStatusTooltip()
     local tooltip = _G["GoAgainAH_StatusTooltip"]
@@ -1155,114 +1174,217 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
     end
 end
 
+-- at addon load, create a dedicated hover-tooltip
+local HoverTooltip = CreateFrame("GameTooltip", "GoAgainAH_HoverTooltip", UIParent, "GameTooltipTemplate")
+HoverTooltip:SetFrameStrata("TOOLTIP")
+-- you can tweak its default anchor offset here if you like:
+-- HoverTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+
 local function ShowHoverTooltipForIcon(iconButton)
-    local statusTooltip = _G["GoAgainAH_StatusTooltip"]
-    if statusTooltip and statusTooltip:IsShown() then return end
-    if GameTooltip:IsShown() and GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end
-    local mainRowButton = iconButton:GetParent(); if not mainRowButton or not mainRowButton.clipData or not mainRowButton.clipData.characterName then return end
-    local clipData = mainRowButton.clipData; local characterNameLower = string.lower(clipData.characterName)
-    GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT"); GameTooltip:AddLine(clipData.characterName)
-    local playerFaction = UnitFactionGroup("player"); local targetFaction = clipData.faction
-    if targetFaction ~= playerFaction then GameTooltip:AddLine("|cffff2020(Другая фракция)|r")
-    else
-        local isFriend, isConnected, friendActualLevel = IsPlayerOnFriendsList(clipData.characterName)
-        GameTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
-        if isFriend then
-            GameTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
-            if isConnected then GameTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", friendActualLevel or 0))
-            else GameTooltip:AddLine("|cff888888(Не в сети)|r") end
-        else GameTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r") end
+    -- don’t run if ours is already visible
+    if HoverTooltip:IsShown() then return end
+
+    -- hide the standard GameTooltip if it’s on this button
+    if GameTooltip:IsShown() and GameTooltip:IsOwned(iconButton) then
+        GameTooltip:Hide()
     end
-    GameTooltip:Show()
+
+    -- grab your clipData
+    local row = iconButton:GetParent()
+    if not row or not row.clipData or not row.clipData.characterName then
+        return
+    end
+    local cd = row.clipData
+    local name = cd.characterName
+
+    -- populate *your* tooltip
+    HoverTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
+    HoverTooltip:ClearLines()
+    HoverTooltip:AddLine(name)
+
+    local pf = UnitFactionGroup("player")
+    if cd.faction ~= pf then
+        HoverTooltip:AddLine("|cffff2020(Другая фракция)|r")
+    else
+        local isFriend, isConnected, lvl = IsPlayerOnFriendsList(name)
+        HoverTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
+
+        if isFriend then
+            HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
+            if isConnected then
+                HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", lvl or 0))
+            else
+                HoverTooltip:AddLine("|cff888888(Не в сети)|r")
+            end
+        else
+            HoverTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r")
+        end
+    end
+
+    -- scale *only* your new tooltip
+    HoverTooltip:SetScale(1.5)
+    HoverTooltip:Show()
 end
 
+
 function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
-    HideStatusTooltip(); if GameTooltip:IsShown() and GameTooltip:IsOwned(iconFrameElement) then GameTooltip:Hide() end
-    local mainRowButton = iconFrameElement:GetParent(); if not mainRowButton or not mainRowButton.clipData then return end
-    local clipData = mainRowButton.clipData; if not clipData.characterName or not clipData.level then return end
-    local characterName = clipData.characterName; local characterNameLower = string.lower(characterName)
-    local originalClipLevelFromThisInteraction = clipData.level; local targetClipFaction = clipData.faction
-    local playerFaction = UnitFactionGroup("player"); local line1, line2, line3 = "", "", ""
+    -- Hide any existing status tooltip
+    HideStatusTooltip()
+
+    -- Hide the GameTooltip if it’s showing for this icon
+    if GameTooltip:IsShown() and GameTooltip:IsOwned(iconFrameElement) then
+        GameTooltip:Hide()
+    end
+
+    -- Hide the custom hover tooltip
+    if GoAgainAH_HoverTooltip then
+        GoAgainAH_HoverTooltip:Hide()
+    end
+
+    -- Grab the clip data from this row
+    local mainRowButton = iconFrameElement:GetParent()
+    if not mainRowButton or not mainRowButton.clipData then
+        return
+    end
+    local clipData = mainRowButton.clipData
+    if not clipData.characterName or not clipData.level then
+        return
+    end
+
+    local characterName                      = clipData.characterName
+    local characterNameLower                 = string.lower(characterName)
+    local originalClipLevelFromThisInteraction = clipData.level
+    local targetClipFaction                  = clipData.faction
+    local playerFaction                      = UnitFactionGroup("player")
+    local line1, line2, line3                = "", "", ""
 
     if receivedMouseButton == "LeftButton" then
+        -- Left-click: whisper the character
         local editBox = _G["ChatFrame1EditBox"]
         if editBox then
-            if editBox:IsShown() then editBox:ClearFocus(); editBox:Hide()
-            else ChatFrame_SendTell(characterName) end
-        else ChatFrame_SendTell(characterName) end
-    elseif receivedMouseButton == "RightButton" then
-        if targetClipFaction ~= playerFaction then
-            ShowStatusTooltip("|cffff0000Нельзя добавить в друзья:|r " .. characterName, "(Разные фракции)", nil); return
+            if editBox:IsShown() then
+                editBox:ClearFocus()
+                editBox:Hide()
+            else
+                ChatFrame_SendTell(characterName)
+            end
+        else
+            ChatFrame_SendTell(characterName)
         end
-        if AddFriend then
-            local wasAlreadyFriend, wasConnected, currentActualLevel, currentClass, currentArea = IsPlayerOnFriendsList(characterName)
 
-            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {} -- Ensure table exists
+    elseif receivedMouseButton == "RightButton" then
+        -- Right-click: add to friends / notify
+
+        -- 1) Prevent cross-faction adds
+        if targetClipFaction ~= playerFaction then
+            ShowStatusTooltip(iconFrameElement,
+                    "|cffff0000Нельзя добавить в друзья:|r " .. characterName,
+                    "(Разные фракции)",
+                    nil
+            )
+            return
+        end
+
+        if AddFriend then
+            -- Check existing friend status
+            local wasAlreadyFriend, wasConnected, currentActualLevel, currentClass, currentArea =
+            IsPlayerOnFriendsList(characterName)
+
+            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 
             if wasAlreadyFriend then
-                line1 = string.format("%s |cff00ff00уже в друзьях.", characterName)
-                line2 = wasConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r"
-                ShowStatusTooltip(line1, line2, nil)
+                -- Already a friend: show status and possibly notify level drop
+                line1 = string.format("%s |cff00ff00уже в друзьях.|r", characterName)
+                -- Online-status + level on one line:
+                if wasConnected then
+                    -- “В сети – Ур: X”
+                    line2 = string.format("|cff69ccf0В сети - Ур: %d|r", currentActualLevel or 0)
+                else
+                    line2 = "|cff888888Не в сети|r"
+                end
+                ShowStatusTooltip(iconFrameElement, line1, line2, nil)
 
                 local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
                 if wasConnected and watchedEntry and watchedEntry.clipLevel then
-                    -- Only notify if they are watched and meet criteria based on stored clipLevel
                     NotifyPlayerLevelDrop(characterName, currentActualLevel, watchedEntry.clipLevel, currentClass, currentArea)
-                elseif wasConnected and not watchedEntry then
-                    -- They are a friend, online, but not in our watch list (e.g. added manually).
-                    -- Optionally, add them to watch list now if this clip interaction is significant?
-                    -- For "notify once based on when ADDED VIA UI", we don't add them here.
-                    -- If you want *any* right-click on an existing friend from a clip to start watching:
-                    -- AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
-                    --    clipLevel = originalClipLevelFromThisInteraction,
-                    --    hasBeenNotifiedForThisAdd = false
-                    -- }
-                    -- NotifyPlayerLevelDrop(characterName, currentActualLevel, originalClipLevelFromThisInteraction, currentClass, currentArea)
                 end
                 return
             end
 
-            -- If NOT already a friend, proceed to add:
-            ns.capturedFriendAddSystemMessage = nil; ns.expectingFriendAddSystemMessageFor = characterNameLower
-            suppressPlayerNotFoundSystemMessageActive = true; AddFriend(characterName)
+            -- Not yet a friend: send request and capture system message
+            ns.capturedFriendAddSystemMessage = nil
+            ns.expectingFriendAddSystemMessageFor = characterNameLower
+            suppressPlayerNotFoundSystemMessageActive = true
+            AddFriend(characterName)
+
+            -- Re-enable error messages after 0.2s
             C_Timer:After(0.2, function()
                 suppressPlayerNotFoundSystemMessageActive = false
-                if ns.expectingFriendAddSystemMessageFor == characterNameLower then ns.expectingFriendAddSystemMessageFor = nil end
+                if ns.expectingFriendAddSystemMessageFor == characterNameLower then
+                    ns.expectingFriendAddSystemMessageFor = nil
+                end
             end)
+
+            -- After 0.3s, check whether the add succeeded
             C_Timer:After(0.3, function()
-                local isNowFriend, isConnected, friendActualLevel, friendClass, friendArea = IsPlayerOnFriendsList(characterName)
+                local isNowFriend, isConnected, friendActualLevel, friendClass, friendArea =
+                IsPlayerOnFriendsList(characterName)
+
                 if isNowFriend then
-                    line1 = string.format("|cff00ff00Добавлен в друзьях:|r %s", characterName)
+                    line1 = string.format("|cff00ff00Добавлен в друзья:|r %s", characterName)
                     if isConnected then
                         line2 = "|cff69ccf0В сети|r"
-                        -- This is a NEWLY added friend. Store for watching & notify.
+                        -- Store for future level-drop notifications
                         AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
                             clipLevel = originalClipLevelFromThisInteraction,
-                            hasBeenNotifiedForThisAdd = false
+                            hasBeenNotifiedForThisAdd = false,
                         }
                         NotifyPlayerLevelDrop(characterName, friendActualLevel, originalClipLevelFromThisInteraction, friendClass, friendArea, "added")
                     else
                         line2 = "|cff888888Не в сети|r"
-                        -- Still store them as they were just added, for future online checks
                         AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
                             clipLevel = originalClipLevelFromThisInteraction,
-                            hasBeenNotifiedForThisAdd = false
+                            hasBeenNotifiedForThisAdd = false,
                         }
                     end
                 else
                     line1 = string.format("|cffffcc00Не удалось добавить:|r %s", characterName)
-                    if ns.capturedFriendAddSystemMessage then line2 = "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r"
-                    else line2 = "(Проверьте ошибки игры в чате)" end
+                    if ns.capturedFriendAddSystemMessage then
+                        line2 = "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r"
+                    else
+                        line2 = "(Проверьте ошибки игры в чате)"
+                    end
                 end
-                ShowStatusTooltip(line1, line2, line3)
-                ns.expectingFriendAddSystemMessageFor = nil; ns.capturedFriendAddSystemMessage = nil
+
+                ShowStatusTooltip(iconFrameElement, line1, line2, line3)
+                ns.expectingFriendAddSystemMessageFor = nil
+                ns.capturedFriendAddSystemMessage = nil
             end)
         end
     end
 end
 
-function GoAgainAH_ClipItem_OnEnter(iconButton) ShowHoverTooltipForIcon(iconButton) end
-function GoAgainAH_ClipItem_OnLeave(iconButton) if GameTooltip:IsOwned(iconButton) then GameTooltip:Hide() end; HideStatusTooltip() end
+-- When the mouse enters the icon, show your custom tooltip
+function GoAgainAH_ClipItem_OnEnter(iconButton)
+    ShowHoverTooltipForIcon(iconButton)
+end
+
+-- When the mouse leaves, hide *all* of your tooltips
+function GoAgainAH_ClipItem_OnLeave(iconButton)
+    -- Hide the custom hover tooltip
+    if GoAgainAH_HoverTooltip then
+        GoAgainAH_HoverTooltip:Hide()
+    end
+
+    -- Hide the status/toast tooltip
+    HideStatusTooltip()
+
+    -- In case the default GameTooltip was used, hide that too
+    if GameTooltip:IsOwned(iconButton) then
+        GameTooltip:Hide()
+    end
+end
+
 
 local function FriendAddSystemMessageFilter(self, event, msg, ...)
     if not msg or type(msg) ~= "string" then return false end
