@@ -922,13 +922,12 @@ end
 
 -- (addonName and ns are assumed to be defined at the top of your file)
 
--- SAVED VARIABLES: Stores clip levels of added friends for cross-session level drop checks
+-- SAVED VARIABLES:
 if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-AuctionHouseDBSaved.friendClipLevels = AuctionHouseDBSaved.friendClipLevels or {} -- e.g., { [playerLowerName] = clipLevel }
+AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {} -- Stores {clipLevel, hasBeenNotifiedForThisAdd}
 
--- SESSION-ONLY TABLES:
-ns.sessionFailedFriendAdds = ns.sessionFailedFriendAdds or {}
-ns.sessionNotifiedForLevelDrop = ns.sessionNotifiedForLevelDrop or {} -- Tracks who was notified for level drop THIS session
+-- SESSION-ONLY TABLES: (Not strictly needed for "notify once ever" if DB handles it, but can be for immediate suppression within a session)
+-- ns.sessionNotifiedForLevelDrop = ns.sessionNotifiedForLevelDrop or {} -- We might not need this if DB flag is robust
 
 -- State for AddFriend Error Handling
 local suppressPlayerNotFoundSystemMessageActive = false
@@ -947,13 +946,13 @@ local function ShowStatusTooltip(line1, line2, line3)
     local tooltip = _G["GoAgainAH_StatusTooltip"]
     if not tooltip then return end; local parentFrame = tooltip:GetParent()
     if not parentFrame or not parentFrame:IsShown() then tooltip:Hide(); return end
-    local l1, l2, l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
+    local l1,l2,l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
     if not (l1 and l2 and l3) then return end
     l1:SetText(""); l2:SetText(""); l3:SetText("")
-    l1:SetText(line1 or ""); if line2 and line2 ~= "" then l2:SetText(line2) else l2:SetText("") end; if line3 and line3 ~= "" then l3:SetText(line3) else l3:SetText("") end
-    local trh = 0; local lc = 0
-    if line1 and line1 ~= "" then trh=trh+l1:GetHeight();lc=lc+1;end; if line2 and line2 ~= "" then trh=trh+l2:GetHeight();lc=lc+1;end; if line3 and line3 ~= "" then trh=trh+l3:GetHeight();lc=lc+1;end
-    local nh = 16 + trh; if lc > 1 then nh=nh+((lc-1)*2) end; tooltip:SetHeight(math.max(35,nh)); tooltip:Show()
+    l1:SetText(line1 or ""); if line2 and line2~="" then l2:SetText(line2) else l2:SetText("") end; if line3 and line3~="" then l3:SetText(line3) else l3:SetText("") end
+    local trh=0; local lc=0
+    if line1 and line1~="" then trh=trh+l1:GetHeight();lc=lc+1;end; if line2 and line2~="" then trh=trh+l2:GetHeight();lc=lc+1;end; if line3 and line3~="" then trh=trh+l3:GetHeight();lc=lc+1;end
+    local nh=16+trh; if lc>1 then nh=nh+((lc-1)*2) end; tooltip:SetHeight(math.max(35,nh)); tooltip:Show()
 end
 
 local function HideStatusTooltip()
@@ -977,12 +976,17 @@ local function IsPlayerOnFriendsList(characterName)
     return false, false, nil, nil, nil
 end
 
-local function NotifyPlayerLevelDrop(name, currentLevel, clipLevel, classToken, area, context)
+local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, classToken, area)
     local lowerName = string.lower(name)
 
-    if ns.sessionNotifiedForLevelDrop[lowerName] then return end -- Check SESSION flag
+    AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+    local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
-    if currentLevel and clipLevel and currentLevel < clipLevel then
+    -- Only proceed if they are being watched AND haven't been notified for this add instance yet,
+    -- AND their current level is less than the level they were at when added via UI.
+    if watchedEntry and not watchedEntry.hasBeenNotifiedForThisAdd and
+            currentLevel and watchedEntry.clipLevel and currentLevel < watchedEntry.clipLevel then
+
         PlaySoundFile(MAP_PING_SOUND_FILE)
         local className = (classToken and type(classToken) == "string" and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[string.upper(classToken)]) or
                 (classToken and type(classToken) == "string" and ns.fallbackClassNames[string.upper(classToken)]) or
@@ -990,15 +994,16 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevel, classToken, 
         local zoneName = area and area ~= "" and area or "Неизвестная зона"
         local clickableName = "|Hplayer:"..name.."|h|cff00ff00["..name.."]|h|r"
         local intro = "|cffFFD700Возрождение Легенды!|r"
-        local message = string.format("%s %s начал(а) свой путь заново! Уровень: %d (был %d, %s) в |cffffff00%s|r.",
-                intro, clickableName, currentLevel, clipLevel, className, zoneName)
+        local message = string.format("%s %s начал(а) свой путь заново! Уровень: %d (был %d при добавлении, %s) в |cffffff00%s|r.",
+                intro, clickableName, currentLevel, watchedEntry.clipLevel, className, zoneName)
 
         if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
             DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message)
         else print(addonName .. ": " .. message) end
 
-        ns.sessionNotifiedForLevelDrop[lowerName] = true -- Mark as notified THIS SESSION
-        -- The AuctionHouseDBSaved.friendClipLevels[lowerName] (which is the clipLevel) remains for future sessions.
+        -- Mark as notified for this specific add instance in SavedVariables
+        watchedEntry.hasBeenNotifiedForThisAdd = true
+        -- The entry will be cleared on next PLAYER_LOGIN if this flag is true.
     end
 end
 
@@ -1045,7 +1050,7 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
 
     local characterName = clipData.characterName
     local characterNameLower = string.lower(characterName)
-    local originalClipLevel = clipData.level
+    local originalClipLevelFromThisInteraction = clipData.level -- Level from the current clip being clicked
     local targetClipFaction = clipData.faction
     local playerFaction = UnitFactionGroup("player")
     local line1, line2, line3 = "", "", ""
@@ -1078,7 +1083,6 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
     elseif receivedMouseButton == "RightButton" then
         if targetClipFaction ~= playerFaction then
             ShowStatusTooltip("|cffff0000Нельзя добавить в друзья:|r " .. characterName, "(Разные фракции)", nil)
-            if iconFrameElement:IsMouseOver() then ShowHoverTooltipForIcon(iconFrameElement) end
             return
         end
 
@@ -1089,12 +1093,14 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                 line1 = string.format("%s |cff00ff00уже в друзьях.", characterName)
                 line2 = wasConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r"
                 ShowStatusTooltip(line1, line2, nil)
-                if wasConnected then
-                    -- If already friend, ensure their clipLevel is stored/updated for future session online checks
-                    AuctionHouseDBSaved.friendClipLevels[characterNameLower] = originalClipLevel
-                    NotifyPlayerLevelDrop(characterName, currentActualLevel, originalClipLevel, currentClass, currentArea, "already_friend_online")
+
+                -- If already a friend and online, check for level drop based on *their existing DB entry* if it exists.
+                -- We do NOT update their clipLevel in DB if they are already a friend from this interaction.
+                AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+                local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
+                if wasConnected and watchedEntry and watchedEntry.clipLevel then
+                    NotifyPlayerLevelDrop(characterName, currentActualLevel, watchedEntry.clipLevel, currentClass, currentArea)
                 end
-                if iconFrameElement:IsMouseOver() then ShowHoverTooltipForIcon(iconFrameElement) end
                 return
             end
 
@@ -1114,13 +1120,22 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     line1 = string.format("|cff00ff00Добавлен в друзьях:|r %s", characterName)
                     if isConnected then
                         line2 = "|cff69ccf0В сети|r"
-                        NotifyPlayerLevelDrop(characterName, friendActualLevel, originalClipLevel, friendClass, friendArea, "added")
+                        -- This is a NEWLY added friend. Store their clip level and notify.
+                        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
+                            clipLevel = originalClipLevelFromThisInteraction,
+                            hasBeenNotifiedForThisAdd = false
+                        }
+                        NotifyPlayerLevelDrop(characterName, friendActualLevel, originalClipLevelFromThisInteraction, friendClass, friendArea, "added")
                     else
                         line2 = "|cff888888Не в сети|r"
+                        -- Still store them as they were just added, for future online checks
+                        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
+                            clipLevel = originalClipLevelFromThisInteraction,
+                            hasBeenNotifiedForThisAdd = false
+                        }
                     end
-                    -- Successfully added: store their name and clip_level in SavedVariables
-                    AuctionHouseDBSaved.friendClipLevels[characterNameLower] = originalClipLevel
-                    -- No sessionFailedFriendAdds needed, they are now a friend
                 else
                     line1 = string.format("|cffffcc00Не удалось добавить:|r %s", characterName)
                     if ns.capturedFriendAddSystemMessage then
@@ -1128,13 +1143,11 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     else
                         line2 = "(Проверьте ошибки игры в чате)"
                     end
-                    -- No sessionFailedFriendAdds needed here as we are not showing "previously failed" in tooltip
                 end
                 ShowStatusTooltip(line1, line2, line3)
 
                 ns.expectingFriendAddSystemMessageFor = nil
                 ns.capturedFriendAddSystemMessage = nil
-                if iconFrameElement:IsMouseOver() then ShowHoverTooltipForIcon(iconFrameElement) end
             end)
         end
     end
@@ -1167,17 +1180,35 @@ local function FriendAddSystemMessageFilter(self, event, msg, ...)
 end
 
 local function OnFriendListUpdate()
-    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.friendClipLevels) ~= "table" then return end
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
 
     for i = 1, GetNumFriends() do
         local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i)
         if name and connected then
             local lowerName = string.lower(name)
-            local storedClipLevel = AuctionHouseDBSaved.friendClipLevels[lowerName]
+            local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
-            if storedClipLevel then -- Only notify if we have a clipLevel stored (meaning we interacted via right-click)
-                NotifyPlayerLevelDrop(name, currentActualLevel, storedClipLevel, classToken, area, "friend_online_event")
+            if watchedEntry and watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
+                NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
             end
+        end
+    end
+end
+
+local function CleanupNotifiedFriends()
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
+
+    local playersToRemove = {}
+    for playerNameLower, data in pairs(AuctionHouseDBSaved.watchedFriends) do
+        if data.hasBeenNotifiedForThisAdd then
+            table.insert(playersToRemove, playerNameLower)
+        end
+    end
+
+    if #playersToRemove > 0 then
+        -- print(addonName .. ": Cleaning up " .. #playersToRemove .. " notified friend(s) from DB on login.")
+        for _, key in ipairs(playersToRemove) do
+            AuctionHouseDBSaved.watchedFriends[key] = nil
         end
     end
 end
@@ -1185,25 +1216,20 @@ end
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
-eventFrame:RegisterEvent("PLAYER_LOGOUT") -- New event
 eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
 
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == addonName then
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-        AuctionHouseDBSaved.friendClipLevels = AuctionHouseDBSaved.friendClipLevels or {}
-        ns.sessionNotifiedForLevelDrop = ns.sessionNotifiedForLevelDrop or {}
+        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+        ns.sessionNotifiedForLevelDrop = {} -- This is for session, DB flag is different
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
     elseif event == "PLAYER_LOGIN" then
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-        AuctionHouseDBSaved.friendClipLevels = AuctionHouseDBSaved.friendClipLevels or {}
+        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
         ns.sessionNotifiedForLevelDrop = {} -- Reset session notification flags on login
-        -- C_Timer:After(5, OnFriendListUpdate) -- Optionally scan friends a few seconds after login
-    elseif event == "PLAYER_LOGOUT" then
-        -- Clear the SESSION-BASED notification flags.
-        -- AuctionHouseDBSaved.friendClipLevels (with the actual clip levels) persists.
-        ns.sessionNotifiedForLevelDrop = {}
-        print(addonName .. ": Session notification flags for level drops cleared on logout.")
+        CleanupNotifiedFriends() -- Clean DB of already notified players
+        C_Timer:After(5, OnFriendListUpdate) -- Scan friends a few seconds after login
     elseif event == "FRIENDLIST_UPDATE" then
         OnFriendListUpdate()
     end
