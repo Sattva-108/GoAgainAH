@@ -287,16 +287,16 @@ ns.GetPlayedTimeColor = function(seconds, level)
 
     -- pick a color based on where this clip falls
     local r, g, b
-    if seconds <= p10_val then
-        r, g, b = 0.6, 0.1, 0.9
-    elseif seconds <= p25_val then
-        r, g, b = 0.0, 1.0, 0.0
-    elseif seconds <= median_val then
-        r, g, b = 1.0, 1.0, 0.0
-    elseif seconds <= p75_val then
-        r, g, b = 1.0, 1.0, 1.0
-    else
-        r, g, b = 1.0, 0.25, 0.25
+    if seconds <= p10_val then          -- Tier #1 (Epic)
+        r, g, b = 0.0, 1.0, 0.0        -- Green
+    elseif seconds <= p25_val then     -- Tier #2 (Legendary)
+        r, g, b = 1.0, 1.0, 0.0        -- Yellow
+    elseif seconds <= median_val then  -- Tier #3 (Fast)
+        r, g, b = 1.0, 1.0, 1.0        -- White
+    elseif seconds <= p75_val then     -- Tier #4 (Average)
+        r, g, b = 1.0, 0.5, 0.0        -- Orange
+    else                                -- Tier #5 (Slow)
+        r, g, b = 1.0, 0.0, 0.0        -- Red
     end
 
     -- determine exact rank

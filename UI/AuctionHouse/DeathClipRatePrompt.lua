@@ -354,38 +354,29 @@ local function CreateReviewPrompt()
                 end
             end
 
-            -- Updated AddRow calls with new categories and their respective colors
-            AddRow("Epic", tip.epic_boundary, 0.6, 0.1, 0.9, 0.6, 0.1, 0.9)
-            AddRow("Легенда", tip.legendary_boundary, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0)
-            AddRow("Быстро", tip.median_boundary, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0)
-            AddRow("Средне", tip.average_boundary, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-            AddRow("Медленно", tip.slow_example_display, 1.0, 0.25, 0.25, 1.0, 0.25, 0.25)
+            -- Your existing boundary rows:
+            AddRow("Легенда",      tip.epic_boundary,       0.0, 1.0, 0.0,   0.0, 1.0, 0.0)   -- green
+            AddRow("Быстро",       tip.legendary_boundary,  1.0, 1.0, 0.0,   1.0, 1.0, 0.0)   -- yellow
+            AddRow("Средне",       tip.median_boundary,     1.0, 1.0, 1.0,   1.0, 1.0, 1.0)   -- white
+            AddRow("Медленно",     tip.average_boundary,    1.0, 0.5, 0.0,   1.0, 0.5, 0.0)   -- orange
+            AddRow("Своя волна",   tip.slow_example_display,1.0, 0.0, 0.0,   1.0, 0.0, 0.0)   -- red
 
-            RateTip:AddLine(" ")
+            RateTip:AddLine(" ")  -- blank spacer
 
-            local played = tip.playedTime
-            local rankColor = {1, 1, 1} -- Default white
-
-            -- Updated rankColor logic using the new boundaries
-            if played and tip.epic_boundary and tip.legendary_boundary and tip.median_boundary and tip.average_boundary then
-                if played <= tip.epic_boundary then
-                    rankColor = {0.6, 0.1, 0.9}    -- Purple (Epic)
-                elseif played <= tip.legendary_boundary then
-                    rankColor = {0.0, 1.0, 0.0}    -- Green (Legendary)
-                elseif played <= tip.median_boundary then
-                    rankColor = {1.0, 1.0, 0.0}    -- Yellow (Fast)
-                elseif played <= tip.average_boundary then
-                    rankColor = {1.0, 1.0, 1.0}    -- White (Average)
-                else
-                    rankColor = {1.0, 0.25, 0.25}  -- Red (Slow)
-                end
+            -- Recolor the rank line using those very same boundaries:
+            local played = tip.playedTime or 0
+            local rankColor = {1,1,1}
+            if     played <= tip.epic_boundary        then rankColor = {0.0, 1.0, 0.0}
+            elseif played <= tip.legendary_boundary   then rankColor = {1.0, 1.0, 0.0}
+            elseif played <= tip.median_boundary      then rankColor = {1.0, 1.0, 1.0}
+            elseif played <= tip.average_boundary     then rankColor = {1.0, 0.5, 0.0}
+            else                                        rankColor = {1.0, 0.0, 0.0}
             end
 
             local rankLabel = "|cffffd100Ранг:|r"
-            local rankStr = " N/A"
-            if tip.rank and tip.maxRank then
-                rankStr = string.format(" %s из %s", tip.rank, tip.maxRank)
-            end
+            local rankStr   = tip.rank and tip.maxRank
+                    and string.format(" %s из %s", tip.rank, tip.maxRank)
+                    or " N/A"
             RateTip:AddLine(rankLabel .. rankStr, unpack(rankColor))
 
             local lastLine = _G["GoAgainAH_RateTooltipTextLeft" .. RateTip:NumLines()]
@@ -437,90 +428,96 @@ local function CreateReviewPrompt()
     end
 
     function prompt:SetPlayedTime(seconds, clip)
+        -- clear any previous tooltip data
         self.playedTimeTooltipData = {}
 
         if seconds and clip and clip.level then
+            -- show the label and set its text
             playedLabel:Show()
             playedLabel:SetText("Время в игре:")
             self.playedTime:SetText(SecondsToTime(seconds))
 
-            local r, g, b,
+            -- ►► only change starts here: pull our tier-colour from GetPlayedTimeColor
+            local r_player, g_player, b_player,
             median_val, p25, p75,
             rank_val, maxRank_val,
-            p10, p90,
             epic_first, legendary_first,
             median_first, average_first,
-            slow_first = ns.GetPlayedTimeColor(seconds, clip.level)
+            slow_first
+            = ns.GetPlayedTimeColor(seconds, clip.level)
 
-            self.playedTime:SetTextColor(r or 1, g or 1, b or 1, 1)
+            -- apply that colour to the main text
+            self.playedTime:SetTextColor(r_player, g_player, b_player, 1)
+            -- ◄◄ only change ends here
 
-            -- now each category shows its own fastest time (sub-rank 1),
-            -- except Slow, which shows the very slowest
-            self.playedTimeTooltipData.epic_boundary      = epic_first
-            self.playedTimeTooltipData.legendary_boundary = legendary_first
-            self.playedTimeTooltipData.median_boundary    = median_first
-            self.playedTimeTooltipData.average_boundary   = average_first
-            self.playedTimeTooltipData.slow_example_display = slow_first
+            -- stash boundaries for the tooltip (unchanged)
+            local tip = self.playedTimeTooltipData
+            tip.epic_boundary        = epic_first
+            tip.legendary_boundary   = legendary_first
+            tip.median_boundary      = median_first
+            tip.average_boundary     = average_first
+            tip.slow_example_display = slow_first
+            tip.playedTime           = seconds
+            tip.rank                 = rank_val
+            tip.maxRank              = maxRank_val
+            tip.r_player, tip.g_player, tip.b_player = r_player, g_player, b_player
 
-            -- keep rank info for display
-            self.playedTimeTooltipData.rank    = rank_val
-            self.playedTimeTooltipData.maxRank = maxRank_val
-            self.playedTimeTooltipData.playedTime = seconds
-            self.playedTimeTooltipData.r_player,
-            self.playedTimeTooltipData.g_player,
-            self.playedTimeTooltipData.b_player = r, g, b
-
-
+            -- cancel any existing countdown ticker
             if ns._ratePromptTicker then
                 ns._ratePromptTicker:Cancel()
                 ns._ratePromptTicker = nil
             end
+
         elseif ns.nextUpdateDeadline then
+            -- your “обновится через” branch (unchanged)
             playedLabel:Show()
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
             self.playedTime:SetTextColor(0.6, 0.6, 0.6, 1)
-            self.playedTimeTooltipData.median_boundary = nil -- Ensure no old data is used
+            self.playedTimeTooltipData.median_boundary = nil
 
             if not ns._ratePromptTicker then
                 ns._ratePromptTicker = C_Timer:NewTicker(1, function()
                     if self.frame:IsShown() and ns.nextUpdateDeadline then
                         local remaining = ns.nextUpdateDeadline - time()
                         if remaining <= 0 then
-                            -- Countdown over, attempt to set actual played time
+                            -- countdown over → recurse or show error
                             if clip and clip.playedTime then
-                                self:SetPlayedTime(clip.playedTime, clip) -- Recurse to set actual time and stats
+                                self:SetPlayedTime(clip.playedTime, clip)
                             else
                                 playedLabel:SetText("Время в игре:")
                                 self.playedTime:SetText("N/A")
-                                self.playedTime:SetTextColor(1,0,0,1) -- Red for error/unavailable
-                                self.playedTimeTooltipData = {} -- Clear tooltip data
+                                self.playedTime:SetTextColor(1, 0, 0, 1)
+                                self.playedTimeTooltipData = {}
                             end
-                            if ns._ratePromptTicker then -- Check if ticker still exists before cancelling
+                            if ns._ratePromptTicker then
                                 ns._ratePromptTicker:Cancel()
                                 ns._ratePromptTicker = nil
                             end
                         else
                             self.playedTime:SetText(SecondsToTime(remaining))
                         end
-                    elseif ns._ratePromptTicker then -- If frame not shown or no deadline, cancel ticker
+                    elseif ns._ratePromptTicker then
                         ns._ratePromptTicker:Cancel()
                         ns._ratePromptTicker = nil
                     end
                 end)
             end
+
         else
+            -- final fallback (unchanged)
+            playedLabel:Show()
             playedLabel:SetText("Обновится через:")
             self.playedTime:SetText("~10 минут")
             self.playedTime:SetTextColor(1, 1, 1, 1)
-            self.playedTimeTooltipData.median_boundary = nil
-
+            self.playedTimeTooltipData = {}
             if ns._ratePromptTicker then
                 ns._ratePromptTicker:Cancel()
                 ns._ratePromptTicker = nil
             end
         end
     end
+
 
     function prompt:OnSubmit(callback)
         self.submitButton:SetCallback("OnClick", function()
