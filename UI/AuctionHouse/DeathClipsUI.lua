@@ -948,17 +948,81 @@ local lastNotificationTime = 0
 local friendListDebounceTimer = nil
 local initialLoginScanTimer = nil
 
-local function ShowStatusTooltip(line1, line2, line3)
+local TOOLTIP_MIN_WIDTH = 150
+local TOOLTIP_MAX_WIDTH = 350
+local TOOLTIP_HORIZONTAL_PADDING = 20
+local TOOLTIP_VERTICAL_PADDING = 16
+local LINE_SPACING = 2
+
+local function ShowStatusTooltip(line1Str, line2Str, line3Str)
     local tooltip = _G["GoAgainAH_StatusTooltip"]
-    if not tooltip then return end; local parentFrame = tooltip:GetParent()
-    if not parentFrame or not parentFrame:IsShown() then tooltip:Hide(); return end
-    local l1,l2,l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
-    if not (l1 and l2 and l3) then return end
-    l1:SetText(""); l2:SetText(""); l3:SetText("")
-    l1:SetText(line1 or ""); if line2 and line2~="" then l2:SetText(line2) else l2:SetText("") end; if line3 and line3~="" then l3:SetText(line3) else l3:SetText("") end
-    local trh=0; local lc=0
-    if line1 and line1~="" then trh=trh+l1:GetHeight();lc=lc+1;end; if line2 and line2~="" then trh=trh+l2:GetHeight();lc=lc+1;end; if line3 and line3~="" then trh=trh+l3:GetHeight();lc=lc+1;end
-    local nh=16+trh; if lc>1 then nh=nh+((lc-1)*2) end; tooltip:SetHeight(math.max(35,nh)); tooltip:Show()
+    if not tooltip then print(addonName .. " Error: GoAgainAH_StatusTooltip frame not found!"); return end
+    local parentFrame = tooltip:GetParent(); if not parentFrame then tooltip:Hide(); return end
+    if not parentFrame:IsShown() then tooltip:Hide(); return end
+
+    local l1, l2, l3 = _G[tooltip:GetName().."Line1"], _G[tooltip:GetName().."Line2"], _G[tooltip:GetName().."Line3"]
+    if not (l1 and l2 and l3) then print(addonName.." Error: StatusTooltip lines not found!"); return end
+
+    -- print(addonName .. " --- ShowStatusTooltip START ---")
+    -- print(string.format("  Input strings: L1='%.30s...', L2='%.30s...', L3='%.30s...'", tostring(line1Str or "nil"), tostring(line2Str or "nil"), tostring(line3Str or "nil")))
+
+    -- Step 1: Assume max possible content width for FontStrings to get their "ideal" wrapped height.
+    -- We'll use TOOLTIP_MAX_WIDTH - TOOLTIP_HORIZONTAL_PADDING as this initial guess.
+    local initialFontStringMaxWidth = TOOLTIP_MAX_WIDTH - TOOLTIP_HORIZONTAL_PADDING
+    l1:SetWidth(initialFontStringMaxWidth)
+    l2:SetWidth(initialFontStringMaxWidth)
+    l3:SetWidth(initialFontStringMaxWidth)
+
+    l1:SetText(line1Str or "")
+    l2:SetText(line2Str or "")
+    l3:SetText(line3Str or "")
+
+    -- Step 2: Now that they have text and a max width, find the actual max width used by any line *after wrapping*.
+    -- Note: GetStringWidth() still gives unconstrained width. We need to check rendered width if possible,
+    -- or rely on the fact that they won't exceed initialFontStringMaxWidth.
+    -- For simplicity, we'll find the widest GetStringWidth() again, but now we primarily care about their heights.
+    local actualMaxContentWidthUsed = 0
+    if line1Str and line1Str ~= "" then actualMaxContentWidthUsed = math.max(actualMaxContentWidthUsed, l1:GetStringWidth()) end
+    if line2Str and line2Str ~= "" then actualMaxContentWidthUsed = math.max(actualMaxContentWidthUsed, l2:GetStringWidth()) end
+    if line3Str and line3Str ~= "" then actualMaxContentWidthUsed = math.max(actualMaxContentWidthUsed, l3:GetStringWidth()) end
+
+    -- If the text content (even after potential wrapping within initialFontStringMaxWidth) is still very wide,
+    -- actualMaxContentWidthUsed could be large. We need to ensure our tooltip isn't too narrow.
+    local targetContentWidth = math.min(initialFontStringMaxWidth, actualMaxContentWidthUsed)
+
+
+    local finalTooltipWidth = targetContentWidth + TOOLTIP_HORIZONTAL_PADDING
+    finalTooltipWidth = math.max(TOOLTIP_MIN_WIDTH, finalTooltipWidth)
+    finalTooltipWidth = math.min(TOOLTIP_MAX_WIDTH, finalTooltipWidth) -- Redundant if targetContentWidth respects TOOLTIP_MAX_WIDTH
+
+    tooltip:SetWidth(finalTooltipWidth)
+
+    -- Final pass on FontString widths to match the determined tooltip content width
+    local finalFontStringContentWidth = finalTooltipWidth - TOOLTIP_HORIZONTAL_PADDING
+    l1:SetWidth(finalFontStringContentWidth)
+    l2:SetWidth(finalFontStringContentWidth)
+    l3:SetWidth(finalFontStringContentWidth)
+
+    -- Re-set text one last time to ensure GetHeight is accurate with the FINAL width
+    l1:SetText(line1Str or "")
+    l2:SetText(line2Str or "")
+    l3:SetText(line3Str or "")
+    -- print("  Text re-set on l1, l2, l3 after FINAL widths were adjusted.")
+
+
+    -- Calculate total height needed
+    local totalTextHeight = 0; local linesShown = 0
+    if line1Str and line1Str ~= "" then totalTextHeight=totalTextHeight+l1:GetHeight(); linesShown=linesShown+1 else l1:SetText("") end
+    if line2Str and line2Str ~= "" then if linesShown>0 then totalTextHeight=totalTextHeight+LINE_SPACING end; totalTextHeight=totalTextHeight+l2:GetHeight(); linesShown=linesShown+1 else l2:SetText("") end
+    if line3Str and line3Str ~= "" then if linesShown>0 then totalTextHeight=totalTextHeight+LINE_SPACING end; totalTextHeight=totalTextHeight+l3:GetHeight(); linesShown=linesShown+1 else l3:SetText("") end
+
+    if linesShown == 0 then tooltip:Hide(); return end
+
+    local newTooltipHeight = TOOLTIP_VERTICAL_PADDING + totalTextHeight
+    tooltip:SetHeight(math.max(35, newTooltipHeight))
+
+    tooltip:Show()
+    -- print(addonName .. " --- ShowStatusTooltip END (Shown) ---")
 end
 
 local function HideStatusTooltip()
