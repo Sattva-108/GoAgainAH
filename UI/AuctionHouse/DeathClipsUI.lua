@@ -925,8 +925,9 @@ end
 -- SAVED VARIABLES:
 if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
 AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+-- Structure: { [playerLowerName] = { clipLevel = number, hasBeenNotifiedForThisAdd = boolean } }
 
--- State for AddFriend Error Handling
+-- State for AddFriend Error Handling (Session Only)
 local suppressPlayerNotFoundSystemMessageActive = false
 local PLAYER_NOT_FOUND_RU = "Игрок не найден."
 ns.expectingFriendAddSystemMessageFor = nil
@@ -940,13 +941,12 @@ ns.fallbackClassNames = {
 }
 
 -- Debounce/Cooldown variables
-local FRIENDLIST_UPDATE_DEBOUNCE_TIME = 10 -- Min time between full friend list SCANS
-local NOTIFICATION_COOLDOWN = 3            -- Min time between individual NOTIFICATIONS
-local lastFriendListScanTime = 0           -- GetTime() of the last full scan
-local lastNotificationTime = 0             -- GetTime() of the last notification sent
-local friendListDebounceTimer = nil        -- Timer for debouncing full scans
-local initialLoginScanTimer = nil          -- Timer for the scan after PLAYER_ENTERING_WORLD
-
+local FRIENDLIST_UPDATE_DEBOUNCE_TIME = 10
+local NOTIFICATION_COOLDOWN = 3
+local lastFriendListScanTime = 0
+local lastNotificationTime = 0
+local friendListDebounceTimer = nil
+local initialLoginScanTimer = nil
 
 local function ShowStatusTooltip(line1, line2, line3)
     local tooltip = _G["GoAgainAH_StatusTooltip"]
@@ -987,18 +987,17 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
     AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
     local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
-    if watchedEntry and not watchedEntry.hasBeenNotifiedForThisAdd and
-            currentLevel and watchedEntry.clipLevel and currentLevel < watchedEntry.clipLevel then
+    -- Only proceed if they are being watched (have a clipLevel) AND
+    -- haven't been notified for this add instance yet,
+    -- AND their current level is less than the level they were at when added via UI.
+    if watchedEntry and watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd and
+            currentLevel and currentLevel < watchedEntry.clipLevel then
 
-        -- Per-notification cooldown check
         local currentTime = GetTime()
         if (currentTime - lastNotificationTime) < NOTIFICATION_COOLDOWN then
-            -- print(addonName .. " DEBUG: Notification for " .. name .. " throttled (too soon after last notification).")
-            -- We might want to queue this notification or try again shortly if throttled.
-            -- For simplicity now, it just skips this one instance if throttled.
             return
         end
-        lastNotificationTime = currentTime -- Update time of last successful notification
+        lastNotificationTime = currentTime
 
         PlaySoundFile(MAP_PING_SOUND_FILE)
         local className = (classToken and type(classToken) == "string" and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[string.upper(classToken)]) or
@@ -1014,7 +1013,8 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
             DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": " .. message)
         else print(addonName .. ": " .. message) end
 
-        watchedEntry.hasBeenNotifiedForThisAdd = true
+        watchedEntry.hasBeenNotifiedForThisAdd = true -- Mark as notified in SavedVariables
+        -- Will be cleaned up on next PLAYER_ENTERING_WORLD
     end
 end
 
@@ -1059,26 +1059,33 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
         end
         if AddFriend then
             local wasAlreadyFriend, wasConnected, currentActualLevel, currentClass, currentArea = IsPlayerOnFriendsList(characterName)
-            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
-            local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
-            if not watchedEntry then -- If not watched before, create entry
-                AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
-                    clipLevel = originalClipLevelFromThisInteraction, hasBeenNotifiedForThisAdd = false
-                }
-                watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
-            else -- Update clipLevel if interacting with a different clip, reset notification status
-                watchedEntry.clipLevel = originalClipLevelFromThisInteraction
-                watchedEntry.hasBeenNotifiedForThisAdd = false
-            end
+
+            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {} -- Ensure table exists
 
             if wasAlreadyFriend then
                 line1 = string.format("%s |cff00ff00уже в друзьях.", characterName)
                 line2 = wasConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r"
                 ShowStatusTooltip(line1, line2, nil)
-                if wasConnected then NotifyPlayerLevelDrop(characterName, currentActualLevel, watchedEntry.clipLevel, currentClass, currentArea) end
+
+                local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
+                if wasConnected and watchedEntry and watchedEntry.clipLevel then
+                    -- Only notify if they are watched and meet criteria based on stored clipLevel
+                    NotifyPlayerLevelDrop(characterName, currentActualLevel, watchedEntry.clipLevel, currentClass, currentArea)
+                elseif wasConnected and not watchedEntry then
+                    -- They are a friend, online, but not in our watch list (e.g. added manually).
+                    -- Optionally, add them to watch list now if this clip interaction is significant?
+                    -- For "notify once based on when ADDED VIA UI", we don't add them here.
+                    -- If you want *any* right-click on an existing friend from a clip to start watching:
+                    -- AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
+                    --    clipLevel = originalClipLevelFromThisInteraction,
+                    --    hasBeenNotifiedForThisAdd = false
+                    -- }
+                    -- NotifyPlayerLevelDrop(characterName, currentActualLevel, originalClipLevelFromThisInteraction, currentClass, currentArea)
+                end
                 return
             end
 
+            -- If NOT already a friend, proceed to add:
             ns.capturedFriendAddSystemMessage = nil; ns.expectingFriendAddSystemMessageFor = characterNameLower
             suppressPlayerNotFoundSystemMessageActive = true; AddFriend(characterName)
             C_Timer:After(0.2, function()
@@ -1091,8 +1098,20 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     line1 = string.format("|cff00ff00Добавлен в друзьях:|r %s", characterName)
                     if isConnected then
                         line2 = "|cff69ccf0В сети|r"
-                        NotifyPlayerLevelDrop(characterName, friendActualLevel, watchedEntry.clipLevel, friendClass, friendArea, "added")
-                    else line2 = "|cff888888Не в сети|r" end
+                        -- This is a NEWLY added friend. Store for watching & notify.
+                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
+                            clipLevel = originalClipLevelFromThisInteraction,
+                            hasBeenNotifiedForThisAdd = false
+                        }
+                        NotifyPlayerLevelDrop(characterName, friendActualLevel, originalClipLevelFromThisInteraction, friendClass, friendArea, "added")
+                    else
+                        line2 = "|cff888888Не в сети|r"
+                        -- Still store them as they were just added, for future online checks
+                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
+                            clipLevel = originalClipLevelFromThisInteraction,
+                            hasBeenNotifiedForThisAdd = false
+                        }
+                    end
                 else
                     line1 = string.format("|cffffcc00Не удалось добавить:|r %s", characterName)
                     if ns.capturedFriendAddSystemMessage then line2 = "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r"
@@ -1142,8 +1161,7 @@ local function HandleFriendListUpdate()
     if (currentTime - lastFriendListScanTime) < FRIENDLIST_UPDATE_DEBOUNCE_TIME then
         local remainingTime = FRIENDLIST_UPDATE_DEBOUNCE_TIME - (currentTime - lastFriendListScanTime)
         friendListDebounceTimer = C_Timer:After(remainingTime, function()
-            friendListDebounceTimer = nil
-            PerformFriendListScan()
+            friendListDebounceTimer = nil; PerformFriendListScan()
         end)
         return
     end
@@ -1152,19 +1170,23 @@ end
 
 local function CleanupNotifiedFriendsDB()
     if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
-    local playersToRemove = {}
+    local playersToCleanup = {}
     for playerNameLower, data in pairs(AuctionHouseDBSaved.watchedFriends) do
-        if data.hasBeenNotifiedForThisAdd then table.insert(playersToRemove, playerNameLower) end
+        if data.hasBeenNotifiedForThisAdd then
+            table.insert(playersToCleanup, playerNameLower)
+        end
     end
-    if #playersToRemove > 0 then
-        print(addonName .. ": Очистка " .. #playersToRemove .. " уведомленных друзей из БД при входе.")
-        for _, key in ipairs(playersToRemove) do AuctionHouseDBSaved.watchedFriends[key] = nil end
+    if #playersToCleanup > 0 then
+        print(addonName .. ": Очистка " .. #playersToCleanup .. " уведомленных друзей из БД при входе в мир.")
+        for _, key in ipairs(playersToCleanup) do
+            AuctionHouseDBSaved.watchedFriends[key] = nil
+        end
     end
 end
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
-eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD") -- Changed from PLAYER_LOGIN
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("PLAYER_LOGOUT")
 eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
 
@@ -1173,21 +1195,20 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
         AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
-    elseif event == "PLAYER_ENTERING_WORLD" then -- Use this for initial scan
+    elseif event == "PLAYER_ENTERING_WORLD" then
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
         AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
         CleanupNotifiedFriendsDB()
         lastFriendListScanTime = 0
         if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
-        if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end -- Cancel previous if any
-        initialLoginScanTimer = C_Timer:After(15, function() -- Scan 15s after entering world
-            initialLoginScanTimer = nil
-            PerformFriendListScan()
+        if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
+        initialLoginScanTimer = C_Timer:After(15, function()
+            initialLoginScanTimer = nil; PerformFriendListScan()
         end)
     elseif event == "PLAYER_LOGOUT" then
         if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
         if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
-        -- Watched friends data in AuctionHouseDBSaved persists.
+        -- Watched friends data in AuctionHouseDBSaved persists. No session flags to clear here.
     elseif event == "FRIENDLIST_UPDATE" then
         HandleFriendListUpdate()
     end
