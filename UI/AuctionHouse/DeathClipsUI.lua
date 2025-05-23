@@ -227,16 +227,13 @@ function OFAuctionFrameDeathClips_OnLoad()
     -- ---- START OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
     local scrollFrame = _G["OFDeathClipsScroll"]
     if scrollFrame then
-        -- FauxScrollFrames typically handle mouse wheel via their OnMouseWheel script.
-        -- Nilling it out is the most direct way to disable it if it's set.
+        -- Disable mouse wheel (you already had this)
         scrollFrame:SetScript("OnMouseWheel", nil)
-
-        -- Some custom FauxScrollFrame setups might use EnableMouseWheel (less common for FauxScrollFrame itself)
-        -- This is more for Blizzard's ScrollFrameTemplate based frames.
-        -- It's generally safe to call if the method exists, but nilling OnMouseWheel is key for FauxScroll.
         if scrollFrame.EnableMouseWheel then
             scrollFrame:EnableMouseWheel(false)
         end
+        -- Hide the entire scroll frame (slider, arrows, background)
+        scrollFrame:Hide()
     end
     -- ---- END OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
 
@@ -397,19 +394,13 @@ function OFAuctionFrameDeathClips_OnShow()
 
 end
 
-local function ResizeEntry(button, numBatchAuctions, totalAuctions)
-    local buttonHighlight = _G[button:GetName() .. "Highlight"]
-    if (numBatchAuctions < NUM_CLIPS_TO_DISPLAY) then
-        button:SetWidth(793)
-        buttonHighlight:SetWidth(758)
-    elseif (numBatchAuctions == NUM_CLIPS_TO_DISPLAY and totalAuctions <= NUM_CLIPS_TO_DISPLAY) then
-        button:SetWidth(793)
-        buttonHighlight:SetWidth(758)
-    else
-        button:SetWidth(769)
-        buttonHighlight:SetWidth(735)
-    end
+-- Replace the old ResizeEntry with this:
+local function ResizeEntry(button, numBatchClips, totalClips)
+    -- Always use full width; ignore any scrollbar space
+    button:SetWidth(793)
+    _G[button:GetName() .. "Highlight"]:SetWidth(758)
 end
+
 
 local function UpdateLayout(buttonName)
     -- Fetch elements for Name, Level, Clip, ClassText, WhereText, and RaceText

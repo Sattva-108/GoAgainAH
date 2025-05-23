@@ -1461,35 +1461,35 @@
 					</Button>
 
 					<!-- Scroll frame unchanged -->
-					<ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate">
+					<ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate" hidden="true">
 						<Size><AbsDimension x="775" y="335" /></Size>
 						<Anchors>
 							<Anchor point="TOPRIGHT">
 								<Offset><AbsDimension x="40" y="-74" /></Offset>
 							</Anchor>
 						</Anchors>
-						<Layers>
-							<Layer>
-								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
-									<Size><AbsDimension x="31" y="256" /></Size>
-									<Anchors>
-										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
-											<Offset><AbsDimension x="-2" y="5" /></Offset>
-										</Anchor>
-									</Anchors>
-									<TexCoords left="0" right="0.484375" top="0" bottom="1" />
-								</Texture>
-								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">
-									<Size><AbsDimension x="31" y="106" /></Size>
-									<Anchors>
-										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
-											<Offset><AbsDimension x="-2" y="-2" /></Offset>
-										</Anchor>
-									</Anchors>
-									<TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />
-								</Texture>
-							</Layer>
-						</Layers>
+<!--						<Layers>-->
+<!--							<Layer>-->
+<!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
+<!--									<Size><AbsDimension x="31" y="256" /></Size>-->
+<!--									<Anchors>-->
+<!--										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">-->
+<!--											<Offset><AbsDimension x="-2" y="5" /></Offset>-->
+<!--										</Anchor>-->
+<!--									</Anchors>-->
+<!--									<TexCoords left="0" right="0.484375" top="0" bottom="1" />-->
+<!--								</Texture>-->
+<!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
+<!--									<Size><AbsDimension x="31" y="106" /></Size>-->
+<!--									<Anchors>-->
+<!--										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">-->
+<!--											<Offset><AbsDimension x="-2" y="-2" /></Offset>-->
+<!--										</Anchor>-->
+<!--									</Anchors>-->
+<!--									<TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />-->
+<!--								</Texture>-->
+<!--							</Layer>-->
+<!--						</Layers>-->
 						<Scripts>
 							<OnVerticalScroll>
 								FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)
