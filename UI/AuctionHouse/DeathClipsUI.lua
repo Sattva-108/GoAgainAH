@@ -195,7 +195,7 @@ function OFAuctionFrameDeathClips_OnLoad()
 
     -- 1) Nav container as a Button …
     local nav = CreateFrame("Button", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
-    nav:SetSize(300, 70)
+    nav:SetSize(250, 70)
     nav:SetScale(0.8)
     nav:SetAlpha(0.9)
     nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 98, 25)
@@ -209,14 +209,14 @@ function OFAuctionFrameDeathClips_OnLoad()
     nav.pageLabel = label  -- сохраняем как поле для доступа из Update
     label:SetFont(label:GetFont(), 16)
     label:SetTextColor(1, 0.8, 0)
-    label:SetJustifyH("CENTER")
+    label:SetJustifyH("RIGHT")
     label:SetPoint("CENTER", nav, "CENTER", 0, 5)
 
 
     -- 3) Prev button, size 50×50 at +20, +5
     local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
     prev:SetSize(80, 50)
-    prev:SetPoint("LEFT", nav, "LEFT", 20, 5)
+    prev:SetPoint("LEFT", nav, "LEFT", 10, 5)
     prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
     prev:SetPushedAtlas("Glue-Left-Array-Shadow-Button-Pushed")
     prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
@@ -238,8 +238,8 @@ function OFAuctionFrameDeathClips_OnLoad()
     next:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
 
     -- Warm orange tone (similar to quest titles or buttons)
-    prev:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
-    next:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
+    prev:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6)
+    next:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6)
 
     -- Warm orange tone (similar to quest titles or buttons)
     prev:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
@@ -280,10 +280,6 @@ function OFAuctionFrameDeathClips_OnLoad()
 
 
 
-    -- Prev button:
-    --   Left click: back 1 page
-    --   Right click: back 10 pages
-    --   Shift+click (either): jump to start
     prev:SetScript("OnClick", function(self, button)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
         local off   = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
@@ -292,18 +288,14 @@ function OFAuctionFrameDeathClips_OnLoad()
             off = 0
         elseif button == "LeftButton" then
             off = off - pages
-        else  -- RightButton
-            off = off - pages * 10 + 10
+        else  -- RightButton: назад на 10 страниц
+            off = off - pages * 10
         end
         off = math.max(0, off)
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
         OFAuctionFrameDeathClips_Update()
     end)
 
-    -- Next button:
-    --   Left click: forward 1 page
-    --   Right click: forward 10 pages
-    --   Shift+click (either): jump to end
     next:SetScript("OnClick", function(self, button)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
         local total  = #OFAuctionFrameDeathClips.currentDisplayableClips
@@ -314,14 +306,19 @@ function OFAuctionFrameDeathClips_OnLoad()
             off = maxOff
         elseif button == "LeftButton" then
             off = off + pages
-        else  -- RightButton
-            off = off + pages * 10 + 10
-
+        else  -- RightButton: "вперёд 10 стр." или с 0 сразу к 9-й
+            if off == 0 then
+                off = pages * 9
+            else
+                off = off + pages * 10
+            end
         end
         off = math.min(maxOff, off)
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
         OFAuctionFrameDeathClips_Update()
     end)
+
+
 
     prev:SetScript("OnMouseDown", function(self)
         SetButtonTextureLayout(self, 40, 40)
