@@ -2417,8 +2417,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             return (a.ts or 0) > (b.ts or 0)      -- ▼ был “<”, стал “>”
         end)
 
-        local CHUNK_SIZE  = 10                    -- ваш 10×0.05 вариант
-        local batchAfter = 0.05
+        local CHUNK_SIZE  = 100                    -- ваш 10×0.05 вариант
+        local batchAfter = 0
         local totalChunks = math.ceil(#rawClips/CHUNK_SIZE)
         local chunkIndex  = 1
 
@@ -2500,7 +2500,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             for i=i1,iN do rows[#rows+1] = ClipToRow(rawClips[i]) end
 
             local ser = Addon:Serialize(rows)
-            local comp= LibDeflate:CompressDeflate(ser,{level=9})
+            local comp= LibDeflate:CompressDeflate(ser,{level=1})
             totalSer,totalComp = totalSer+#ser,totalComp+#comp
 
             local payload = { label=("chunk_%dof%d"):format(chunkIndex,totalChunks),
