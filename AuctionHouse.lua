@@ -2403,215 +2403,185 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
 
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
+        -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-
-        local since = payload.since
-        local clips = payload.clips or {}
+        local since      = payload.since
+        local knownClips = payload.clips or {}
         print(("🔍DBG: Payload since TS = %s, have %d clip-IDs"):format(
-                tostring(since), #clips
+                tostring(since), #knownClips
         ))
 
-        local rawClips = ns.GetNewDeathClips(since, clips)
+        -- Gather and sort all clips newer than `since`
+        local rawClips = ns.GetNewDeathClips(since, knownClips)
         print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then
             return
         end
-
-        -- sort by ts
         table.sort(rawClips, function(a, b)
             return (a.ts or 0) < (b.ts or 0)
         end)
 
-        -- precompute our realm
+        -- Precompute realm info
         local fullRealm = GetRealmName() or ""
-        local realmID = ns.RealmFullNameToID[fullRealm] or 0
+        local realmID   = ns.RealmFullNameToID[fullRealm] or 0
 
-        local rows = {}
-        for i, c in ipairs(rawClips) do
-            local ts = c.ts or 0  -- absolute server time
+        -- Chunk parameters
+        local CHUNK_SIZE   = 50
+        local totalChunks  = math.ceil(#rawClips / CHUNK_SIZE)
+        local chunkIndex   = 1
 
-            -- strip color from mob name
-            local mobName = (c.deathCause or "")
-                    :gsub("|c%x%x%x%x%x%x%x%x", "")
-                    :gsub("|r", "")
+        -- Recursive sender
+        local function sendNextChunk()
+            local startIdx = (chunkIndex - 1) * CHUNK_SIZE + 1
+            local endIdx   = math.min(chunkIndex * CHUNK_SIZE, #rawClips)
 
-            -- determine causeCode (0–10, default 7)
-            local causeCode = 7
-            for id, text in pairs(ns.DeathCauseByID) do
-                if id ~= 7 and c.deathCause:find(text, 1, true) then
-                    causeCode = id
-                    break
+            -- Build just this slice of rows
+            local rows = {}
+            for i = startIdx, endIdx do
+                local c = rawClips[i]
+                local ts = c.ts or 0
+
+                local mobName = (c.deathCause or "")
+                        :gsub("|c%x%x%x%x%x%x%x%x", "")
+                        :gsub("|r", "")
+
+                local causeCode = 7
+                for id, text in pairs(ns.DeathCauseByID) do
+                    if id ~= 7 and c.deathCause:find(text, 1, true) then
+                        causeCode = id
+                        break
+                    end
                 end
-            end
-            local mobData
-            if causeCode == 7 and mobName ~= "" then
-                mobData = ns.MobIDByName[mobName] or mobName -- Assign ID if found, otherwise fallback to mobName string
-            else
-                mobData = "" -- Assign empty string if not causeCode 7 or mobName is empty
-            end
 
-            -- zone → ID + fallback string
-            local zid = ns.ZoneIDByName[c.where] or 0
-            local rawZone = (zid > 0) and nil or (c.where or "")
+                local mobData = (causeCode == 7 and mobName ~= "")
+                        and (ns.MobIDByName[mobName] or mobName)
+                        or ""
 
-            -- faction → code
-            local facCode = (c.faction == "Alliance" and 1)
-                    or (c.faction == "Horde" and 2)
-                    or 3
+                local zid     = ns.ZoneIDByName[c.where] or 0
+                local rawZone = (zid > 0) and nil or (c.where or "")
 
-            -- race & class codes
-            local raceCode = ns.RaceIDByName[c.race] or 0
-            local classCode = ns.ClassIDByName[c.class] or 0
+                local facCode = (c.faction == "Alliance" and 1)
+                        or (c.faction == "Horde"    and 2)
+                        or 3
 
-            -- **NEW**: read the raw mobLevel field directly
-            local mobLevelNum = c.mobLevel or 0
+                local raceCode   = ns.RaceIDByName[c.race] or 0
+                local classCode  = ns.ClassIDByName[c.class] or 0
+                local mobLevelNum = c.mobLevel or 0
 
-            -- build the row
-            local row = {
-                c.characterName or "", -- [1]
-                ts, -- [2]
-                classCode, -- [3]
-                c.completed and 0 or causeCode, -- [4]
-                raceCode, -- [5]
-                c.completed and 0 or zid, -- [6]
-                facCode, -- [7]
-                realmID, -- [8]
-                c.level or 0, -- [9]
-                c.getPlayedTry or 0, -- [10]
-                tonumber(c.playedTime) or nil, -- [11]
-                (not c.completed) and mobData or "", -- [12] NEW (mobData can be ID or string)
-            }
+                local row = {
+                    c.characterName or "",           -- [1]
+                    ts,                              -- [2]
+                    classCode,                       -- [3]
+                    c.completed and 0 or causeCode,  -- [4]
+                    raceCode,                        -- [5]
+                    c.completed and 0 or zid,        -- [6]
+                    facCode,                         -- [7]
+                    realmID,                         -- [8]
+                    c.level or 0,                    -- [9]
+                    c.getPlayedTry or 0,             -- [10]
+                    tonumber(c.playedTime) or nil,   -- [11]
+                    (not c.completed) and mobData or "", -- [12]
+                }
+                row[13] = mobLevelNum              -- [13]
+                row[14] = c.completed or nil       -- [14]
 
-            row[13] = mobLevelNum              -- [13] fixed mob level
-            row[14] = c.completed or nil       -- [14] completed flag
+                local idx = 15
+                if (not c.completed) and row[6] == 0 and rawZone then
+                    row[idx] = rawZone
+                    idx = idx + 1
+                end
+                if (not c.completed) and row[8] == 0 and fullRealm then
+                    row[idx] = fullRealm
+                end
 
-            -- optional zone + realm strings
-            local idx = 15
-            if (not c.completed) and row[6] == 0 and rawZone then
-                row[idx] = rawZone
-                idx = idx + 1
-            end
-            if (not c.completed) and row[8] == 0 and fullRealm then
-                row[idx] = fullRealm
+                rows[#rows + 1] = row
             end
 
-            rows[i] = row
-        end
+            -- Serialize, compress (level=9), encode, and send
+            local serialized = Addon:Serialize(rows)
+            local compressed = LibDeflate:CompressDeflate(serialized, { level = 9 })
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
 
-        -- ------------------------------------------------------------------
-        -- Debug: pretty-print one RAW 'rows' entry (numeric array)
-        -- ------------------------------------------------------------------
-        local function DebugDumpClipArr(arr)
-            -- map numeric slots -> human labels so the printout is readable
-            local labels = {
-                "name", -- 1
-                "ts", -- 2
-                "classID", -- 3
-                "causeID", -- 4
-                "raceID", -- 5
-                "zoneID", -- 6
-                "factionID", -- 7
-                "realmID", -- 8
-                "level", -- 9
-                "getPlayedTry", --10
-                "playedTime", --11
-                "mobName", --12
-                "mobLevel", --13
-                "realmName", --14
-                "zoneName", --15 (optional fallback)
-                "completed", --16
-            }
+            local label         = ("chunk_%dof%d"):format(chunkIndex, totalChunks)
+            local payloadToSend = { label = label, data = encoded }
+            local msgOut        = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, payloadToSend })
 
-            local parts = {}
-            for i = 1, #arr do
-                table.insert(parts, labels[i] .. "=" .. tostring(arr[i]))
-            end
-            --print("SEND-RAW {" .. table.concat(parts, ", ") .. "}")
-        end
+            self:SendDm(msgOut, sender, "BULK")
 
-        local debugShown = 0                         -- NEW
+            -- Cleanup and schedule next
+            rows, serialized, compressed, encoded = nil, nil, nil, nil
+            collectgarbage("step")
+            chunkIndex = chunkIndex + 1
 
-        for _, arr in ipairs(rows) do
-            if debugShown < 100 then
-                -- print only first 100
-                DebugDumpClipArr(arr)
-                debugShown = debugShown + 1
+            if chunkIndex <= totalChunks then
+                C_Timer:After(1, sendNextChunk)
             end
         end
 
-
-        -- serialize & send
-        local serialized = Addon:Serialize(rows)
-        print((">> DEBUG: serialized rows = %d bytes"):format(#serialized))
-        local compressionConfigs = {level = 9}
-        local compressed = LibDeflate:CompressDeflate(serialized, compressionConfigs)
-        print((">> DEBUG: compressed rows = %d bytes (Level 9)"):format(#compressed))
-
-        local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
-        self:SendDm(msg, sender, "BULK")
+        -- Kick off
+        sendNextChunk()
 
 
         -- === Receiver: T_DEATH_CLIPS_STATE ===
+        -- === Receiver: T_DEATH_CLIPS_STATE ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
+        -- Handle both legacy (raw string) and new {label,data} payloads
+        local compressed
+        local label
+        if type(payload) == "table" then
+            label      = payload.label
+            compressed = payload.data
+            compressed = LibDeflate:DecodeForWoWAddonChannel(compressed)
+        else
+            compressed = payload
+        end
 
-        local decompressed = LibDeflate:DecompressDeflate(payload)
-        local ok, rows = Addon:Deserialize(decompressed)
+        -- Decompress & deserialize
+        local decompressed = LibDeflate:DecompressDeflate(compressed)
+        local ok, rows     = Addon:Deserialize(decompressed)
         if not ok then
             return
         end
 
+        -- Rebuild each clip exactly as before
         for _, arr in ipairs(rows) do
-            ----------------------------------------------------------------
-            -- 1) pull in the raw ts
-            ----------------------------------------------------------------
+            -- 1) Timestamp
             local clipTS = arr[2] or 0
-            local now = GetServerTime()
-            if clipTS > now then
-                clipTS = now
-            end
+            local now    = GetServerTime()
+            if clipTS > now then clipTS = now end
 
-            ----------------------------------------------------------------
-            -- 2) look-ups and fallbacks
-            ----------------------------------------------------------------
-            local zid = arr[6] or 0
-            local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
-                    or arr[15] or ""
-
-            local rid = arr[8] or 0
+            -- 2) Zone & realm
+            local zid      = arr[6] or 0
+            local zoneName = (zid > 0 and ns.GetZoneNameByID(zid)) or arr[15] or ""
+            local rid      = arr[8] or 0
             local realmStr = (rid > 0 and ns.GetRealmNameByID(rid))
                     or ((zid == 0 and arr[16]) or arr[15])
                     or "UnknownRealm"
 
-            local clipCompleted = arr[14] ~= nil            -- slot-14 flag
-            local causeID = arr[4] or 0
-            local mobPayload = arr[12] or "" -- This is the mobData from sender
+            -- 3) Completion & cause
+            local clipCompleted = arr[14] ~= nil
+            local causeID       = arr[4] or 0
+            local mobPayload    = arr[12] or ""
             local mobNameForCause = ""
-            if type(mobPayload) == "number" then -- It's an ID
+            if type(mobPayload) == "number" then
                 mobNameForCause = ns.MobNameByID[mobPayload] or "Неизвестный моб"
-            elseif type(mobPayload) == "string" then -- It's a fallback string name
+            elseif type(mobPayload) == "string" then
                 mobNameForCause = mobPayload
             end
-
             local causeStr = clipCompleted and ""
-                    or ns.GetDeathCauseByID(causeID, mobNameForCause) -- Use reconstructed/fallback name
+                    or ns.GetDeathCauseByID(causeID, mobNameForCause)
 
-            ----------------------------------------------------------------
-            -- 3) class & race names
-            ----------------------------------------------------------------
+            -- 4) Class & race
             local classStr = ns.ClassNameByID[arr[3]] or ""
             local raceInfo = ns.GetRaceInfoByID(arr[5])
 
-            ----------------------------------------------------------------
-            -- 4) rebuild the clip table
-            ----------------------------------------------------------------
+            -- 5) Reassemble clip table
             local clip = {
                 characterName = arr[1] or "",
                 ts            = clipTS,
-                classCode     = arr[3],
                 class         = classStr,
                 causeCode     = causeID,
                 deathCause    = causeStr,
-                raceCode      = arr[5],
                 race          = raceInfo.name,
                 where         = clipCompleted and "" or zoneName,
                 factionCode   = arr[7],
@@ -2621,12 +2591,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 getPlayedTry  = arr[10],
                 playedTime    = arr[11],
                 mobLevel      = (arr[13] and arr[13] > 0) and arr[13] or nil,
-                completed     = clipCompleted and true or nil,
+                completed     = clipCompleted or nil,
             }
 
-            ----------------------------------------------------------------
-            -- 5) faction string
-            ----------------------------------------------------------------
+            -- 6) Faction string
             if clip.factionCode == 1 then
                 clip.faction = "Alliance"
             elseif clip.factionCode == 2 then
@@ -2635,35 +2603,19 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 clip.faction = "Neutral"
             end
 
-            ----------------------------------------------------------------
-            -- 6) ✂️ Minimal cleanup: drop unused or default fields
-            ----------------------------------------------------------------
+            -- 7) Cleanup default fields
             clip.classCode, clip.raceCode, clip.factionCode, clip.realmCode = nil, nil, nil, nil
             if clip.playedTime then
                 clip.getPlayedTry = nil
             end
 
-            ----------------------------------------------------------------
-            -- 7) build unique ID via helper
-            ----------------------------------------------------------------
+            -- 8) Assign ID and store
             clip.id = ns.GenerateClipID(clip, clip.completed)
-
             LiveDeathClips[clip.id] = clip
         end
 
-
-        ------------------------------------------------------------------
-        --  STOP BENCHMARK (debug only)
-        ------------------------------------------------------------------
-        -- ── POP & PRINT ──
-        local entry = table.remove(self.benchDebugQueue or {}, 1)
-        if entry then
-            local elapsed = GetTime() - entry.start
-            print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
-                    :format(entry.id, date("%H:%M"), elapsed))
-        end
-
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+
 
 
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE_REQUEST then
