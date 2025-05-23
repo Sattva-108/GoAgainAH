@@ -197,6 +197,7 @@ function OFAuctionFrameDeathClips_OnLoad()
     local nav = CreateFrame("Button", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
     nav:SetSize(300, 70)
     nav:SetScale(0.8)
+    nav:SetAlpha(0.9)
     nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 98, 25)
     nav:SetNormalAtlas("Glue-Shadow-Button-Normal", true)
     nav:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
@@ -217,7 +218,6 @@ function OFAuctionFrameDeathClips_OnLoad()
     prev:SetSize(80, 50)
     prev:SetPoint("LEFT", nav, "LEFT", 20, 5)
     prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
-    prev:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
     prev:SetPushedAtlas("Glue-Left-Array-Shadow-Button-Pushed")
     prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
     prev:SetDisabledAtlas("Glue-Left-Array-Shadow-Button-Disable")
@@ -228,19 +228,22 @@ function OFAuctionFrameDeathClips_OnLoad()
     next:SetSize(80, 50)
     next:SetPoint("RIGHT", nav, "RIGHT", -10, 5)
     next:SetNormalAtlas("Glue-Right-Array-Shadow-Button-Normal")
-    next:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
     next:SetPushedAtlas("Glue-Right-Array-Shadow-Button-Pushed")
     next:SetHighlightAtlas("Glue-Right-Array-Shadow-Button-Highlight")
     next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
     next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
     -- Warm orange tone (similar to quest titles or buttons)
-    prev:GetHighlightTexture():SetVertexColor(1, 0.5, 0, 0.6)
-    next:GetHighlightTexture():SetVertexColor(1, 0.5, 0, 0.6)
+    prev:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
+    next:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
 
     -- Warm orange tone (similar to quest titles or buttons)
-    prev:GetDisabledTexture():SetVertexColor(0.3, 0.3, 0.3, 1)
-    next:GetDisabledTexture():SetVertexColor(0.3, 0.3, 0.3, 1)
+    prev:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
+    next:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
+
+    -- Warm orange tone (similar to quest titles or buttons)
+    prev:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
+    next:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
 
     -- Helper to center and size normal, highlight, pushed textures (no disabled)
     local function SetButtonTextureLayout(btn, width, height)
@@ -261,6 +264,12 @@ function OFAuctionFrameDeathClips_OnLoad()
             push:ClearAllPoints()
             push:SetPoint("CENTER", btn, "CENTER")
             push:SetSize(width, height)
+        end
+        local dis = btn:GetDisabledTexture()
+        if dis then
+            dis:ClearAllPoints()
+            dis:SetPoint("CENTER", btn, "CENTER")
+            dis:SetSize(width, height)
         end
     end
 
@@ -313,6 +322,21 @@ function OFAuctionFrameDeathClips_OnLoad()
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
         OFAuctionFrameDeathClips_Update()
     end)
+
+    prev:SetScript("OnMouseDown", function(self)
+        SetButtonTextureLayout(self, 40, 40)
+    end)
+    prev:SetScript("OnMouseUp", function(self)
+        SetButtonTextureLayout(self, 55, 50)
+    end)
+
+    next:SetScript("OnMouseDown", function(self)
+        SetButtonTextureLayout(self, 40, 40)
+    end)
+    next:SetScript("OnMouseUp", function(self)
+        SetButtonTextureLayout(self, 55, 50)
+    end)
+
 
 
 
@@ -934,9 +958,11 @@ function OFAuctionFrameDeathClips_Update()
         local currentPage
         if offset == 0 then
             nav.pageLabel:SetText("Навигация")
+            nav.pageLabel:SetAlpha(0.8)
         else
             currentPage = math.floor(offset / NUM_CLIPS_TO_DISPLAY) + 1 -- page 1→2, page 2→3, etc
             nav.pageLabel:SetText(currentPage .. " / " .. totalPages)
+            nav.pageLabel:SetAlpha(0.9)
         end
     end
 
