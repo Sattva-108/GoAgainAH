@@ -468,8 +468,8 @@ local function UpdateLayout(buttonName)
         clipFrame:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
 
         -- Reset the width of ClassText and RaceText to original sizes (adjust as needed)
-        classText:SetWidth(84)  -- Adjust to original width as needed
-        raceText:SetWidth(84)   -- Adjust to original width as needed
+        classText:SetWidth(96)  -- Adjust to original width as needed
+        raceText:SetWidth(96)   -- Adjust to original width as needed
 
         -- Re-anchor the ClassText and RaceText to the right of clipFrame
         classText:ClearAllPoints()
