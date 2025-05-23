@@ -244,7 +244,7 @@ ns.GetPlayedTimeColor = function(seconds, level)
     -- собрать клипы текущего уровня и сервера
     local relevant = {}
     for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
-        if tonumber(clip.level) == level and clip.playedTime and not clip.completed then
+        if tonumber(clip.level) == level and clip.playedTime then
             relevant[#relevant + 1] = tonumber(clip.playedTime)
         end
     end

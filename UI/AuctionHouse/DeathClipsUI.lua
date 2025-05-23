@@ -758,12 +758,14 @@ function OFAuctionFrameDeathClips_Update()
         frame.needsDataRefresh = false
         forceFullRowUpdate = true
 
-        -- сброс пагинации и скролла
-        frame.page = 0
-        FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
-        if OFDeathClipsScrollScrollBar then
-            OFDeathClipsScrollScrollBar:SetValue(0)
-        end
+        ---- сброс пагинации и скролла
+        --frame.page = 0
+        --local currentOffset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+        --local currentScroll = OFDeathClipsScrollScrollBar:GetValue()
+        --if currentOffset and currentScroll then
+        --    FauxScrollFrame_SetOffset(OFDeathClipsScroll, currentOffset)
+        --    OFDeathClipsScrollScrollBar:SetValue(currentScroll)
+        --end
     end
 
     local clipsToDisplay = frame.currentDisplayableClips
