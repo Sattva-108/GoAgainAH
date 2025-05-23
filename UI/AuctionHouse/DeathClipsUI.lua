@@ -929,8 +929,9 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     local icon = self:CreateTexture(nil, "ARTWORK")
     icon:SetSize(40, 26)
     icon:SetPoint("LEFT", self, "LEFT", 0, 0)
-    icon:Hide()
     icon:SetTexCoord(0.1, 0.9, 0.34, 0.74)
+    icon:SetTexture("Interface\\AddOns\\GoAgainAH\\Media\\minus.tga")
+    icon:Show()
 
     -- Create count text overlaid on icon
     local count = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -945,7 +946,7 @@ function OFDeathClipsRatingWidget_OnLoad(self)
     -- Assign SetReactions function
     function self:SetReactions(data)
         local paths = {
-            [1] = "Interface\\AddOns\\GoAgainAH\\Media\\laugh_64x64.tga",
+            [1] = "Interface\\AddOns\\GoAgainAH\\Media\\smiley_64x64.tga",
             [2] = "Interface\\AddOns\\GoAgainAH\\Media\\eyes_64x64.tga",
             [3] = "Interface\\AddOns\\GoAgainAH\\Media\\clown_64x64.tga",
             [4] = "Interface\\AddOns\\GoAgainAH\\Media\\fire_64x64.tga",
@@ -962,21 +963,26 @@ function OFDeathClipsRatingWidget_OnLoad(self)
             icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
             count:ClearAllPoints()
             count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -3, 6)
+            icon:ClearAllPoints()
+            icon:SetPoint("LEFT", self, "LEFT", 0, 0)
+
+
 
             if id == 2 then
-                icon:SetSize(40, 40)
-                icon:SetTexCoord(0, 1, 0, 1)
+                icon:SetSize(40, 36)
+                icon:SetTexCoord(0, 1, 0.05, 0.95) -- немного больше
+                icon:SetPoint("LEFT", self, "LEFT", 0, -1)
                 count:SetPoint("TOPLEFT", icon, "BOTTOMRIGHT", -3, 12)
-
             elseif id == 3 then
                 icon:SetTexCoord(0.1, 0.9, 0.30, 0.72)
-
             elseif id == 4 then
                 icon:SetTexCoord(0.1, 0.9, 0.12, 0.66)
+                icon:SetVertexColor(0.5, 0.5, 0.5, 1)
 
             elseif id == 1 then
-                icon:SetVertexColor(0.5, 0.5, 0.5, 1.0)
-                icon:SetTexCoord(0.1, 0.9, 0.24, 0.78)
+                icon:SetSize(40, 24)
+                icon:SetVertexColor(0.5, 0.5, 0.5, 0.9)
+                icon:SetTexCoord(0.05, 0.95, 0.2644, 0.8044)
             end
 
             icon:SetTexture(path)
@@ -985,7 +991,13 @@ function OFDeathClipsRatingWidget_OnLoad(self)
             count:SetText(countValue)
             count:Show()
         else
-            icon:Hide()
+            icon:SetTexture("Interface\\AddOns\\GoAgainAH\\Media\\minus_final_32x8.tga")
+            icon:SetSize(32, 8)
+            icon:SetTexCoord(0, 1, 0, 1)
+            icon:SetVertexColor(1, 1, 1, 0.1)
+            icon:ClearAllPoints()
+            icon:SetPoint("LEFT", self, "LEFT", 5, 0)
+            icon:Show()
             count:Hide()
         end
     end
