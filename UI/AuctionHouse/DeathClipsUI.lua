@@ -270,13 +270,6 @@ function OFAuctionFrameDeathClips_OnLoad()
     prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
     prev:SetDisabledAtlas("Glue-Left-Array-Shadow-Button-Disable")
     prev:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    prev:SetScript("OnClick", function(self, button)
-        if button == "LeftButton" then
-            print("Prev page")
-        else
-            print("First page")
-        end
-    end)
 
     -- 4) Next button, size 50×50 at –20, +5
     local next = CreateFrame("Button", "OFDeathClipsNextPageButton", nav)
@@ -288,13 +281,40 @@ function OFAuctionFrameDeathClips_OnLoad()
     next:SetHighlightAtlas("Glue-Right-Array-Shadow-Button-Highlight")
     next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
     next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    next:SetScript("OnClick", function(self, button)
+
+
+    -- Prev button: Left = back 1 page (or 10 if Shift), Right = jump to start
+    prev:SetScript("OnClick", function(self, button)
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        local off   = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+        local pages = NUM_CLIPS_TO_DISPLAY
+        local step  = pages * (IsShiftKeyDown() and 10 or 1)
         if button == "LeftButton" then
-            print("Next page")
+            off = math.max(0, off - step)
         else
-            print("Last page")
+            off = 0
         end
+        FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
+        OFAuctionFrameDeathClips_Update()
     end)
+
+    -- Next button: Left = forward 1 page (or 10 if Shift), Right = jump to end
+    next:SetScript("OnClick", function(self, button)
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        local total  = #OFAuctionFrameDeathClips.currentDisplayableClips
+        local pages  = NUM_CLIPS_TO_DISPLAY
+        local maxOff = math.max(0, total - pages)
+        local off    = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+        local step   = pages * (IsShiftKeyDown() and 10 or 1)
+        if button == "LeftButton" then
+            off = math.min(maxOff, off + step)
+        else
+            off = maxOff
+        end
+        FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
+        OFAuctionFrameDeathClips_Update()
+    end)
+
 
 
     -- ---- START OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
