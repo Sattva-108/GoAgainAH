@@ -193,55 +193,6 @@ function OFAuctionFrameDeathClips_OnLoad()
         end)
     end
 
-    -- inside OFAuctionFrameDeathClips_OnLoad, replace your two button hooks with this:
-
-    -- Prev button: Left = back 1 page (or 10 if Shift), Right = jump to start
-    do
-        local btn = _G["OFDeathClipsPrevPageButton"]
-        if btn then
-            btn:SetScript("OnClick", function(self, button)
-                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                local off    = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-                local pages  = NUM_CLIPS_TO_DISPLAY
-                local step   = pages * (IsShiftKeyDown() and 10 or 1)
-                if button == "LeftButton" then
-                    -- shift down: go back 'step' items
-                    off = math.max(0, off - step)
-                else
-                    -- right click: to very start
-                    off = 0
-                end
-                FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
-                OFAuctionFrameDeathClips_Update()
-            end)
-        end
-    end
-
-    -- Next button: Left = forward 1 page (or 10 if Shift), Right = jump to end
-    do
-        local btn = _G["OFDeathClipsNextPageButton"]
-        if btn then
-            btn:SetScript("OnClick", function(self, button)
-                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                local total   = #OFAuctionFrameDeathClips.currentDisplayableClips
-                local pages   = NUM_CLIPS_TO_DISPLAY
-                local maxOff  = math.max(0, total - pages)
-                local off     = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-                local step    = pages * (IsShiftKeyDown() and 10 or 1)
-                if button == "LeftButton" then
-                    -- shift down: advance 'step' items
-                    off = math.min(maxOff, off + step)
-                else
-                    -- right click: to very end
-                    off = maxOff
-                end
-                FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
-                OFAuctionFrameDeathClips_Update()
-            end)
-        end
-    end
-    -- ---- END OF PAGINATION BUTTONS LOGIC ----
-
     -- 1) Nav container as a Button …
     local nav = CreateFrame("Button", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
     nav:SetSize(300, 70)
@@ -283,37 +234,49 @@ function OFAuctionFrameDeathClips_OnLoad()
     next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 
-    -- Prev button: Left = back 1 page (or 10 if Shift), Right = jump to start
+    -- Prev button:
+    --   Left click: back 1 page
+    --   Right click: back 10 pages
+    --   Shift+click (either): jump to start
     prev:SetScript("OnClick", function(self, button)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
         local off   = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
         local pages = NUM_CLIPS_TO_DISPLAY
-        local step  = pages * (IsShiftKeyDown() and 10 or 1)
-        if button == "LeftButton" then
-            off = math.max(0, off - step)
-        else
+        if IsShiftKeyDown() then
             off = 0
+        elseif button == "LeftButton" then
+            off = off - pages
+        else  -- RightButton
+            off = off - pages * 10 + 10
         end
+        off = math.max(0, off)
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
         OFAuctionFrameDeathClips_Update()
     end)
 
-    -- Next button: Left = forward 1 page (or 10 if Shift), Right = jump to end
+    -- Next button:
+    --   Left click: forward 1 page
+    --   Right click: forward 10 pages
+    --   Shift+click (either): jump to end
     next:SetScript("OnClick", function(self, button)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
         local total  = #OFAuctionFrameDeathClips.currentDisplayableClips
         local pages  = NUM_CLIPS_TO_DISPLAY
         local maxOff = math.max(0, total - pages)
         local off    = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-        local step   = pages * (IsShiftKeyDown() and 10 or 1)
-        if button == "LeftButton" then
-            off = math.min(maxOff, off + step)
-        else
+        if IsShiftKeyDown() then
             off = maxOff
+        elseif button == "LeftButton" then
+            off = off + pages
+        else  -- RightButton
+            off = off + pages * 10 + 10
+
         end
+        off = math.min(maxOff, off)
         FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
         OFAuctionFrameDeathClips_Update()
     end)
+
 
 
 
