@@ -1578,68 +1578,71 @@
                         </Anchors>
                     </Button>
 
-					<Button name="OFDeathClipsPrevPageButton" inherits="PKBT_RedButtonTemplate">
-						<Size x="90" y="30"/>
-						<Anchors>
-							<Anchor point="BOTTOMRIGHT" x="-110" y="9"/>
-						</Anchors>
-
-						<Layers>
-							<Layer level="ARTWORK">
-								<Texture name="$parentIcon" file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up">
-									<Size x="22" y="22"/>
-									<Anchors>
-										<Anchor point="LEFT" x="6" y="0"/>
-									</Anchors>
-								</Texture>
-								<FontString name="$parentLabel" inherits="GameFontHighlightSmall" text="Назад">
-									<Anchors>
-										<Anchor point="LEFT" relativeTo="$parentIcon" relativePoint="RIGHT" x="6" y="0"/>
-									</Anchors>
-								</FontString>
-							</Layer>
-						</Layers>
-
-						<Scripts>
-							<OnClick>
-								print("Назад clicked")
-							</OnClick>
-						</Scripts>
-					</Button>
-
-
-					<Button name="OFDeathClipsNextPageButton">
-                        <Size>
-                            <AbsDimension x="30" y="30" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="BOTTOMRIGHT">
-                                <Offset>
-                                    <AbsDimension x="40" y="9" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="BACKGROUND">
-                                <FontString inherits="GameFontHighlightSmall" text="NEXT" justifyH="RIGHT">
-                                    <Size>
-                                        <AbsDimension x="60" y="10" />
-                                    </Size>
-                                    <Anchors>
-                                        <Anchor point="RIGHT" relativePoint="LEFT" />
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
+                    <Button name="OFDeathClipsPrevPageButton">
+<!--                        <Size>-->
+<!--                            <AbsDimension x="30" y="30" />-->
+<!--                        </Size>-->
+<!--                        <Anchors>-->
+<!--                            <Anchor point="BOTTOMRIGHT">-->
+<!--                                <Offset>-->
+<!--                                    <AbsDimension x="-90" y="9" />-->
+<!--                                </Offset>-->
+<!--                            </Anchor>-->
+<!--                        </Anchors>-->
+<!--                        <Layers>-->
+<!--                            <Layer level="BACKGROUND">-->
+<!--                                <FontString inherits="GameFontHighlightSmall" text="PREV" justifyH="LEFT">-->
+<!--                                    <Size>-->
+<!--                                        <AbsDimension x="60" y="10" />-->
+<!--                                    </Size>-->
+<!--                                    <Anchors>-->
+<!--                                        <Anchor point="LEFT" relativePoint="RIGHT" />-->
+<!--                                    </Anchors>-->
+<!--                                </FontString>-->
+<!--                            </Layer>-->
+<!--                        </Layers>-->
 						<Scripts>
 							<OnLoad>
 								self:RegisterForClicks("LeftButtonUp","RightButtonUp")
 							</OnLoad>
 						</Scripts>
-                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up" />
-                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down" />
-                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />
-                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />
+<!--                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up" />-->
+<!--                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Down" />-->
+<!--                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Disabled" />-->
+<!--                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />-->
+                    </Button>
+                    <Button name="OFDeathClipsNextPageButton">
+<!--                        <Size>-->
+<!--                            <AbsDimension x="30" y="30" />-->
+<!--                        </Size>-->
+<!--                        <Anchors>-->
+<!--                            <Anchor point="BOTTOMRIGHT">-->
+<!--                                <Offset>-->
+<!--                                    <AbsDimension x="40" y="9" />-->
+<!--                                </Offset>-->
+<!--                            </Anchor>-->
+<!--                        </Anchors>-->
+<!--                        <Layers>-->
+<!--                            <Layer level="BACKGROUND">-->
+<!--                                <FontString inherits="GameFontHighlightSmall" text="NEXT" justifyH="RIGHT">-->
+<!--                                    <Size>-->
+<!--                                        <AbsDimension x="60" y="10" />-->
+<!--                                    </Size>-->
+<!--                                    <Anchors>-->
+<!--                                        <Anchor point="RIGHT" relativePoint="LEFT" />-->
+<!--                                    </Anchors>-->
+<!--                                </FontString>-->
+<!--                            </Layer>-->
+<!--                        </Layers>-->
+						<Scripts>
+							<OnLoad>
+								self:RegisterForClicks("LeftButtonUp","RightButtonUp")
+							</OnLoad>
+						</Scripts>
+<!--                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up" />-->
+<!--                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down" />-->
+<!--                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />-->
+<!--                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />-->
                     </Button>
                 </Frames>
                 <Scripts>

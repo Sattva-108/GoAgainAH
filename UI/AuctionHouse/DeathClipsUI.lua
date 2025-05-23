@@ -242,6 +242,59 @@ function OFAuctionFrameDeathClips_OnLoad()
     end
     -- ---- END OF PAGINATION BUTTONS LOGIC ----
 
+    -- 1) Nav container parented to your DeathClips frame
+    local nav = CreateFrame("Frame", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
+    nav:SetSize(300, 70)
+    nav:SetScale(0.8)
+    nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 95, 25)
+
+    -- 2) Dark “cloud” background
+    local bg = nav:CreateTexture(nil, "BACKGROUND")
+    bg:SetAtlas("Glue-Shadow-Button-Normal", true)
+    bg:SetAllPoints(nav)
+
+    -- 3) Centered “Page” label, raised 8px
+    local label = nav:CreateFontString(nil, "BORDER", "GameFontNormal")
+    label:SetText("Page")
+    label:SetFont(label:GetFont(), 16)
+    label:SetTextColor(1, 0.8, 0)
+    label:SetJustifyH("CENTER")
+    label:SetPoint("CENTER", nav, "CENTER", 0, 5)
+
+    -- 4) Prev button, size 40×40, X = +30, Y = +8
+    local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
+    prev:SetSize(50, 50)
+    prev:SetPoint("LEFT", nav, "LEFT", 20, 5)
+    prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
+    prev:SetPushedAtlas("Glue-Left-Array-Shadow-Button-Pushed")
+    prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
+    prev:SetDisabledAtlas("Glue-Left-Array-Shadow-Button-Disable")
+    prev:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    prev:SetScript("OnClick", function(self, button)
+        if button == "LeftButton" then
+            print("Prev page")
+        else
+            print("First page")
+        end
+    end)
+
+    -- 5) Next button, size 40×40, X = -30, Y = +8
+    local next = CreateFrame("Button", "OFDeathClipsNextPageButton", nav)
+    next:SetSize(50, 50)
+    next:SetPoint("RIGHT", nav, "RIGHT", -20, 5)
+    next:SetNormalAtlas("Glue-Right-Array-Shadow-Button-Normal")
+    next:SetPushedAtlas("Glue-Right-Array-Shadow-Button-Pushed")
+    next:SetHighlightAtlas("Glue-Right-Array-Shadow-Button-Highlight")
+    next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
+    next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    next:SetScript("OnClick", function(self, button)
+        if button == "LeftButton" then
+            print("Next page")
+        else
+            print("Last page")
+        end
+    end)
+
     -- ---- START OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
     local scrollFrame = _G["OFDeathClipsScroll"]
     if scrollFrame then
@@ -1484,3 +1537,5 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         HandleFriendListUpdate()
     end
 end)
+
+
