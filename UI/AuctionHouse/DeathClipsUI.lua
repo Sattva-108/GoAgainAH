@@ -203,13 +203,14 @@ function OFAuctionFrameDeathClips_OnLoad()
     nav:SetHighlightAtlas("Glue-Shadow-Button-Highlight", true)
     nav:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
 
-    -- 2) Centered “Page” label, on OVERLAY
+    -- 2) Centered label, on OVERLAY
     local label = nav:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetText("Page")
+    nav.pageLabel = label  -- сохраняем как поле для доступа из Update
     label:SetFont(label:GetFont(), 16)
     label:SetTextColor(1, 0.8, 0)
     label:SetJustifyH("CENTER")
     label:SetPoint("CENTER", nav, "CENTER", 0, 5)
+
 
     -- 3) Prev button, size 50×50 at +20, +5
     local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
@@ -926,6 +927,20 @@ function OFAuctionFrameDeathClips_Update()
         if nextButton then nextButton:Hide() end
         if searchCountText then searchCountText:Hide() end
     end
+    local nav = _G["OFDeathClipsNavFrame"]
+    if nav and nav.pageLabel then
+        local totalPages = math.max(1, math.ceil(totalClips / NUM_CLIPS_TO_DISPLAY))
+        local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+        local currentPage
+        if offset == 0 then
+            nav.pageLabel:SetText("Навигация")
+        else
+            currentPage = math.floor(offset / NUM_CLIPS_TO_DISPLAY) + 1 -- page 1→2, page 2→3, etc
+            nav.pageLabel:SetText(currentPage .. " / " .. totalPages)
+        end
+    end
+
+
 end
 
 function OFDeathClipsRatingWidget_OnLoad(self)
