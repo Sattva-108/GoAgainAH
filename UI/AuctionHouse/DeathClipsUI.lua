@@ -233,6 +233,16 @@ function OFAuctionFrameDeathClips_OnLoad()
     next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
     next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
+    -- Warm orange tone (similar to quest titles or buttons)
+    prev:GetHighlightTexture():SetVertexColor(1, 0.5, 0, 0.6)
+    next:GetHighlightTexture():SetVertexColor(1, 0.5, 0, 0.6)
+
+    -- Warm orange tone (similar to quest titles or buttons)
+    prev:GetDisabledTexture():SetVertexColor(0.3, 0.3, 0.3, 1)
+    next:GetDisabledTexture():SetVertexColor(0.3, 0.3, 0.3, 1)
+
+
+
 
     -- Prev button:
     --   Left click: back 1 page
