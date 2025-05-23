@@ -213,7 +213,7 @@ function OFAuctionFrameDeathClips_OnLoad()
 
     -- 3) Prev button, size 50×50 at +20, +5
     local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
-    prev:SetSize(55, 50)
+    prev:SetSize(80, 50)
     prev:SetPoint("LEFT", nav, "LEFT", 20, 5)
     prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
     prev:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
@@ -224,7 +224,7 @@ function OFAuctionFrameDeathClips_OnLoad()
 
     -- 4) Next button, size 50×50 at –20, +5
     local next = CreateFrame("Button", "OFDeathClipsNextPageButton", nav)
-    next:SetSize(55, 50)
+    next:SetSize(80, 50)
     next:SetPoint("RIGHT", nav, "RIGHT", -10, 5)
     next:SetNormalAtlas("Glue-Right-Array-Shadow-Button-Normal")
     next:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
@@ -240,6 +240,32 @@ function OFAuctionFrameDeathClips_OnLoad()
     -- Warm orange tone (similar to quest titles or buttons)
     prev:GetDisabledTexture():SetVertexColor(0.3, 0.3, 0.3, 1)
     next:GetDisabledTexture():SetVertexColor(0.3, 0.3, 0.3, 1)
+
+    -- Helper to center and size normal, highlight, pushed textures (no disabled)
+    local function SetButtonTextureLayout(btn, width, height)
+        local tex = btn:GetNormalTexture()
+        if tex then
+            tex:ClearAllPoints()
+            tex:SetPoint("CENTER", btn, "CENTER")
+            tex:SetSize(width, height)
+        end
+        local hlt = btn:GetHighlightTexture()
+        if hlt then
+            hlt:ClearAllPoints()
+            hlt:SetPoint("CENTER", btn, "CENTER")
+            hlt:SetSize(width, height)
+        end
+        local push = btn:GetPushedTexture()
+        if push then
+            push:ClearAllPoints()
+            push:SetPoint("CENTER", btn, "CENTER")
+            push:SetSize(width, height)
+        end
+    end
+
+    -- Usage for both buttons:
+    SetButtonTextureLayout(next, 55, 50)
+    SetButtonTextureLayout(prev, 55, 50)
 
 
 
