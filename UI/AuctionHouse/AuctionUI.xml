@@ -1580,7 +1580,7 @@
 
                     <Button name="OFDeathClipsPrevPageButton">
                         <Size>
-                            <AbsDimension x="32" y="32" />
+                            <AbsDimension x="30" y="30" />
                         </Size>
                         <Anchors>
                             <Anchor point="BOTTOMRIGHT">
@@ -1601,14 +1601,11 @@
                                 </FontString>
                             </Layer>
                         </Layers>
-                        <Scripts>
-                            <OnClick>
-                                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                                OFAuctionFrameDeathClips.page = OFAuctionFrameDeathClips.page - 1
-                                OFDeathClipsScrollScrollBar:SetValue(0)
-                                OFAuctionFrameDeathClips_Update()
-                            </OnClick>
-                        </Scripts>
+						<Scripts>
+							<OnLoad>
+								self:RegisterForClicks("LeftButtonUp","RightButtonUp")
+							</OnLoad>
+						</Scripts>
                         <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up" />
                         <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Down" />
                         <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Disabled" />
@@ -1616,7 +1613,7 @@
                     </Button>
                     <Button name="OFDeathClipsNextPageButton">
                         <Size>
-                            <AbsDimension x="32" y="32" />
+                            <AbsDimension x="30" y="30" />
                         </Size>
                         <Anchors>
                             <Anchor point="BOTTOMRIGHT">
@@ -1637,14 +1634,11 @@
                                 </FontString>
                             </Layer>
                         </Layers>
-                        <Scripts>
-                            <OnClick>
-                                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
-                                OFAuctionFrameDeathClips.page = OFAuctionFrameDeathClips.page + 1
-                                OFDeathClipsScrollScrollBar:SetValue(0)
-                                OFAuctionFrameDeathClips_Update()
-                            </OnClick>
-                        </Scripts>
+						<Scripts>
+							<OnLoad>
+								self:RegisterForClicks("LeftButtonUp","RightButtonUp")
+							</OnLoad>
+						</Scripts>
                         <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up" />
                         <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down" />
                         <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />

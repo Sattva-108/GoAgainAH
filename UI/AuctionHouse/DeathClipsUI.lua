@@ -193,34 +193,52 @@ function OFAuctionFrameDeathClips_OnLoad()
         end)
     end
 
-    -- ---- START OF PAGINATION BUTTONS LOGIC (Unchanged from previous correct version) ----
-    local prevButton = _G["OFDeathClipsPrevPageButton"]
-    local nextButton = _G["OFDeathClipsNextPageButton"]
+    -- inside OFAuctionFrameDeathClips_OnLoad, replace your two button hooks with this:
 
-    if prevButton then
-        prevButton:SetScript("OnClick", function()
-            local currentOffset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-            local newOffset = math.max(0, currentOffset - NUM_CLIPS_TO_DISPLAY)
-            if newOffset ~= currentOffset then
-                FauxScrollFrame_SetOffset(OFDeathClipsScroll, newOffset)
+    -- Prev button: Left = back 1 page (or 10 if Shift), Right = jump to start
+    do
+        local btn = _G["OFDeathClipsPrevPageButton"]
+        if btn then
+            btn:SetScript("OnClick", function(self, button)
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                local off    = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+                local pages  = NUM_CLIPS_TO_DISPLAY
+                local step   = pages * (IsShiftKeyDown() and 10 or 1)
+                if button == "LeftButton" then
+                    -- shift down: go back 'step' items
+                    off = math.max(0, off - step)
+                else
+                    -- right click: to very start
+                    off = 0
+                end
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
                 OFAuctionFrameDeathClips_Update()
-            end
-        end)
+            end)
+        end
     end
 
-    if nextButton then
-        nextButton:SetScript("OnClick", function()
-            local totalClips = #OFAuctionFrameDeathClips.currentDisplayableClips
-            local currentOffset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-
-            local maxOffsetPossible = math.max(0, totalClips - NUM_CLIPS_TO_DISPLAY)
-            local newOffset = math.min(maxOffsetPossible, currentOffset + NUM_CLIPS_TO_DISPLAY)
-
-            if newOffset ~= currentOffset then
-                FauxScrollFrame_SetOffset(OFDeathClipsScroll, newOffset)
+    -- Next button: Left = forward 1 page (or 10 if Shift), Right = jump to end
+    do
+        local btn = _G["OFDeathClipsNextPageButton"]
+        if btn then
+            btn:SetScript("OnClick", function(self, button)
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                local total   = #OFAuctionFrameDeathClips.currentDisplayableClips
+                local pages   = NUM_CLIPS_TO_DISPLAY
+                local maxOff  = math.max(0, total - pages)
+                local off     = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+                local step    = pages * (IsShiftKeyDown() and 10 or 1)
+                if button == "LeftButton" then
+                    -- shift down: advance 'step' items
+                    off = math.min(maxOff, off + step)
+                else
+                    -- right click: to very end
+                    off = maxOff
+                end
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, off)
                 OFAuctionFrameDeathClips_Update()
-            end
-        end)
+            end)
+        end
     end
     -- ---- END OF PAGINATION BUTTONS LOGIC ----
 
