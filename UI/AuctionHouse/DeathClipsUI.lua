@@ -71,6 +71,7 @@ local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsClipSort, "clips", "clip")
 end
 
+-- OFAuctionFrameDeathClips_OnLoad
 function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.page = 0
     OFAuctionFrame_SetSort("clips", "when", false) -- Initial sort
@@ -161,7 +162,7 @@ function OFAuctionFrameDeathClips_OnLoad()
                         OFDeathClipsScrollScrollBar:SetValue(0)
                     end
                     OFAuctionFrameDeathClips.needsDataRefresh = true -- Sort changed, needs data refresh
-                    --OFAuctionFrameDeathClips_Update() -- Update will be called by scroll or other events
+                    -- OFAuctionFrameDeathClips_Update()
                 end
             end)
             sortHookApplied = true
@@ -171,14 +172,13 @@ function OFAuctionFrameDeathClips_OnLoad()
     end
 
     -- Hook tab clicks to set needsDataRefresh
-    -- Assuming OFDeathClipsTabLive and OFDeathClipsTabCompleted are global or accessible
     if OFDeathClipsTabLive then
         OFDeathClipsTabLive:HookScript("OnClick", function()
             if OFAuctionFrameDeathClips.currentSubTab ~= "live" then
                 OFAuctionFrameDeathClips.currentSubTab = "live"
                 OFAuctionFrameDeathClips.needsDataRefresh = true
-                OFAuctionFrame_SetSort("clips", "when", false) -- Reset sort for live tab
-                -- OFAuctionFrameDeathClips_Update() will be called by FauxScrollFrame or other mechanisms
+                OFAuctionFrame_SetSort("clips", "when", false)
+                -- OFAuctionFrameDeathClips_Update()
             end
         end)
     end
@@ -187,47 +187,58 @@ function OFAuctionFrameDeathClips_OnLoad()
             if OFAuctionFrameDeathClips.currentSubTab ~= "completed" then
                 OFAuctionFrameDeathClips.currentSubTab = "completed"
                 OFAuctionFrameDeathClips.needsDataRefresh = true
-                OFAuctionFrame_SetSort("clips", "clip", true) -- Reset sort for completed tab
+                OFAuctionFrame_SetSort("clips", "clip", true)
                 -- OFAuctionFrameDeathClips_Update()
             end
         end)
     end
-    ---- Быстрое обновление колонки «Когда» при скролле, сортировке и смене вкладок
-    --local function RefreshWhenColumn()
-    --    for i = 1, NUM_CLIPS_TO_DISPLAY do
-    --        local el = ns.clipButtonElements[i]
-    --        local clip = el and el.button.clipData
-    --        if clip and clip.ts then
-    --            local whenFS = el.whenText
-    --            whenFS:SetText(formatWhen(clip))
-    --            if clip.playedTime and clip.level then
-    --                local r,g,b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-    --                whenFS:SetTextColor(r, g, b, .7)
-    --            else
-    --                whenFS:SetTextColor(.6, .6, .6, .5)
-    --            end
-    --        end
-    --    end
-    --end
 
-    ---- при скролле
-    --OFDeathClipsScroll:HookScript("OnVerticalScroll", function(self, offset)
-    --    RefreshWhenColumn()
-    --end)
-    --
-    ---- сразу после сортировки
-    --hooksecurefunc("OFAuctionFrame_SetSort", function(type, key, ascending)
-    --    if type == "clips" then
-    --        print("refresh")
-    --        RefreshWhenColumn()
-    --    end
-    --end)
-    --
-    ---- при переключении подп вкладок (если они есть)
-    --if OFDeathClipsTabLive and OFDeathClipsTabCompleted then
-    --    OFDeathClipsTabLive:HookScript("OnClick", RefreshWhenColumn)
-    --    OFDeathClipsTabCompleted:HookScript("OnClick", RefreshWhenColumn)
-    --end
+    -- ---- START OF PAGINATION BUTTONS LOGIC (Unchanged from previous correct version) ----
+    local prevButton = _G["OFDeathClipsPrevPageButton"]
+    local nextButton = _G["OFDeathClipsNextPageButton"]
+
+    if prevButton then
+        prevButton:SetScript("OnClick", function()
+            local currentOffset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+            local newOffset = math.max(0, currentOffset - NUM_CLIPS_TO_DISPLAY)
+            if newOffset ~= currentOffset then
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, newOffset)
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
+
+    if nextButton then
+        nextButton:SetScript("OnClick", function()
+            local totalClips = #OFAuctionFrameDeathClips.currentDisplayableClips
+            local currentOffset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
+
+            local maxOffsetPossible = math.max(0, totalClips - NUM_CLIPS_TO_DISPLAY)
+            local newOffset = math.min(maxOffsetPossible, currentOffset + NUM_CLIPS_TO_DISPLAY)
+
+            if newOffset ~= currentOffset then
+                FauxScrollFrame_SetOffset(OFDeathClipsScroll, newOffset)
+                OFAuctionFrameDeathClips_Update()
+            end
+        end)
+    end
+    -- ---- END OF PAGINATION BUTTONS LOGIC ----
+
+    -- ---- START OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
+    local scrollFrame = _G["OFDeathClipsScroll"]
+    if scrollFrame then
+        -- FauxScrollFrames typically handle mouse wheel via their OnMouseWheel script.
+        -- Nilling it out is the most direct way to disable it if it's set.
+        scrollFrame:SetScript("OnMouseWheel", nil)
+
+        -- Some custom FauxScrollFrame setups might use EnableMouseWheel (less common for FauxScrollFrame itself)
+        -- This is more for Blizzard's ScrollFrameTemplate based frames.
+        -- It's generally safe to call if the method exists, but nilling OnMouseWheel is key for FauxScroll.
+        if scrollFrame.EnableMouseWheel then
+            scrollFrame:EnableMouseWheel(false)
+        end
+    end
+    -- ---- END OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
 
 end
 
@@ -713,7 +724,7 @@ local function FilterHiddenClips(state, clips)
     return clips   -- overrides больше нет → ничего не скрываем
 end
 
-
+-- OFAuctionFrameDeathClips_Update
 -- Updates clip entries based on which tab is active
 function OFAuctionFrameDeathClips_Update()
     local frame = OFAuctionFrameDeathClips
@@ -731,7 +742,6 @@ function OFAuctionFrameDeathClips_Update()
 
     local forceFullRowUpdate = false
     if frame.needsDataRefresh then
-        -- print("DEBUG: Refreshing full clip data")
         local rawPool = ns.GetLiveDeathClips()
         local pool = ns.FilterClipsThisRealm(rawPool)
         local tempClips = {}
@@ -757,29 +767,11 @@ function OFAuctionFrameDeathClips_Update()
         frame.currentDisplayableClips = tempClips
         frame.needsDataRefresh = false
         forceFullRowUpdate = true
-
-        ---- сброс пагинации и скролла
-        --frame.page = 0
-        --local currentOffset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-        --local currentScroll = OFDeathClipsScrollScrollBar:GetValue()
-        --if currentOffset and currentScroll then
-        --    FauxScrollFrame_SetOffset(OFDeathClipsScroll, currentOffset)
-        --    OFDeathClipsScrollScrollBar:SetValue(currentScroll)
-        --end
     end
 
     local clipsToDisplay = frame.currentDisplayableClips
     local totalClips = #clipsToDisplay
-    local page = frame.page or 0
     local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-
-    -- Calculate start and end indices for the current view
-    -- Note: FauxScrollFrame_GetOffset gives the index of the *first visible item* (0-based for logic, 1-based for lua tables)
-    -- If we are using pure pagination (page * NUM_CLIPS_PER_PAGE), then offset should align with that.
-    -- For simplicity, let's assume offset is the primary driver from the scrollbar, and page is for next/prev buttons.
-    -- The FauxScrollFrame handles the actual "view window" based on its total items and item height.
-    -- The number of items to actually process for display is NUM_CLIPS_TO_DISPLAY.
-    -- The items we get are from clipsToDisplay[offset + 1] to clipsToDisplay[offset + NUM_CLIPS_TO_DISPLAY]
 
     updateSortArrows()
 
@@ -792,17 +784,15 @@ function OFAuctionFrameDeathClips_Update()
 
         if not clip then
             button:Hide()
-            button.displayedClipID = nil -- Clear stored ID
+            button.displayedClipID = nil
         else
             numActuallyDisplayed = numActuallyDisplayed + 1
             button:Show()
-            -- Store the current clip data on the button for the ticker to use
             button.clipData = clip
 
             local ratings = (clip.id and ratingsByClip[clip.id]) or {}
             ns.TryExcept(
                     function()
-                        -- Pass forceFullRowUpdate to UpdateClipEntry
                         UpdateClipEntry(state, i, offset, buttonElements, clip, ratings, totalClips, totalClips, forceFullRowUpdate)
                     end,
                     function(err)
@@ -814,33 +804,44 @@ function OFAuctionFrameDeathClips_Update()
     end
 
     -- Pagination and Scrollbar Update
-    -- FauxScrollFrame_Update(scrollFrame, numItemsTotal, numItemsPerPage, itemHeight)
-    -- numItemsTotal is totalClips
-    -- numItemsPerPage is NUM_CLIPS_TO_DISPLAY
+    -- This call is still necessary for the FauxScrollFrame's internal offset management
     FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
 
-    OFDeathClipsPrevPageButton:Hide()
-    OFDeathClipsNextPageButton:Hide()
+    -- ---- START OF MINIMAL CHANGE TO HIDE SCROLLBAR ----
+    -- Explicitly hide the scrollbar after FauxScrollFrame_Update has potentially shown it.
+    -- This makes the UI rely purely on pagination buttons.
+    if _G["OFDeathClipsScrollScrollBar"] then
+        _G["OFDeathClipsScrollScrollBar"]:Hide()
+    end
+    -- ---- END OF MINIMAL CHANGE TO HIDE SCROLLBAR ----
 
-    -- Pagination button logic (using totalClips from the cached list)
-    -- Keep it for later, don't delete this code.
-    local displayableItemsInCurrentView = totalClips - offset
+    -- Logic for pagination buttons visibility and state (remains the same)
+    local prevButton = _G["OFDeathClipsPrevPageButton"]
+    local nextButton = _G["OFDeathClipsNextPageButton"]
+    local searchCountText = _G["OFDeathClipsSearchCountText"]
+
     if totalClips > NUM_CLIPS_TO_DISPLAY then
-        -- Only show pagination if total items exceed one page view
-        --local currentScrollPage = floor(offset / NUM_CLIPS_TO_DISPLAY) -- Page based on scroll offset
-        --local totalScrollPages = ceil(totalClips / NUM_CLIPS_TO_DISPLAY) -1
-        --
-        --OFDeathClipsPrevPageButton:SetEnabled(offset > 0)
-        --OFDeathClipsNextPageButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
+        if prevButton then
+            prevButton:Show()
+            prevButton:SetEnabled(offset > 0)
+        end
+        if nextButton then
+            nextButton:Show()
+            nextButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
+        end
 
-        OFDeathClipsSearchCountText:Show()
-        local itemsMin = offset + 1
-        local itemsMax = offset + numActuallyDisplayed
-        OFDeathClipsSearchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
+        if searchCountText then
+            searchCountText:Show()
+            local itemsMin = offset + 1
+            local itemsMax = offset + numActuallyDisplayed
+            if itemsMax < itemsMin and totalClips > 0 then itemsMax = itemsMin end
+            if totalClips == 0 then itemsMin = 0; itemsMax = 0; end
+            searchCountText:SetFormattedText(NUMBER_OF_RESULTS_TEMPLATE, itemsMin, itemsMax, totalClips)
+        end
     else
-        --        OFDeathClipsPrevPageButton:Disable()
-        --        OFDeathClipsNextPageButton:Disable()
-        OFDeathClipsSearchCountText:Hide()
+        if prevButton then prevButton:Hide() end
+        if nextButton then nextButton:Hide() end
+        if searchCountText then searchCountText:Hide() end
     end
 end
 
