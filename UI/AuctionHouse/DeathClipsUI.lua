@@ -242,30 +242,30 @@ function OFAuctionFrameDeathClips_OnLoad()
     end
     -- ---- END OF PAGINATION BUTTONS LOGIC ----
 
-    -- 1) Nav container parented to your DeathClips frame
-    local nav = CreateFrame("Frame", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
+    -- 1) Nav container as a Button …
+    local nav = CreateFrame("Button", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
     nav:SetSize(300, 70)
     nav:SetScale(0.8)
-    nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 95, 25)
+    nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 98, 25)
+    nav:SetNormalAtlas("Glue-Shadow-Button-Normal", true)
+    nav:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
+    nav:SetHighlightAtlas("Glue-Shadow-Button-Highlight", true)
+    nav:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
 
-    -- 2) Dark “cloud” background
-    local bg = nav:CreateTexture(nil, "BACKGROUND")
-    bg:SetAtlas("Glue-Shadow-Button-Normal", true)
-    bg:SetAllPoints(nav)
-
-    -- 3) Centered “Page” label, raised 8px
-    local label = nav:CreateFontString(nil, "BORDER", "GameFontNormal")
+    -- 2) Centered “Page” label, on OVERLAY
+    local label = nav:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     label:SetText("Page")
     label:SetFont(label:GetFont(), 16)
     label:SetTextColor(1, 0.8, 0)
     label:SetJustifyH("CENTER")
     label:SetPoint("CENTER", nav, "CENTER", 0, 5)
 
-    -- 4) Prev button, size 40×40, X = +30, Y = +8
+    -- 3) Prev button, size 50×50 at +20, +5
     local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
-    prev:SetSize(50, 50)
+    prev:SetSize(55, 50)
     prev:SetPoint("LEFT", nav, "LEFT", 20, 5)
     prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
+    prev:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
     prev:SetPushedAtlas("Glue-Left-Array-Shadow-Button-Pushed")
     prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
     prev:SetDisabledAtlas("Glue-Left-Array-Shadow-Button-Disable")
@@ -278,11 +278,12 @@ function OFAuctionFrameDeathClips_OnLoad()
         end
     end)
 
-    -- 5) Next button, size 40×40, X = -30, Y = +8
+    -- 4) Next button, size 50×50 at –20, +5
     local next = CreateFrame("Button", "OFDeathClipsNextPageButton", nav)
-    next:SetSize(50, 50)
-    next:SetPoint("RIGHT", nav, "RIGHT", -20, 5)
+    next:SetSize(55, 50)
+    next:SetPoint("RIGHT", nav, "RIGHT", -10, 5)
     next:SetNormalAtlas("Glue-Right-Array-Shadow-Button-Normal")
+    next:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
     next:SetPushedAtlas("Glue-Right-Array-Shadow-Button-Pushed")
     next:SetHighlightAtlas("Glue-Right-Array-Shadow-Button-Highlight")
     next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
@@ -294,6 +295,7 @@ function OFAuctionFrameDeathClips_OnLoad()
             print("Last page")
         end
     end)
+
 
     -- ---- START OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
     local scrollFrame = _G["OFDeathClipsScroll"]
