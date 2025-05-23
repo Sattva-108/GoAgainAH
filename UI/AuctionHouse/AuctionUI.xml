@@ -1359,13 +1359,18 @@
                         </FontString>
                     </Layer>
 					<Layer> <!-- Or whatever layer it's in -->
-						<FontString name="OFDeathClipsSearchCountText" inherits="GameFontHighlightSmall" text="">
+						<FontString name="OFDeathClipsSearchCountText" inherits="GameFontHighlightSmall" text="" hidden="true">
 							<Size x="400" y="20"/> <!-- Give it a fixed size for now -->
 							<Anchors>
 								<Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
 									<Offset x="0" y="14"/> <!-- Position it above Prev/Next buttons, adjust X to center roughly -->
 								</Anchor>
 							</Anchors>
+							<Scripts>
+								<OnLoad>
+									self:Hide()
+								</OnLoad>
+							</Scripts>
 						</FontString>
 					</Layer>
                 </Layers>
@@ -1462,12 +1467,12 @@
 
 					<!-- Scroll frame unchanged -->
 					<ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate" hidden="true">
-						<Size><AbsDimension x="775" y="335" /></Size>
-						<Anchors>
-							<Anchor point="TOPRIGHT">
-								<Offset><AbsDimension x="40" y="-74" /></Offset>
-							</Anchor>
-						</Anchors>
+<!--						<Size><AbsDimension x="775" y="335" /></Size>-->
+<!--						<Anchors>-->
+<!--							<Anchor point="TOPRIGHT">-->
+<!--								<Offset><AbsDimension x="40" y="-74" /></Offset>-->
+<!--							</Anchor>-->
+<!--						</Anchors>-->
 <!--						<Layers>-->
 <!--							<Layer>-->
 <!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
@@ -1490,11 +1495,11 @@
 <!--								</Texture>-->
 <!--							</Layer>-->
 <!--						</Layers>-->
-						<Scripts>
-							<OnVerticalScroll>
-								FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)
-							</OnVerticalScroll>
-						</Scripts>
+<!--						<Scripts>-->
+<!--							<OnVerticalScroll>-->
+<!--								FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)-->
+<!--							</OnVerticalScroll>-->
+<!--						</Scripts>-->
 					</ScrollFrame>
 					<Button name="OFDeathClipsButton1" inherits="OFDeathClipsButtonTemplate" id="1">
                         <Anchors>

@@ -193,89 +193,54 @@ function OFAuctionFrameDeathClips_OnLoad()
         end)
     end
 
-    -- 1) Nav container as a Button …
     local nav = CreateFrame("Button", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
-    nav:SetSize(250, 70)
-    nav:SetScale(0.8)
-    nav:SetAlpha(0.9)
+    nav:SetSize(250, 70); nav:SetScale(0.8); nav:SetAlpha(0.9)
     nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 98, 25)
     nav:SetNormalAtlas("Glue-Shadow-Button-Normal", true)
     nav:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
     nav:SetHighlightAtlas("Glue-Shadow-Button-Highlight", true)
     nav:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
 
-    -- 2) Centered label, on OVERLAY
     local label = nav:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    nav.pageLabel = label  -- сохраняем как поле для доступа из Update
+    nav.pageLabel = label
     label:SetFont(label:GetFont(), 16)
     label:SetTextColor(1, 0.8, 0)
     label:SetJustifyH("RIGHT")
     label:SetPoint("CENTER", nav, "CENTER", 0, 5)
 
-
-    -- 3) Prev button, size 50×50 at +20, +5
     local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
-    prev:SetSize(80, 50)
-    prev:SetPoint("LEFT", nav, "LEFT", 10, 5)
+    prev:SetSize(80, 50); prev:SetPoint("LEFT", nav, "LEFT", 10, 5)
     prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
     prev:SetPushedAtlas("Glue-Left-Array-Shadow-Button-Pushed")
     prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
     prev:SetDisabledAtlas("Glue-Left-Array-Shadow-Button-Disable")
     prev:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
-    -- 4) Next button, size 50×50 at –20, +5
     local next = CreateFrame("Button", "OFDeathClipsNextPageButton", nav)
-    next:SetSize(80, 50)
-    next:SetPoint("RIGHT", nav, "RIGHT", -10, 5)
+    next:SetSize(80, 50); next:SetPoint("RIGHT", nav, "RIGHT", -10, 5)
     next:SetNormalAtlas("Glue-Right-Array-Shadow-Button-Normal")
     next:SetPushedAtlas("Glue-Right-Array-Shadow-Button-Pushed")
     next:SetHighlightAtlas("Glue-Right-Array-Shadow-Button-Highlight")
     next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
     next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
-    -- Warm orange tone (similar to quest titles or buttons)
     prev:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
     next:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
-
-    -- Warm orange tone (similar to quest titles or buttons)
     prev:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6)
     next:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6)
-
-    -- Warm orange tone (similar to quest titles or buttons)
     prev:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
     next:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
 
-    -- Helper to center and size normal, highlight, pushed textures (no disabled)
-    local function SetButtonTextureLayout(btn, width, height)
-        local tex = btn:GetNormalTexture()
-        if tex then
-            tex:ClearAllPoints()
-            tex:SetPoint("CENTER", btn, "CENTER")
-            tex:SetSize(width, height)
-        end
-        local hlt = btn:GetHighlightTexture()
-        if hlt then
-            hlt:ClearAllPoints()
-            hlt:SetPoint("CENTER", btn, "CENTER")
-            hlt:SetSize(width, height)
-        end
-        local push = btn:GetPushedTexture()
-        if push then
-            push:ClearAllPoints()
-            push:SetPoint("CENTER", btn, "CENTER")
-            push:SetSize(width, height)
-        end
-        local dis = btn:GetDisabledTexture()
-        if dis then
-            dis:ClearAllPoints()
-            dis:SetPoint("CENTER", btn, "CENTER")
-            dis:SetSize(width, height)
+    local function SetButtonTextureLayout(btn, w, h)
+        local t = {btn:GetNormalTexture(), btn:GetHighlightTexture(), btn:GetPushedTexture(), btn:GetDisabledTexture()}
+        for _, tex in ipairs(t) do
+            if tex then tex:ClearAllPoints(); tex:SetPoint("CENTER", btn, "CENTER"); tex:SetSize(w, h) end
         end
     end
 
-    -- Usage for both buttons:
-    SetButtonTextureLayout(next, 55, 50)
-    SetButtonTextureLayout(prev, 55, 50)
+    SetButtonTextureLayout(next, 55, 45)
+    SetButtonTextureLayout(prev, 55, 45)
+
 
 
 
@@ -324,14 +289,14 @@ function OFAuctionFrameDeathClips_OnLoad()
         SetButtonTextureLayout(self, 40, 40)
     end)
     prev:SetScript("OnMouseUp", function(self)
-        SetButtonTextureLayout(self, 55, 50)
+        SetButtonTextureLayout(self, 55, 45)
     end)
 
     next:SetScript("OnMouseDown", function(self)
         SetButtonTextureLayout(self, 40, 40)
     end)
     next:SetScript("OnMouseUp", function(self)
-        SetButtonTextureLayout(self, 55, 50)
+        SetButtonTextureLayout(self, 55, 45)
     end)
 
 
@@ -912,13 +877,6 @@ function OFAuctionFrameDeathClips_Update()
     -- This call is still necessary for the FauxScrollFrame's internal offset management
     FauxScrollFrame_Update(OFDeathClipsScroll, totalClips, NUM_CLIPS_TO_DISPLAY, CLIPS_BUTTON_HEIGHT)
 
-    -- ---- START OF MINIMAL CHANGE TO HIDE SCROLLBAR ----
-    -- Explicitly hide the scrollbar after FauxScrollFrame_Update has potentially shown it.
-    -- This makes the UI rely purely on pagination buttons.
-    if _G["OFDeathClipsScrollScrollBar"] then
-        _G["OFDeathClipsScrollScrollBar"]:Hide()
-    end
-    -- ---- END OF MINIMAL CHANGE TO HIDE SCROLLBAR ----
 
     -- Logic for pagination buttons visibility and state (remains the same)
     local prevButton = _G["OFDeathClipsPrevPageButton"]
@@ -950,18 +908,18 @@ function OFAuctionFrameDeathClips_Update()
     end
     local nav = _G["OFDeathClipsNavFrame"]
     if nav and nav.pageLabel then
-        local totalPages = math.max(1, math.ceil(totalClips / NUM_CLIPS_TO_DISPLAY))
+        local totalPages = math.max(1, math.ceil(totalClips / NUM_CLIPS_TO_DISPLAY) - 1)
         local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll)
-        local currentPage
         if offset == 0 then
             nav.pageLabel:SetText("Навигация")
             nav.pageLabel:SetAlpha(0.8)
         else
-            currentPage = math.floor(offset / NUM_CLIPS_TO_DISPLAY) + 1 -- page 1→2, page 2→3, etc
+            local currentPage = math.floor(offset / NUM_CLIPS_TO_DISPLAY) + 1
             nav.pageLabel:SetText(currentPage .. " / " .. totalPages)
             nav.pageLabel:SetAlpha(0.9)
         end
     end
+
 
 
 end
