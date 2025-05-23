@@ -2404,7 +2404,6 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         -- === Sender: T_DEATH_CLIPS_STATE_REQUEST ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
-
         local since = payload.since
         local clips = payload.clips or {}
         print(("🔍DBG: Payload since TS = %s, have %d clip-IDs"):format(
@@ -2412,30 +2411,31 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         ))
 
         local rawClips = ns.GetNewDeathClips(since, clips)
-        print((">> DEBUG: %d death-clips to sync"):format(#rawClips))
+        print((" >> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then
             return
         end
 
-        -- sort by ts
+        -- sort by ts (sync newest→old)
         table.sort(rawClips, function(a, b)
-            return (a.ts or 0) < (b.ts or 0)
+            return (a.ts or 0) > (b.ts or 0)
         end)
 
         -- precompute our realm
         local fullRealm = GetRealmName() or ""
         local realmID = ns.RealmFullNameToID[fullRealm] or 0
 
+        -- build all rows
         local rows = {}
         for i, c in ipairs(rawClips) do
-            local ts = c.ts or 0  -- absolute server time
+            local ts = c.ts or 0
 
             -- strip color from mob name
             local mobName = (c.deathCause or "")
                     :gsub("|c%x%x%x%x%x%x%x%x", "")
                     :gsub("|r", "")
 
-            -- determine causeCode (0–10, default 7)
+            -- determine causeCode
             local causeCode = 7
             for id, text in pairs(ns.DeathCauseByID) do
                 if id ~= 7 and c.deathCause:find(text, 1, true) then
@@ -2445,9 +2445,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             end
             local mobData
             if causeCode == 7 and mobName ~= "" then
-                mobData = ns.MobIDByName[mobName] or mobName -- Assign ID if found, otherwise fallback to mobName string
+                mobData = ns.MobIDByName[mobName] or mobName
             else
-                mobData = "" -- Assign empty string if not causeCode 7 or mobName is empty
+                mobData = ""
             end
 
             -- zone → ID + fallback string
@@ -2463,27 +2463,26 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             local raceCode = ns.RaceIDByName[c.race] or 0
             local classCode = ns.ClassIDByName[c.class] or 0
 
-            -- **NEW**: read the raw mobLevel field directly
+            -- read the raw mobLevel field directly
             local mobLevelNum = c.mobLevel or 0
 
             -- build the row
             local row = {
                 c.characterName or "", -- [1]
-                ts, -- [2]
-                classCode, -- [3]
+                ts,                     -- [2]
+                classCode,              -- [3]
                 c.completed and 0 or causeCode, -- [4]
-                raceCode, -- [5]
-                c.completed and 0 or zid, -- [6]
-                facCode, -- [7]
-                realmID, -- [8]
-                c.level or 0, -- [9]
-                c.getPlayedTry or 0, -- [10]
+                raceCode,               -- [5]
+                c.completed and 0 or zid,       -- [6]
+                facCode,                -- [7]
+                realmID,                -- [8]
+                c.level or 0,           -- [9]
+                c.getPlayedTry or 0,    -- [10]
                 tonumber(c.playedTime) or nil, -- [11]
-                (not c.completed) and mobData or "", -- [12] NEW (mobData can be ID or string)
+                (not c.completed) and mobData or "", -- [12]
+                mobLevelNum,            -- [13]
+                c.completed or nil,     -- [14]
             }
-
-            row[13] = mobLevelNum              -- [13] fixed mob level
-            row[14] = c.completed or nil       -- [14] completed flag
 
             -- optional zone + realm strings
             local idx = 15
@@ -2498,68 +2497,99 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             rows[i] = row
         end
 
-        -- ------------------------------------------------------------------
-        -- Debug: pretty-print one RAW 'rows' entry (numeric array)
-        -- ------------------------------------------------------------------
+        -- Debug: pretty-print one RAW 'rows' entry
         local function DebugDumpClipArr(arr)
-            -- map numeric slots -> human labels so the printout is readable
             local labels = {
-                "name", -- 1
-                "ts", -- 2
-                "classID", -- 3
-                "causeID", -- 4
-                "raceID", -- 5
-                "zoneID", -- 6
-                "factionID", -- 7
-                "realmID", -- 8
-                "level", -- 9
-                "getPlayedTry", --10
-                "playedTime", --11
-                "mobName", --12
-                "mobLevel", --13
-                "realmName", --14
-                "zoneName", --15 (optional fallback)
-                "completed", --16
+                "name","ts","classID","causeID","raceID",
+                "zoneID","factionID","realmID","level",
+                "getPlayedTry","playedTime","mobName",
+                "mobLevel","completed","zoneName","realmName",
             }
-
             local parts = {}
             for i = 1, #arr do
-                table.insert(parts, labels[i] .. "=" .. tostring(arr[i]))
+                parts[i] = labels[i] .. "=" .. tostring(arr[i])
             end
             --print("SEND-RAW {" .. table.concat(parts, ", ") .. "}")
         end
-
-        local debugShown = 0                         -- NEW
-
+        local debugShown = 0
         for _, arr in ipairs(rows) do
             if debugShown < 100 then
-                -- print only first 100
                 DebugDumpClipArr(arr)
                 debugShown = debugShown + 1
             end
         end
 
+        -- batching setup
+        local CHUNK_SIZE = 100
+        local batchAfter = 0
+        local totalChunks = math.ceil(#rows / CHUNK_SIZE)
+        local chunkIndex = 1
+        local syncStart, totalSer, totalComp = GetTime(), 0, 0
 
-        -- serialize & send
-        local serialized = Addon:Serialize(rows)
-        print((">> DEBUG: serialized rows = %d bytes"):format(#serialized))
-        local compressionConfigs = {level = 9}
-        local compressed = LibDeflate:CompressDeflate(serialized, compressionConfigs)
-        print((">> DEBUG: compressed rows = %d bytes (Level 9)"):format(#compressed))
+        local function sendNext()
+            local i1 = (chunkIndex - 1) * CHUNK_SIZE + 1
+            local iN = math.min(chunkIndex * CHUNK_SIZE, #rows)
+            local chunkRows = {}
+            for i = i1, iN do
+                chunkRows[#chunkRows+1] = rows[i]
+            end
 
-        local msg = Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, compressed })
-        self:SendDm(msg, sender, "BULK")
+            local ser = Addon:Serialize(chunkRows)
+            local comp = LibDeflate:CompressDeflate(ser, { level = 1 })
+            totalSer = totalSer + #ser
+            totalComp = totalComp + #comp
+
+            local payload = {
+                label = ("chunk_%dof%d"):format(chunkIndex, totalChunks),
+                data  = LibDeflate:EncodeForWoWAddonChannel(comp),
+            }
+            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIPS_STATE, payload }), sender, "BULK")
+
+            -- cleanup
+            chunkRows, ser, comp = nil, nil, nil
+            collectgarbage("step")
+
+            chunkIndex = chunkIndex + 1
+            if chunkIndex <= totalChunks then
+                C_Timer:After(batchAfter, sendNext)
+            else
+                local dt = GetTime() - syncStart
+                print((" >> DEBUG: serialized rows = %d bytes"):format(totalSer))
+                print((" >> DEBUG: compressed rows = %d bytes (Level 1)"):format(totalComp))
+                print((" >> DEBUG: sent %d clips in %d chunks, took %.2f s total"):format(#rows, totalChunks, dt))
+            end
+        end
+        sendNext()
 
 
         -- === Receiver: T_DEATH_CLIPS_STATE ===
     elseif dataType == ns.T_DEATH_CLIPS_STATE then
+        ------------------------------------------------------------------
+        -- 0) extract compressed + label
+        ------------------------------------------------------------------
+        local compressed, label
+        if type(payload) == "table" then
+            label      = payload.label                 -- e.g. "chunk_3of12"
+            compressed = LibDeflate:DecodeForWoWAddonChannel(payload.data)
+        else
+            compressed = payload
+        end
+        if type(compressed) ~= "string" then
+            return
+        end
 
-        local decompressed = LibDeflate:DecompressDeflate(payload)
-        local ok, rows = Addon:Deserialize(decompressed)
+        ------------------------------------------------------------------
+        -- 1) decompress & deserialize
+        ------------------------------------------------------------------
+        local decompressed = LibDeflate:DecompressDeflate(compressed)
+        local ok, rows     = Addon:Deserialize(decompressed)
         if not ok then
             return
         end
 
+        ------------------------------------------------------------------
+        -- 2) rebuild & store each clip (logic unchanged)
+        ------------------------------------------------------------------
         for _, arr in ipairs(rows) do
             ----------------------------------------------------------------
             -- 1) pull in the raw ts
@@ -2573,27 +2603,26 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ----------------------------------------------------------------
             -- 2) look-ups and fallbacks
             ----------------------------------------------------------------
-            local zid = arr[6] or 0
-            local zoneName = (zid > 0 and ns.GetZoneNameByID(zid))
-                    or arr[15] or ""
+            local zid      = arr[6] or 0
+            local zoneName = (zid > 0 and ns.GetZoneNameByID(zid)) or arr[15] or ""
 
-            local rid = arr[8] or 0
+            local rid      = arr[8] or 0
             local realmStr = (rid > 0 and ns.GetRealmNameByID(rid))
                     or ((zid == 0 and arr[16]) or arr[15])
                     or "UnknownRealm"
 
-            local clipCompleted = arr[14] ~= nil            -- slot-14 flag
-            local causeID = arr[4] or 0
-            local mobPayload = arr[12] or "" -- This is the mobData from sender
+            local clipCompleted  = arr[14] ~= nil
+            local causeID        = arr[4] or 0
+            local mobPayload     = arr[12] or ""
             local mobNameForCause = ""
-            if type(mobPayload) == "number" then -- It's an ID
+            if type(mobPayload) == "number" then
                 mobNameForCause = ns.MobNameByID[mobPayload] or "Неизвестный моб"
-            elseif type(mobPayload) == "string" then -- It's a fallback string name
+            elseif type(mobPayload) == "string" then
                 mobNameForCause = mobPayload
             end
 
             local causeStr = clipCompleted and ""
-                    or ns.GetDeathCauseByID(causeID, mobNameForCause) -- Use reconstructed/fallback name
+                    or ns.GetDeathCauseByID(causeID, mobNameForCause)
 
             ----------------------------------------------------------------
             -- 3) class & race names
@@ -2644,23 +2673,34 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             end
 
             ----------------------------------------------------------------
-            -- 7) build unique ID via helper
+            -- 7) build unique ID
             ----------------------------------------------------------------
             clip.id = ns.GenerateClipID(clip, clip.completed)
-
             LiveDeathClips[clip.id] = clip
         end
 
-
         ------------------------------------------------------------------
-        --  STOP BENCHMARK (debug only)
+        --  STOP BENCHMARK (debug only): only on the last chunk
         ------------------------------------------------------------------
-        -- ── POP & PRINT ──
-        local entry = table.remove(self.benchDebugQueue or {}, 1)
-        if entry then
-            local elapsed = GetTime() - entry.start
-            print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
-                    :format(entry.id, date("%H:%M"), elapsed))
+        if label then
+            local i, n = label:match("chunk_(%d+)of(%d+)")
+            i, n = tonumber(i), tonumber(n)
+            if i and n and i == n then                      -- last batch only :contentReference[oaicite:0]{index=0}
+                local entry = table.remove(self.benchDebugQueue or {}, 1)
+                if entry then
+                    local elapsed = GetTime() - entry.start
+                    print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
+                            :format(entry.id, date("%H:%M"), elapsed))
+                end
+            end
+        else
+            -- legacy: no label → behave as before :contentReference[oaicite:1]{index=1}
+            local entry = table.remove(self.benchDebugQueue or {}, 1)
+            if entry then
+                local elapsed = GetTime() - entry.start
+                print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
+                        :format(entry.id, date("%H:%M"), elapsed))
+            end
         end
 
         API:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
