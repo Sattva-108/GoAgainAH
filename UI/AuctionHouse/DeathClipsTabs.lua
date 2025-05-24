@@ -36,6 +36,38 @@ ns.DeathClipsTabSettings = {
             { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText" },
             { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
+        },
+    ["NEW_TAB_1"] = {
+        tabId = "NEW_TAB_1",
+        tabName = "Новый Таб 1", -- "New Tab 1"
+        defaultSortKey = "STREAMER", -- Default sort by streamer name
+        defaultSortAscending = true,
+        columns = {
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 150, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" }, -- Hidden
+            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
+            { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip" },
+            { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 71, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "RIGHT" },
+            { id = "RACE_TYPE", headerText = "RACE", visible = false, baseWidth = 82, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "LEFT" }, -- Hidden
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 },
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
+        }
+    },
+    ["NEW_TAB_2"] = {
+        tabId = "NEW_TAB_2",
+        tabName = "Новый Таб 2", -- "New Tab 2"
+        defaultSortKey = "REACTION", -- Default sort by rating
+        defaultSortAscending = false,
+        columns = {
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 140, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" },
+            { id = "CLIP_INFO", headerText = "Время прохождения", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip", dataRowXOffset = -8 },
+            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" }, -- Made visible
+            { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 133, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 15 },
+            { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 144, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 2 },
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText" },
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
+        }
     }
 }
 
@@ -159,70 +191,91 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     if frame._hasSubtabs then return end
     frame._hasSubtabs = true
 
-    -- Create two buttons using EncounterTierTabTemplate
+    -- Create buttons using EncounterTierTabTemplate
     local liveBtn = CreateFrame("Button", "OFDeathClipsTabLive", frame, "EncounterTierTabTemplate")
     local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", liveBtn, "EncounterTierTabTemplate")
+    local newTab1Btn = CreateFrame("Button", "OFDeathClipsTabNew1", compBtn, "EncounterTierTabTemplate")
+    local newTab2Btn = CreateFrame("Button", "OFDeathClipsTabNew2", newTab1Btn, "EncounterTierTabTemplate")
 
-    -- size & positioning
+    local liveConfig = ns.DeathClipsTabSettings["LIVE_CLIPS"]
+    local compConfig = ns.DeathClipsTabSettings["COMPLETED_CLIPS"]
+    local newTab1Config = ns.DeathClipsTabSettings["NEW_TAB_1"]
+    local newTab2Config = ns.DeathClipsTabSettings["NEW_TAB_2"]
+
+    -- Size & Positioning & Text
     liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 90, -12)
-    liveBtn:SetText("Погибшие")
+    liveBtn:SetText(liveConfig.tabName)
+    liveBtn:SetSize(100, 40) -- Ensure size
 
-    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 32, 0)
-    compBtn:SetText("Выжившие")
+    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    compBtn:SetText(compConfig.tabName)
+    compBtn:SetSize(100, 40) -- Ensure size
 
-    ---- size & positioning
-    liveBtn:SetSize(100,40)
-    compBtn:SetSize(100,40)
+    newTab1Btn:SetPoint("LEFT", compBtn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    newTab1Btn:SetText(newTab1Config.tabName)
+    newTab1Btn:SetSize(100, 40) -- Ensure size
 
-    liveBtn.selectedGlow:SetAlpha(0.60)
-    compBtn.selectedGlow:SetAlpha(0.60)
-    liveBtn.selectedGlow:SetVertexColor(0.78, 0.35, 0.33)  -- soft red
-    compBtn.selectedGlow:SetVertexColor(0.5, 0.7, 0.5)     -- soft green
-    liveBtn.selectedGlow:SetHeight(10)
-    compBtn.selectedGlow:SetHeight(10)
+    newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    newTab2Btn:SetText(newTab2Config.tabName)
+    newTab2Btn:SetSize(100, 40) -- Ensure size
 
+    -- Glow properties
+    liveBtn.selectedGlow:SetAlpha(0.60); compBtn.selectedGlow:SetAlpha(0.60); newTab1Btn.selectedGlow:SetAlpha(0.60); newTab2Btn.selectedGlow:SetAlpha(0.60)
+    liveBtn.selectedGlow:SetVertexColor(0.78, 0.35, 0.33); compBtn.selectedGlow:SetVertexColor(0.5, 0.7, 0.5)
+    newTab1Btn.selectedGlow:SetVertexColor(0.5, 0.5, 0.7); newTab2Btn.selectedGlow:SetVertexColor(0.7, 0.5, 0.5)
+    liveBtn.selectedGlow:SetHeight(10); compBtn.selectedGlow:SetHeight(10); newTab1Btn.selectedGlow:SetHeight(10); newTab2Btn.selectedGlow:SetHeight(10)
 
-    -- style toggle
+    -- Style toggle
     local function updateTabStyles()
-        if frame.currentSubTab == "LIVE_CLIPS" then
+        liveBtn.selectedGlow:Hide(); compBtn.selectedGlow:Hide(); newTab1Btn.selectedGlow:Hide(); newTab2Btn.selectedGlow:Hide()
+
+        liveBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
+        compBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
+        newTab1Btn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
+        newTab2Btn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
+
+        if frame.currentSubTab == liveConfig.tabId then
             liveBtn.selectedGlow:Show()
-            compBtn.selectedGlow:Hide()
-
-            compBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
             liveBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        else -- Assuming "COMPLETED_CLIPS"
+        elseif frame.currentSubTab == compConfig.tabId then
             compBtn.selectedGlow:Show()
-            liveBtn.selectedGlow:Hide()
-
-            liveBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
             compBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
+        elseif frame.currentSubTab == newTab1Config.tabId then
+            newTab1Btn.selectedGlow:Show()
+            newTab1Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
+        elseif frame.currentSubTab == newTab2Config.tabId then
+            newTab2Btn.selectedGlow:Show()
+            newTab2Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
         end
     end
 
-
-    -- 3) Hook Live button: only set state & run Update
+    -- OnClick Handlers
     liveBtn:SetScript("OnClick", function()
-        if frame.currentSubTab ~= "LIVE_CLIPS" then
-            frame.currentSubTab = "LIVE_CLIPS"
-            updateTabStyles()
-            -- ns.isCompletedTabActive = false -- Remove this
-            OnSubTabChanged(frame, "LIVE_CLIPS")
-            OFAuctionFrameDeathClips_Update()
+        if frame.currentSubTab ~= liveConfig.tabId then
+            frame.currentSubTab = liveConfig.tabId; updateTabStyles()
+            OnSubTabChanged(frame, liveConfig.tabId); OFAuctionFrameDeathClips_Update()
         end
     end)
-
-    -- 4) Hook Completed button: set state, run your logic, then Update
     compBtn:SetScript("OnClick", function()
-        if frame.currentSubTab ~= "COMPLETED_CLIPS" then
-            frame.currentSubTab = "COMPLETED_CLIPS"
-            updateTabStyles()
-            -- ns.isCompletedTabActive = true -- Remove this
-            OnSubTabChanged(frame, "COMPLETED_CLIPS")
-            OFAuctionFrameDeathClips_Update()
+        if frame.currentSubTab ~= compConfig.tabId then
+            frame.currentSubTab = compConfig.tabId; updateTabStyles()
+            OnSubTabChanged(frame, compConfig.tabId); OFAuctionFrameDeathClips_Update()
+        end
+    end)
+    newTab1Btn:SetScript("OnClick", function()
+        if frame.currentSubTab ~= newTab1Config.tabId then
+            frame.currentSubTab = newTab1Config.tabId; updateTabStyles()
+            OnSubTabChanged(frame, newTab1Config.tabId); OFAuctionFrameDeathClips_Update()
+        end
+    end)
+    newTab2Btn:SetScript("OnClick", function()
+        if frame.currentSubTab ~= newTab2Config.tabId then
+            frame.currentSubTab = newTab2Config.tabId; updateTabStyles()
+            OnSubTabChanged(frame, newTab2Config.tabId); OFAuctionFrameDeathClips_Update()
         end
     end)
 
-    -- initialize
+    -- Initialize
     frame.currentSubTab = ns.currentActiveTabId -- Initialize with the default active tab ID
     updateTabStyles()
     OnSubTabChanged(frame, ns.currentActiveTabId) -- Call with the current active tab ID
