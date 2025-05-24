@@ -178,7 +178,7 @@ local function OnSubTabChanged(frame, newTabId)
     end
 
     UpdateDeathClipsLayout() -- This will now use ns.currentActiveTabId internally
-    
+
     for i = 1, 9 do -- Assuming NUM_CLIPS_TO_DISPLAY is 9, or use a constant if available
         if ns.ApplyClipLayout then ns.ApplyClipLayout("OFDeathClipsButton" .. i) end -- This will also use ns.currentActiveTabId internally
     end
@@ -218,7 +218,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
     newTab2Btn:SetText(newTab2Config.tabName)
     newTab2Btn:SetSize(100, 40) -- Ensure size
-    
+
     -- Glow properties
     liveBtn.selectedGlow:SetAlpha(0.60); compBtn.selectedGlow:SetAlpha(0.60); newTab1Btn.selectedGlow:SetAlpha(0.60); newTab2Btn.selectedGlow:SetAlpha(0.60)
     liveBtn.selectedGlow:SetVertexColor(0.78, 0.35, 0.33); compBtn.selectedGlow:SetVertexColor(0.5, 0.7, 0.5)
@@ -228,7 +228,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     -- Style toggle
     local function updateTabStyles()
         liveBtn.selectedGlow:Hide(); compBtn.selectedGlow:Hide(); newTab1Btn.selectedGlow:Hide(); newTab2Btn.selectedGlow:Hide()
-        
+
         liveBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
         compBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
         newTab1Btn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
