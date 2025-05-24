@@ -482,96 +482,99 @@ end
 
 
 local function UpdateLayout(buttonName)
-    -- Fetch elements for Name, Level, Clip, ClassText, WhereText, and RaceText
-    local name = _G[buttonName .. "Name"]
-    local level = _G[buttonName .. "Level"]
-    local clipFrame = _G[buttonName .. "Clip"]
-    local classText = _G[buttonName .. "ClassText"]
-    local whereText = _G[buttonName .. "WhereText"]
-    local raceText = _G[buttonName .. "RaceText"]
-    -- Re-anchor WhenText to the right of RaceText
-    local whenText = _G[buttonName .. "WhenText"]
-    -- Re-anchor Rating frame to the right of WhenText
-    local rating = _G[buttonName .. "Rating"]
+    local activeTabKey = ns.currentActiveTabId -- Use the new state variable
+    -- Ensure ns.DeathClipsTabSettings is available. If it's loaded with DeathClipsTabs.lua and ns is shared, it should be.
+    if not ns.DeathClipsTabSettings then
+        if ns.debug then print(addonName .. ": ns.DeathClipsTabSettings not found in UpdateLayout.") end
+        return
+    end
+    local activeTabConfig = ns.DeathClipsTabSettings[activeTabKey]
 
-    if ns.isCompletedTabActive then
-        -- When completed tab is active, hide the level and expand the name
-        level:Hide()
-        name:SetWidth(name:GetWidth() + level:GetWidth())  -- Expand name to take up the space of level
+    if not activeTabConfig or not activeTabConfig.columns then
+        if ns.debug then print("Error: No tab configuration or columns found for key: " .. activeTabKey .. " in UpdateLayout (DeathClipsUI.lua)") end
+        return
+    end
 
-        -- Re-anchor the clip to the right of name
-        clipFrame:ClearAllPoints()
-        clipFrame:SetPoint("LEFT", name, "RIGHT", -8, 0)  -- Position Clip immediately to the right of Name
+    local button = _G[buttonName] -- The main button for the row, though not directly used for anchoring children in this loop
+    if not button then
+        if ns.debug then print("Error: Button " .. buttonName .. " not found in UpdateLayout.") end
+        return
+    end
 
-        -- Hide WhereText and adjust ClassText and RaceText
-        whereText:Hide()
+    -- Start anchoring data relative to the item icon. The item icon itself is usually anchored to the button's left.
+    local itemIcon = _G[buttonName .. "Item"]
+    if not itemIcon then
+        if ns.debug then print("Error: Item icon for " .. buttonName .. " not found.") end
+        return -- Cannot proceed without the initial anchor
+    end
+    local previousVisibleFs = itemIcon
+    local initialXOffset = 5 -- Default X offset from the Item icon's RIGHT to the first data FS's LEFT
 
-        -- Get half the width of WhereText to distribute between ClassText and RaceText
-        local whereWidth = whereText:GetWidth()
-        local halfWhereWidth = whereWidth / 2
+    -- First, hide all FontStrings that are part of the configurable layout to ensure a clean state
+    -- This prevents FontStrings from a previous tab's layout from remaining visible if not used in the current one.
+    for _, columnConfigCheck in ipairs(ns.DeathClipsTabSettings["LIVE_CLIPS"].columns) do -- Iterate one config to get all possible FS names
+        if columnConfigCheck.fontStringName then
+            local fsNameToHide = _G[buttonName .. columnConfigCheck.fontStringName]
+            if fsNameToHide then fsNameToHide:Hide() end
+        end
+    end
+     for _, columnConfigCheck in ipairs(ns.DeathClipsTabSettings["COMPLETED_CLIPS"].columns) do -- Iterate other config too
+        if columnConfigCheck.fontStringName then
+            local fsNameToHide = _G[buttonName .. columnConfigCheck.fontStringName]
+            if fsNameToHide then fsNameToHide:Hide() end
+        end
+    end
 
-        -- Increase the width of ClassText and RaceText by half of WhereText's width
-        classText:SetWidth(classText:GetWidth() + halfWhereWidth - 20)
-        raceText:SetWidth(raceText:GetWidth() + halfWhereWidth - 20)
 
-        -- Re-anchor the ClassText and RaceText to slide them to the right of Clip
-        classText:ClearAllPoints()
-        raceText:ClearAllPoints()
+    for _, columnConfig in ipairs(activeTabConfig.columns) do
+        if columnConfig.fontStringName then -- Ensure there's a font string to manage
+            local fs = _G[buttonName .. columnConfig.fontStringName]
+            if fs then
+                if columnConfig.visible then
+                    fs:Show()
+                    -- For the "Clip" frame, baseWidth applies to the container. Its internal elements are set in UpdateClipEntry.
+                    fs:SetWidth(columnConfig.baseWidth)
 
-        -- Anchor ClassText immediately to the right of Clip
-        classText:SetPoint("LEFT", clipFrame, "RIGHT", 15, 0)
+                    if columnConfig.fontObject then
+                        local font = _G[columnConfig.fontObject] or columnConfig.fontObject -- Check global first, then direct
+                        if font then
+                            -- Check if fs is a FontString or a Frame. SetFontObject is for FontStrings.
+                            -- The "Clip" element is a Frame. Its children FontStrings (ClipText, ClipMobLevel) get fonts in UpdateClipEntry.
+                            if type(fs.SetFontObject) == "function" then
+                                fs:SetFontObject(font)
+                            end
+                        elseif ns.debug then
+                            print("Warning: Font object not found: " .. columnConfig.fontObject)
+                        end
+                    end
 
-        -- Anchor RaceText immediately to the right of ClassText
-        raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
+                    if columnConfig.justifyH then
+                        if type(fs.SetJustifyH) == "function" then -- Only FontStrings have SetJustifyH
+                           fs:SetJustifyH(columnConfig.justifyH)
+                        end
+                    end
 
-        -- Set font for ClassText and RaceText in the live tab (fallback font)
-        classText:SetFontObject("GameFontNormal")  -- Fallback font for live tab
-        raceText:SetFontObject("GameFontNormal")   -- Fallback font for live tab
-        classText:SetJustifyH("CENTER")
-        raceText:SetJustifyH("CENTER")
+                    fs:ClearAllPoints()
+                    local xOffset = columnConfig.dataRowXOffset or 2 -- Default gap if no specific offset provided in config
 
-        whenText:ClearAllPoints()
-        whenText:SetPoint("LEFT", raceText, "RIGHT", 0, 0)
-    else
-        -- If live tab is active, show the level again and reset the name width
-        level:Show()
-        name:SetWidth(100)  -- Reset to original width (adjust if needed)
-
-        -- Re-anchor the whereText to the right of level (was clipFrame before)
-        whereText:ClearAllPoints()
-        whereText:SetPoint("LEFT", level, "RIGHT", 2, 0)
-        whereText:Show()
-
-        -- Move the clipFrame where whereText was
-        clipFrame:ClearAllPoints()
-        clipFrame:SetPoint("LEFT", whereText, "RIGHT", 2, 0)
-
-        -- Reset the width of ClassText and RaceText to original sizes (adjust as needed)
-        classText:SetWidth(96)  -- Adjust to original width as needed
-        raceText:SetWidth(96)   -- Adjust to original width as needed
-
-        -- Re-anchor the ClassText and RaceText to the right of clipFrame
-        classText:ClearAllPoints()
-        raceText:ClearAllPoints()
-
-        -- Anchor ClassText immediately to the right of Clip (was WhereText before)
-        classText:SetPoint("LEFT", clipFrame, "RIGHT", -15, 0)
-
-        -- Anchor RaceText immediately to the right of ClassText
-        raceText:SetPoint("LEFT", classText, "RIGHT", 2, 0)
-
-        -- Set font and alignment for ClassText and RaceText in the live tab
-        classText:SetFontObject("GameFontHighlightSmall")  -- Example font for live tab
-        raceText:SetFontObject("GameFontHighlightSmall")   -- Example font for live tab
-        classText:SetJustifyH("RIGHT")
-        raceText:SetJustifyH("LEFT")
-
-        whenText:ClearAllPoints()
-        whenText:SetPoint("LEFT", raceText, "RIGHT", -10, 0)
-
-        rating:ClearAllPoints()
-        rating:SetPoint("LEFT", whenText, "RIGHT", 5, 0)
-
+                    if previousVisibleFs == itemIcon then
+                        -- First data FontString after the item icon. Anchor its LEFT to itemIcon's RIGHT.
+                        fs:SetPoint("LEFT", previousVisibleFs, "RIGHT", initialXOffset, 0)
+                    else
+                        -- Subsequent FontStrings. Anchor its LEFT to previousVisibleFs's RIGHT.
+                        fs:SetPoint("LEFT", previousVisibleFs, "RIGHT", xOffset, 0)
+                    end
+                    previousVisibleFs = fs
+                else
+                    fs:Hide()
+                end
+            elseif ns.debug then
+                print("Warning: FontString or Frame not found: " .. buttonName .. columnConfig.fontStringName)
+            end
+        elseif ns.debug then
+            -- This case might be okay if a column is purely for header and has no corresponding data row element.
+            -- print("Debug: No fontStringName for column ID: " .. columnConfig.id .. " in UpdateLayout.")
+        end
     end
 end
 ns.ApplyClipLayout = UpdateLayout
@@ -588,10 +591,21 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
     -- Only update static fields if the clip displayed by this button changes, or if a full update is forced
     if button.displayedClipID ~= clip.id or forceFullUpdate then
         button.displayedClipID = clip.id
-        -- button.clipData is set in the calling function (OFAuctionFrameDeathClips_Update)
-
         ResizeEntry(button, #OFAuctionFrameDeathClips.currentDisplayableClips, #OFAuctionFrameDeathClips.currentDisplayableClips)
-        -- Assuming ResizeEntry is handled correctly elsewhere or as part of layout
+
+        local activeTabKey = ns.currentActiveTabId
+        if not ns.DeathClipsTabSettings or not ns.DeathClipsTabSettings[activeTabKey] or not ns.DeathClipsTabSettings[activeTabKey].columns then
+            if ns.debug then print("UpdateClipEntry: Tab settings not found for " .. activeTabKey) end
+            return -- Can't proceed without column visibility info
+        end
+        local activeTabConfig = ns.DeathClipsTabSettings[activeTabKey]
+        
+        local columnVisibility = {}
+        for _, colCfg in ipairs(activeTabConfig.columns) do
+            if colCfg.fontStringName then -- Use fontStringName as key as it matches element names
+                columnVisibility[colCfg.fontStringName] = colCfg.visible
+            end
+        end
 
         local nameFS = elements.name
         local raceFS = elements.raceText
@@ -601,44 +615,11 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         local clipTextFS = elements.clipText
         local mobLevelFS = elements.clipMobLevel
         local iconTexture = elements.itemIconTexture
+        local lvl = clip.level or 1 -- Used by multiple sections, define once if LEVEL or CLIP_INFO is visible
 
-        -- ===== NAME =====
-        local newNameText = clip.characterName or L["Unknown"]
-        if nameFS:GetText() ~= newNameText then
-            nameFS:SetText(newNameText)
-        end
-        local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
-        local curR, curG, curB = nameFS:GetTextColor()
-        if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then
-            nameFS:SetTextColor(clr.r, clr.g, clr.b)
-        end
-
-        -- ===== RACE =====
-        local newRaceText = clip.race or L["Unknown"]
-        if GetLocale() == "ruRU" and ns.isCompletedTabActive then
-            if newRaceText == "Ночноро\nждённый" then
-                newRaceText = "Ночнорождённый"
-            elseif newRaceText == "Озар. дреней" then
-                newRaceText = "Озарённый дреней"
-            elseif newRaceText == "Дворф Ч. Железа" then
-                newRaceText = "Дворф Чёрного Железа"
-            end
-        end
-        if raceFS:GetText() ~= newRaceText then
-            raceFS:SetText(newRaceText)
-        end
-        local rF, gF, bF = 0.9, 0.9, 0.4
-        if clip.faction == "Horde" then
-            rF, gF, bF = 0.8, 0.3, 0.3
-        elseif clip.faction == "Alliance" then
-            rF, gF, bF = 0.4, 0.6, 1
-        end
-        local curRF, curGF, curBF = raceFS:GetTextColor()
-        if curRF ~= rF or curGF ~= gF or curBF ~= bF then
-            raceFS:SetTextColor(rF, gF, bF)
-        end
-
-        -- ===== CLASS ICON =====
+        -- ===== CLASS ICON (Typically always visible if Name is visible, or generally present) =====
+        -- Assuming class icon visibility is tied to the general presence of a row, not a specific data column being toggleable.
+        -- If it needs to be tied to a column (e.g. "STREAMER" which uses "Name" FS), this logic might need adjustment.
         local newTexture = "Interface\\Icons\\INV_Misc_QuestionMark"
         local newCoords = { 0, 1, 0, 1 }
         if clip.class and CLASS_ICON_TCOORDS[clip.class] then
@@ -650,108 +631,138 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         end
         iconTexture:SetTexCoord(unpack(newCoords))
 
+        -- ===== NAME =====
+        if columnVisibility["Name"] then
+            local newNameText = clip.characterName or L["Unknown"]
+            if nameFS:GetText() ~= newNameText then
+                nameFS:SetText(newNameText)
+            end
+            local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
+            local curR, curG, curB = nameFS:GetTextColor()
+            if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then
+                nameFS:SetTextColor(clr.r, clr.g, clr.b)
+            end
+        end
+
         -- ===== LEVEL =====
-        local lvl = clip.level or 1
-        local q = GetQuestDifficultyColor(lvl)
-        local newLevelText = string.format("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
-        -- FontStrings don't have GetFormattedText, so we compare with a stored value or just update
-        -- For simplicity, let's assume level might change or its color might due to player level, so update.
-        levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
-
-        -- ===== CLASS TEXT =====
-        local key = clip.class and string.upper(clip.class) or "UNKNOWN"
-        local newClassText = LOCALIZED_CLASS_NAMES_MALE[key] or clip.class or L["Unknown"]
-        if GetLocale() == "ruRU" and not ns.isCompletedTabActive then
-            if key == "WARLOCK" then
-                newClassText = "Варлок"
-            elseif key == "ROGUE" then
-                newClassText = "Разбойник"
-            end
+        if columnVisibility["Level"] then
+            local q = GetQuestDifficultyColor(lvl)
+            levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
         end
-        if classFS:GetText() ~= newClassText then
-            classFS:SetText(newClassText)
-        end
-        local cc = RAID_CLASS_COLORS[key] or { r = 1, g = 1, b = 1 }
-        local curCCR, curCCG, curCCB = classFS:GetTextColor()
-        if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then
-            classFS:SetTextColor(cc.r, cc.g, cc.b)
-        end
-
+        
         -- ===== WHERE =====
-        whereFS:SetJustifyH("LEFT")
-        local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
-        if zone == "Полуостров Адского Пламени" then
-            zone = "Полуостров\nАдского Пламени"
-        end
-        if whereFS:GetText() ~= zone then
-            whereFS:SetText(zone)
-        end
-
-        -- ===== CAUSE / MOB LEVEL (Clip Text) =====
-        local causeId = clip.causeCode or 0
-        local newClipDisplayText = ""
-        local newMobLevelText = ""
-        local mr, mg, mb = 0, 0, 0
-
-        if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
-            local mobLvl = clip.mobLevel or 0
-            local playerLvl = lvl
-            local diff = mobLvl - playerLvl
-            mr, mg, mb = 0, 1, 0
-            if diff >= 4 then
-                mr, mg, mb = 1, 0, 0
-            elseif diff >= 2 then
-                mr, mg, mb = 1, .5, 0
-            elseif diff >= -1 then
-                mr, mg, mb = 1, 1, 0
-            elseif diff >= -4 then
-                mr, mg, mb = 0, 1, 0
-            else
-                mr, mg, mb = .5, .5, .5
+        if columnVisibility["WhereText"] then
+            whereFS:SetJustifyH("LEFT")
+            local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
+            if zone == "Полуостров Адского Пламени" then
+                zone = "Полуостров\nАдского Пламени"
             end
-
-            newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
-            newMobLevelText = tostring(mobLvl)
-            mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
-        else
-            newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
-            newMobLevelText = ""
-        end
-
-        if clipTextFS:GetText() ~= newClipDisplayText then
-            clipTextFS:SetText(newClipDisplayText)
-        end
-        if mobLevelFS:GetText() ~= newMobLevelText then
-            mobLevelFS:SetText(newMobLevelText)
-        end
-        mobLevelFS:SetJustifyH("CENTER")
-
-        -- ===== COMPLETED TIMER (also uses clipTextFS) =====
-        if clip.completed then
-            if clipTextFS:GetFontObject() ~= GameFontNormalLarge then
-                clipTextFS:SetFontObject("GameFontNormalLarge")
+            if whereFS:GetText() ~= zone then
+                whereFS:SetText(zone)
             end
-            if clip.playedTime then
-                local s = clip.playedTime
-                local completedText = string.format("%dд %dч %dм %dс",
-                        math.floor(s / 86400), math.floor(s % 86400 / 3600),
-                        math.floor(s % 3600 / 60), s % 60)
-                if clipTextFS:GetText() ~= completedText then
-                    clipTextFS:SetText(completedText)
+        end
+
+        -- ===== CAUSE / MOB LEVEL / COMPLETED TIMER (Clip Text) =====
+        -- All these use clipTextFS and mobLevelFS, controlled by the visibility of the "Clip" (CLIP_INFO column)
+        if columnVisibility["Clip"] then
+            local causeId = clip.causeCode or 0
+            local newClipDisplayText = ""
+            local newMobLevelText = ""
+            local mr, mg, mb = 0, 0, 0
+
+            if not clip.completed then -- Logic for non-completed clips (death cause, mob level)
+                if clipTextFS:GetFontObject() ~= GameFontNormal then
+                    clipTextFS:SetFontObject("GameFontNormal")
                 end
-            elseif clipTextFS:GetText() ~= "Грузится" then
-                clipTextFS:SetText("Грузится")
+
+                if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
+                    local mobLvl = clip.mobLevel or 0
+                    local playerLvl = lvl -- lvl defined above
+                    local diff = mobLvl - playerLvl
+                    mr, mg, mb = 0, 1, 0
+                    if diff >= 4 then mr, mg, mb = 1, 0, 0
+                    elseif diff >= 2 then mr, mg, mb = 1, .5, 0
+                    elseif diff >= -1 then mr, mg, mb = 1, 1, 0
+                    elseif diff >= -4 then mr, mg, mb = 0, 1, 0
+                    else mr, mg, mb = .5, .5, .5 end
+
+                    newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
+                    newMobLevelText = tostring(mobLvl)
+                    mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
+                else
+                    newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
+                    newMobLevelText = ""
+                    mobLevelFS:SetTextColor(1,1,1,1) -- Reset color if no mob level
+                end
+                if mobLevelFS:GetText() ~= newMobLevelText then
+                    mobLevelFS:SetText(newMobLevelText)
+                end
+                mobLevelFS:SetJustifyH("CENTER") -- Always justify
+            else -- Logic for completed clips (timer)
+                if clipTextFS:GetFontObject() ~= GameFontNormalLarge then
+                    clipTextFS:SetFontObject("GameFontNormalLarge")
+                end
+                if clip.playedTime then
+                    local s = clip.playedTime
+                    newClipDisplayText = string.format("%dд %dч %dм %dс",
+                            math.floor(s / 86400), math.floor(s % 86400 / 3600),
+                            math.floor(s % 3600 / 60), s % 60)
+                else
+                    newClipDisplayText = "Грузится"
+                end
+                if mobLevelFS:GetText() ~= "" then -- Clear mob level for completed
+                    mobLevelFS:SetText("")
+                end
             end
-        else
-            if clipTextFS:GetFontObject() ~= GameFontNormal then
-                clipTextFS:SetFontObject("GameFontNormal")
-            end
-            -- If not completed, the cause text was already set above by the "CAUSE / MOB LEVEL" block.
-            -- Only re-set it if the font change somehow blanked it or if it differs from newClipDisplayText
+            
             if clipTextFS:GetText() ~= newClipDisplayText then
                 clipTextFS:SetText(newClipDisplayText)
             end
         end
+
+
+        -- ===== CLASS TEXT =====
+        if columnVisibility["ClassText"] then
+            local key = clip.class and string.upper(clip.class) or "UNKNOWN"
+            local newClassText = LOCALIZED_CLASS_NAMES_MALE[key] or clip.class or L["Unknown"]
+            if GetLocale() == "ruRU" and ns.currentActiveTabId == "LIVE_CLIPS" then
+                if key == "WARLOCK" then newClassText = "Варлок"
+                elseif key == "ROGUE" then newClassText = "Разбойник" end
+            end
+            if classFS:GetText() ~= newClassText then
+                classFS:SetText(newClassText)
+            end
+            local cc = RAID_CLASS_COLORS[key] or { r = 1, g = 1, b = 1 }
+            local curCCR, curCCG, curCCB = classFS:GetTextColor()
+            if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then
+                classFS:SetTextColor(cc.r, cc.g, cc.b)
+            end
+        end
+
+        -- ===== RACE =====
+        if columnVisibility["RaceText"] then
+            local newRaceText = clip.race or L["Unknown"]
+            if GetLocale() == "ruRU" and ns.currentActiveTabId == "COMPLETED_CLIPS" then
+                if newRaceText == "Ночноро\nждённый" then newRaceText = "Ночнорождённый"
+                elseif newRaceText == "Озар. дреней" then newRaceText = "Озарённый дреней"
+                elseif newRaceText == "Дворф Ч. Железа" then newRaceText = "Дворф Чёрного Железа" end
+            end
+            if raceFS:GetText() ~= newRaceText then
+                raceFS:SetText(newRaceText)
+            end
+            local rF, gF, bF = 0.9, 0.9, 0.4
+            if clip.faction == "Horde" then rF, gF, bF = 0.8, 0.3, 0.3
+            elseif clip.faction == "Alliance" then rF, gF, bF = 0.4, 0.6, 1 end
+            local curRF, curGF, curBF = raceFS:GetTextColor()
+            if curRF ~= rF or curGF ~= gF or curBF ~= bF then
+                raceFS:SetTextColor(rF, gF, bF)
+            end
+        end
+        
+        -- Note: WhenText is updated by a separate ticker in OFAuctionFrameDeathClips_OnShow for live updates
+        -- So, it's not managed here for visibility of its data content.
+        -- Its layout (position) is handled by UpdateLayout.
+
     end -- END of "if button.displayedClipID ~= clip.id or forceFullUpdate then"
 
     -- ===== RATING WIDGET =====
@@ -816,14 +827,14 @@ function OFAuctionFrameDeathClips_Update()
         local pool = ns.FilterClipsThisRealm(rawPool)
         local tempClips = {}
 
-        if frame.currentSubTab == "completed" then
+        if ns.currentActiveTabId == "COMPLETED_CLIPS" then
             for _, clip in ipairs(pool) do
                 if clip.completed then
                     table.insert(tempClips, clip)
                 end
             end
         else
-            -- "live" or default
+            -- "LIVE_CLIPS" or default
             for _, clip in ipairs(pool) do
                 if not clip.completed then
                     table.insert(tempClips, clip)
@@ -831,7 +842,7 @@ function OFAuctionFrameDeathClips_Update()
             end
         end
 
-        local _, sortKey, sortAscending = OFGetCurrentSortParams("clips")
+        local _, sortKey, sortAscending = OFGetCurrentSortParams("clips") -- This should be fine as OFGetCurrentSortParams gets it from the game's sort state
         tempClips = ns.SortDeathClips(tempClips, OFGetCurrentSortParams("clips"))
 
         frame.currentDisplayableClips = tempClips
