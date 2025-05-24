@@ -94,7 +94,7 @@ local function CreateClipsSorter(sortParams)
         elseif k == "clip" then
             addSorter(desc, function(l, r)
                 -- Completed tab: sort by numeric playedTime
-                if ns.isCompletedTabActive then
+                if ns.currentActiveTabId == "COMPLETED_CLIPS" then -- Use ns.currentActiveTabId
                     -- Ensure numeric comparison
                     local a = tonumber(l.playedTime) or 0
                     local b = tonumber(r.playedTime) or 0

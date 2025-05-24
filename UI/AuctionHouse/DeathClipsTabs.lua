@@ -17,8 +17,8 @@ ns.DeathClipsTabSettings = {
             { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip" },
             { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 71, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "RIGHT" },
             { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 82, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "LEFT" },
-            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = -10 },
-            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 }, -- Changed from -10
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 } -- Unchanged for now
         }
     },
     ["COMPLETED_CLIPS"] = {
