@@ -2,104 +2,153 @@
 local addonName, ns = ...
 local L = ns.L
 
--- Create the flag in the shared namespace
-ns.isCompletedTabActive = false
+ns.currentActiveTabId = "LIVE_CLIPS" -- Default active tab
+
+ns.DeathClipsTabSettings = {
+    ["LIVE_CLIPS"] = {
+        tabId = "LIVE_CLIPS",
+        tabName = "Погибшие",
+        defaultSortKey = "WHEN_HAPPENED",
+        defaultSortAscending = false,
+        columns = {
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 90, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Level", visible = true, baseWidth = 50, sortKey = "level", fontStringName = "Level" },
+            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
+            { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip" },
+            { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 71, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "RIGHT" },
+            { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 82, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "LEFT" },
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = -10 },
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
+        }
+    },
+    ["COMPLETED_CLIPS"] = {
+        tabId = "COMPLETED_CLIPS",
+        tabName = "Выжившие",
+        defaultSortKey = "CLIP_INFO",
+        defaultSortAscending = false, -- Assuming higher playedTime is "better"
+        columns = {
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 140, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" },
+            { id = "CLIP_INFO", headerText = "Время прохождения", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip", dataRowXOffset = -8 },
+            { id = "WHERE_DIED", headerText = "Где умер", visible = false, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
+            { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 133, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 15 },
+            { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 144, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 2 },
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText" },
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
+        }
+    }
+}
+
+-- ns.isCompletedTabActive = false -- This line will be removed
+
+local columnIdToHeaderButtonName = {
+    STREAMER = "OFDeathClipsStreamerSort",
+    LEVEL = "OFDeathClipsLevelSort",
+    WHERE_DIED = "OFDeathClipsWhereSort",
+    CLIP_INFO = "OFDeathClipsClipSort",
+    CLASS_TYPE = "OFDeathClipsClassSort",
+    RACE_TYPE = "OFDeathClipsRaceSort",
+    WHEN_HAPPENED = "OFDeathClipsWhenSort", -- Assuming this is the correct global name
+    REACTION = "OFDeathClipsRatingSort"   -- Assuming this is the correct global name
+}
 
 local function UpdateDeathClipsLayout()
-    local frame = OFAuctionFrameDeathClips
-    local streamerSort = _G["OFDeathClipsStreamerSort"]
-    local levelSort = _G["OFDeathClipsLevelSort"]
-    local clipSort = _G["OFDeathClipsClipSort"]
-    local whereSort = _G["OFDeathClipsWhereSort"]
-    local classSort = _G["OFDeathClipsClassSort"]
-    local raceSort = _G["OFDeathClipsRaceSort"]
+    local frame = OFAuctionFrameDeathClips -- Main frame for anchoring
+    if not frame then return end
 
-    --if ns.isCompletedTabActive then
-    --    OFAuctionFrame_SetSort("clips", "playedTime", true)
-    --else
-    --    OFAuctionFrame_SetSort("clips", "when", false)
-    --end
+    local activeTabKey = ns.currentActiveTabId -- Use the new state variable
+    local activeTabConfig = ns.DeathClipsTabSettings[activeTabKey]
 
-    if ns.isCompletedTabActive then
-        OFDeathClipsClipSort:SetText("      Время прохождения")
-        -- When completed tab is active, hide the level sort button
-        levelSort:Hide()
+    if not activeTabConfig or not activeTabConfig.columns then
+        if ns.debug then print("Error: No tab configuration or columns found for key: " .. activeTabKey) end
+        return
+    end
 
-        -- Adjust the width of StreamerSort and move ClipSort to the right
-        streamerSort:SetWidth(streamerSort:GetWidth() + levelSort:GetWidth())  -- Expand StreamerSort to fill the space
-        clipSort:ClearAllPoints()  -- Clear any existing anchors
-        clipSort:SetPoint("LEFT", streamerSort, "RIGHT", 2, 0)  -- Position it immediately to the right of StreamerSort
+    local previousVisibleHeaderButton = nil
+    local firstVisibleHeaderXOffset = 65 -- Default X offset for the very first sort button
+    local firstVisibleHeaderYOffset = -52 -- Default Y offset for the very first sort button
 
-        -- Hide WhereSort button
-        whereSort:Hide()
+    -- First pass: hide all buttons to handle cases where a button might not be in the config
+    for _, headerButtonName in pairs(columnIdToHeaderButtonName) do
+        local button = _G[headerButtonName]
+        if button then
+            button:Hide()
+        end
+    end
 
-        -- Get half the width of WhereSort to distribute between ClassSort and RaceSort
-        local whereWidth = whereSort:GetWidth()
-        local halfWhereWidth = whereWidth / 2
+    for _, columnConfig in ipairs(activeTabConfig.columns) do
+        local headerButtonName = columnIdToHeaderButtonName[columnConfig.id]
+        if headerButtonName then
+            local button = _G[headerButtonName]
+            if button then
+                if columnConfig.visible then
+                    button:Show()
+                    button:SetText(columnConfig.headerText)
+                    button:SetWidth(columnConfig.baseWidth)
+                    button:ClearAllPoints()
 
-        -- Increase the width of ClassSort and RaceSort by half of WhereSort's width
-        classSort:SetWidth(classSort:GetWidth() + halfWhereWidth)
-        raceSort:SetWidth(raceSort:GetWidth() + halfWhereWidth)
-
-        -- Re-anchor the ClassSort and RaceSort buttons to slide them to the right of ClipSort
-        classSort:ClearAllPoints()
-        raceSort:ClearAllPoints()
-        classSort:SetPoint("LEFT", clipSort, "RIGHT", 2, 0)  -- Position it immediately to the right of ClipSort
-        raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)   -- Position it immediately to the right of ClassSort
-
-    else
-        OFDeathClipsClipSort:SetText("       Причина смерти")
-        levelSort:Show()
-        streamerSort:SetWidth(90)
-
-        -- New header order: Level -> Where -> Clip -> Class -> Race
-        whereSort:Show()
-
-        whereSort:ClearAllPoints()
-        whereSort:SetPoint("LEFT", levelSort, "RIGHT", 2, 0)
-
-        clipSort:ClearAllPoints()
-        clipSort:SetPoint("LEFT", whereSort, "RIGHT", 2, 0)
-
-        classSort:SetWidth(71)
-        raceSort:SetWidth(82)
-
-        classSort:ClearAllPoints()
-        classSort:SetPoint("LEFT", clipSort, "RIGHT", 2, 0)
-
-        raceSort:ClearAllPoints()
-        raceSort:SetPoint("LEFT", classSort, "RIGHT", 2, 0)
+                    if previousVisibleHeaderButton then
+                        button:SetPoint("LEFT", previousVisibleHeaderButton, "RIGHT", 2, 0) -- Standard 2px gap
+                    else
+                        -- This is the first visible header
+                        -- The problem description implies OFAuctionFrameDeathClips is the parent for anchoring.
+                        -- The original anchor for OFDeathClipsStreamerSort was ("TOPLEFT", frame, "TOPLEFT", 65, -52)
+                        -- We use 'frame' which is OFAuctionFrameDeathClips here.
+                        button:SetPoint("TOPLEFT", frame, "TOPLEFT", firstVisibleHeaderXOffset, firstVisibleHeaderYOffset)
+                    end
+                    previousVisibleHeaderButton = button
+                else
+                    button:Hide() -- Ensure button is hidden if not visible, even if it was shown by default
+                end
+            elseif ns.debug then
+                print("Warning: Header button not found: " .. headerButtonName)
+            end
+        elseif ns.debug then
+            print("Warning: No header button mapping for column ID: " .. columnConfig.id)
+        end
     end
 end
 
 
 -- 1) Helper: what to do when the sub-tab changes
-local function OnSubTabChanged(frame, newTab)
-
-    -- Reset the page number
+local function OnSubTabChanged(frame, newTabId)
     OFAuctionFrameDeathClips.page = 0
-    -- Always reset the scroll frame offset (important for data loading)
     FauxScrollFrame_SetOffset(OFDeathClipsScroll, 0)
     if OFDeathClipsScrollScrollBar then
         OFDeathClipsScrollScrollBar:SetValue(0)
     end
 
+    ns.currentActiveTabId = newTabId -- Set the new active tab ID
 
-    if newTab == "completed" then
-        ns.isCompletedTabActive = true
-        OFAuctionFrame_SetSort("clips", "clip", false)
-
-        UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
-
-    else
-        ns.isCompletedTabActive = false
-        OFAuctionFrame_SetSort("clips", "when", false)
-
-        UpdateDeathClipsLayout()  -- Re-update the layout whenever the tab switches
+    local tabConfig = ns.DeathClipsTabSettings[newTabId]
+    if not tabConfig then
+        if ns.debug then print("Error: OnSubTabChanged - No tab configuration found for ID: " .. newTabId) end
+        return
     end
-    -- Применить макет к каждой из 9 видимых строк (NUM_CLIPS_TO_DISPLAY = 9)
-    for i = 1, 9 do
-        ns.ApplyClipLayout("OFDeathClipsButton" .. i)
+
+    local sortKeyString = "" -- This will be the actual sort key like "when", "clip"
+    local defaultSortColumnId = tabConfig.defaultSortKey -- This is an ID like "WHEN_HAPPENED"
+    local actualSortColumn = nil
+
+    for _, columnDef in ipairs(tabConfig.columns) do
+        if columnDef.id == defaultSortColumnId then
+            actualSortColumn = columnDef
+            break
+        end
+    end
+
+    if actualSortColumn and actualSortColumn.sortKey then
+        sortKeyString = actualSortColumn.sortKey
+        OFAuctionFrame_SetSort("clips", sortKeyString, tabConfig.defaultSortAscending)
+    else
+        if ns.debug then print("Error: Default sort key ID '" .. defaultSortColumnId .. "' not found or has no sortKey string in config for tab " .. newTabId) end
+        OFAuctionFrame_SetSort("clips", "when", false) -- Fallback sort
+    end
+
+    UpdateDeathClipsLayout() -- This will now use ns.currentActiveTabId internally
+
+    for i = 1, 9 do -- Assuming NUM_CLIPS_TO_DISPLAY is 9, or use a constant if available
+        if ns.ApplyClipLayout then ns.ApplyClipLayout("OFDeathClipsButton" .. i) end -- This will also use ns.currentActiveTabId internally
     end
 end
 
@@ -135,13 +184,13 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
 
     -- style toggle
     local function updateTabStyles()
-        if frame.currentSubTab == "live" then
+        if frame.currentSubTab == "LIVE_CLIPS" then
             liveBtn.selectedGlow:Show()
             compBtn.selectedGlow:Hide()
 
             compBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
             liveBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        else
+        else -- Assuming "COMPLETED_CLIPS"
             compBtn.selectedGlow:Show()
             liveBtn.selectedGlow:Hide()
 
@@ -153,28 +202,28 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
 
     -- 3) Hook Live button: only set state & run Update
     liveBtn:SetScript("OnClick", function()
-        if frame.currentSubTab ~= "live" then
-            frame.currentSubTab = "live"
+        if frame.currentSubTab ~= "LIVE_CLIPS" then
+            frame.currentSubTab = "LIVE_CLIPS"
             updateTabStyles()
-            ns.isCompletedTabActive = false
-            OnSubTabChanged(frame, "live")
+            -- ns.isCompletedTabActive = false -- Remove this
+            OnSubTabChanged(frame, "LIVE_CLIPS")
             OFAuctionFrameDeathClips_Update()
         end
     end)
 
     -- 4) Hook Completed button: set state, run your logic, then Update
     compBtn:SetScript("OnClick", function()
-        if frame.currentSubTab ~= "completed" then
-            frame.currentSubTab = "completed"
+        if frame.currentSubTab ~= "COMPLETED_CLIPS" then
+            frame.currentSubTab = "COMPLETED_CLIPS"
             updateTabStyles()
-            ns.isCompletedTabActive = true
-            OnSubTabChanged(frame, "completed")
+            -- ns.isCompletedTabActive = true -- Remove this
+            OnSubTabChanged(frame, "COMPLETED_CLIPS")
             OFAuctionFrameDeathClips_Update()
         end
     end)
 
     -- initialize
-    frame.currentSubTab = frame.currentSubTab or "live"
+    frame.currentSubTab = ns.currentActiveTabId -- Initialize with the default active tab ID
     updateTabStyles()
-    OnSubTabChanged(frame, frame.currentSubTab)
+    OnSubTabChanged(frame, ns.currentActiveTabId) -- Call with the current active tab ID
 end)
