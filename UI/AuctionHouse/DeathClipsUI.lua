@@ -989,7 +989,11 @@ function OFDeathClipsRatingWidget_OnLoad(self)
             icon:Show()
 
             count:SetText(countValue)
-            count:Show()
+            if countValue > 9 then
+                count:Show()
+            else
+                count:Hide()
+            end
         else
             icon:SetTexture("Interface\\AddOns\\GoAgainAH\\Media\\minus_final_32x8.tga")
             icon:SetSize(32, 8)
