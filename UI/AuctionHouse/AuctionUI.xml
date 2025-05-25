@@ -1400,7 +1400,7 @@
 					</Button>
 
 					<!-- OLD LEVEL -->
-					<Button name="OFDeathClipsOldLevelSort" inherits="OFAuctionSortButtonTemplate" text="Старый Ур.">
+					<Button name="OFDeathClipsOldLevelSort" inherits="OFAuctionSortButtonTemplate" text="Бывший ур.">
 						<Size><AbsDimension x="45" y="19" /></Size>
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="OFDeathClipsLevelSort" relativePoint="RIGHT">
@@ -1413,7 +1413,7 @@
 					</Button>
 
 					<!-- OLD CLASS -->
-					<Button name="OFDeathClipsOldClassSort" inherits="OFAuctionSortButtonTemplate" text="Старый Класс">
+					<Button name="OFDeathClipsOldClassSort" inherits="OFAuctionSortButtonTemplate" text="Бывший класс">
 						<Size><AbsDimension x="75" y="19" /></Size>
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="OFDeathClipsOldLevelSort" relativePoint="RIGHT">

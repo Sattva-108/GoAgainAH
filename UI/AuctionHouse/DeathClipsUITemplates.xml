@@ -60,7 +60,7 @@
                 </Texture>
 
                 <!-- Old Level -->
-                <FontString name="$parentOldLevelText" inherits="GameFontNormal" justifyH="LEFT">
+                <FontString name="$parentOldLevelText" inherits="GameFontNormalLarge" justifyH="CENTER">
                     <Size><AbsDimension x="40" y="32" /></Size>
                     <Anchors>
                         <Anchor point="TOPLEFT"> <!-- Generic default anchor, will be overridden by Lua -->

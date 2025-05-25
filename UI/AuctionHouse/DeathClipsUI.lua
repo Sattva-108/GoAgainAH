@@ -666,7 +666,10 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             if columnVisibility["OldLevelText"] then
                 oldLevelFS:Show()
                 if clip.isReincarnated then
-                    oldLevelFS:SetText(clip.oldLevel or "?")
+                    local actualOldLevel = clip.oldLevel or 1 -- Fallback to 1 if oldLevel is nil
+                    local q = GetQuestDifficultyColor(actualOldLevel) -- Use the level, not the font string
+                    oldLevelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, actualOldLevel)
+                    --oldLevelFS:SetText(clip.oldLevel or "?")
                 else
                     oldLevelFS:SetText("")
                 end

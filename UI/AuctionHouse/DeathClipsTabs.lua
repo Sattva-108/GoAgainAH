@@ -43,15 +43,15 @@ ns.DeathClipsTabSettings = {
         defaultSortKey = "WHEN_HAPPENED", -- Original death time
         defaultSortAscending = false,      -- Most recent original deaths first
         columns = {
-            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 150, sortKey = "streamer", fontStringName = "Name" },
-            { id = "LEVEL", headerText = "Уровень", visible = true, baseWidth = 60, sortKey = "level", fontStringName = "Level" }, -- New Level
-            { id = "OLD_LEVEL", headerText = "Старый Ур.", visible = true, baseWidth = 55, sortKey = "oldlevel", fontStringName = "OldLevelText", dataRowXOffset = 5 },
-            { id = "OLD_CLASS", headerText = "Старый Класс", visible = true, baseWidth = 100, sortKey = "oldclass", fontStringName = "OldClassText", dataRowXOffset = 5 },
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Уровень", visible = true, baseWidth = 70, sortKey = "level", fontStringName = "Level" }, -- New Level
+            { id = "OLD_LEVEL", headerText = "Бывший ур.", visible = true, baseWidth = 85, sortKey = "oldlevel", fontStringName = "OldLevelText", dataRowXOffset = 5 },
+            { id = "OLD_CLASS", headerText = "Бывший класс", visible = true, baseWidth = 100, sortKey = "oldclass", fontStringName = "OldClassText", dataRowXOffset = 5 },
             { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 220, sortKey = "clip", fontStringName = "Clip" },
             { id = "WHERE_DIED", headerText = "Где умер", visible = false, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
             { id = "RACE_TYPE", headerText = "RACE", visible = false, baseWidth = 82, sortKey = "race", fontStringName = "RaceText" },
             { id = "CLASS_TYPE", headerText = "CLASS", visible = false, baseWidth = 71, sortKey = "class", fontStringName = "ClassText" },
-            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 80, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 },
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 70, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 },
             { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 70, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     },
