@@ -89,6 +89,44 @@ function ns.IsPlayerOnFriendsList(characterName)
     return false, false, nil, nil, nil, nil -- Not found on friends list
 end
 
+function ns.GetEnglishClassToken(localizedClassName)
+    if not localizedClassName or localizedClassName == "" then return nil end
+
+    if ns.russianClassNameToEnglishToken then
+        local token = ns.russianClassNameToEnglishToken[localizedClassName]
+        if token then return token end
+        token = ns.russianClassNameToEnglishToken[string.upper(localizedClassName)]
+        if token then return token end
+    end
+
+    -- Fallback: Check if the localizedClassName (uppercased) is itself a valid English global constant key
+    -- This handles cases where the game client might already provide the English token.
+    local upperLocalizedClassName = string.upper(localizedClassName)
+    if _G.LOCALIZED_CLASS_NAMES_MALE and _G.LOCALIZED_CLASS_NAMES_MALE[upperLocalizedClassName] then
+        -- Check if upperLocalizedClassName is a key in LOCALIZED_CLASS_NAMES_MALE, implying it IS an English token
+        local isKey = false
+        for k, _ in pairs(_G.LOCALIZED_CLASS_NAMES_MALE) do
+            if k == upperLocalizedClassName then
+                isKey = true
+                break
+            end
+        end
+        if isKey then return upperLocalizedClassName end
+    end
+
+    -- Further fallback: Check against ns.fallbackClassNames values (which are localized) to get key (English token)
+    -- This assumes ns.fallbackClassNames maps English Token (key) -> Localized Name (value)
+    if ns.fallbackClassNames then
+        for engToken, locName in pairs(ns.fallbackClassNames) do
+            if locName == localizedClassName or locName == upperLocalizedClassName then
+                return engToken -- Return the English key
+            end
+        end
+    end
+
+    return nil -- No token found
+end
+
 ns.russianClassNameToEnglishToken = {
     -- Male (and some neutral) forms from LOCALIZED_CLASS_NAMES_MALE
     ["Рыцарь смерти"] = "DEATHKNIGHT",
@@ -420,6 +458,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         lastKnownActualLevel = (isConnectedInitially and currentDisplayLevelInitially and currentDisplayLevelInitially > 0) and currentDisplayLevelInitially or originalClipLevelFromThisInteraction,
                         lastKnownActualLevelTimestamp = GetTime(),
                         hasBeenNotifiedForThisAdd = false,
+                        localizedClassNameAtLastSighting = isConnectedInitially and currentClassInitially or nil,
+                        currentEnglishClassTokenAtLastSighting = isConnectedInitially and ns.GetEnglishClassToken(currentClassInitially) or nil
                     }
                     AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                     ns.lastActionStatus = {
@@ -467,6 +507,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 lastKnownActualLevel = newFriendDisplayLevel, -- Live level
                                 lastKnownActualLevelTimestamp = GetTime(),
                                 hasBeenNotifiedForThisAdd = false,
+                                localizedClassNameAtLastSighting = newFriendClass, -- Store localized class
+                                currentEnglishClassTokenAtLastSighting = ns.GetEnglishClassToken(newFriendClass) -- Store derived English token
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                             if newFriendDisplayLevel and newFriendDisplayLevel > 0 then
@@ -480,6 +522,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Friend is offline, use clip level as last known
                                 lastKnownActualLevelTimestamp = GetTime(),
                                 hasBeenNotifiedForThisAdd = false,
+                                localizedClassNameAtLastSighting = nil, -- Offline, no live class info
+                                currentEnglishClassTokenAtLastSighting = nil
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                         end
@@ -549,7 +593,12 @@ local function PerformFriendListScan()
                     DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
                     watchedEntry.lastKnownActualLevel = currentActualLevel
                     watchedEntry.lastKnownActualLevelTimestamp = GetTime()
+                end
 
+                -- Update class info at last sighting
+                if classToken then
+                    watchedEntry.localizedClassNameAtLastSighting = classToken
+                    watchedEntry.currentEnglishClassTokenAtLastSighting = ns.GetEnglishClassToken(classToken)
                 end
 
                 -- Logic for level drop notification (original functionality)
@@ -605,32 +654,25 @@ function ns.GetReincarnatedFriendsDisplayList()
         if watchedEntry and watchedEntry.characterName and watchedEntry.hasBeenNotifiedForThisAdd then
             local characterName = watchedEntry.characterName
 
-            local isFriendOnWoWList, isConnected, displayLevelFromFunc, localizedClassFromFunc, areaFromFunc, _ = ns.IsPlayerOnFriendsList(characterName)
+            local liveIsFriendOnWoWList, liveIsConnected, liveDisplayLevel, liveLocalizedClass, liveArea, _ = ns.IsPlayerOnFriendsList(characterName)
 
-            local actualLevelToStore = displayLevelFromFunc
-            if not isConnected and watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0 then
-                actualLevelToStore = watchedEntry.lastKnownActualLevel
-            elseif not isConnected and actualLevelToStore == 0 and watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0 then
-                actualLevelToStore = watchedEntry.lastKnownActualLevel
+            local actualLevelToStore
+            local finalLocalizedClassName
+            local finalCurrentEnglishClassToken
+
+            if liveIsConnected then
+                actualLevelToStore = liveDisplayLevel
+                finalLocalizedClassName = liveLocalizedClass
+                finalCurrentEnglishClassToken = ns.GetEnglishClassToken(liveLocalizedClass)
+            else
+                -- Player is offline or not on WoW friends list
+                actualLevelToStore = (watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0) and watchedEntry.lastKnownActualLevel or 0
+                finalLocalizedClassName = watchedEntry.localizedClassNameAtLastSighting
+                finalCurrentEnglishClassToken = watchedEntry.currentEnglishClassTokenAtLastSighting
             end
 
-            local currentEnglishClassToken = nil
-            if localizedClassFromFunc and ns.russianClassNameToEnglishToken then
-                currentEnglishClassToken = ns.russianClassNameToEnglishToken[localizedClassFromFunc]
-                if not currentEnglishClassToken then -- Try uppercase as a fallback
-                    currentEnglishClassToken = ns.russianClassNameToEnglishToken[string.upper(localizedClassFromFunc)]
-                end
-            end
-            if not currentEnglishClassToken and localizedClassFromFunc and localizedClassFromFunc ~= "" then
-                -- If still not found, but we have a localized name, check if it's already an English token (e.g. from other clients)
-                for engToken, _ in pairs(LOCALIZED_CLASS_NAMES_MALE) do -- Check against a known list of English tokens
-                    if string.upper(localizedClassFromFunc) == engToken then
-                        currentEnglishClassToken = engToken
-                        break
-                    end
-                end
-            end
-
+            -- Ensure actualLevelToStore is not nil, default to 0 if it ended up nil (e.g. from liveDisplayLevel being nil for some reason)
+            actualLevelToStore = actualLevelToStore or 0
 
             -- Find the corresponding original death clip
             local bestOriginalClip = nil
@@ -646,11 +688,11 @@ function ns.GetReincarnatedFriendsDisplayList()
                 characterName = characterName,
                 clipLevel = watchedEntry.clipLevel,
                 actualLevel = actualLevelToStore,
-                isOnline = isConnected,
-                isOnWoWFriends = isFriendOnWoWList,
-                localizedClassName = localizedClassFromFunc,
-                currentEnglishClassToken = currentEnglishClassToken,
-                zone = areaFromFunc,
+                isOnline = liveIsConnected, -- Reflects current live online status
+                isOnWoWFriends = liveIsFriendOnWoWList, -- Reflects current live WoW friend status
+                localizedClassName = finalLocalizedClassName,
+                currentEnglishClassToken = finalCurrentEnglishClassToken,
+                zone = liveArea, -- Will be nil if not connected/not on friends list, which is appropriate
                 lastKnownActualLevelTimestamp = watchedEntry.lastKnownActualLevelTimestamp,
                 hasBeenNotifiedForThisAdd = watchedEntry.hasBeenNotifiedForThisAdd,
 

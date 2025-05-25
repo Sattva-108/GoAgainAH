@@ -809,7 +809,8 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             if classFS:GetText() ~= newClassText then
                 classFS:SetText(newClassText)
             end
-            local cc = RAID_CLASS_COLORS[key] or { r = 1, g = 1, b = 1 }
+            -- Use displayClassToken (which is based on newClassToken/currentEnglishClassToken for reincarnated) for color consistency
+            local cc = RAID_CLASS_COLORS[displayClassToken] or RAID_CLASS_COLORS[clip.class] or { r = 1, g = 1, b = 1 }
             local curCCR, curCCG, curCCB = classFS:GetTextColor()
             if curCCR ~= cc.r or curCCG ~= cc.g or curCCB ~= cc.b then
                 classFS:SetTextColor(cc.r, cc.g, cc.b)
