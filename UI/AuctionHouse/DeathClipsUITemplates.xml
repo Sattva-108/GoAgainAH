@@ -59,12 +59,22 @@
                     <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
                 </Texture>
 
-                <!-- Old Stats -->
-                <FontString name="$parentOldStatsText" inherits="GameFontNormalSmall" justifyH="LEFT">
-                    <Size><AbsDimension x="106" y="32" /></Size> <!-- Width slightly less than baseWidth (110) for padding -->
+                <!-- Old Level -->
+                <FontString name="$parentOldLevelText" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size><AbsDimension x="40" y="32" /></Size>
                     <Anchors>
                         <Anchor point="TOPLEFT"> <!-- Generic default anchor, will be overridden by Lua -->
                             <Offset><AbsDimension x="400" y="0" /></Offset> <!-- Arbitrary default X offset -->
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <!-- Old Class -->
+                <FontString name="$parentOldClassText" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size><AbsDimension x="70" y="32" /></Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentOldLevelText" relativePoint="RIGHT">
+                            <Offset><AbsDimension x="5" y="0" /></Offset>
                         </Anchor>
                     </Anchors>
                 </FontString>

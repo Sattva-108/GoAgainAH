@@ -107,6 +107,14 @@ local function CreateClipsSorter(sortParams)
             addSorter(desc, function(l, r) return 0 end)
         elseif k == "rating" then
             addSorter(desc, GetDeathClipRatingSorter(desc))
+        elseif k == "oldlevel" then
+            addSorter(desc, function(l, r)
+                return (tonumber(l.oldLevel) or 0) - (tonumber(r.oldLevel) or 0)
+            end)
+        elseif k == "oldclass" then
+            addSorter(desc, function(l, r)
+                return stringCompare(l, r, "oldClassToken")
+            end)
         end
     end
 

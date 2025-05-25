@@ -103,7 +103,8 @@ function OFAuctionFrameDeathClips_OnLoad()
             clipMobLevel = _G[buttonName .. "ClipMobLevel"],
             rating = _G[buttonName .. "Rating"],
             clipFrame = _G[buttonName .. "Clip"],
-            oldStatsText = _G[buttonName .. "OldStatsText"], -- Added for REINCARNATED_CLIPS
+            oldLevelText = _G[buttonName .. "OldLevelText"], -- New cache entry
+            oldClassText = _G[buttonName .. "OldClassText"], -- New cache entry
         }
         button.displayedClipID = nil -- Initialize for conditional updates
 
@@ -615,7 +616,8 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         local whereFS = elements.whereText
         local clipTextFS = elements.clipText
         local mobLevelFS = elements.clipMobLevel
-        local oldStatsFS = elements.oldStatsText -- New FontString element
+        local oldLevelFS = elements.oldLevelText -- New element
+        local oldClassFS = elements.oldClassText -- New element
         local iconTexture = elements.itemIconTexture
 
         -- Determine which level and class to use based on reincarnated status
@@ -657,13 +659,40 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, actualLevelForColor)
         end
 
-        -- ===== OLD STATS (Old Level and Old Class) =====
-        if columnVisibility["OldStatsText"] and oldStatsFS then
-            if clip.isReincarnated then
-                local oldClassDisplay = (clip.oldClassToken and LOCALIZED_CLASS_NAMES_MALE[clip.oldClassToken]) or ""
-                oldStatsFS:SetText(string.format("%s %s", clip.oldLevel or "?", oldClassDisplay))
+        -- ===== OLD LEVEL =====
+        if oldLevelFS then
+            if columnVisibility["OldLevelText"] then
+                oldLevelFS:Show()
+                if clip.isReincarnated then
+                    oldLevelFS:SetText(clip.oldLevel or "?")
+                else
+                    oldLevelFS:SetText("")
+                end
             else
-                oldStatsFS:SetText("")
+                oldLevelFS:Hide()
+                oldLevelFS:SetText("")
+            end
+        end
+
+        -- ===== OLD CLASS =====
+        if oldClassFS then
+            if columnVisibility["OldClassText"] then
+                oldClassFS:Show()
+                if clip.isReincarnated then
+                    local oldClassToken = clip.oldClassToken
+                    local oldClassLocalizedName = (oldClassToken and LOCALIZED_CLASS_NAMES_MALE[oldClassToken]) or ""
+                    local coloredOldClassText = oldClassLocalizedName
+                    if oldClassToken and RAID_CLASS_COLORS[oldClassToken] then
+                        local color = RAID_CLASS_COLORS[oldClassToken]
+                        coloredOldClassText = string.format("|cff%02x%02x%02x%s|r", color.r*255, color.g*255, color.b*255, oldClassLocalizedName)
+                    end
+                    oldClassFS:SetText(coloredOldClassText)
+                else
+                    oldClassFS:SetText("")
+                end
+            else
+                oldClassFS:Hide()
+                oldClassFS:SetText("")
             end
         end
 
