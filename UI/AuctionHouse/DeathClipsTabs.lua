@@ -40,8 +40,8 @@ ns.DeathClipsTabSettings = {
     ["REINCARNATED_CLIPS"] = {
         tabId = "REINCARNATED_CLIPS",
         tabName = "Восставшие",
-        defaultSortKey = "WHEN_HAPPENED", -- Original death time
-        defaultSortAscending = false,      -- Most recent original deaths first
+        defaultSortKey = "LEVEL", -- Original death time
+        defaultSortAscending = true,      -- Most recent original deaths first
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },
             { id = "LEVEL", headerText = "Уровень", visible = true, baseWidth = 70, sortKey = "level", fontStringName = "Level" }, -- New Level
@@ -219,9 +219,9 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     newTab1Btn:SetText(newTab1Config.tabName)
     newTab1Btn:SetSize(100, 40) -- Ensure size
 
-    newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
-    newTab2Btn:SetText(newTab2Config.tabName)
-    newTab2Btn:SetSize(100, 40) -- Ensure size
+    --newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    --newTab2Btn:SetText(newTab2Config.tabName)
+    --newTab2Btn:SetSize(100, 40) -- Ensure size
 
     -- Glow properties
     liveBtn.selectedGlow:SetAlpha(0.60); compBtn.selectedGlow:SetAlpha(0.60); newTab1Btn.selectedGlow:SetAlpha(0.60); newTab2Btn.selectedGlow:SetAlpha(0.60)
