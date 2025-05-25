@@ -17,15 +17,15 @@ ns.DeathClipsTabSettings = {
             { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip" },
             { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 71, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "RIGHT" },
             { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 82, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "LEFT" },
-            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 }, -- Changed from -10
-            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 } -- Unchanged for now
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 },
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     },
     ["COMPLETED_CLIPS"] = {
         tabId = "COMPLETED_CLIPS",
         tabName = "Выжившие",
         defaultSortKey = "CLIP_INFO",
-        defaultSortAscending = false, -- Assuming higher playedTime is "better"
+        defaultSortAscending = false,
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 140, sortKey = "streamer", fontStringName = "Name" },
             { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" },
@@ -37,32 +37,33 @@ ns.DeathClipsTabSettings = {
             { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     },
-    ["NEW_TAB_1"] = {
-        tabId = "NEW_TAB_1",
-        tabName = "Новый Таб 1", -- "New Tab 1"
-        defaultSortKey = "STREAMER", -- Default sort by streamer name
-        defaultSortAscending = true,
+    ["REINCARNATED_CLIPS"] = {
+        tabId = "REINCARNATED_CLIPS",
+        tabName = "Восставшие",
+        defaultSortKey = "WHEN_HAPPENED", -- Original death time
+        defaultSortAscending = false,      -- Most recent original deaths first
         columns = {
-            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 150, sortKey = "streamer", fontStringName = "Name" },
-            { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" }, -- Hidden
-            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
-            { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip" },
-            { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 71, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "RIGHT" },
-            { id = "RACE_TYPE", headerText = "RACE", visible = false, baseWidth = 82, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "LEFT" }, -- Hidden
-            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 },
-            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Уровень", visible = true, baseWidth = 50, sortKey = "level", fontStringName = "Level" }, -- New Level
+            { id = "OLD_STATS", headerText = "Старые Данные", visible = true, baseWidth = 110, sortKey = "oldlevel", fontStringName = "OldStatsText" },
+            { id = "CLIP_INFO", headerText = "Причина смерти", visible = true, baseWidth = 180, sortKey = "clip", fontStringName = "Clip" },
+            { id = "WHERE_DIED", headerText = "Где умер", visible = false, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
+            { id = "RACE_TYPE", headerText = "RACE", visible = false, baseWidth = 82, sortKey = "race", fontStringName = "RaceText" },
+            { id = "CLASS_TYPE", headerText = "CLASS", visible = false, baseWidth = 71, sortKey = "class", fontStringName = "ClassText" },
+            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 70, sortKey = "when", fontStringName = "WhenText", dataRowXOffset = 2 },
+            { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 60, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     },
-    ["NEW_TAB_2"] = {
+    ["NEW_TAB_2"] = { -- This tab configuration remains untouched
         tabId = "NEW_TAB_2",
-        tabName = "Новый Таб 2", -- "New Tab 2"
-        defaultSortKey = "REACTION", -- Default sort by rating
+        tabName = "Новый Таб 2",
+        defaultSortKey = "REACTION",
         defaultSortAscending = false,
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 140, sortKey = "streamer", fontStringName = "Name" },
             { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" },
             { id = "CLIP_INFO", headerText = "Время прохождения", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip", dataRowXOffset = -8 },
-            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" }, -- Made visible
+            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
             { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 133, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 15 },
             { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 144, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 2 },
             { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText" },
@@ -199,7 +200,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
 
     local liveConfig = ns.DeathClipsTabSettings["LIVE_CLIPS"]
     local compConfig = ns.DeathClipsTabSettings["COMPLETED_CLIPS"]
-    local newTab1Config = ns.DeathClipsTabSettings["NEW_TAB_1"]
+    local newTab1Config = ns.DeathClipsTabSettings["REINCARNATED_CLIPS"] -- Updated key
     local newTab2Config = ns.DeathClipsTabSettings["NEW_TAB_2"]
 
     -- Size & Positioning & Text
@@ -240,10 +241,10 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
         elseif frame.currentSubTab == compConfig.tabId then
             compBtn.selectedGlow:Show()
             compBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        elseif frame.currentSubTab == newTab1Config.tabId then
+        elseif frame.currentSubTab == newTab1Config.tabId then -- newTab1Config now refers to REINCARNATED_CLIPS
             newTab1Btn.selectedGlow:Show()
             newTab1Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        elseif frame.currentSubTab == newTab2Config.tabId then
+        elseif frame.currentSubTab == newTab2Config.tabId then -- This is still NEW_TAB_2
             newTab2Btn.selectedGlow:Show()
             newTab2Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
         end

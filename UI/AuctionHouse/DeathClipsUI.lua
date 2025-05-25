@@ -103,6 +103,7 @@ function OFAuctionFrameDeathClips_OnLoad()
             clipMobLevel = _G[buttonName .. "ClipMobLevel"],
             rating = _G[buttonName .. "Rating"],
             clipFrame = _G[buttonName .. "Clip"],
+            oldStatsText = _G[buttonName .. "OldStatsText"], -- Added for REINCARNATED_CLIPS
         }
         button.displayedClipID = nil -- Initialize for conditional updates
 
@@ -614,15 +615,21 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         local whereFS = elements.whereText
         local clipTextFS = elements.clipText
         local mobLevelFS = elements.clipMobLevel
+        local oldStatsFS = elements.oldStatsText -- New FontString element
         local iconTexture = elements.itemIconTexture
-        local lvl = clip.level or 1 -- Used by multiple sections, define once if LEVEL or CLIP_INFO is visible
 
-        -- ===== CLASS ICON (Typically always visible if Name is visible, or generally present) =====
-        -- Assuming class icon visibility is tied to the general presence of a row, not a specific data column being toggleable.
-        -- If it needs to be tied to a column (e.g. "STREAMER" which uses "Name" FS), this logic might need adjustment.
+        -- Determine which level and class to use based on reincarnated status
+        local displayLevel = clip.isReincarnated and clip.newLevel or clip.level
+        local displayClassToken = clip.isReincarnated and clip.newClassToken or clip.class -- For icon and name color
+        local actualLevelForColor = displayLevel or 1 -- Fallback for GetQuestDifficultyColor
+
+        -- ===== CLASS ICON =====
         local newTexture = "Interface\\Icons\\INV_Misc_QuestionMark"
         local newCoords = { 0, 1, 0, 1 }
-        if clip.class and CLASS_ICON_TCOORDS[clip.class] then
+        if displayClassToken and CLASS_ICON_TCOORDS[displayClassToken] then
+            newTexture = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
+            newCoords = CLASS_ICON_TCOORDS[displayClassToken]
+        elseif clip.class and CLASS_ICON_TCOORDS[clip.class] then -- Fallback to original class if new one is not there
             newTexture = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
             newCoords = CLASS_ICON_TCOORDS[clip.class]
         end
@@ -637,17 +644,27 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             if nameFS:GetText() ~= newNameText then
                 nameFS:SetText(newNameText)
             end
-            local clr = RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
+            local classColor = RAID_CLASS_COLORS[displayClassToken] or RAID_CLASS_COLORS[clip.class] or { r = .85, g = .85, b = .85 }
             local curR, curG, curB = nameFS:GetTextColor()
-            if curR ~= clr.r or curG ~= clr.g or curB ~= clr.b then
-                nameFS:SetTextColor(clr.r, clr.g, clr.b)
+            if curR ~= classColor.r or curG ~= classColor.g or curB ~= classColor.b then
+                nameFS:SetTextColor(classColor.r, classColor.g, classColor.b)
             end
         end
 
-        -- ===== LEVEL =====
+        -- ===== LEVEL (Current Level) =====
         if columnVisibility["Level"] then
-            local q = GetQuestDifficultyColor(lvl)
-            levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, lvl)
+            local q = GetQuestDifficultyColor(actualLevelForColor)
+            levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, actualLevelForColor)
+        end
+
+        -- ===== OLD STATS (Old Level and Old Class) =====
+        if columnVisibility["OldStatsText"] and oldStatsFS then
+            if clip.isReincarnated then
+                local oldClassDisplay = (clip.oldClassToken and LOCALIZED_CLASS_NAMES_MALE[clip.oldClassToken]) or ""
+                oldStatsFS:SetText(string.format("%s %s", clip.oldLevel or "?", oldClassDisplay))
+            else
+                oldStatsFS:SetText("")
+            end
         end
 
         -- ===== WHERE =====
@@ -668,16 +685,15 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             local causeId = clip.causeCode or 0
             local newClipDisplayText = ""
             local newMobLevelText = ""
-            local mr, mg, mb = 0, 0, 0
+            local mr, mg, mb
 
-            if not clip.completed then -- Logic for non-completed clips (death cause, mob level)
-                if clipTextFS:GetFontObject() ~= GameFontNormal then
-                    clipTextFS:SetFontObject("GameFontNormal")
-                end
+            if clip.isReincarnated then
+                -- For reincarnated, always show original death cause
+                if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
 
                 if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
                     local mobLvl = clip.mobLevel or 0
-                    local playerLvl = lvl -- lvl defined above
+                    local playerLvl = clip.oldLevel or 1 -- Use oldLevel for color calculation against mob
                     local diff = mobLvl - playerLvl
                     mr, mg, mb = 0, 1, 0
                     if diff >= 4 then mr, mg, mb = 1, 0, 0
@@ -685,23 +701,16 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                     elseif diff >= -1 then mr, mg, mb = 1, 1, 0
                     elseif diff >= -4 then mr, mg, mb = 0, 1, 0
                     else mr, mg, mb = .5, .5, .5 end
-
                     newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
                     newMobLevelText = tostring(mobLvl)
                     mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
                 else
                     newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
                     newMobLevelText = ""
-                    mobLevelFS:SetTextColor(1,1,1,1) -- Reset color if no mob level
+                    mobLevelFS:SetTextColor(1,1,1,1)
                 end
-                if mobLevelFS:GetText() ~= newMobLevelText then
-                    mobLevelFS:SetText(newMobLevelText)
-                end
-                mobLevelFS:SetJustifyH("CENTER") -- Always justify
-            else -- Logic for completed clips (timer)
-                if clipTextFS:GetFontObject() ~= GameFontNormalLarge then
-                    clipTextFS:SetFontObject("GameFontNormalLarge")
-                end
+            elseif clip.completed then -- Standard completed clips (not reincarnated)
+                if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
                 if clip.playedTime then
                     local s = clip.playedTime
                     newClipDisplayText = string.format("%dд %dч %dм %dс",
@@ -710,16 +719,33 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                 else
                     newClipDisplayText = "Грузится"
                 end
-                if mobLevelFS:GetText() ~= "" then -- Clear mob level for completed
-                    mobLevelFS:SetText("")
+                newMobLevelText = "" -- No mob level for completed
+            else -- Standard live clips (not reincarnated, not completed)
+                if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
+                if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
+                    local mobLvl = clip.mobLevel or 0
+                    local playerLvl = displayLevel or 1 -- Use current display level
+                    local diff = mobLvl - playerLvl
+                    mr, mg, mb = 0, 1, 0
+                    if diff >= 4 then mr, mg, mb = 1, 0, 0
+                    elseif diff >= 2 then mr, mg, mb = 1, .5, 0
+                    elseif diff >= -1 then mr, mg, mb = 1, 1, 0
+                    elseif diff >= -4 then mr, mg, mb = 0, 1, 0
+                    else mr, mg, mb = .5, .5, .5 end
+                    newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
+                    newMobLevelText = tostring(mobLvl)
+                    mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
+                else
+                    newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
+                    newMobLevelText = ""
+                    mobLevelFS:SetTextColor(1,1,1,1)
                 end
             end
 
-            if clipTextFS:GetText() ~= newClipDisplayText then
-                clipTextFS:SetText(newClipDisplayText)
-            end
+            if clipTextFS:GetText() ~= newClipDisplayText then clipTextFS:SetText(newClipDisplayText) end
+            if mobLevelFS:GetText() ~= newMobLevelText then mobLevelFS:SetText(newMobLevelText) end
+            mobLevelFS:SetJustifyH("CENTER") -- Always justify if it's part of the Clip column
         end
-
 
         -- ===== CLASS TEXT =====
         if columnVisibility["ClassText"] then
@@ -824,25 +850,77 @@ function OFAuctionFrameDeathClips_Update()
     local forceFullRowUpdate = false
     if frame.needsDataRefresh then
         local rawPool = ns.GetLiveDeathClips()
-        local pool = ns.FilterClipsThisRealm(rawPool)
+        local pool = ns.FilterClipsThisRealm(rawPool) -- Base pool for LIVE and for finding original clips
         local tempClips = {}
 
-        if ns.currentActiveTabId == "COMPLETED_CLIPS" then
-            for _, clip in ipairs(pool) do
-                if clip.completed then
-                    table.insert(tempClips, clip)
+        if ns.currentActiveTabId == "REINCARNATED_CLIPS" then
+            if _G.AuctionHouseDBSaved and _G.AuctionHouseDBSaved.watchedFriends then -- Ensure global DB is used
+                for playerNameLower, watchedEntry in pairs(_G.AuctionHouseDBSaved.watchedFriends) do
+                    if watchedEntry.hasBeenNotifiedForThisAdd and watchedEntry.characterName then
+                        -- Call the namespaced function
+                        local _, isConnected, currentLevel, currentClassToken = ns.IsPlayerOnFriendsList(watchedEntry.characterName)
+
+                        if currentLevel and currentClassToken then -- Friend still exists and info retrieved
+                            local latestOriginalClip = nil
+                            for _, clip in ipairs(pool) do -- Search in the 'pool' of live/non-completed clips
+                                if string.lower(clip.characterName or "") == playerNameLower and not clip.completed then
+                                    if not latestOriginalClip or (clip.ts and latestOriginalClip.ts and clip.ts > latestOriginalClip.ts) then
+                                        latestOriginalClip = clip
+                                    end
+                                end
+                            end
+
+                            if latestOriginalClip then
+                                local displayClip = {
+                                    characterName = watchedEntry.characterName,
+                                    level = currentLevel, -- 'level' for sorting will refer to newLevel
+                                    newLevel = currentLevel,
+                                    -- Assuming ns.russianClassNameToEnglishToken is available in ns
+                                    newClassToken = (ns.russianClassNameToEnglishToken and ns.russianClassNameToEnglishToken[currentClassToken]) or currentClassToken,
+                                    oldLevel = watchedEntry.clipLevel,
+                                    oldClassToken = latestOriginalClip.class,
+
+                                    id = latestOriginalClip.id,
+                                    deathCause = latestOriginalClip.deathCause,
+                                    causeCode = latestOriginalClip.causeCode,
+                                    mobLevel = latestOriginalClip.mobLevel,
+                                    ts = latestOriginalClip.ts, -- This is the original death timestamp
+                                    -- rating = latestOriginalClip.rating, -- If rating is stored directly on clip
+                                    mapId = latestOriginalClip.mapId, -- For 'where' if needed by helper
+                                    where = latestOriginalClip.where, -- For 'where' if needed by helper
+                                    faction = latestOriginalClip.faction,
+                                    class = latestOriginalClip.class, -- Original class for color consistency if newClassToken is not used by nameFS
+                                    -- Mark as reincarnated for potential specific handling in UpdateClipEntry
+                                    isReincarnated = true
+                                }
+                                -- If ratings are fetched by clip.id, this will use original clip's rating
+                                -- The 'rating' field in displayClip might be populated by UpdateClipEntry or here if available on latestOriginalClip
+                                table.insert(tempClips, displayClip)
+                            end
+                        end
+                    end
                 end
             end
-        else
-            -- "LIVE_CLIPS" or default
-            for _, clip in ipairs(pool) do
-                if not clip.completed then
+        elseif ns.currentActiveTabId == "COMPLETED_CLIPS" then
+            -- Corrected logic for COMPLETED_CLIPS:
+            -- tempClips is already initialized before this if/elseif/else block
+            if pool then -- Check if pool is not nil (it's already realm-filtered)
+                for _, clip in ipairs(pool) do -- Iterate 'pool'
+                    if clip.completed then
+                        table.insert(tempClips, clip)
+                    end
+                end
+            end
+        else -- Default to "LIVE_CLIPS"
+            for _, clip in ipairs(pool) do -- 'pool' here is already non-completed clips
+                if not clip.completed then -- This check is redundant if 'pool' is already filtered
                     table.insert(tempClips, clip)
                 end
             end
         end
 
-        local _, sortKey, sortAscending = OFGetCurrentSortParams("clips") -- This should be fine as OFGetCurrentSortParams gets it from the game's sort state
+        -- Sorting should occur *after* tempClips is populated for the specific tab
+        -- local _, sortKey, sortAscending = OFGetCurrentSortParams("clips") -- Already declared above in the function
         tempClips = ns.SortDeathClips(tempClips, OFGetCurrentSortParams("clips"))
 
         frame.currentDisplayableClips = tempClips

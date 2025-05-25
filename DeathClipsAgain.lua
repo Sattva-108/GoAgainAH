@@ -36,7 +36,7 @@ local LINE_SPACING = 2
 
 -- ShowStatusTooltip and HideStatusTooltip are removed.
 
-local function IsPlayerOnFriendsList(characterName)
+function ns.IsPlayerOnFriendsList(characterName)
     if not characterName or characterName == "" then return false end
     local lowerCharacterName = string.lower(characterName)
     for i = 1, GetNumFriends() do
@@ -192,7 +192,7 @@ local function ShowHoverTooltipForIcon(iconButton)
     if cd.faction ~= pf then
         HoverTooltip:AddLine("|cffff2020(Другая фракция)|r")
     else
-        local isFriend, isConnected, lvl = IsPlayerOnFriendsList(name)
+        local isFriend, isConnected, lvl = ns.IsPlayerOnFriendsList(name) -- Corrected call
         HoverTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
 
         if isFriend then
@@ -285,7 +285,7 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
         if AddFriend then
             -- Check existing friend status
             local wasAlreadyFriend, wasConnected, currentActualLevel, currentClass, currentArea =
-            IsPlayerOnFriendsList(characterName)
+            ns.IsPlayerOnFriendsList(characterName) -- Corrected call
 
             AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 
@@ -322,20 +322,24 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
             -- After 0.3s, check whether the add succeeded
             C_Timer:After(0.3, function()
                 local isNowFriend, isConnected, friendActualLevel, friendClass, friendArea =
-                IsPlayerOnFriendsList(characterName)
+                ns.IsPlayerOnFriendsList(characterName) -- Corrected call
 
                 if isNowFriend then
                     ns.lastActionStatus = { characterName = characterName, text = string.format("|cff00ff00Добавлен в друзья:|r %s", characterName) }
                     if isConnected then
                         ns.lastActionStatus.line2 = "|cff69ccf0В сети|r"
                         AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
-                            clipLevel = originalClipLevelFromThisInteraction, hasBeenNotifiedForThisAdd = false,
+                            characterName = characterName, -- Added original casing
+                            clipLevel = originalClipLevelFromThisInteraction,
+                            hasBeenNotifiedForThisAdd = false,
                         }
                         NotifyPlayerLevelDrop(characterName, friendActualLevel, originalClipLevelFromThisInteraction, friendClass, friendArea, "added")
                     else
                         ns.lastActionStatus.line2 = "|cff888888Не в сети|r"
                         AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
-                            clipLevel = originalClipLevelFromThisInteraction, hasBeenNotifiedForThisAdd = false,
+                            characterName = characterName, -- Added original casing
+                            clipLevel = originalClipLevelFromThisInteraction,
+                            hasBeenNotifiedForThisAdd = false,
                         }
                     end
                 else
@@ -417,19 +421,14 @@ local function HandleFriendListUpdate()
 end
 
 local function CleanupNotifiedFriendsDB()
-    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
-    local playersToCleanup = {}
-    for playerNameLower, data in pairs(AuctionHouseDBSaved.watchedFriends) do
-        if data.hasBeenNotifiedForThisAdd then
-            table.insert(playersToCleanup, playerNameLower)
-        end
-    end
-    if #playersToCleanup > 0 then
-        print(addonName .. ": Очистка " .. #playersToCleanup .. " уведомленных друзей из БД при входе в мир.")
-        for _, key in ipairs(playersToCleanup) do
-            AuctionHouseDBSaved.watchedFriends[key] = nil
-        end
-    end
+    -- Intentionally left empty to preserve watchedFriends entries
+    -- regardless of their hasBeenNotifiedForThisAdd status, allowing
+    -- the "Восставшие" tab to be persistent across sessions.
+    -- Original logic for cleaning up notified friends has been removed.
+
+    -- If there's any other type of cleanup needed in the future (e.g., removing very old entries
+    -- or entries for characters no longer on friends list for a long time),
+    -- that logic could be added here. For now, no cleanup is performed.
 end
 
 local eventFrame = CreateFrame("Frame")
