@@ -37,19 +37,54 @@ local LINE_SPACING = 2
 -- ShowStatusTooltip and HideStatusTooltip are removed.
 
 function ns.IsPlayerOnFriendsList(characterName)
-    if not characterName or characterName == "" then return false end
+    if not characterName or characterName == "" then
+        return false, false, nil, nil, nil, nil
+    end
     local lowerCharacterName = string.lower(characterName)
+    local isFriend = false
+    local connected = false
+    local displayLevel = nil
+    local classToken = nil
+    local area = nil
+    local clipLevelFromDB = nil
+
     for i = 1, GetNumFriends() do
-        local name, level, classToken, area, connected = GetFriendInfo(i)
+        local name, levelFromGetFriendInfo, classTokenFromGetFriendInfo, areaFromGetFriendInfo, connectedFromGetFriendInfo = GetFriendInfo(i)
         if name then
             local lowerName = string.lower(name)
             local friendBaseName = lowerName:match("([^%-]+)")
             if friendBaseName == lowerCharacterName or lowerName == lowerCharacterName then
-                return true, connected, level, classToken, area
+                isFriend = true
+                connected = connectedFromGetFriendInfo
+                classToken = classTokenFromGetFriendInfo
+                area = areaFromGetFriendInfo
+
+                if connected then
+                    displayLevel = levelFromGetFriendInfo
+                else
+                    -- Friend is offline, try to get level from DB
+                    local watchedEntry = AuctionHouseDBSaved.watchedFriends and AuctionHouseDBSaved.watchedFriends[lowerCharacterName]
+                    if watchedEntry then
+                        if watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0 then
+                            displayLevel = watchedEntry.lastKnownActualLevel
+                        else
+                            displayLevel = watchedEntry.clipLevel -- Fallback to clipLevel if lastKnown is invalid
+                        end
+                    else
+                        displayLevel = 0 -- Should not happen for a watched friend, but as a fallback
+                    end
+                end
+
+                -- Get clipLevelFromDB regardless of online status
+                local watchedEntryForClipLevel = AuctionHouseDBSaved.watchedFriends and AuctionHouseDBSaved.watchedFriends[lowerCharacterName]
+                if watchedEntryForClipLevel then
+                    clipLevelFromDB = watchedEntryForClipLevel.clipLevel
+                end
+                return isFriend, connected, displayLevel, classToken, area, clipLevelFromDB
             end
         end
     end
-    return false, false, nil, nil, nil
+    return false, false, nil, nil, nil, nil -- Not found on friends list
 end
 
 ns.russianClassNameToEnglishToken = {
@@ -192,15 +227,18 @@ local function ShowHoverTooltipForIcon(iconButton)
     if cd.faction ~= pf then
         HoverTooltip:AddLine("|cffff2020(Другая фракция)|r")
     else
-        local isFriend, isConnected, lvl = ns.IsPlayerOnFriendsList(name) -- Corrected call
+        local isFriend, isConnected, displayLevel, _, _, clipLevelFromDB = ns.IsPlayerOnFriendsList(name)
         HoverTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
 
         if isFriend then
             HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
             if isConnected then
-                HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", lvl or 0))
+                HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", displayLevel or 0))
             else
-                HoverTooltip:AddLine("|cff888888(Не в сети)|r")
+                HoverTooltip:AddLine(string.format("|cff888888(Не в сети - Уровень: %d)|r", displayLevel or 0))
+                if clipLevelFromDB and clipLevelFromDB ~= displayLevel then
+                    HoverTooltip:AddLine(string.format("|cff888888(Исходный уровень: %d)|r", clipLevelFromDB))
+                end
             end
         else
             HoverTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r")
@@ -284,23 +322,28 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
 
         if AddFriend then
             -- Check existing friend status
-            local wasAlreadyFriend, wasConnected, currentActualLevel, currentClass, currentArea =
-            ns.IsPlayerOnFriendsList(characterName) -- Corrected call
+            local wasAlreadyFriend, wasConnected, currentDisplayLevel, currentClass, currentArea, currentClipLevelFromDB =
+            ns.IsPlayerOnFriendsList(characterName)
 
             AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 
             if wasAlreadyFriend then
                 ns.lastActionStatus = { characterName = characterName, text = string.format("%s |cff00ff00уже в друзьях.|r", characterName) }
                 if wasConnected then
-                    ns.lastActionStatus.line2 = string.format("|cff69ccf0В сети - Ур: %d|r", currentActualLevel or 0)
+                    ns.lastActionStatus.line2 = string.format("|cff69ccf0В сети - Ур: %d|r", currentDisplayLevel or 0)
                 else
-                    ns.lastActionStatus.line2 = "|cff888888Не в сети|r"
+                    ns.lastActionStatus.line2 = string.format("|cff888888(Не в сети - Уровень: %d)|r", currentDisplayLevel or 0)
+                    if currentClipLevelFromDB and currentClipLevelFromDB ~= currentDisplayLevel then
+                        ns.lastActionStatus.line2 = ns.lastActionStatus.line2 .. string.format(" (Исходный: %d)", currentClipLevelFromDB)
+                    end
                 end
                 ShowHoverTooltipForIcon(iconFrameElement)
 
                 local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
-                if wasConnected and watchedEntry and watchedEntry.clipLevel then
-                    NotifyPlayerLevelDrop(characterName, currentActualLevel, watchedEntry.clipLevel, currentClass, currentArea)
+                -- NotifyPlayerLevelDrop should be called with the live level if the player is online.
+                -- currentDisplayLevel will be the live level if wasConnected is true.
+                if wasConnected and watchedEntry and watchedEntry.clipLevel and currentDisplayLevel then
+                    NotifyPlayerLevelDrop(characterName, currentDisplayLevel, watchedEntry.clipLevel, currentClass, currentArea)
                 end
                 return
             end
@@ -321,26 +364,34 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
 
             -- After 0.3s, check whether the add succeeded
             C_Timer:After(0.3, function()
-                local isNowFriend, isConnected, friendActualLevel, friendClass, friendArea =
-                ns.IsPlayerOnFriendsList(characterName) -- Corrected call
+                local isNowFriend, isConnected, newFriendDisplayLevel, newFriendClass, newFriendArea, newFriendClipLevelFromDB =
+                ns.IsPlayerOnFriendsList(characterName)
 
                 if isNowFriend then
                     ns.lastActionStatus = { characterName = characterName, text = string.format("|cff00ff00Добавлен в друзья:|r %s", characterName) }
                     if isConnected then
                         ns.lastActionStatus.line2 = "|cff69ccf0В сети|r"
-                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
-                            characterName = characterName, -- Added original casing
+                        local friendData = {
+                            characterName = characterName,
                             clipLevel = originalClipLevelFromThisInteraction,
+                            lastKnownActualLevel = newFriendDisplayLevel,
+                            lastKnownActualLevelTimestamp = GetTime(),
                             hasBeenNotifiedForThisAdd = false,
                         }
-                        NotifyPlayerLevelDrop(characterName, friendActualLevel, originalClipLevelFromThisInteraction, friendClass, friendArea, "added")
+                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
+
+                        NotifyPlayerLevelDrop(characterName, newFriendDisplayLevel, originalClipLevelFromThisInteraction, newFriendClass, newFriendArea, "added")
                     else
                         ns.lastActionStatus.line2 = "|cff888888Не в сети|r"
-                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = {
-                            characterName = characterName, -- Added original casing
+                        local friendData = {
+                            characterName = characterName,
                             clipLevel = originalClipLevelFromThisInteraction,
+                            lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Friend is offline, use clip level as last known
+                            lastKnownActualLevelTimestamp = GetTime(),
                             hasBeenNotifiedForThisAdd = false,
                         }
+                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
+
                     end
                 else
                     ns.lastActionStatus = { characterName = characterName, text = string.format("|cffffcc00Не удалось добавить:|r %s", characterName) }
@@ -395,13 +446,26 @@ end
 local function PerformFriendListScan()
     lastFriendListScanTime = GetTime()
     if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
+
     for i = 1, GetNumFriends() do
-        local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i)
-        if name and connected then
+        local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i) -- Renamed liveLevel to currentActualLevel for clarity
+        if name and connected then -- Only process online friends
             local lowerName = string.lower(name)
             local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
-            if watchedEntry and watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
-                NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
+
+            if watchedEntry then
+                -- Check for level change to update lastKnownActualLevel
+                if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
+                    watchedEntry.lastKnownActualLevel = currentActualLevel
+                    watchedEntry.lastKnownActualLevelTimestamp = GetTime()
+
+                end
+
+                -- Logic for level drop notification (original functionality)
+                if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
+                    NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
+                end
             end
         end
     end
@@ -442,6 +506,7 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
         AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
+
     elseif event == "PLAYER_ENTERING_WORLD" then
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
         AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
