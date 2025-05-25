@@ -243,6 +243,15 @@ HoverTooltip:SetFrameStrata("TOOLTIP")
 -- HoverTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 
 local function ShowHoverTooltipForIcon(iconButton)
+    -- Guard clause: Exit if button is invalid or mouse is not over it.
+    -- Guard clause: Exit if button is invalid or mouse is not over it.
+    if not iconButton or not iconButton:IsMouseOver() then
+        if GoAgainAH_HoverTooltip then -- Check if tooltip exists
+            GoAgainAH_HoverTooltip:Hide()
+        end
+        return -- Exit the function if the mouse is not over the iconButton
+    end
+
     HoverTooltip:ClearLines() -- Clear lines at the beginning
 
     -- hide the standard GameTooltip if it’s on this button
