@@ -254,6 +254,20 @@ OFAuctionSort["clips_rate"] = {
     { column = "rate",	reverse = false	},
 }
 
+OFAuctionSort["clips_oldlevel"] = {
+	-- Secondary sort criterion: by 'when' (timestamp), descending (newest first)
+	{ column = "when",      reverse = true  },
+	-- Primary sort criterion: by 'oldlevel', ascending (lower levels first)
+	{ column = "oldlevel",  reverse = false }
+}
+
+OFAuctionSort["clips_oldclass"] = {
+	-- Secondary sort criterion: by 'when' (timestamp), descending (newest first)
+	{ column = "when",      reverse = true  },
+	-- Primary sort criterion: by 'oldclass' (which uses 'oldClassToken'), ascending (alphabetical)
+	{ column = "oldclass",  reverse = false }
+}
+
 
 OFAuctionSort["lfg_name"] = {
     { column = "viewers",		reverse = true	},

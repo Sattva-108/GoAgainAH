@@ -83,51 +83,51 @@
 					</Anchor>
 				</Anchors>
 			</Button>
-            <Button name="OFAuctionFrameTab4" inherits="OFAuctionTabTemplate" id="4" text="L_REVIEWS_N">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab3" relativePoint="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-15" y="0" />
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-            </Button>
-            <Button name="OFAuctionFrameTab5" inherits="OFAuctionTabTemplate" id="5" text="Поиск группы">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab4" relativePoint="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-15" y="0" />
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-            </Button>
-            <Button name="OFAuctionFrameTab6" inherits="OFAuctionTabTemplate" id="6" text="Не вывезли">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab5" relativePoint="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-15" y="0" />
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-            </Button>
-            <Button name="OFAuctionFrameTab7" inherits="OFAuctionTabTemplate" id="7" text="Чёрный список">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab6" relativePoint="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-15" y="0" />
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-            </Button>
-            <Button name="OFAuctionFrameTab8" inherits="OFAuctionTabTemplate" id="8" text="">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab7" relativePoint="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-15" y="0" />
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-            </Button>
+			<Button name="OFAuctionFrameTab4" inherits="OFAuctionTabTemplate" id="4" text="L_REVIEWS_N">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab3" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-15" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OFAuctionFrameTab5" inherits="OFAuctionTabTemplate" id="5" text="Поиск группы">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab4" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-15" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OFAuctionFrameTab6" inherits="OFAuctionTabTemplate" id="6" text="Не вывезли">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab5" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-15" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OFAuctionFrameTab7" inherits="OFAuctionTabTemplate" id="7" text="Чёрный список">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab6" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-15" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OFAuctionFrameTab8" inherits="OFAuctionTabTemplate" id="8" text="">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab7" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-15" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
 			<Frame name="OFAuctionFrameMoneyFrame" inherits="SmallMoneyFrameTemplate">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT">
@@ -349,7 +349,7 @@
 							</Anchor>
 						</Anchors>
 					</Button>
-                    <ScrollFrame name="OFBrowseFilterScrollFrame" inherits="FauxScrollFrameTemplate">
+					<ScrollFrame name="OFBrowseFilterScrollFrame" inherits="FauxScrollFrameTemplate">
 						<Size>
 							<AbsDimension x="160" y="305" />
 						</Size>
@@ -460,31 +460,31 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseLevelSort" inherits="OFAuctionSortButtonTemplate" text="REQ_LEVEL_ABBR">
-                        <Size x="35" y="19" />
-                        <Anchors>
-                            <Anchor x="-2" point="LEFT" relativeTo="OFBrowseQualitySort" relativePoint="RIGHT" />
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                _G[self:GetName().."Arrow"]:SetPoint("LEFT", _G[self:GetName().."Text"], "RIGHT", 0, -2)
-                            </OnLoad>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("list", "level")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="OFBrowseTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
-                        <Size x="50" y="19" />
-                        <Anchors>
-                            <Anchor x="-2" point="LEFT" relativeTo="OFBrowseLevelSort" relativePoint="RIGHT" />
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("list", "type")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
+					<Button name="OFBrowseLevelSort" inherits="OFAuctionSortButtonTemplate" text="REQ_LEVEL_ABBR">
+						<Size x="35" y="19" />
+						<Anchors>
+							<Anchor x="-2" point="LEFT" relativeTo="OFBrowseQualitySort" relativePoint="RIGHT" />
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								_G[self:GetName().."Arrow"]:SetPoint("LEFT", _G[self:GetName().."Text"], "RIGHT", 0, -2)
+							</OnLoad>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("list", "level")
+							</OnClick>
+						</Scripts>
+					</Button>
+					<Button name="OFBrowseTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
+						<Size x="50" y="19" />
+						<Anchors>
+							<Anchor x="-2" point="LEFT" relativeTo="OFBrowseLevelSort" relativePoint="RIGHT" />
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("list", "type")
+							</OnClick>
+						</Scripts>
+					</Button>
 					<Button name="OFBrowseDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
 						<Size>
 							<AbsDimension x="80" y="19" />
@@ -502,7 +502,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseHighBidderSort" inherits="OFAuctionSortButtonTemplate" text="L_BUYER_SELLER">
+					<Button name="OFBrowseHighBidderSort" inherits="OFAuctionSortButtonTemplate" text="L_BUYER_SELLER">
 						<Size>
 							<AbsDimension x="139" y="19" />
 						</Size>
@@ -519,23 +519,23 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
-                        <Size>
-                            <AbsDimension x="60" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBrowseHighBidderSort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("list", "rating")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
+					<Button name="OFBrowseRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
+						<Size>
+							<AbsDimension x="60" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFBrowseHighBidderSort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("list", "rating")
+							</OnClick>
+						</Scripts>
+					</Button>
 					<Button name="OFBrowseCurrentBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
 						<Size>
 							<AbsDimension x="126" y="19" />
@@ -637,25 +637,25 @@
 							</Anchor>
 						</Anchors>
 						<Scripts>
-                            <OnLoad>
-                                self:SetText(OF_BROWSE_SEARCH_PLACEHOLDER)
-                            </OnLoad>
-                            <OnEditFocusLost>
-                                if self:GetText() == "" then
-                                    self:SetText(OF_BROWSE_SEARCH_PLACEHOLDER)
-                                end
-                                EditBox_ClearHighlight(self)
-                            </OnEditFocusLost>
-                            <OnEditFocusGained>
-                                if self:GetText() == OF_BROWSE_SEARCH_PLACEHOLDER then
-                                    self:SetText("")
-                                end
-                                EditBox_HighlightText(self)
-                            </OnEditFocusGained>
-                            <OnTextChanged function="OFAuctionFrameBrowse_Search"/>
+							<OnLoad>
+								self:SetText(OF_BROWSE_SEARCH_PLACEHOLDER)
+							</OnLoad>
+							<OnEditFocusLost>
+								if self:GetText() == "" then
+								self:SetText(OF_BROWSE_SEARCH_PLACEHOLDER)
+								end
+								EditBox_ClearHighlight(self)
+							</OnEditFocusLost>
+							<OnEditFocusGained>
+								if self:GetText() == OF_BROWSE_SEARCH_PLACEHOLDER then
+								self:SetText("")
+								end
+								EditBox_HighlightText(self)
+							</OnEditFocusGained>
+							<OnTextChanged function="OFAuctionFrameBrowse_Search"/>
 							<OnTabPressed>
 								if ( not IsShiftKeyDown() ) then
-                                    OFBrowseMinLevel:SetFocus()
+								OFBrowseMinLevel:SetFocus()
 								end
 							</OnTabPressed>
 							<OnEnterPressed inherit="append">
@@ -665,7 +665,7 @@
 							<OnEnter>
 								GameTooltip_SetDefaultAnchor(GameTooltip, self)
 								GameTooltip_SetTitle(GameTooltip, "Поиск по имени предмета")
-<!--								GameTooltip_AddNormalLine(GameTooltip, "Find items by name", true)-->
+								<!--								GameTooltip_AddNormalLine(GameTooltip, "Find items by name", true)-->
 								GameTooltip:Show()
 							</OnEnter>
 							<OnLeave>
@@ -701,9 +701,9 @@
 						<Scripts>
 							<OnTabPressed>
 								if ( IsShiftKeyDown() ) then
-									OFBrowseName:SetFocus();
+								OFBrowseName:SetFocus();
 								else
-									OFBrowseMaxLevel:SetFocus();
+								OFBrowseMaxLevel:SetFocus();
 								end
 							</OnTabPressed>
 							<OnEnterPressed function="EditBox_ClearFocus">
@@ -725,7 +725,7 @@
 						<Scripts>
 							<OnTabPressed>
 								if ( IsShiftKeyDown() ) then
-									OFBrowseMinLevel:SetFocus();
+								OFBrowseMinLevel:SetFocus();
 								end
 							</OnTabPressed>
 							<OnEnterPressed function="EditBox_ClearFocus">
@@ -733,38 +733,38 @@
 							</OnEnterPressed>
 						</Scripts>
 					</EditBox>
-                    <CheckButton name="OFOnlineOnlyCheckButton" inherits="UICheckButtonTemplate">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBrowseMaxLevel" relativePoint="RIGHT" x="10" />
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                OFOnlineOnlyCheckButtonText:SetFontObject(GameFontHighlightSmall)
-                                OFOnlineOnlyCheckButtonText:SetText(L_ONLINE_ONLY)
-                            </OnLoad>
-                            <OnClick function="OFOnlineOnlyCheckButton_OnClick" />
-                        </Scripts>
-                    </CheckButton>
-                    <CheckButton name="OFAuctionsOnlyCheckButton" inherits="UICheckButtonTemplate">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFOnlineOnlyCheckButton" relativePoint="RIGHT" x="65" />
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                OFAuctionsOnlyCheckButtonText:SetFontObject(GameFontHighlightSmall)
-                                OFAuctionsOnlyCheckButtonText:SetText(L_AUCTIONS_ONLY)
-                            </OnLoad>
-                            <OnClick function="OFAuctionsOnlyCheckButton_OnClick" />
-                        </Scripts>
-                    </CheckButton>
+					<CheckButton name="OFOnlineOnlyCheckButton" inherits="UICheckButtonTemplate">
+						<Size>
+							<AbsDimension x="24" y="24"/>
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFBrowseMaxLevel" relativePoint="RIGHT" x="10" />
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFOnlineOnlyCheckButtonText:SetFontObject(GameFontHighlightSmall)
+								OFOnlineOnlyCheckButtonText:SetText(L_ONLINE_ONLY)
+							</OnLoad>
+							<OnClick function="OFOnlineOnlyCheckButton_OnClick" />
+						</Scripts>
+					</CheckButton>
+					<CheckButton name="OFAuctionsOnlyCheckButton" inherits="UICheckButtonTemplate">
+						<Size>
+							<AbsDimension x="24" y="24"/>
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFOnlineOnlyCheckButton" relativePoint="RIGHT" x="65" />
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFAuctionsOnlyCheckButtonText:SetFontObject(GameFontHighlightSmall)
+								OFAuctionsOnlyCheckButtonText:SetText(L_AUCTIONS_ONLY)
+							</OnLoad>
+							<OnClick function="OFAuctionsOnlyCheckButton_OnClick" />
+						</Scripts>
+					</CheckButton>
 
-                    <Button name="OFBrowseSearchButton" inherits="UIPanelButtonTemplate" text="SEARCH">
+					<Button name="OFBrowseSearchButton" inherits="UIPanelButtonTemplate" text="SEARCH">
 						<Size>
 							<AbsDimension x="80" y="22" />
 						</Size>
@@ -896,8 +896,8 @@
 						</Layers>
 						<Scripts>
 							<OnClick>
-                                StaticPopup_Show("OF_FULFILL_AUCTION");
-                                self:Disable();
+								StaticPopup_Show("OF_FULFILL_AUCTION");
+								self:Disable();
 							</OnClick>
 						</Scripts>
 					</Button>
@@ -919,35 +919,35 @@
 						</Layers>
 						<Scripts>
 							<OnClick>
-                                OFBrowseBuyoutButton_OnClick(self);
+								OFBrowseBuyoutButton_OnClick(self);
 								self:Disable();
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBrowseLoanButton" inherits="UIPanelButtonTemplate" text="L_LOAN">
-                        <Size x="80" y="22" />
-                        <Anchors>
-                            <Anchor point="RIGHT" relativeTo="OFBrowseBuyoutButton" relativePoint="LEFT" />
-                        </Anchors>
-                        <Layers>
-                            <Layer level="BORDER">
-                                <Texture file="Interface\FrameGeneral\UI-Frame">
-                                    <Size x="13" y="25" />
-                                    <Anchors>
-                                        <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
-                                    </Anchors>
-                                    <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
-                                </Texture>
-                            </Layer>
-                        </Layers>
-                        <Scripts>
-                            <OnClick>
-                                OFBrowseLoanButton_OnClick(self)
-                                self:Disable();
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                </Frames>
+					<Button name="OFBrowseLoanButton" inherits="UIPanelButtonTemplate" text="L_LOAN">
+						<Size x="80" y="22" />
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFBrowseBuyoutButton" relativePoint="LEFT" />
+						</Anchors>
+						<Layers>
+							<Layer level="BORDER">
+								<Texture file="Interface\FrameGeneral\UI-Frame">
+									<Size x="13" y="25" />
+									<Anchors>
+										<Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+									</Anchors>
+									<TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnClick>
+								OFBrowseLoanButton_OnClick(self)
+								self:Disable();
+							</OnClick>
+						</Scripts>
+					</Button>
+				</Frames>
 				<Scripts>
 					<OnLoad function="OFAuctionFrameBrowse_OnLoad">
 
@@ -1006,78 +1006,78 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBidTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
-                        <Size x="60" y="19" />
-                        <Anchors>
-                            <Anchor x="-2" point="LEFT" relativeTo="OFBidQualitySort" relativePoint="RIGHT" />
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("bidder", "type")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-				   <Button name="OFBidBuyerName" inherits="OFAuctionSortButtonTemplate" text="L_BUYER_SELLER">
-                        <Size>
-                            <AbsDimension x="164" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBidTypeSort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("bidder", "buyer")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="OFBidRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
-                        <Size>
-                            <AbsDimension x="60" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBidBuyerName" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("bidder", "rating")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="OFBidDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
-                        <Size>
-                            <AbsDimension x="80" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBidRatingSort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("bidder", "delivery")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="OFBidStatusSort" inherits="OFAuctionSortButtonTemplate" text="STATUS">
+					<Button name="OFBidTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
+						<Size x="60" y="19" />
+						<Anchors>
+							<Anchor x="-2" point="LEFT" relativeTo="OFBidQualitySort" relativePoint="RIGHT" />
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("bidder", "type")
+							</OnClick>
+						</Scripts>
+					</Button>
+					<Button name="OFBidBuyerName" inherits="OFAuctionSortButtonTemplate" text="L_BUYER_SELLER">
+						<Size>
+							<AbsDimension x="164" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFBidTypeSort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("bidder", "buyer")
+							</OnClick>
+						</Scripts>
+					</Button>
+					<Button name="OFBidRatingSort" inherits="OFAuctionSortButtonTemplate" text="L_RATING">
+						<Size>
+							<AbsDimension x="60" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFBidBuyerName" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("bidder", "rating")
+							</OnClick>
+						</Scripts>
+					</Button>
+					<Button name="OFBidDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
+						<Size>
+							<AbsDimension x="80" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFBidRatingSort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("bidder", "delivery")
+							</OnClick>
+						</Scripts>
+					</Button>
+					<Button name="OFBidStatusSort" inherits="OFAuctionSortButtonTemplate" text="STATUS">
 						<Size>
 							<AbsDimension x="103" y="19" />
 						</Size>
 						<Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBidDeliverySort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
+							<Anchor point="LEFT" relativeTo="OFBidDeliverySort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
 						</Anchors>
 						<Scripts>
 							<OnClick>
@@ -1085,23 +1085,23 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBidBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
-                        <Size>
-                            <AbsDimension x="126" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFBidStatusSort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("bidder", "bid")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
+					<Button name="OFBidBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
+						<Size>
+							<AbsDimension x="126" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFBidStatusSort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("bidder", "bid")
+							</OnClick>
+						</Scripts>
+					</Button>
 					<ScrollFrame name="OFBidScrollFrame" inherits="FauxScrollFrameTemplate">
 						<Size>
 							<AbsDimension x="775" y="335" />
@@ -1256,31 +1256,31 @@
 							<OnClick function="OFBidInviteButton_OnClick" />
 						</Scripts>
 					</Button>
-                    <Button name="OFBidWhisperButton" inherits="UIPanelButtonTemplate" text="WHISPER">
-                        <Size>
-                            <AbsDimension x="80" y="22" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="RIGHT" relativeTo="OFBidInviteButton" relativePoint="LEFT" />
-                        </Anchors>
-                        <Layers>
-                            <Layer level="BORDER">
-                                <Texture file="Interface\FrameGeneral\UI-Frame">
-                                    <Size x="13" y="25" />
-                                    <Anchors>
-                                        <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
-                                    </Anchors>
-                                    <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
-                                </Texture>
-                            </Layer>
-                        </Layers>
-                        <Scripts>
-                            <OnClick function="OFBidWhisperButton_OnClick"/>
-                        </Scripts>
-                    </Button>
+					<Button name="OFBidWhisperButton" inherits="UIPanelButtonTemplate" text="WHISPER">
+						<Size>
+							<AbsDimension x="80" y="22" />
+						</Size>
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFBidInviteButton" relativePoint="LEFT" />
+						</Anchors>
+						<Layers>
+							<Layer level="BORDER">
+								<Texture file="Interface\FrameGeneral\UI-Frame">
+									<Size x="13" y="25" />
+									<Anchors>
+										<Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+									</Anchors>
+									<TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnClick function="OFBidWhisperButton_OnClick"/>
+						</Scripts>
+					</Button>
 					<Button name="OFBidCancelAuctionButton" inherits="UIPanelButtonTemplate" text="CANCEL_AUCTION">
 						<Size>
-                            <AbsDimension x="126" y="22" />
+							<AbsDimension x="126" y="22" />
 						</Size>
 						<Anchors>
 							<Anchor point="RIGHT" relativeTo="OFBidWhisperButton" relativePoint="LEFT">
@@ -1302,62 +1302,62 @@
 						</Layers>
 						<Scripts>
 							<OnClick>
-                                StaticPopup_Show("OF_CANCEL_AUCTION_PENDING")
-                                self:Disable()
+								StaticPopup_Show("OF_CANCEL_AUCTION_PENDING")
+								self:Disable()
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFBidForgiveLoanButton" inherits="UIPanelButtonTemplate" text="L_MARK_LOAN_COMPLETE">
-                        <Size>
-                            <AbsDimension x="165" y="22" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="RIGHT" relativeTo="OFBidCancelAuctionButton" relativePoint="LEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="BORDER">
-                                <Texture file="Interface\FrameGeneral\UI-Frame">
-                                    <Size x="13" y="25" />
-                                    <Anchors>
-                                        <Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
-                                    </Anchors>
-                                    <TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
-                                </Texture>
-                            </Layer>
-                        </Layers>
-                        <Scripts>
-                            <OnClick function="OFBidForgiveLoanButton_OnClick" />
-                        </Scripts>
-                    </Button>
+					<Button name="OFBidForgiveLoanButton" inherits="UIPanelButtonTemplate" text="L_MARK_LOAN_COMPLETE">
+						<Size>
+							<AbsDimension x="165" y="22" />
+						</Size>
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFBidCancelAuctionButton" relativePoint="LEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BORDER">
+								<Texture file="Interface\FrameGeneral\UI-Frame">
+									<Size x="13" y="25" />
+									<Anchors>
+										<Anchor x="5" y="1" point="TOPRIGHT" relativePoint="TOPLEFT" />
+									</Anchors>
+									<TexCoords left="0.0078125" right="0.109375" top="0.7578125" bottom="0.953125" />
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnClick function="OFBidForgiveLoanButton_OnClick" />
+						</Scripts>
+					</Button>
 				</Frames>
 				<Scripts>
-                    <OnLoad function="OFAuctionFrameBid_OnLoad"/>
+					<OnLoad function="OFAuctionFrameBid_OnLoad"/>
 					<OnShow function="OFAuctionFrameBid_Update"/>
 				</Scripts>
 			</Frame>
-            <Frame name="OFAuctionFrameDeathClips" hidden="true">
-                <Size>
-                    <AbsDimension x="758" y="447" />
-                </Size>
-                <Anchors>
-                    <Anchor point="TOPLEFT" />
-                </Anchors>
-                <Layers>
-                    <Layer level="BACKGROUND">
-                        <FontString name="OFDeathClipsTitle" inherits="GameFontNormal" text="">
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="48" y="-18" />
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                    </Layer>
+			<Frame name="OFAuctionFrameDeathClips" hidden="true">
+				<Size>
+					<AbsDimension x="758" y="447" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" />
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="OFDeathClipsTitle" inherits="GameFontNormal" text="">
+							<Anchors>
+								<Anchor point="TOP">
+									<Offset>
+										<AbsDimension x="48" y="-18" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
 					<Layer> <!-- Or whatever layer it's in -->
 						<FontString name="OFDeathClipsSearchCountText" inherits="GameFontHighlightSmall" text="" hidden="true">
 							<Size x="400" y="20"/> <!-- Give it a fixed size for now -->
@@ -1373,8 +1373,8 @@
 							</Scripts>
 						</FontString>
 					</Layer>
-                </Layers>
-                <Frames>
+				</Layers>
+				<Frames>
 					<!-- Streamer sort remains first -->
 					<Button name="OFDeathClipsStreamerSort" inherits="OFAuctionSortButtonTemplate" text="Имя">
 						<Size><AbsDimension x="90" y="19" /></Size>
@@ -1396,6 +1396,32 @@
 						</Anchors>
 						<Scripts>
 							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "level")</OnClick>
+						</Scripts>
+					</Button>
+
+					<!-- OLD LEVEL -->
+					<Button name="OFDeathClipsOldLevelSort" inherits="OFAuctionSortButtonTemplate" text="Бывший ур.">
+						<Size><AbsDimension x="45" y="19" /></Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFDeathClipsLevelSort" relativePoint="RIGHT">
+								<Offset><AbsDimension x="2" y="0" /></Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "oldlevel")</OnClick>
+						</Scripts>
+					</Button>
+
+					<!-- OLD CLASS -->
+					<Button name="OFDeathClipsOldClassSort" inherits="OFAuctionSortButtonTemplate" text="Бывший класс">
+						<Size><AbsDimension x="75" y="19" /></Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFDeathClipsOldLevelSort" relativePoint="RIGHT">
+								<Offset><AbsDimension x="2" y="0" /></Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>OFAuctionFrame_OnClickSortColumn("clips", "oldclass")</OnClick>
 						</Scripts>
 					</Button>
 
@@ -1467,195 +1493,195 @@
 
 					<!-- Scroll frame unchanged -->
 					<ScrollFrame name="OFDeathClipsScroll" inherits="FauxScrollFrameTemplate" hidden="true">
-<!--						<Size><AbsDimension x="775" y="335" /></Size>-->
-<!--						<Anchors>-->
-<!--							<Anchor point="TOPRIGHT">-->
-<!--								<Offset><AbsDimension x="40" y="-74" /></Offset>-->
-<!--							</Anchor>-->
-<!--						</Anchors>-->
-<!--						<Layers>-->
-<!--							<Layer>-->
-<!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
-<!--									<Size><AbsDimension x="31" y="256" /></Size>-->
-<!--									<Anchors>-->
-<!--										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">-->
-<!--											<Offset><AbsDimension x="-2" y="5" /></Offset>-->
-<!--										</Anchor>-->
-<!--									</Anchors>-->
-<!--									<TexCoords left="0" right="0.484375" top="0" bottom="1" />-->
-<!--								</Texture>-->
-<!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
-<!--									<Size><AbsDimension x="31" y="106" /></Size>-->
-<!--									<Anchors>-->
-<!--										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">-->
-<!--											<Offset><AbsDimension x="-2" y="-2" /></Offset>-->
-<!--										</Anchor>-->
-<!--									</Anchors>-->
-<!--									<TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />-->
-<!--								</Texture>-->
-<!--							</Layer>-->
-<!--						</Layers>-->
-<!--						<Scripts>-->
-<!--							<OnVerticalScroll>-->
-<!--								FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)-->
-<!--							</OnVerticalScroll>-->
-<!--						</Scripts>-->
+						<!--						<Size><AbsDimension x="775" y="335" /></Size>-->
+						<!--						<Anchors>-->
+						<!--							<Anchor point="TOPRIGHT">-->
+						<!--								<Offset><AbsDimension x="40" y="-74" /></Offset>-->
+						<!--							</Anchor>-->
+						<!--						</Anchors>-->
+						<!--						<Layers>-->
+						<!--							<Layer>-->
+						<!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
+						<!--									<Size><AbsDimension x="31" y="256" /></Size>-->
+						<!--									<Anchors>-->
+						<!--										<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">-->
+						<!--											<Offset><AbsDimension x="-2" y="5" /></Offset>-->
+						<!--										</Anchor>-->
+						<!--									</Anchors>-->
+						<!--									<TexCoords left="0" right="0.484375" top="0" bottom="1" />-->
+						<!--								</Texture>-->
+						<!--								<Texture file="Interface\PaperDollInfoFrame\UI-Character-ScrollBar">-->
+						<!--									<Size><AbsDimension x="31" y="106" /></Size>-->
+						<!--									<Anchors>-->
+						<!--										<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">-->
+						<!--											<Offset><AbsDimension x="-2" y="-2" /></Offset>-->
+						<!--										</Anchor>-->
+						<!--									</Anchors>-->
+						<!--									<TexCoords left="0.515625" right="1" top="0" bottom="0.4140625" />-->
+						<!--								</Texture>-->
+						<!--							</Layer>-->
+						<!--						</Layers>-->
+						<!--						<Scripts>-->
+						<!--							<OnVerticalScroll>-->
+						<!--								FauxScrollFrame_OnVerticalScroll(self, offset, OF_AUCTIONS_BUTTON_HEIGHT, OFAuctionFrameDeathClips_Update)-->
+						<!--							</OnVerticalScroll>-->
+						<!--						</Scripts>-->
 					</ScrollFrame>
 					<Button name="OFDeathClipsButton1" inherits="OFDeathClipsButtonTemplate" id="1">
-                        <Anchors>
-                            <Anchor point="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="27" y="-76" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton2" inherits="OFDeathClipsButtonTemplate" id="2">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton1" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton3" inherits="OFDeathClipsButtonTemplate" id="3">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton2" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton4" inherits="OFDeathClipsButtonTemplate" id="4">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton3" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton5" inherits="OFDeathClipsButtonTemplate" id="5">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton4" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton6" inherits="OFDeathClipsButtonTemplate" id="6">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton5" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton7" inherits="OFDeathClipsButtonTemplate" id="7">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton6" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton8" inherits="OFDeathClipsButtonTemplate" id="8">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton7" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
-                    <Button name="OFDeathClipsButton9" inherits="OFDeathClipsButtonTemplate" id="9">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton8" relativePoint="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="0" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                    </Button>
+						<Anchors>
+							<Anchor point="TOPLEFT">
+								<Offset>
+									<AbsDimension x="27" y="-76" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton2" inherits="OFDeathClipsButtonTemplate" id="2">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton1" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton3" inherits="OFDeathClipsButtonTemplate" id="3">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton2" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton4" inherits="OFDeathClipsButtonTemplate" id="4">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton3" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton5" inherits="OFDeathClipsButtonTemplate" id="5">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton4" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton6" inherits="OFDeathClipsButtonTemplate" id="6">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton5" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton7" inherits="OFDeathClipsButtonTemplate" id="7">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton6" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton8" inherits="OFDeathClipsButtonTemplate" id="8">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton7" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
+					<Button name="OFDeathClipsButton9" inherits="OFDeathClipsButtonTemplate" id="9">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeathClipsButton8" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+					</Button>
 
-<!--                    <Button name="OFDeathClipsPrevPageButton">-->
-<!--&lt;!&ndash;                        <Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <AbsDimension x="30" y="30" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        </Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                        <Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <Anchor point="BOTTOMRIGHT">&ndash;&gt;-->
-<!--&lt;!&ndash;                                <Offset>&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <AbsDimension x="-90" y="9" />&ndash;&gt;-->
-<!--&lt;!&ndash;                                </Offset>&ndash;&gt;-->
-<!--&lt;!&ndash;                            </Anchor>&ndash;&gt;-->
-<!--&lt;!&ndash;                        </Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                        <Layers>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <Layer level="BACKGROUND">&ndash;&gt;-->
-<!--&lt;!&ndash;                                <FontString inherits="GameFontHighlightSmall" text="PREV" justifyH="LEFT">&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                                        <AbsDimension x="60" y="10" />&ndash;&gt;-->
-<!--&lt;!&ndash;                                    </Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                                        <Anchor point="LEFT" relativePoint="RIGHT" />&ndash;&gt;-->
-<!--&lt;!&ndash;                                    </Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                                </FontString>&ndash;&gt;-->
-<!--&lt;!&ndash;                            </Layer>&ndash;&gt;-->
-<!--&lt;!&ndash;                        </Layers>&ndash;&gt;-->
-<!--						<Scripts>-->
-<!--							<OnLoad>-->
-<!--								self:RegisterForClicks("LeftButtonUp","RightButtonUp")-->
-<!--							</OnLoad>-->
-<!--						</Scripts>-->
-<!--&lt;!&ndash;                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Down" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Disabled" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />&ndash;&gt;-->
-<!--                    </Button>-->
-<!--                    <Button name="OFDeathClipsNextPageButton">-->
-<!--&lt;!&ndash;                        <Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <AbsDimension x="30" y="30" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        </Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                        <Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <Anchor point="BOTTOMRIGHT">&ndash;&gt;-->
-<!--&lt;!&ndash;                                <Offset>&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <AbsDimension x="40" y="9" />&ndash;&gt;-->
-<!--&lt;!&ndash;                                </Offset>&ndash;&gt;-->
-<!--&lt;!&ndash;                            </Anchor>&ndash;&gt;-->
-<!--&lt;!&ndash;                        </Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                        <Layers>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <Layer level="BACKGROUND">&ndash;&gt;-->
-<!--&lt;!&ndash;                                <FontString inherits="GameFontHighlightSmall" text="NEXT" justifyH="RIGHT">&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                                        <AbsDimension x="60" y="10" />&ndash;&gt;-->
-<!--&lt;!&ndash;                                    </Size>&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                                        <Anchor point="RIGHT" relativePoint="LEFT" />&ndash;&gt;-->
-<!--&lt;!&ndash;                                    </Anchors>&ndash;&gt;-->
-<!--&lt;!&ndash;                                </FontString>&ndash;&gt;-->
-<!--&lt;!&ndash;                            </Layer>&ndash;&gt;-->
-<!--&lt;!&ndash;                        </Layers>&ndash;&gt;-->
-<!--						<Scripts>-->
-<!--							<OnLoad>-->
-<!--								self:RegisterForClicks("LeftButtonUp","RightButtonUp")-->
-<!--							</OnLoad>-->
-<!--						</Scripts>-->
-<!--&lt;!&ndash;                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />&ndash;&gt;-->
-<!--&lt;!&ndash;                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />&ndash;&gt;-->
-<!--                    </Button>-->
-                </Frames>
-                <Scripts>
-                    <OnLoad function="OFAuctionFrameDeathClips_OnLoad"/>
-                    <OnShow function="OFAuctionFrameDeathClips_OnShow"/>
-                    <OnHide function="OFAuctionFrameDeathClips_OnHide"/>
-                </Scripts>
-            </Frame>
+					<!--                    <Button name="OFDeathClipsPrevPageButton">-->
+					<!--&lt;!&ndash;                        <Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            <AbsDimension x="30" y="30" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        </Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            <Anchor point="BOTTOMRIGHT">&ndash;&gt;-->
+					<!--&lt;!&ndash;                                <Offset>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    <AbsDimension x="-90" y="9" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                                </Offset>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            </Anchor>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        </Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <Layers>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            <Layer level="BACKGROUND">&ndash;&gt;-->
+					<!--&lt;!&ndash;                                <FontString inherits="GameFontHighlightSmall" text="PREV" justifyH="LEFT">&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    <Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                        <AbsDimension x="60" y="10" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    </Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    <Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                        <Anchor point="LEFT" relativePoint="RIGHT" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    </Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                </FontString>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            </Layer>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        </Layers>&ndash;&gt;-->
+					<!--						<Scripts>-->
+					<!--							<OnLoad>-->
+					<!--								self:RegisterForClicks("LeftButtonUp","RightButtonUp")-->
+					<!--							</OnLoad>-->
+					<!--						</Scripts>-->
+					<!--&lt;!&ndash;                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Down" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Disabled" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />&ndash;&gt;-->
+					<!--                    </Button>-->
+					<!--                    <Button name="OFDeathClipsNextPageButton">-->
+					<!--&lt;!&ndash;                        <Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            <AbsDimension x="30" y="30" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        </Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            <Anchor point="BOTTOMRIGHT">&ndash;&gt;-->
+					<!--&lt;!&ndash;                                <Offset>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    <AbsDimension x="40" y="9" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                                </Offset>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            </Anchor>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        </Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <Layers>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            <Layer level="BACKGROUND">&ndash;&gt;-->
+					<!--&lt;!&ndash;                                <FontString inherits="GameFontHighlightSmall" text="NEXT" justifyH="RIGHT">&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    <Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                        <AbsDimension x="60" y="10" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    </Size>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    <Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                        <Anchor point="RIGHT" relativePoint="LEFT" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                                    </Anchors>&ndash;&gt;-->
+					<!--&lt;!&ndash;                                </FontString>&ndash;&gt;-->
+					<!--&lt;!&ndash;                            </Layer>&ndash;&gt;-->
+					<!--&lt;!&ndash;                        </Layers>&ndash;&gt;-->
+					<!--						<Scripts>-->
+					<!--							<OnLoad>-->
+					<!--								self:RegisterForClicks("LeftButtonUp","RightButtonUp")-->
+					<!--							</OnLoad>-->
+					<!--						</Scripts>-->
+					<!--&lt;!&ndash;                        <NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />&ndash;&gt;-->
+					<!--&lt;!&ndash;                        <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />&ndash;&gt;-->
+					<!--                    </Button>-->
+				</Frames>
+				<Scripts>
+					<OnLoad function="OFAuctionFrameDeathClips_OnLoad"/>
+					<OnShow function="OFAuctionFrameDeathClips_OnShow"/>
+					<OnHide function="OFAuctionFrameDeathClips_OnHide"/>
+				</Scripts>
+			</Frame>
 			<Frame name="OFAuctionFrameReviews" hidden="true">
 				<Size x="758" y="447" />
 				<Anchors>
@@ -1822,23 +1848,23 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFAuctionsLevelSort" inherits="OFAuctionSortButtonTemplate" text="REQ_LEVEL_ABBR">
-                        <Size>
-                            <AbsDimension x="47" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFAuctionsQualitySort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("owner", "level")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
+					<Button name="OFAuctionsLevelSort" inherits="OFAuctionSortButtonTemplate" text="REQ_LEVEL_ABBR">
+						<Size>
+							<AbsDimension x="47" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFAuctionsQualitySort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("owner", "level")
+							</OnClick>
+						</Scripts>
+					</Button>
 					<Button name="OFAuctionsTypeSort" inherits="OFAuctionSortButtonTemplate" text="L_TYPE">
 						<Size x="60" y="19" />
 						<Anchors>
@@ -1850,37 +1876,37 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <Button name="OFAuctionsDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
-                        <Size x="130" y="19" />
-                        <Anchors>
-                            <Anchor x="-2" point="LEFT" relativeTo="OFAuctionsTypeSort" relativePoint="RIGHT" />
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("owner", "delivery")
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="OFAuctionsBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
-                        <Size>
-                            <AbsDimension x="161" y="19" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="LEFT" relativeTo="OFAuctionsDeliverySort" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="-2" y="0" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnClick>
-                                OFAuctionFrame_OnClickSortColumn("owner", "bid");
-                            </OnClick>
-                        </Scripts>
-                    </Button>
+					<Button name="OFAuctionsDeliverySort" inherits="OFAuctionSortButtonTemplate" text="L_MISC">
+						<Size x="130" y="19" />
+						<Anchors>
+							<Anchor x="-2" point="LEFT" relativeTo="OFAuctionsTypeSort" relativePoint="RIGHT" />
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("owner", "delivery")
+							</OnClick>
+						</Scripts>
+					</Button>
+					<Button name="OFAuctionsBidSort" inherits="OFAuctionSortButtonTemplate" text="L_PRICE">
+						<Size>
+							<AbsDimension x="161" y="19" />
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="OFAuctionsDeliverySort" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="-2" y="0" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								OFAuctionFrame_OnClickSortColumn("owner", "bid");
+							</OnClick>
+						</Scripts>
+					</Button>
 
 
-                    <ScrollFrame name="OFAuctionsScrollFrame" inherits="FauxScrollFrameTemplate">
+					<ScrollFrame name="OFAuctionsScrollFrame" inherits="FauxScrollFrameTemplate">
 						<Size x="575" y="339" />
 						<Anchors>
 							<Anchor x="40" y="-72" point="TOPRIGHT" />
@@ -1994,9 +2020,9 @@
 						</Layers>
 						<Scripts>
 							<OnLoad>
-                                self:RegisterEvent("NEW_AUCTION_UPDATE")
+								self:RegisterEvent("NEW_AUCTION_UPDATE")
 								self:RegisterForDrag("LeftButton")
-                                self:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+								self:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 							</OnLoad>
 							<OnEvent function="OFAuctionSellItemButton_OnEvent" />
 							<OnClick function="OFAuctionSellItemButton_OnClick" />
@@ -2005,12 +2031,12 @@
 							<OnEnter>
 								GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 								if ( GetAuctionSellItemInfo() ) then
-									local hasCooldown, speciesID, level, breedQuality, maxHealth, power, speed, name = GameTooltip:SetAuctionSellItem();
-									if(speciesID and speciesID &gt; 0) then
-										BattlePetToolTip_Show(speciesID, level, breedQuality, maxHealth, power, speed, name);
-									end
+								local hasCooldown, speciesID, level, breedQuality, maxHealth, power, speed, name = GameTooltip:SetAuctionSellItem();
+								if(speciesID and speciesID &gt; 0) then
+								BattlePetToolTip_Show(speciesID, level, breedQuality, maxHealth, power, speed, name);
+								end
 								else
-									GameTooltip:SetText(AUCTION_ITEM_TEXT, 1.0, 1.0, 1.0);
+								GameTooltip:SetText(AUCTION_ITEM_TEXT, 1.0, 1.0, 1.0);
 								end
 							</OnEnter>
 							<OnLeave function="GameTooltip_Hide" />
@@ -2056,24 +2082,24 @@
 						<Scripts>
 							<OnTabPressed>
 								if ( IsShiftKeyDown() ) then
-									if ( self.prevFocus ) then
-										self.prevFocus:SetFocus();
-									else
-										self:ClearFocus();
-									end
+								if ( self.prevFocus ) then
+								self.prevFocus:SetFocus();
 								else
-									if ( self.nextFocus ) then
-										self.nextFocus:SetFocus();
-									else
-										self:ClearFocus();
-									end
+								self:ClearFocus();
+								end
+								else
+								if ( self.nextFocus ) then
+								self.nextFocus:SetFocus();
+								else
+								self:ClearFocus();
+								end
 								end
 							</OnTabPressed>
 							<OnEnterPressed>
 								if ( self.nextFocus ) then
-									self.nextFocus:SetFocus();
+								self.nextFocus:SetFocus();
 								else
-									self:ClearFocus();
+								self:ClearFocus();
 								end
 							</OnEnterPressed>
 							<OnEscapePressed>
@@ -2130,24 +2156,24 @@
 						<Scripts>
 							<OnTabPressed>
 								if ( IsShiftKeyDown() ) then
-									if ( self.prevFocus ) then
-										self.prevFocus:SetFocus();
-									else
-										self:ClearFocus();
-									end
+								if ( self.prevFocus ) then
+								self.prevFocus:SetFocus();
 								else
-									if ( self.nextFocus ) then
-										self.nextFocus:SetFocus();
-									else
-										self:ClearFocus();
-									end
+								self:ClearFocus();
+								end
+								else
+								if ( self.nextFocus ) then
+								self.nextFocus:SetFocus();
+								else
+								self:ClearFocus();
+								end
 								end
 							</OnTabPressed>
 							<OnEnterPressed>
 								if ( self.nextFocus ) then
-									self.nextFocus:SetFocus();
+								self.nextFocus:SetFocus();
 								else
-									self:ClearFocus();
+								self:ClearFocus();
 								end
 							</OnEnterPressed>
 							<OnEscapePressed>
@@ -2165,84 +2191,84 @@
 						</Scripts>
 						<FontString inherits="ChatFontNormal" />
 					</EditBox>
-                    <Frame name="OFDeliveryDropdown" inherits="UIDropDownMenuTemplate" id="1">
-                        <Size x="110" y="22" />
-                        <Anchors>
-                            <Anchor x="60" y="278" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
-                        </Anchors>
-                        <Layers>
-                            <Layer level="OVERLAY">
-                                <FontString name="$parentName" inherits="GameFontHighlightSmall" text="Delivery">
-                                    <Anchors>
-                                        <Anchor point="LEFT" relativePoint="LEFT">
-                                            <Offset>
-                                                <AbsDimension x="-35" y="1"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Frame>
-                    <Frame name="OFPriceTypeDropdown" inherits="UIDropDownMenuTemplate" id="2">
-                        <Size x="110" y="22" />
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFDeliveryDropdown" relativePoint="BOTTOMLEFT">
-                                <Offset x="0" y="-8"/>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="OVERLAY">
-                                <FontString name="$parentName" inherits="GameFontHighlightSmall" text="Price">
-                                    <Anchors>
-                                        <Anchor point="LEFT" relativePoint="LEFT">
-                                            <Offset>
-                                                <AbsDimension x="-35" y="1"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Frame>
-                    <Frame name="OFBuyoutPrice" inherits="MoneyInputFrameTemplate">
-                        <Anchors>
-                            <Anchor x="5" y="-15" point="TOPLEFT" relativeTo="OFPriceTypeDropdownName" relativePoint="BOTTOMLEFT">
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                MoneyInputFrame_SetOnValueChangedFunc(self, OFAuctionsFrameAuctions_ValidateAuction);
-                            </OnLoad>
-                        </Scripts>
-                    </Frame>
-                    <EditBox name="OFTwitchRaidViewerAmount" letters="6" numeric="true" autoFocus="false" inherits="InputBoxTemplate" hidden="true">
-                        <Size>
-                            <AbsDimension x="50" y="16"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFBuyoutPrice" relativePoint="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="113" y="-1"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer>
-                                <FontString name="OFTwitchRaidViewerAmountText" inherits="GameFontHighlightSmall" text="L_MIN_TWITCH_VIEWERS">
-                                    <Anchors>
-                                        <Anchor x="-8" y="0" point="RIGHT" relativeTo="OFTwitchRaidViewerAmount" relativePoint="LEFT" />
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                        <Scripts>
-                            <OnLoad>
-                                self:SetText("200")
-                            </OnLoad>
-                            <OnEnterPressed function="EditBox_ClearFocus"/>
-                        </Scripts>
-                    </EditBox>
+					<Frame name="OFDeliveryDropdown" inherits="UIDropDownMenuTemplate" id="1">
+						<Size x="110" y="22" />
+						<Anchors>
+							<Anchor x="60" y="278" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
+						</Anchors>
+						<Layers>
+							<Layer level="OVERLAY">
+								<FontString name="$parentName" inherits="GameFontHighlightSmall" text="Delivery">
+									<Anchors>
+										<Anchor point="LEFT" relativePoint="LEFT">
+											<Offset>
+												<AbsDimension x="-35" y="1"/>
+											</Offset>
+										</Anchor>
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+					</Frame>
+					<Frame name="OFPriceTypeDropdown" inherits="UIDropDownMenuTemplate" id="2">
+						<Size x="110" y="22" />
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFDeliveryDropdown" relativePoint="BOTTOMLEFT">
+								<Offset x="0" y="-8"/>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="OVERLAY">
+								<FontString name="$parentName" inherits="GameFontHighlightSmall" text="Price">
+									<Anchors>
+										<Anchor point="LEFT" relativePoint="LEFT">
+											<Offset>
+												<AbsDimension x="-35" y="1"/>
+											</Offset>
+										</Anchor>
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+					</Frame>
+					<Frame name="OFBuyoutPrice" inherits="MoneyInputFrameTemplate">
+						<Anchors>
+							<Anchor x="5" y="-15" point="TOPLEFT" relativeTo="OFPriceTypeDropdownName" relativePoint="BOTTOMLEFT">
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								MoneyInputFrame_SetOnValueChangedFunc(self, OFAuctionsFrameAuctions_ValidateAuction);
+							</OnLoad>
+						</Scripts>
+					</Frame>
+					<EditBox name="OFTwitchRaidViewerAmount" letters="6" numeric="true" autoFocus="false" inherits="InputBoxTemplate" hidden="true">
+						<Size>
+							<AbsDimension x="50" y="16"/>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFBuyoutPrice" relativePoint="TOPLEFT">
+								<Offset>
+									<AbsDimension x="113" y="-1"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer>
+								<FontString name="OFTwitchRaidViewerAmountText" inherits="GameFontHighlightSmall" text="L_MIN_TWITCH_VIEWERS">
+									<Anchors>
+										<Anchor x="-8" y="0" point="RIGHT" relativeTo="OFTwitchRaidViewerAmount" relativePoint="LEFT" />
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnLoad>
+								self:SetText("200")
+							</OnLoad>
+							<OnEnterPressed function="EditBox_ClearFocus"/>
+						</Scripts>
+					</EditBox>
 					<Button name="OFAuctionsCloseButton" inherits="UIPanelButtonTemplate" text="CLOSE">
 						<Size>
 							<AbsDimension x="80" y="22" />
@@ -2273,190 +2299,190 @@
 						</Anchors>
 						<Scripts>
 							<OnClick>
-                                StaticPopup_Show("OF_CANCEL_AUCTION_ACTIVE");
-                                self:Disable();
+								StaticPopup_Show("OF_CANCEL_AUCTION_ACTIVE");
+								self:Disable();
 							</OnClick>
 						</Scripts>
 					</Button>
-                    <CheckButton name="OFAllowLoansCheckButton" inherits="UICheckButtonTemplate">
-                        <Size>
-                            <AbsDimension x="24" y="24" />
-                        </Size>
-                        <Anchors>
-                            <Anchor point="BOTTOMLEFT">
-                                <Offset>
-                                    <AbsDimension x="25" y="191" />
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                OFAllowLoansCheckButtonText:SetFontObject(GameFontHighlightSmall)
-                                OFAllowLoansCheckButtonText:SetText("Allow loan")
-                            </OnLoad>
+					<CheckButton name="OFAllowLoansCheckButton" inherits="UICheckButtonTemplate">
+						<Size>
+							<AbsDimension x="24" y="24" />
+						</Size>
+						<Anchors>
+							<Anchor point="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="25" y="191" />
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFAllowLoansCheckButtonText:SetFontObject(GameFontHighlightSmall)
+								OFAllowLoansCheckButtonText:SetText("Allow loan")
+							</OnLoad>
 							<OnEnter>
-							    GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
-                                GameTooltip_SetTitle(GameTooltip, "Buyout with loan");
-                                GameTooltip_AddNormalLine(GameTooltip, "Allow players to buy the item on a loan. They have 7 days to pay or declare bankruptcy.", true);
-                                GameTooltip:Show();
+								GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
+								GameTooltip_SetTitle(GameTooltip, "Buyout with loan");
+								GameTooltip_AddNormalLine(GameTooltip, "Allow players to buy the item on a loan. They have 7 days to pay or declare bankruptcy.", true);
+								GameTooltip:Show();
 							</OnEnter>
 							<OnLeave>
-							    GameTooltip:Hide();
+								GameTooltip:Hide();
 							</OnLeave>
-                            <OnClick>
-                                OFAllowLoansCheckButton_OnClick(self)
-                            </OnClick>
-                        </Scripts>
-                    </CheckButton>
-                    <CheckButton name="OFRoleplayCheckButton" inherits="UICheckButtonTemplate">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="RIGHT" relativeTo="OFAllowLoansCheckButton" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="85" y="0"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                OFRoleplayCheckButtonText:SetFontObject(GameFontHighlightSmall);
-                                OFRoleplayCheckButtonText:SetText("Roleplay");
-                            </OnLoad>
-                            <OnEnter>
-                                GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
-                                GameTooltip_SetTitle(GameTooltip, "Roleplay");
-                                GameTooltip_AddNormalLine(GameTooltip, OF_ROLEPLAY_TOOLTIP, true);
-                                GameTooltip:Show();
-                            </OnEnter>
-                            <OnLeave>
-                                GameTooltip:Hide();
-                            </OnLeave>
-                            <OnClick>
-                                OFRoleplayCheckButton_OnClick(self)
-                            </OnClick>
-                        </Scripts>
-                    </CheckButton>
-                    <CheckButton name="OFDeathRollCheckButton" inherits="UICheckButtonTemplate">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="RIGHT" relativeTo="OFAllowLoansCheckButton" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="0" y="-20"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                OFDeathRollCheckButtonText:SetFontObject(GameFontHighlightSmall);
-                                OFDeathRollCheckButtonText:SetText("Death Roll");
-                            </OnLoad>
+							<OnClick>
+								OFAllowLoansCheckButton_OnClick(self)
+							</OnClick>
+						</Scripts>
+					</CheckButton>
+					<CheckButton name="OFRoleplayCheckButton" inherits="UICheckButtonTemplate">
+						<Size>
+							<AbsDimension x="24" y="24"/>
+						</Size>
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFAllowLoansCheckButton" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="85" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFRoleplayCheckButtonText:SetFontObject(GameFontHighlightSmall);
+								OFRoleplayCheckButtonText:SetText("Roleplay");
+							</OnLoad>
 							<OnEnter>
-                                GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
-                                GameTooltip_SetTitle(GameTooltip, "Death Roll");
-                                GameTooltip_AddNormalLine(GameTooltip, OF_DEATH_ROLL_TOOLTIP, true);
-                                GameTooltip:Show();
+								GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
+								GameTooltip_SetTitle(GameTooltip, "Roleplay");
+								GameTooltip_AddNormalLine(GameTooltip, OF_ROLEPLAY_TOOLTIP, true);
+								GameTooltip:Show();
 							</OnEnter>
 							<OnLeave>
-                                GameTooltip:Hide();
+								GameTooltip:Hide();
 							</OnLeave>
-                            <OnClick>
-                                OFDeathRollCheckButton_OnClick(self)
-                            </OnClick>
-                        </Scripts>
-                    </CheckButton>
-                    <CheckButton name="OFDuelCheckButton" inherits="UICheckButtonTemplate">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="RIGHT" relativeTo="OFRoleplayCheckButton" relativePoint="RIGHT">
-                                <Offset>
-                                    <AbsDimension x="0" y="-20"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                OFDuelCheckButtonText:SetFontObject(GameFontHighlightSmall)
-                                OFDuelCheckButtonText:SetText("Duel (Normal)")
-                            </OnLoad>
+							<OnClick>
+								OFRoleplayCheckButton_OnClick(self)
+							</OnClick>
+						</Scripts>
+					</CheckButton>
+					<CheckButton name="OFDeathRollCheckButton" inherits="UICheckButtonTemplate">
+						<Size>
+							<AbsDimension x="24" y="24"/>
+						</Size>
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFAllowLoansCheckButton" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="0" y="-20"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFDeathRollCheckButtonText:SetFontObject(GameFontHighlightSmall);
+								OFDeathRollCheckButtonText:SetText("Death Roll");
+							</OnLoad>
 							<OnEnter>
-                                GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15)
-                                GameTooltip_SetTitle(GameTooltip, "Duel (Normal)")
-                                GameTooltip_AddNormalLine(GameTooltip, OF_DUEL_TOOLTIP, true)
-                                GameTooltip:Show()
+								GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15);
+								GameTooltip_SetTitle(GameTooltip, "Death Roll");
+								GameTooltip_AddNormalLine(GameTooltip, OF_DEATH_ROLL_TOOLTIP, true);
+								GameTooltip:Show();
 							</OnEnter>
 							<OnLeave>
-                                GameTooltip:Hide();
+								GameTooltip:Hide();
 							</OnLeave>
-                            <OnClick>
-                                OFDuelCheckButton_OnClick(self)
-                            </OnClick>
-                        </Scripts>
-                    </CheckButton>
-                    <Frame name="OFAuctionsNoteBackdrop" hidden="true">
-                        <KeyValues>
-                            <KeyValue key="backdropInfo" value="BACKDROP_TUTORIAL_16_16" type="global"/>
-                        </KeyValues>
-                        <Size>
-                            <AbsDimension x="183" y="60"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor x="24" y="100" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
-                        </Anchors>
-                        <Scripts>
-                            <OnLoad>
-                                self:SetBackdrop({
-                                    bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-                                    edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-                                    edgeSize = 16,
-                                    insets = { left = 4, right = 3, top = 4, bottom = 3 }
-                                })
-                                self:SetBackdropColor(0, 0, 0, 0.8)
-                            </OnLoad>
-                        </Scripts>
-                    </Frame>
-                    <EditBox name="OFAuctionsNote" letters="100" multiLine="true" autoFocus="false">
-                        <Size x="172" y="90" />
-                        <Anchors>
-                            <Anchor point="TOPLEFT" relativeTo="OFAuctionsNoteBackdrop" relativePoint="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="3" y="0"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                        </Layers>
-                        <Frames>
-                        </Frames>
-                        <Scripts>
-                            <OnLoad>
-                                self:SetText(OF_NOTE_PLACEHOLDER)
-                            </OnLoad>
-                            <OnEscapePressed function="EditBox_ClearFocus"/>
-                            <OnEditFocusLost>
-                                if self:GetText() == "" then
-                                    self:SetText(OF_NOTE_PLACEHOLDER)
-                                end
-                                EditBox_ClearHighlight(self)
-                            </OnEditFocusLost>
-                            <OnEditFocusGained>
-                                if self:GetText() == OF_NOTE_PLACEHOLDER then
-                                    self:SetText("")
-                                end
-                                EditBox_HighlightText(self)
-                            </OnEditFocusGained>
-                            <OnTextChanged>
-                                OFAuctionsFrameAuctions_ValidateAuction()
-                            </OnTextChanged>
-                        </Scripts>
-                        <FontString inherits="ChatFontSmall" />
-                    </EditBox>
-                    <Button name="OFAuctionsCreateAuctionButton" inherits="UIPanelButtonTemplate" text="CREATE_AUCTION">
+							<OnClick>
+								OFDeathRollCheckButton_OnClick(self)
+							</OnClick>
+						</Scripts>
+					</CheckButton>
+					<CheckButton name="OFDuelCheckButton" inherits="UICheckButtonTemplate">
+						<Size>
+							<AbsDimension x="24" y="24"/>
+						</Size>
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFRoleplayCheckButton" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="0" y="-20"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFDuelCheckButtonText:SetFontObject(GameFontHighlightSmall)
+								OFDuelCheckButtonText:SetText("Duel (Normal)")
+							</OnLoad>
+							<OnEnter>
+								GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", 100, 15)
+								GameTooltip_SetTitle(GameTooltip, "Duel (Normal)")
+								GameTooltip_AddNormalLine(GameTooltip, OF_DUEL_TOOLTIP, true)
+								GameTooltip:Show()
+							</OnEnter>
+							<OnLeave>
+								GameTooltip:Hide();
+							</OnLeave>
+							<OnClick>
+								OFDuelCheckButton_OnClick(self)
+							</OnClick>
+						</Scripts>
+					</CheckButton>
+					<Frame name="OFAuctionsNoteBackdrop" hidden="true">
+						<KeyValues>
+							<KeyValue key="backdropInfo" value="BACKDROP_TUTORIAL_16_16" type="global"/>
+						</KeyValues>
+						<Size>
+							<AbsDimension x="183" y="60"/>
+						</Size>
+						<Anchors>
+							<Anchor x="24" y="100" point="BOTTOMLEFT" relativeTo="OFAuctionFrameAuctions" relativePoint="BOTTOMLEFT" />
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								self:SetBackdrop({
+								bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+								edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+								edgeSize = 16,
+								insets = { left = 4, right = 3, top = 4, bottom = 3 }
+								})
+								self:SetBackdropColor(0, 0, 0, 0.8)
+							</OnLoad>
+						</Scripts>
+					</Frame>
+					<EditBox name="OFAuctionsNote" letters="100" multiLine="true" autoFocus="false">
+						<Size x="172" y="90" />
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="OFAuctionsNoteBackdrop" relativePoint="TOPLEFT">
+								<Offset>
+									<AbsDimension x="3" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+						</Layers>
+						<Frames>
+						</Frames>
+						<Scripts>
+							<OnLoad>
+								self:SetText(OF_NOTE_PLACEHOLDER)
+							</OnLoad>
+							<OnEscapePressed function="EditBox_ClearFocus"/>
+							<OnEditFocusLost>
+								if self:GetText() == "" then
+								self:SetText(OF_NOTE_PLACEHOLDER)
+								end
+								EditBox_ClearHighlight(self)
+							</OnEditFocusLost>
+							<OnEditFocusGained>
+								if self:GetText() == OF_NOTE_PLACEHOLDER then
+								self:SetText("")
+								end
+								EditBox_HighlightText(self)
+							</OnEditFocusGained>
+							<OnTextChanged>
+								OFAuctionsFrameAuctions_ValidateAuction()
+							</OnTextChanged>
+						</Scripts>
+						<FontString inherits="ChatFontSmall" />
+					</EditBox>
+					<Button name="OFAuctionsCreateAuctionButton" inherits="UIPanelButtonTemplate" text="CREATE_AUCTION">
 						<Size>
 							<AbsDimension x="191" y="20" />
 						</Size>
@@ -2476,24 +2502,24 @@
 					<OnLoad function="OFAuctionFrameAuctions_OnLoad" />
 					<OnShow function="OFAuctionFrameAuctions_OnShow" />
 					<OnEvent function="OFAuctionFrameAuctions_OnEvent" />
-                    <OnHide function="OFAuctionFrameAuctions_OnHide" />
-                </Scripts>
-            </Frame>
+					<OnHide function="OFAuctionFrameAuctions_OnHide" />
+				</Scripts>
+			</Frame>
 
-            <Frame name="OFAuctionFrameLFG" inherits="OFLFG_FrameTemplate" hidden="true">
-            </Frame>
+			<Frame name="OFAuctionFrameLFG" inherits="OFLFG_FrameTemplate" hidden="true">
+			</Frame>
 
-            <Frame name="OFAuctionFrameSettings" inherits="OFSettings_Template" hidden="true">
-            </Frame>
-            <Frame name="OFAuctionFrameAthene" inherits="OFAtheneFrameTemplate" hidden="true" />
-        </Frames>
-        <Scripts>
+			<Frame name="OFAuctionFrameSettings" inherits="OFSettings_Template" hidden="true">
+			</Frame>
+			<Frame name="OFAuctionFrameAthene" inherits="OFAtheneFrameTemplate" hidden="true" />
+		</Frames>
+		<Scripts>
 			<OnLoad function="OFAuctionFrame_OnLoad" />
 			<OnShow function="OFAuctionFrame_OnShow" />
 			<OnHide>
 				PlaySound(SOUNDKIT.AUCTION_WINDOW_CLOSE)
 				OFAuctionFrameDeathClips.openedPromptClipID = nil
-                OFCloseAuctionStaticPopups()
+				OFCloseAuctionStaticPopups()
 				SetAuctionsTabShowing(false)
 			</OnHide>
 			<OnMouseWheel>

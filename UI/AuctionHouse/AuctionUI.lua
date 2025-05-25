@@ -176,22 +176,22 @@ function OFSpecialFlagCheckButton_OnClick()
 end
 
 local function GetAuctionSortColumn(sortTable)
-	local existingSortColumn, existingSortReverse = currentSortParams[sortTable].column, currentSortParams[sortTable].desc
+    local existingSortColumn, existingSortReverse = currentSortParams[sortTable].column, currentSortParams[sortTable].desc
 
-	-- The "bid" column can now be configured to sort by per-unit bid price ("unitbid"),
-	-- per-unit buyout price ("unitprice"), or total buyout price ("totalbuyout") instead of
-	-- always sorting by total bid price ("bid"). Map these new sort options to the "bid" column.
-	if (existingSortColumn == "totalbuyout" or existingSortColumn == "unitbid" or existingSortColumn == "unitprice") then
-		existingSortColumn = "bid";
-	end
+    -- The "bid" column can now be configured to sort by per-unit bid price ("unitbid"),
+    -- per-unit buyout price ("unitprice"), or total buyout price ("totalbuyout") instead of
+    -- always sorting by total bid price ("bid"). Map these new sort options to the "bid" column.
+    if (existingSortColumn == "totalbuyout" or existingSortColumn == "unitbid" or existingSortColumn == "unitprice") then
+        existingSortColumn = "bid";
+    end
 
-	return existingSortColumn, existingSortReverse
+    return existingSortColumn, existingSortReverse
 end
 
 
 local function GetBuyoutPrice()
-	local buyoutPrice = MoneyInputFrame_GetCopper(OFBuyoutPrice);
-	return buyoutPrice;
+    local buyoutPrice = MoneyInputFrame_GetCopper(OFBuyoutPrice);
+    return buyoutPrice;
 end
 
 
@@ -205,9 +205,9 @@ end
 
 function OFBrowseLoanButton_OnClick(button)
     ns.AuctionBuyConfirmPrompt:Show(OFAuctionFrame.auction, true,
-        function() OFAuctionFrameSwitchTab(TAB_PENDING) end,
-        function(error) UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0) end,
-        function() button:Enable() end
+            function() OFAuctionFrameSwitchTab(TAB_PENDING) end,
+            function(error) UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0) end,
+            function() button:Enable() end
     )
 end
 
@@ -220,9 +220,9 @@ function OFBrowseBuyoutButton_OnClick(button)
         StaticPopup_Show("OF_BUY_AUCTION_GOLD")
     else
         ns.AuctionBuyConfirmPrompt:Show(OFAuctionFrame.auction, false,
-            function() OFAuctionFrameSwitchTab(TAB_PENDING) end,
-            function(error) UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0) end,
-            function() button:Enable() end
+                function() OFAuctionFrameSwitchTab(TAB_PENDING) end,
+                function(error) UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0) end,
+                function() button:Enable() end
         )
     end
 end
@@ -334,18 +334,18 @@ StaticPopupDialogs["OF_BUY_AUCTION_GOLD"] = {
 }
 
 StaticPopupDialogs["OF_DECLINE_ALL"] = {
-	text = L["Are you sure you want to unlist all your pending orders?"],
+    text = L["Are you sure you want to unlist all your pending orders?"],
     button1 = YES,
     button2 = NO,
-	OnAccept = function()
-		-- Cancel each auction
+    OnAccept = function()
+        -- Cancel each auction
         local allAuctions = ns.AuctionHouseAPI:GetMySellPendingAuctions()
-		for _, auction in pairs(allAuctions) do
-			ns.AuctionHouseAPI:CancelAuction(auction.id)
-		end
-	end,
+        for _, auction in pairs(allAuctions) do
+            ns.AuctionHouseAPI:CancelAuction(auction.id)
+        end
+    end,
     showAlert = 1,
-	timeout = 0,
+    timeout = 0,
     exclusive = 1,
     hideOnEscape = 1,
 }
@@ -608,70 +608,70 @@ function OFAuctionFrame_OnLoad (self)
             end
         end
     end
-    
+
     tinsert(UISpecialFrames, "OFAuctionFrame")
 
-	-- Tab Handling code
-	PanelTemplates_SetNumTabs(self, 8);
-	PanelTemplates_SetTab(self, 1);
+    -- Tab Handling code
+    PanelTemplates_SetNumTabs(self, 8);
+    PanelTemplates_SetTab(self, 1);
 
-	-- Set focus rules
-	OFBrowseFilterScrollFrame.ScrollBar.scrollStep = OF_BROWSE_FILTER_HEIGHT;
+    -- Set focus rules
+    OFBrowseFilterScrollFrame.ScrollBar.scrollStep = OF_BROWSE_FILTER_HEIGHT;
 
-	-- Init search dot count
-	OFAuctionFrameBrowse.dotCount = 0;
-	OFAuctionFrameBrowse.isSearchingThrottle = 0;
+    -- Init search dot count
+    OFAuctionFrameBrowse.dotCount = 0;
+    OFAuctionFrameBrowse.isSearchingThrottle = 0;
 
-	OFAuctionFrameBrowse.page = 0;
-	FauxScrollFrame_SetOffset(OFBrowseScrollFrame,0);
+    OFAuctionFrameBrowse.page = 0;
+    FauxScrollFrame_SetOffset(OFBrowseScrollFrame,0);
 
-	OFAuctionFrameBid.page = 0;
-	FauxScrollFrame_SetOffset(OFBidScrollFrame,0);
-	GetBidderAuctionItems(OFAuctionFrameBid.page);
+    OFAuctionFrameBid.page = 0;
+    FauxScrollFrame_SetOffset(OFBidScrollFrame,0);
+    GetBidderAuctionItems(OFAuctionFrameBid.page);
 
-	OFAuctionFrameAuctions.page = 0;
-	FauxScrollFrame_SetOffset(OFAuctionsScrollFrame,0);
+    OFAuctionFrameAuctions.page = 0;
+    FauxScrollFrame_SetOffset(OFAuctionsScrollFrame,0);
 
-	MoneyFrame_SetMaxDisplayWidth(OFAuctionFrameMoneyFrame, 160);
+    MoneyFrame_SetMaxDisplayWidth(OFAuctionFrameMoneyFrame, 160);
 
-	--if GetClassicExpansionLevel() == LE_EXPANSION_CLASSIC then
-		--Vanilla textures are slightly different from later expansions so we need to adjust the placement of the BrowseResetButton
-	--	OFBrowseResetButton:SetSize(97, 22);
-	--	OFBrowseResetButton:SetPoint("TOPLEFT", 37, -79);
-	--end
+    --if GetClassicExpansionLevel() == LE_EXPANSION_CLASSIC then
+    --Vanilla textures are slightly different from later expansions so we need to adjust the placement of the BrowseResetButton
+    --	OFBrowseResetButton:SetSize(97, 22);
+    --	OFBrowseResetButton:SetPoint("TOPLEFT", 37, -79);
+    --end
 end
 
 function OFAuctionFrame_Show()
-	if ( OFAuctionFrame:IsShown() ) then
-		OFAuctionFrameBrowse_Update();
-		OFAuctionFrameBid_Update();
-		OFAuctionFrameAuctions_Update();
-	else
-		ShowUIPanel(OFAuctionFrame);
+    if ( OFAuctionFrame:IsShown() ) then
+        OFAuctionFrameBrowse_Update();
+        OFAuctionFrameBid_Update();
+        OFAuctionFrameAuctions_Update();
+    else
+        ShowUIPanel(OFAuctionFrame);
 
-		OFAuctionFrameBrowse.page = 0;
-		FauxScrollFrame_SetOffset(OFBrowseScrollFrame,0);
+        OFAuctionFrameBrowse.page = 0;
+        FauxScrollFrame_SetOffset(OFBrowseScrollFrame,0);
 
-		OFAuctionFrameBid.page = 0;
-		FauxScrollFrame_SetOffset(OFBidScrollFrame,0);
-		GetBidderAuctionItems(OFAuctionFrameBid.page);
+        OFAuctionFrameBid.page = 0;
+        FauxScrollFrame_SetOffset(OFBidScrollFrame,0);
+        GetBidderAuctionItems(OFAuctionFrameBid.page);
 
-		OFAuctionFrameAuctions.page = 0;
-		FauxScrollFrame_SetOffset(OFAuctionsScrollFrame,0);
+        OFAuctionFrameAuctions.page = 0;
+        FauxScrollFrame_SetOffset(OFAuctionsScrollFrame,0);
 
-		OFBrowsePrevPageButton.isEnabled = false;
-		OFBrowseNextPageButton.isEnabled = false;
-		OFBrowsePrevPageButton:Disable();
-		OFBrowseNextPageButton:Disable();
-		
-		if ( not OFAuctionFrame:IsShown() ) then
-			CloseAuctionHouse();
-		end
-	end
+        OFBrowsePrevPageButton.isEnabled = false;
+        OFBrowseNextPageButton.isEnabled = false;
+        OFBrowsePrevPageButton:Disable();
+        OFBrowseNextPageButton:Disable();
+
+        if ( not OFAuctionFrame:IsShown() ) then
+            CloseAuctionHouse();
+        end
+    end
 end
 
 function OFAuctionFrame_Hide()
-	HideUIPanel(OFAuctionFrame);
+    HideUIPanel(OFAuctionFrame);
 end
 
 local initialTab = TAB_BROWSE
@@ -704,10 +704,10 @@ function OFAuctionFrame_OnShow (self)
     initialTab = TAB_BROWSE
 
     AuctionFrame_UpdatePortrait()
-	OFBrowseNoResultsText:SetText(BROWSE_SEARCH_TEXT);
-	PlaySound(SOUNDKIT.AUCTION_WINDOW_OPEN);
+    OFBrowseNoResultsText:SetText(BROWSE_SEARCH_TEXT);
+    PlaySound(SOUNDKIT.AUCTION_WINDOW_OPEN);
 
-	--OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
+    --OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
     OFAuctionFrame_UpdateReviewsTabText()
     OFAuctionFrame_UpdateAtheneTab()
 end
@@ -767,10 +767,10 @@ local function AssignLFGTextures()
 end
 
 function OFAuctionFrameSwitchTab(index)
-	PanelTemplates_SetTab(OFAuctionFrame, index)
-	OFAuctionFrameAuctions:Hide()
-	OFAuctionFrameBrowse:Hide()
-	OFAuctionFrameBid:Hide()
+    PanelTemplates_SetTab(OFAuctionFrame, index)
+    OFAuctionFrameAuctions:Hide()
+    OFAuctionFrameBrowse:Hide()
+    OFAuctionFrameBid:Hide()
     OFAuctionFrameReviews:Hide()
     OFAuctionFrameDeathClips:Hide()
     OFAuctionFrameSettings:Hide()
@@ -779,7 +779,7 @@ function OFAuctionFrameSwitchTab(index)
     OFAuctionFrameSettings_OnSwitchTab()
     SetAuctionsTabShowing(false)
 
-	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+    PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
 
     if not OFAuctionFrameCloseButton.defaultPoint then
         local point, relativeTo, relativePoint, xOffset, yOffset = OFAuctionFrameCloseButton:GetPoint()
@@ -798,20 +798,20 @@ function OFAuctionFrameSwitchTab(index)
     end
 
 
-	if ( index == TAB_BROWSE ) then
-		OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopLeft");
-		OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-Top");
-		OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopRight");
-		OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-BotLeft");
-		OFAuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot");
-		OFAuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotRight");
-		OFAuctionFrameBrowse:Show();
-		OFAuctionFrame.type = "list";
-	elseif ( index == TAB_AUCTIONS ) then
-		-- OFAuctions tab
+    if ( index == TAB_BROWSE ) then
+        OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopLeft");
+        OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-Top");
+        OFAuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopRight");
+        OFAuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-BotLeft");
+        OFAuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot");
+        OFAuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotRight");
+        OFAuctionFrameBrowse:Show();
+        OFAuctionFrame.type = "list";
+    elseif ( index == TAB_AUCTIONS ) then
+        -- OFAuctions tab
         AssignCreateOrderTextures()
-		OFAuctionFrameAuctions:Show();
-		SetAuctionsTabShowing(true);
+        OFAuctionFrameAuctions:Show();
+        SetAuctionsTabShowing(true);
     elseif ( index == TAB_PENDING ) then
         OFAuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-TopLeft");
         OFAuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Top");
@@ -877,29 +877,29 @@ function OFAuctionFrameBrowse_OnLoad(self)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_DELETED, markDirtyAndUpdate)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_ON_BLACKLIST_STATE_UPDATE, markDirtyAndUpdate)
 
-	self.qualityIndex = FILTER_ALL_INDEX;
+    self.qualityIndex = FILTER_ALL_INDEX;
 end
 
 
 
 function OFAuctionFrameBrowse_UpdateArrows()
-	OFSortButton_UpdateArrow(OFBrowseQualitySort, "list", "quality")
-	OFSortButton_UpdateArrow(OFBrowseTypeSort, "list", "type")
+    OFSortButton_UpdateArrow(OFBrowseQualitySort, "list", "quality")
+    OFSortButton_UpdateArrow(OFBrowseTypeSort, "list", "type")
     OFSortButton_UpdateArrow(OFBrowseLevelSort, "list", "level")
     OFSortButton_UpdateArrow(OFBrowseDeliverySort, "list", "delivery")
-	OFSortButton_UpdateArrow(OFBrowseHighBidderSort, "list", "seller")
+    OFSortButton_UpdateArrow(OFBrowseHighBidderSort, "list", "seller")
     OFSortButton_UpdateArrow(OFBrowseRatingSort, "list", "rating")
-	OFSortButton_UpdateArrow(OFBrowseCurrentBidSort, "list", "bid")
+    OFSortButton_UpdateArrow(OFBrowseCurrentBidSort, "list", "bid")
 end
 
 
 function OFRequestItemButton_OnClick(button)
     --print("Request item", button:GetParent().itemID, button:GetParent().item.equipSlot)
     ns.AuctionWishlistConfirmPrompt:Show(
-        button:GetParent().itemID,
-        nil,
-        function(error) UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0) end,
-        nil
+            button:GetParent().itemID,
+            nil,
+            function(error) UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0) end,
+            nil
     )
 end
 
@@ -912,85 +912,85 @@ function OFSelectSpecialItemButton_OnClick(button)
 end
 
 function OFBrowseButton_OnClick(button)
-	assert(button);
-	
-	OFSetSelectedAuctionItem("list", button.auction)
-	-- Close any auction related popups
-	OFCloseAuctionStaticPopups()
-	OFAuctionFrameBrowse_Update()
+    assert(button);
+
+    OFSetSelectedAuctionItem("list", button.auction)
+    -- Close any auction related popups
+    OFCloseAuctionStaticPopups()
+    OFAuctionFrameBrowse_Update()
 end
 
 function OFAuctionFrameBrowse_Reset(self)
-	OFBrowseName:SetText(OF_BROWSE_SEARCH_PLACEHOLDER)
-	OFBrowseMinLevel:SetText("")
-	OFBrowseMaxLevel:SetText("")
+    OFBrowseName:SetText(OF_BROWSE_SEARCH_PLACEHOLDER)
+    OFBrowseMinLevel:SetText("")
+    OFBrowseMaxLevel:SetText("")
     OFOnlineOnlyCheckButton:SetChecked(false)
     OFAuctionsOnlyCheckButton:SetChecked(false)
 
-	-- reset the filters
-	OF_OPEN_FILTER_LIST = {}
-	OFAuctionFrameBrowse.selectedCategoryIndex = nil
-	OFAuctionFrameBrowse.selectedSubCategoryIndex = nil
-	OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil
+    -- reset the filters
+    OF_OPEN_FILTER_LIST = {}
+    OFAuctionFrameBrowse.selectedCategoryIndex = nil
+    OFAuctionFrameBrowse.selectedSubCategoryIndex = nil
+    OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil
 
-	OFAuctionFrameFilters_Update()
+    OFAuctionFrameFilters_Update()
     OFAuctionFrameBrowse_Search()
     OFAuctionFrameBrowse_Update()
-	self:Disable()
+    self:Disable()
 end
 
 function OFBrowseResetButton_OnUpdate(self, elapsed)
     local search = OFBrowseName:GetText()
-	if ( (search == "" or search == OF_BROWSE_SEARCH_PLACEHOLDER) and (OFBrowseMinLevel:GetText() == "") and (OFBrowseMaxLevel:GetText() == "") and
-         (not OFOnlineOnlyCheckButton:GetChecked()) and
-	     (not OFAuctionFrameBrowse.selectedCategoryIndex))
-	then
-		self:Disable()
-	else
-		self:Enable()
-	end
+    if ( (search == "" or search == OF_BROWSE_SEARCH_PLACEHOLDER) and (OFBrowseMinLevel:GetText() == "") and (OFBrowseMaxLevel:GetText() == "") and
+            (not OFOnlineOnlyCheckButton:GetChecked()) and
+            (not OFAuctionFrameBrowse.selectedCategoryIndex))
+    then
+        self:Disable()
+    else
+        self:Enable()
+    end
 end
 
 function OFAuctionFrame_SetSort(sortTable, sortColumn, oppositeOrder)
-    local template = OFAuctionSort[sortTable.."_"..sortColumn]
-    local sortParams = {}
+        local template = OFAuctionSort[sortTable.."_"..sortColumn]
+        local sortParams = {}
 	-- set the columns
-	for index, row in pairs(template) do
+        for index, row in pairs(template) do
 		-- Browsing by the "bid" column will sort by whatever price sorrting option the user selected
 		-- instead of always sorting by "bid" (total bid price)
 		local sort = row.column;
-        local reverse
-		if (oppositeOrder) then
-            reverse = not row.reverse
-		else
-            reverse = row.reverse
-		end
-        table.insert(sortParams, { column = sort, reverse = reverse })
-	end
-    currentSortParams[sortTable] = {
-        column = sortColumn,
-        desc = oppositeOrder,
-        params = sortParams,
-    }
+            local reverse
+            if (oppositeOrder) then
+                reverse = not row.reverse
+            else
+                reverse = row.reverse
+            end
+            table.insert(sortParams, { column = sort, reverse = reverse })
+        end
+        currentSortParams[sortTable] = {
+            column = sortColumn,
+            desc = oppositeOrder,
+            params = sortParams,
+        }
     if sortTable == "list" then
         browseSortDirty = true
     end
 end
 
 function OFAuctionFrame_OnClickSortColumn(sortTable, sortColumn)
-	-- change the sort as appropriate
-	local existingSortColumn, existingSortReverse = GetAuctionSortColumn(sortTable)
-	local oppositeOrder = false
-	if (existingSortColumn and (existingSortColumn == sortColumn)) then
-		oppositeOrder = not existingSortReverse
-	elseif (sortColumn == "level") then
-		oppositeOrder = true
-	end
+    -- change the sort as appropriate
+    local existingSortColumn, existingSortReverse = GetAuctionSortColumn(sortTable)
+    local oppositeOrder = false
+    if (existingSortColumn and (existingSortColumn == sortColumn)) then
+        oppositeOrder = not existingSortReverse
+    elseif (sortColumn == "level") then
+        oppositeOrder = true
+    end
 
-	-- set the new sort order
-	OFAuctionFrame_SetSort(sortTable, sortColumn, oppositeOrder)
+    -- set the new sort order
+    OFAuctionFrame_SetSort(sortTable, sortColumn, oppositeOrder)
 
-	-- apply the sort
+    -- apply the sort
     if (sortTable == "list") then
         OFAuctionFrameBrowse_Search()
     elseif(sortTable == "bidder") then
@@ -1011,8 +1011,8 @@ local prevBrowseParams
 local function OFAuctionFrameBrowse_SearchHelper(newParams)
     local page = newParams.page
 
-	if prevBrowseParams then
-		-- if we have already done a browse then see if any of the params have changed (except for the page number)
+    if prevBrowseParams then
+        -- if we have already done a browse then see if any of the params have changed (except for the page number)
         for k, v in pairs(newParams) do
             if ( k ~= "page" and v ~= prevBrowseParams[k] ) then
                 -- if we detect a change then we want to reset the page number back to the first page
@@ -1021,7 +1021,7 @@ local function OFAuctionFrameBrowse_SearchHelper(newParams)
                 break;
             end
         end
-	end
+    end
 
     newParams.page = page
     prevBrowseParams = newParams
@@ -1079,53 +1079,53 @@ function OFAuctionFrameBrowse_OnShow()
 end
 -- If string is quoted, return the string with the quotes removed, otherwise return nil.
 local function DequoteString(s)
-	-- Recognize the ASCII double character quote or (unlike mainline) Unicode curly double quotes.
-	-- Also recognize the French "guillemet" double angle quote characters since the mainline
-	-- auction house converts those to ASCII double quotes in CaseAccentInsensitiveParseInternal().
-	-- Always recognize any of these quote characters, regardless of the user's locale setting.
+    -- Recognize the ASCII double character quote or (unlike mainline) Unicode curly double quotes.
+    -- Also recognize the French "guillemet" double angle quote characters since the mainline
+    -- auction house converts those to ASCII double quotes in CaseAccentInsensitiveParseInternal().
+    -- Always recognize any of these quote characters, regardless of the user's locale setting.
 
-	-- Unicode code points as UTF-8 strings.
-	local doubleQuote = '"';					-- U+0022 Quotation Mark
-	local leftDoubleQuote = "\226\128\156";		-- U+201C Left Double Quotation Mark
-	local rightDoubleQuote = "\226\128\157";	-- U+201D Right Double Quotation Mark
-	local leftGuillemet = "\194\171";			-- U+00AB Left-Pointing Double Angle Quotation Mark
-	local rightGuillemet = "\194\187";			-- U+00BB Right-Pointing Double Angle Quotation Mark
+    -- Unicode code points as UTF-8 strings.
+    local doubleQuote = '"';					-- U+0022 Quotation Mark
+    local leftDoubleQuote = "\226\128\156";		-- U+201C Left Double Quotation Mark
+    local rightDoubleQuote = "\226\128\157";	-- U+201D Right Double Quotation Mark
+    local leftGuillemet = "\194\171";			-- U+00AB Left-Pointing Double Angle Quotation Mark
+    local rightGuillemet = "\194\187";			-- U+00BB Right-Pointing Double Angle Quotation Mark
 
-	-- Check is the search string starts with a recognized opening quote and get its UTF-8 length.
-	local quoteLen = 0;
+    -- Check is the search string starts with a recognized opening quote and get its UTF-8 length.
+    local quoteLen = 0;
 
-	if (#s >= #doubleQuote and string.sub(s, 1, #doubleQuote) == doubleQuote) then
-		quoteLen = #doubleQuote;
-	elseif (#s >= #leftDoubleQuote and string.sub(s, 1, #leftDoubleQuote) == leftDoubleQuote) then
-		quoteLen = #leftDoubleQuote;
-	elseif (#s >= #leftGuillemet and string.sub(s, 1, #leftGuillemet) == leftGuillemet) then
-		quoteLen = #leftGuillemet;
-	end
+    if (#s >= #doubleQuote and string.sub(s, 1, #doubleQuote) == doubleQuote) then
+        quoteLen = #doubleQuote;
+    elseif (#s >= #leftDoubleQuote and string.sub(s, 1, #leftDoubleQuote) == leftDoubleQuote) then
+        quoteLen = #leftDoubleQuote;
+    elseif (#s >= #leftGuillemet and string.sub(s, 1, #leftGuillemet) == leftGuillemet) then
+        quoteLen = #leftGuillemet;
+    end
 
-	if (quoteLen == 0) then
-		return nil;
-	end
+    if (quoteLen == 0) then
+        return nil;
+    end
 
-	-- Trim the opening quote
-	s = string.sub(s, quoteLen + 1);
+    -- Trim the opening quote
+    s = string.sub(s, quoteLen + 1);
 
-	-- Check is the search string ends with a recognized closing quote and get its UTF-8 length.
-	quoteLen = 0;
+    -- Check is the search string ends with a recognized closing quote and get its UTF-8 length.
+    quoteLen = 0;
 
-	if (#s >= #doubleQuote and string.sub(s, -#doubleQuote) == doubleQuote) then
-		quoteLen = #doubleQuote;
-	elseif (#s >= #rightDoubleQuote and string.sub(s, -#rightDoubleQuote) == rightDoubleQuote) then
-		quoteLen = #rightDoubleQuote;
-	elseif (#s >= #rightGuillemet and string.sub(s, -#rightGuillemet) == rightGuillemet) then
-		quoteLen = #rightGuillemet;
-	end
+    if (#s >= #doubleQuote and string.sub(s, -#doubleQuote) == doubleQuote) then
+        quoteLen = #doubleQuote;
+    elseif (#s >= #rightDoubleQuote and string.sub(s, -#rightDoubleQuote) == rightDoubleQuote) then
+        quoteLen = #rightDoubleQuote;
+    elseif (#s >= #rightGuillemet and string.sub(s, -#rightGuillemet) == rightGuillemet) then
+        quoteLen = #rightGuillemet;
+    end
 
-	if (quoteLen == 0) then
-		return nil;
-	end
+    if (quoteLen == 0) then
+        return nil;
+    end
 
-	-- Trim the closing quote	
-	return string.sub(s, 1, -(quoteLen + 1));
+    -- Trim the closing quote
+    return string.sub(s, 1, -(quoteLen + 1));
 end
 
 function OFAuctionFrameBrowse_Search()
@@ -1157,17 +1157,17 @@ function OFAuctionFrameBrowse_Search()
     end
 
     OFAuctionFrameBrowse_SearchHelper(BrowseParams.New(
-        text,
-        minLevel,
-        maxLevel,
-        OFAuctionFrameBrowse.selectedCategoryIndex,
-        OFAuctionFrameBrowse.selectedSubCategoryIndex,
-        OFAuctionFrameBrowse.selectedSubSubCategoryIndex,
-        OFAuctionFrameBrowse.page,
-        OFAuctionFrameBrowse.factionIndex,
-        exactMatch,
-        OFOnlineOnlyCheckButton:GetChecked(),
-        OFAuctionsOnlyCheckButton:GetChecked()
+            text,
+            minLevel,
+            maxLevel,
+            OFAuctionFrameBrowse.selectedCategoryIndex,
+            OFAuctionFrameBrowse.selectedSubCategoryIndex,
+            OFAuctionFrameBrowse.selectedSubSubCategoryIndex,
+            OFAuctionFrameBrowse.page,
+            OFAuctionFrameBrowse.factionIndex,
+            exactMatch,
+            OFOnlineOnlyCheckButton:GetChecked(),
+            OFAuctionsOnlyCheckButton:GetChecked()
     ))
     -- after updating filters, we need to query auctions and item db again
     browseResultCache = nil
@@ -1190,182 +1190,182 @@ function OFBrowseSearchButton_OnUpdate(self, elapsed)
     end
     OFAuctionFrameBrowse_UpdateArrows()
 
-	if (OFAuctionFrameBrowse.isSearching) then
-		if ( OFAuctionFrameBrowse.isSearchingThrottle <= 0 ) then
-			OFAuctionFrameBrowse.dotCount = OFAuctionFrameBrowse.dotCount + 1;
-			if ( OFAuctionFrameBrowse.dotCount > 3 ) then
-				OFAuctionFrameBrowse.dotCount = 0
-			end
-			local dotString = "";
-			for i=1, OFAuctionFrameBrowse.dotCount do
-				dotString = dotString..".";
-			end
-			OFBrowseSearchDotsText:Show();
-			OFBrowseSearchDotsText:SetText(dotString);
-			OFBrowseNoResultsText:SetText(SEARCHING_FOR_ITEMS);
-			OFAuctionFrameBrowse.isSearchingThrottle = 0.3;
-		else
-			OFAuctionFrameBrowse.isSearchingThrottle = OFAuctionFrameBrowse.isSearchingThrottle - elapsed;
-		end
-	else
-		OFBrowseSearchDotsText:Hide();
-	end
+    if (OFAuctionFrameBrowse.isSearching) then
+        if ( OFAuctionFrameBrowse.isSearchingThrottle <= 0 ) then
+            OFAuctionFrameBrowse.dotCount = OFAuctionFrameBrowse.dotCount + 1;
+            if ( OFAuctionFrameBrowse.dotCount > 3 ) then
+                OFAuctionFrameBrowse.dotCount = 0
+            end
+            local dotString = "";
+            for i=1, OFAuctionFrameBrowse.dotCount do
+                dotString = dotString..".";
+            end
+            OFBrowseSearchDotsText:Show();
+            OFBrowseSearchDotsText:SetText(dotString);
+            OFBrowseNoResultsText:SetText(SEARCHING_FOR_ITEMS);
+            OFAuctionFrameBrowse.isSearchingThrottle = 0.3;
+        else
+            OFAuctionFrameBrowse.isSearchingThrottle = OFAuctionFrameBrowse.isSearchingThrottle - elapsed;
+        end
+    else
+        OFBrowseSearchDotsText:Hide();
+    end
 end
 
 function OFAuctionFrameFilters_Update(forceSelectionIntoView)
-	OFAuctionFrameFilters_UpdateCategories(forceSelectionIntoView);
-	-- Update scrollFrame
-	FauxScrollFrame_Update(OFBrowseFilterScrollFrame, #OF_OPEN_FILTER_LIST, OF_NUM_FILTERS_TO_DISPLAY, OF_BROWSE_FILTER_HEIGHT);
+    OFAuctionFrameFilters_UpdateCategories(forceSelectionIntoView);
+    -- Update scrollFrame
+    FauxScrollFrame_Update(OFBrowseFilterScrollFrame, #OF_OPEN_FILTER_LIST, OF_NUM_FILTERS_TO_DISPLAY, OF_BROWSE_FILTER_HEIGHT);
 end
 
 function OFAuctionFrameFilters_UpdateCategories(forceSelectionIntoView)
-	-- Initialize the list of open filters
-	OF_OPEN_FILTER_LIST = {};
+    -- Initialize the list of open filters
+    OF_OPEN_FILTER_LIST = {};
 
-	for categoryIndex, categoryInfo in ipairs(OFAuctionCategories) do
-		local selected = OFAuctionFrameBrowse.selectedCategoryIndex and OFAuctionFrameBrowse.selectedCategoryIndex == categoryIndex;
+    for categoryIndex, categoryInfo in ipairs(OFAuctionCategories) do
+        local selected = OFAuctionFrameBrowse.selectedCategoryIndex and OFAuctionFrameBrowse.selectedCategoryIndex == categoryIndex;
         local blueHighlight = categoryInfo:HasFlag("BLUE_HIGHLIGHT")
         tinsert(OF_OPEN_FILTER_LIST, { name = categoryInfo.name, type = "category", categoryIndex = categoryIndex, selected = selected, isToken = false, blueHighlight=blueHighlight });
 
         if ( selected ) then
             OFAuctionFrameFilters_AddSubCategories(categoryInfo.subCategories);
         end
-	end
-	
-	local hasScrollBar = #OF_OPEN_FILTER_LIST > OF_NUM_FILTERS_TO_DISPLAY;
+    end
 
-	-- Display the list of open filters
-	local offset = FauxScrollFrame_GetOffset(OFBrowseFilterScrollFrame);
-	if ( forceSelectionIntoView and hasScrollBar and OFAuctionFrameBrowse.selectedCategoryIndex and ( not OFAuctionFrameBrowse.selectedSubCategoryIndex and not OFAuctionFrameBrowse.selectedSubSubCategoryIndex ) ) then
-		if ( OFAuctionFrameBrowse.selectedCategoryIndex <= offset ) then
-			FauxScrollFrame_OnVerticalScroll(OFBrowseFilterScrollFrame, math.max(0.0, (OFAuctionFrameBrowse.selectedCategoryIndex - 1) * OF_BROWSE_FILTER_HEIGHT), OF_BROWSE_FILTER_HEIGHT);
-			offset = FauxScrollFrame_GetOffset(OFBrowseFilterScrollFrame);
-		end
-	end
-	
-	local dataIndex = offset;
+    local hasScrollBar = #OF_OPEN_FILTER_LIST > OF_NUM_FILTERS_TO_DISPLAY;
 
-	for i = 1, OF_NUM_FILTERS_TO_DISPLAY do
-		local button = OFAuctionFrameBrowse.OFFilterButtons[i];
-		button:SetWidth(hasScrollBar and 136 or 156);
+    -- Display the list of open filters
+    local offset = FauxScrollFrame_GetOffset(OFBrowseFilterScrollFrame);
+    if ( forceSelectionIntoView and hasScrollBar and OFAuctionFrameBrowse.selectedCategoryIndex and ( not OFAuctionFrameBrowse.selectedSubCategoryIndex and not OFAuctionFrameBrowse.selectedSubSubCategoryIndex ) ) then
+        if ( OFAuctionFrameBrowse.selectedCategoryIndex <= offset ) then
+            FauxScrollFrame_OnVerticalScroll(OFBrowseFilterScrollFrame, math.max(0.0, (OFAuctionFrameBrowse.selectedCategoryIndex - 1) * OF_BROWSE_FILTER_HEIGHT), OF_BROWSE_FILTER_HEIGHT);
+            offset = FauxScrollFrame_GetOffset(OFBrowseFilterScrollFrame);
+        end
+    end
 
-		dataIndex = dataIndex + 1;
+    local dataIndex = offset;
 
-		if ( dataIndex <= #OF_OPEN_FILTER_LIST ) then
-			local info = OF_OPEN_FILTER_LIST[dataIndex];
+    for i = 1, OF_NUM_FILTERS_TO_DISPLAY do
+        local button = OFAuctionFrameBrowse.OFFilterButtons[i];
+        button:SetWidth(hasScrollBar and 136 or 156);
 
-			if ( info ) then
-				OFFilterButton_SetUp(button, info);
-				
-				if ( info.type == "category" ) then
-					button.categoryIndex = info.categoryIndex;
-				elseif ( info.type == "subCategory" ) then
-					button.subCategoryIndex = info.subCategoryIndex;
-				elseif ( info.type == "subSubCategory" ) then
-					button.subSubCategoryIndex = info.subSubCategoryIndex;
-				end
-				
-				if ( info.selected ) then
-					button:LockHighlight();
-				else
-					button:UnlockHighlight();
-				end
-				button:Show();
-			end
-		else
-			button:Hide();
-		end
-	end
+        dataIndex = dataIndex + 1;
+
+        if ( dataIndex <= #OF_OPEN_FILTER_LIST ) then
+            local info = OF_OPEN_FILTER_LIST[dataIndex];
+
+            if ( info ) then
+                OFFilterButton_SetUp(button, info);
+
+                if ( info.type == "category" ) then
+                    button.categoryIndex = info.categoryIndex;
+                elseif ( info.type == "subCategory" ) then
+                    button.subCategoryIndex = info.subCategoryIndex;
+                elseif ( info.type == "subSubCategory" ) then
+                    button.subSubCategoryIndex = info.subSubCategoryIndex;
+                end
+
+                if ( info.selected ) then
+                    button:LockHighlight();
+                else
+                    button:UnlockHighlight();
+                end
+                button:Show();
+            end
+        else
+            button:Hide();
+        end
+    end
 end
 
 function OFAuctionFrameFilters_AddSubCategories(subCategories)
-	if subCategories then
-		for subCategoryIndex, subCategoryInfo in ipairs(subCategories) do
-			local selected = OFAuctionFrameBrowse.selectedSubCategoryIndex and OFAuctionFrameBrowse.selectedSubCategoryIndex == subCategoryIndex;
+    if subCategories then
+        for subCategoryIndex, subCategoryInfo in ipairs(subCategories) do
+            local selected = OFAuctionFrameBrowse.selectedSubCategoryIndex and OFAuctionFrameBrowse.selectedSubCategoryIndex == subCategoryIndex;
 
-			tinsert(OF_OPEN_FILTER_LIST, { name = subCategoryInfo.name, type = "subCategory", subCategoryIndex = subCategoryIndex, selected = selected });
-		 
-			if ( selected ) then
-				OFAuctionFrameFilters_AddSubSubCategories(subCategoryInfo.subCategories);
-			end
-		end
-	end
+            tinsert(OF_OPEN_FILTER_LIST, { name = subCategoryInfo.name, type = "subCategory", subCategoryIndex = subCategoryIndex, selected = selected });
+
+            if ( selected ) then
+                OFAuctionFrameFilters_AddSubSubCategories(subCategoryInfo.subCategories);
+            end
+        end
+    end
 end
 
 function OFAuctionFrameFilters_AddSubSubCategories(subSubCategories)
-	if subSubCategories then
-		for subSubCategoryIndex, subSubCategoryInfo in ipairs(subSubCategories) do
-			local selected = OFAuctionFrameBrowse.selectedSubSubCategoryIndex and OFAuctionFrameBrowse.selectedSubSubCategoryIndex == subSubCategoryIndex;
-			local isLast = subSubCategoryIndex == #subSubCategories;
+    if subSubCategories then
+        for subSubCategoryIndex, subSubCategoryInfo in ipairs(subSubCategories) do
+            local selected = OFAuctionFrameBrowse.selectedSubSubCategoryIndex and OFAuctionFrameBrowse.selectedSubSubCategoryIndex == subSubCategoryIndex;
+            local isLast = subSubCategoryIndex == #subSubCategories;
 
-			tinsert(OF_OPEN_FILTER_LIST, { name = subSubCategoryInfo.name, type = "subSubCategory", subSubCategoryIndex = subSubCategoryIndex, selected = selected, isLast = isLast});
-		end
-	end
+            tinsert(OF_OPEN_FILTER_LIST, { name = subSubCategoryInfo.name, type = "subSubCategory", subSubCategoryIndex = subSubCategoryIndex, selected = selected, isLast = isLast});
+        end
+    end
 end
 
 function OFFilterButton_SetUp(button, info)
-	local normalText = _G[button:GetName().."NormalText"];
-	local normalTexture = _G[button:GetName().."NormalTexture"];
-	local line = _G[button:GetName().."Lines"];
-	local tex = button:GetNormalTexture();
+    local normalText = _G[button:GetName().."NormalText"];
+    local normalTexture = _G[button:GetName().."NormalTexture"];
+    local line = _G[button:GetName().."Lines"];
+    local tex = button:GetNormalTexture();
 
-	if ( info.type == "category" ) then
-		button:SetNormalFontObject(GameFontNormalSmallLeft);
-		button:SetText(info.name);
-		normalText:SetPoint("LEFT", button, "LEFT", 4, 0);
-		normalTexture:SetAlpha(1.0);	
-		line:Hide();
-	elseif ( info.type == "subCategory" ) then
-		button:SetNormalFontObject(GameFontHighlightSmallLeft);
-		button:SetText(info.name);
-		normalText:SetPoint("LEFT", button, "LEFT", 12, 0);
-		normalTexture:SetAlpha(0.4);
-		line:Hide();
-	elseif ( info.type == "subSubCategory" ) then
-		button:SetNormalFontObject(GameFontHighlightSmallLeft);
-		button:SetText(info.name);
-		normalText:SetPoint("LEFT", button, "LEFT", 20, 0);
-		normalTexture:SetAlpha(0.0);	
-		
-		if ( info.isLast ) then
-			line:SetTexCoord(0.4375, 0.875, 0, 0.625);
-		else
-			line:SetTexCoord(0, 0.4375, 0, 0.625);
-		end
-		line:Show();
-	end
-	button.type = info.type; 
+    if ( info.type == "category" ) then
+        button:SetNormalFontObject(GameFontNormalSmallLeft);
+        button:SetText(info.name);
+        normalText:SetPoint("LEFT", button, "LEFT", 4, 0);
+        normalTexture:SetAlpha(1.0);
+        line:Hide();
+    elseif ( info.type == "subCategory" ) then
+        button:SetNormalFontObject(GameFontHighlightSmallLeft);
+        button:SetText(info.name);
+        normalText:SetPoint("LEFT", button, "LEFT", 12, 0);
+        normalTexture:SetAlpha(0.4);
+        line:Hide();
+    elseif ( info.type == "subSubCategory" ) then
+        button:SetNormalFontObject(GameFontHighlightSmallLeft);
+        button:SetText(info.name);
+        normalText:SetPoint("LEFT", button, "LEFT", 20, 0);
+        normalTexture:SetAlpha(0.0);
+
+        if ( info.isLast ) then
+            line:SetTexCoord(0.4375, 0.875, 0, 0.625);
+        else
+            line:SetTexCoord(0, 0.4375, 0, 0.625);
+        end
+        line:Show();
+    end
+    button.type = info.type;
 end
 
 function OFAuctionFrameFilter_OnClick(self, button)
-	if ( self.type == "category" ) then
-		if ( OFAuctionFrameBrowse.selectedCategoryIndex == self.categoryIndex ) then
-			OFAuctionFrameBrowse.selectedCategoryIndex = nil;
-		else
-			OFAuctionFrameBrowse.selectedCategoryIndex = self.categoryIndex;
+    if ( self.type == "category" ) then
+        if ( OFAuctionFrameBrowse.selectedCategoryIndex == self.categoryIndex ) then
+            OFAuctionFrameBrowse.selectedCategoryIndex = nil;
+        else
+            OFAuctionFrameBrowse.selectedCategoryIndex = self.categoryIndex;
             local sortParams = currentSortParams["list"]
             if sortParams and sortParams.column == "quality" and sortParams.desc then
                 OFAuctionFrame_SetSort("list", "quality", false)
             end
-		end
-		OFAuctionFrameBrowse.selectedSubCategoryIndex = nil;
-		OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
-	elseif ( self.type == "subCategory" ) then
-		if ( OFAuctionFrameBrowse.selectedSubCategoryIndex == self.subCategoryIndex ) then
-			OFAuctionFrameBrowse.selectedSubCategoryIndex = nil;
-			OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
-		else
-			OFAuctionFrameBrowse.selectedSubCategoryIndex = self.subCategoryIndex;
-			OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
-		end
-	elseif ( self.type == "subSubCategory" ) then
-		if ( OFAuctionFrameBrowse.selectedSubSubCategoryIndex == self.subSubCategoryIndex ) then
-			OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
-		else
-			OFAuctionFrameBrowse.selectedSubSubCategoryIndex = self.subSubCategoryIndex
-		end
-	end
-	OFAuctionFrameFilters_Update(true)
+        end
+        OFAuctionFrameBrowse.selectedSubCategoryIndex = nil;
+        OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
+    elseif ( self.type == "subCategory" ) then
+        if ( OFAuctionFrameBrowse.selectedSubCategoryIndex == self.subCategoryIndex ) then
+            OFAuctionFrameBrowse.selectedSubCategoryIndex = nil;
+            OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
+        else
+            OFAuctionFrameBrowse.selectedSubCategoryIndex = self.subCategoryIndex;
+            OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
+        end
+    elseif ( self.type == "subSubCategory" ) then
+        if ( OFAuctionFrameBrowse.selectedSubSubCategoryIndex == self.subSubCategoryIndex ) then
+            OFAuctionFrameBrowse.selectedSubSubCategoryIndex = nil;
+        else
+            OFAuctionFrameBrowse.selectedSubSubCategoryIndex = self.subSubCategoryIndex
+        end
+    end
+    OFAuctionFrameFilters_Update(true)
 end
 
 local function UpdateItemIcon(itemID, buttonName, texture, count, canUse)
@@ -1797,11 +1797,11 @@ function OFAuctionFrameBrowse_Update()
                 item = items[index - 1 - #auctions]
             end
             ns.TryExcept(
-                function() UpdateItemEntry(index, i, offset, button, item, numBatchAuctions, totalEntries, "list") end,
-                function(err)
-                    button:Hide()
-                    ns.DebugLog("Browse UpdateItemEntry failed: ", err)
-                end
+                    function() UpdateItemEntry(index, i, offset, button, item, numBatchAuctions, totalEntries, "list") end,
+                    function(err)
+                        button:Hide()
+                        ns.DebugLog("Browse UpdateItemEntry failed: ", err)
+                    end
             )
 
         elseif ( shouldHide ) then
@@ -1817,16 +1817,16 @@ function OFAuctionFrameBrowse_Update()
                     if (deferredButton.auctionId == deferredAuction.id) then
                         deferredButton:Show()
                         ns.TryExcept(
-                            function() UpdateBrowseEntry(deferredIndex, deferredI, deferredOffset, deferredButton, deferredAuction, numBatchAuctions, totalEntries) end,
-                            function(err) deferredButton:Hide(); ns.DebugLog("rendering deferred browse entry failed: ", err) end
+                                function() UpdateBrowseEntry(deferredIndex, deferredI, deferredOffset, deferredButton, deferredAuction, numBatchAuctions, totalEntries) end,
+                                function(err) deferredButton:Hide(); ns.DebugLog("rendering deferred browse entry failed: ", err) end
                         )
                     end
                 end)
             end
         else
             ns.TryExcept(
-                function() UpdateBrowseEntry(index, i, offset, button, auction, numBatchAuctions, totalEntries) end,
-                function(err) button:Hide(); ns.DebugLog("rendering browse entry failed: ", err) end
+                    function() UpdateBrowseEntry(index, i, offset, button, auction, numBatchAuctions, totalEntries) end,
+                    function(err) button:Hide(); ns.DebugLog("rendering browse entry failed: ", err) end
             )
         end
     end
@@ -1997,27 +1997,27 @@ function OFAuctionFrameBid_Update()
     local auctions = ns.GetMyPendingAuctions(currentSortParams["bidder"].params)
     local totalAuctions = #auctions
     local numBatchAuctions = min(totalAuctions, OF_NUM_AUCTION_ITEMS_PER_PAGE)
-	local button, auction
-	local offset = FauxScrollFrame_GetOffset(OFBidScrollFrame);
-	local index;
-	local isLastSlotEmpty;
+    local button, auction
+    local offset = FauxScrollFrame_GetOffset(OFBidScrollFrame);
+    local index;
+    local isLastSlotEmpty;
     OFBidCancelAuctionButton:Disable()
     OFBidForgiveLoanButton:Disable()
     OFBidWhisperButton:Disable()
     OFBidInviteButton:Disable()
 
     -- Update sort arrows
-	OFSortButton_UpdateArrow(OFBidQualitySort, "bidder", "quality")
+    OFSortButton_UpdateArrow(OFBidQualitySort, "bidder", "quality")
     OFSortButton_UpdateArrow(OFBidTypeSort, "bidder", "type")
     OFSortButton_UpdateArrow(OFBidDeliverySort, "bidder", "delivery")
     OFSortButton_UpdateArrow(OFBidBuyerName, "bidder", "buyer")
     OFSortButton_UpdateArrow(OFBidRatingSort, "bidder", "rating")
     OFSortButton_UpdateArrow(OFBidStatusSort, "bidder", "status")
-	OFSortButton_UpdateArrow(OFBidBidSort, "bidder", "bid")
+    OFSortButton_UpdateArrow(OFBidBidSort, "bidder", "bid")
 
-	for i=1, OF_NUM_BIDS_TO_DISPLAY do
-		index = offset + i;
-		button = _G["OFBidButton"..i]
+    for i=1, OF_NUM_BIDS_TO_DISPLAY do
+        index = offset + i;
+        button = _G["OFBidButton"..i]
 
         auction = auctions[index]
         if (auction) then
@@ -2025,13 +2025,13 @@ function OFAuctionFrameBid_Update()
         else
             button.auctionId = nil
         end
-		-- Show or hide auction buttons
-		if ( auction == nil or index > numBatchAuctions ) then
-			button:Hide();
-			-- If the last button is empty then set isLastSlotEmpty var
-			isLastSlotEmpty = (i == OF_NUM_BIDS_TO_DISPLAY);
-		else
-			button:Show()
+        -- Show or hide auction buttons
+        if ( auction == nil or index > numBatchAuctions ) then
+            button:Hide();
+            -- If the last button is empty then set isLastSlotEmpty var
+            isLastSlotEmpty = (i == OF_NUM_BIDS_TO_DISPLAY);
+        else
+            button:Show()
             local itemName = ns.GetItemInfo(auction.itemID)
             if (itemName) then
                 ns.TryExcept(
@@ -2051,34 +2051,34 @@ function OFAuctionFrameBid_Update()
                     end
                 end)
             end
-		end
-	end
-	-- If more than one page of auctions show the next and prev arrows when the scrollframe is scrolled all the way down
-	if ( totalAuctions > OF_NUM_AUCTION_ITEMS_PER_PAGE ) then
-		if ( isLastSlotEmpty ) then
-			OFBidSearchCountText:Show()
-			OFBidSearchCountText:SetFormattedText(SINGLE_PAGE_RESULTS_TEMPLATE, totalAuctions)
-		else
-			OFBidSearchCountText:Hide()
-		end
-		
-		-- Artifically inflate the number of results so the scrollbar scrolls one extra row
-		numBatchAuctions = numBatchAuctions + 1
-	else
-		OFBidSearchCountText:Hide()
-	end
+        end
+    end
+    -- If more than one page of auctions show the next and prev arrows when the scrollframe is scrolled all the way down
+    if ( totalAuctions > OF_NUM_AUCTION_ITEMS_PER_PAGE ) then
+        if ( isLastSlotEmpty ) then
+            OFBidSearchCountText:Show()
+            OFBidSearchCountText:SetFormattedText(SINGLE_PAGE_RESULTS_TEMPLATE, totalAuctions)
+        else
+            OFBidSearchCountText:Hide()
+        end
 
-	-- Update scrollFrame
-	FauxScrollFrame_Update(OFBidScrollFrame, numBatchAuctions, OF_NUM_BIDS_TO_DISPLAY, OF_AUCTIONS_BUTTON_HEIGHT)
+        -- Artifically inflate the number of results so the scrollbar scrolls one extra row
+        numBatchAuctions = numBatchAuctions + 1
+    else
+        OFBidSearchCountText:Hide()
+    end
+
+    -- Update scrollFrame
+    FauxScrollFrame_Update(OFBidScrollFrame, numBatchAuctions, OF_NUM_BIDS_TO_DISPLAY, OF_AUCTIONS_BUTTON_HEIGHT)
 end
 
 function OFBidButton_OnClick(button)
-	assert(button)
-	
-	OFSetSelectedAuctionItem("bidder", button.auction)
-	-- Close any auction related popups
-	OFCloseAuctionStaticPopups()
-	OFAuctionFrameBid_Update()
+    assert(button)
+
+    OFSetSelectedAuctionItem("bidder", button.auction)
+    -- Close any auction related popups
+    OFCloseAuctionStaticPopups()
+    OFAuctionFrameBid_Update()
 end
 
 function OFIsGoldItemSelected()
@@ -2095,10 +2095,10 @@ end
 function OFDeliveryDropdown_Initialize(self, level)
     local info = UIDropDownMenu_CreateInfo()
     local parent = self:GetParent() or self  -- Fallback to self if no parent
-    
+
     -- Use the global function, not a method
     local isSpellSelected = OFIsSpellItemSelected()
-    
+
     -- "Any" option (if spell/item is NOT selected)
     if not isSpellSelected then
         info.text = "Any"
@@ -2136,7 +2136,7 @@ end
 function OFPriceTypeDropdown_Initialize(self, level)
     local info = UIDropDownMenu_CreateInfo()
     local parent = self:GetParent() or self  -- Fallback to self if no parent
-    
+
     -- Use the global function, not a method
     local isGoldSelected = OFIsGoldItemSelected()
 
@@ -2144,7 +2144,7 @@ function OFPriceTypeDropdown_Initialize(self, level)
     if not isGoldSelected then
         info.text = "Gold"
         info.value = ns.PRICE_TYPE_MONEY
-        info.func = function() 
+        info.func = function()
             parent:SetPriceSelected(ns.PRICE_TYPE_MONEY)
             UIDropDownMenu_SetSelectedValue(OFPriceTypeDropdown, ns.PRICE_TYPE_MONEY)
         end
@@ -2281,9 +2281,9 @@ function OFAuctionFrameAuctions_OnLoad(self)
 end
 
 function OFAuctionFrameAuctions_OnEvent(self, event, ...)
-	if ( event == "AUCTION_OWNED_LIST_UPDATE") then
-		OFAuctionFrameAuctions_Update();
-	end
+    if ( event == "AUCTION_OWNED_LIST_UPDATE") then
+        OFAuctionFrameAuctions_Update();
+    end
 end
 
 local function DeselectAuctionItem()
@@ -2397,20 +2397,20 @@ function OFAuctionFrameAuctions_Update()
     local auctions = ns.GetMyActiveAuctions(currentSortParams["owner"].params)
     local totalAuctions = #auctions
     local numBatchAuctions = min(totalAuctions + 2, OF_NUM_AUCTION_ITEMS_PER_PAGE)
-	local offset = FauxScrollFrame_GetOffset(OFAuctionsScrollFrame)
-	local index
-	local isLastSlotEmpty
-	local auction, button, itemName
+    local offset = FauxScrollFrame_GetOffset(OFAuctionsScrollFrame)
+    local index
+    local isLastSlotEmpty
+    local auction, button, itemName
 
-	-- Update sort arrows
-	OFSortButton_UpdateArrow(OFAuctionsQualitySort, "owner", "quality")
-	OFSortButton_UpdateArrow(OFAuctionsLevelSort, "owner", "level")
+    -- Update sort arrows
+    OFSortButton_UpdateArrow(OFAuctionsQualitySort, "owner", "quality")
+    OFSortButton_UpdateArrow(OFAuctionsLevelSort, "owner", "level")
     OFSortButton_UpdateArrow(OFAuctionsTypeSort, "owner", "type")
     OFSortButton_UpdateArrow(OFAuctionsDeliverySort, "owner", "delivery")
     OFSortButton_UpdateArrow(OFAuctionsBidSort, "owner", "bid")
 
-	for i=1, OF_NUM_AUCTIONS_TO_DISPLAY do
-		index = offset + i + (OF_NUM_AUCTION_ITEMS_PER_PAGE * OFAuctionFrameAuctions.page)
+    for i=1, OF_NUM_AUCTIONS_TO_DISPLAY do
+        index = offset + i + (OF_NUM_AUCTION_ITEMS_PER_PAGE * OFAuctionFrameAuctions.page)
         auction = auctions[index - 2]
         button = _G["OFAuctionsButton"..i];
         if (auction == nil) then
@@ -2421,38 +2421,38 @@ function OFAuctionFrameAuctions_Update()
 
         local isItem = index == 1
         local isEnchantEntry = index == 2
-		-- Show or hide auction buttons
+        -- Show or hide auction buttons
         if isItem then
             auction = nil
 
             ns.TryExcept(
-                function() UpdateItemEntry(index, i, offset, button, ns.ITEM_GOLD, numBatchAuctions, totalAuctions + 2, "owner") end,
-                function(err)
-                    button:Hide()
-                    ns.DebugLog("OFAuctionFrameAuctions_Update UpdateItemEntry failed: ", err)
-                end
+                    function() UpdateItemEntry(index, i, offset, button, ns.ITEM_GOLD, numBatchAuctions, totalAuctions + 2, "owner") end,
+                    function(err)
+                        button:Hide()
+                        ns.DebugLog("OFAuctionFrameAuctions_Update UpdateItemEntry failed: ", err)
+                    end
             )
         elseif isEnchantEntry then
             auction = nil
 
             ns.TryExcept(
-                function() UpdateEnchantAuctionEntry(index, i, offset, button, numBatchAuctions, totalAuctions + 2) end,
-                function(err)
-                    button:Hide()
-                    ns.DebugLog("rendering auction item entry failed: ", err)
-                end
+                    function() UpdateEnchantAuctionEntry(index, i, offset, button, numBatchAuctions, totalAuctions + 2) end,
+                    function(err)
+                        button:Hide()
+                        ns.DebugLog("rendering auction item entry failed: ", err)
+                    end
             )
 
-		elseif ( auction == nil or index > (numBatchAuctions + (OF_NUM_AUCTION_ITEMS_PER_PAGE * OFAuctionFrameAuctions.page)) ) then
-			button:Hide();
-			-- If the last button is empty then set isLastSlotEmpty var
-			isLastSlotEmpty = (i == OF_NUM_AUCTIONS_TO_DISPLAY);
-		else
+        elseif ( auction == nil or index > (numBatchAuctions + (OF_NUM_AUCTION_ITEMS_PER_PAGE * OFAuctionFrameAuctions.page)) ) then
+            button:Hide();
+            -- If the last button is empty then set isLastSlotEmpty var
+            isLastSlotEmpty = (i == OF_NUM_AUCTIONS_TO_DISPLAY);
+        else
             itemName = ns.GetItemInfo(auction.itemID)
             if (itemName) then
                 ns.TryExcept(
-                    function() UpdateAuctionEntry(index, i, offset, button, auction, numBatchAuctions, totalAuctions + 2) end,
-                    function(err) button:Hide(); ns.DebugLog("rendering auction entry failed: ", err) end
+                        function() UpdateAuctionEntry(index, i, offset, button, auction, numBatchAuctions, totalAuctions + 2) end,
+                        function(err) button:Hide(); ns.DebugLog("rendering auction entry failed: ", err) end
                 )
             else
                 local deferredI, deferredIndex, deferredAuction, deferredOffset = i, index, auction, offset
@@ -2461,54 +2461,54 @@ function OFAuctionFrameAuctions_Update()
                     if (deferredButton.auctionId == deferredAuction.id) then
                         deferredButton:Show()
                         ns.TryExcept(
-                            function() UpdateAuctionEntry(deferredIndex, deferredI, deferredOffset, deferredButton, deferredAuction, numBatchAuctions, totalAuctions + 2) end,
-                            function(err) deferredButton:Hide(); ns.DebugLog("rendering deferred auction entry failed: ", err) end
+                                function() UpdateAuctionEntry(deferredIndex, deferredI, deferredOffset, deferredButton, deferredAuction, numBatchAuctions, totalAuctions + 2) end,
+                                function(err) deferredButton:Hide(); ns.DebugLog("rendering deferred auction entry failed: ", err) end
                         )
                     end
                 end)
             end
-		end
-	end
-	-- If more than one page of auctions show the next and prev arrows when the scrollframe is scrolled all the way down
-	if ( totalAuctions > OF_NUM_AUCTION_ITEMS_PER_PAGE ) then
-		if ( isLastSlotEmpty ) then
-			OFAuctionsSearchCountText:Show();
-			OFAuctionsSearchCountText:SetFormattedText(SINGLE_PAGE_RESULTS_TEMPLATE, totalAuctions);
-		else
-			OFAuctionsSearchCountText:Hide();
-		end
+        end
+    end
+    -- If more than one page of auctions show the next and prev arrows when the scrollframe is scrolled all the way down
+    if ( totalAuctions > OF_NUM_AUCTION_ITEMS_PER_PAGE ) then
+        if ( isLastSlotEmpty ) then
+            OFAuctionsSearchCountText:Show();
+            OFAuctionsSearchCountText:SetFormattedText(SINGLE_PAGE_RESULTS_TEMPLATE, totalAuctions);
+        else
+            OFAuctionsSearchCountText:Hide();
+        end
 
-		-- Artifically inflate the number of results so the scrollbar scrolls one extra row
-		numBatchAuctions = numBatchAuctions + 1;
-	else
-		OFAuctionsSearchCountText:Hide();
-	end
+        -- Artifically inflate the number of results so the scrollbar scrolls one extra row
+        numBatchAuctions = numBatchAuctions + 1;
+    else
+        OFAuctionsSearchCountText:Hide();
+    end
 
     local selected = OFGetSelectedAuctionItem("owner")
 
-	if (selected and ns.CanCancelAuction(selected)) then
+    if (selected and ns.CanCancelAuction(selected)) then
         OFAuctionsCancelAuctionButton.auction = selected
-		OFAuctionsCancelAuctionButton:Enable()
-	else
+        OFAuctionsCancelAuctionButton:Enable()
+    else
         OFAuctionsCancelAuctionButton.auction = nil
-		OFAuctionsCancelAuctionButton:Disable()
-	end
+        OFAuctionsCancelAuctionButton:Disable()
+    end
 
-	-- Update scrollFrame
-	FauxScrollFrame_Update(OFAuctionsScrollFrame, numBatchAuctions, OF_NUM_AUCTIONS_TO_DISPLAY, OF_AUCTIONS_BUTTON_HEIGHT);
+    -- Update scrollFrame
+    FauxScrollFrame_Update(OFAuctionsScrollFrame, numBatchAuctions, OF_NUM_AUCTIONS_TO_DISPLAY, OF_AUCTIONS_BUTTON_HEIGHT);
 end
 
 function GetEffectiveAuctionsScrollFrameOffset()
-	return FauxScrollFrame_GetOffset(OFAuctionsScrollFrame)
+    return FauxScrollFrame_GetOffset(OFAuctionsScrollFrame)
 end
 
 function OFAuctionsButton_OnClick(button)
-	assert(button)
+    assert(button)
     OFSetSelectedAuctionItem("owner", button.auction)
-	-- Close any auction related popups
-	OFCloseAuctionStaticPopups()
-	OFAuctionFrameAuctions.cancelPrice = button.cancelPrice
-	OFAuctionFrameAuctions_Update()
+    -- Close any auction related popups
+    OFCloseAuctionStaticPopups()
+    OFAuctionFrameAuctions.cancelPrice = button.cancelPrice
+    OFAuctionFrameAuctions_Update()
 end
 
 
@@ -2530,24 +2530,24 @@ function OFAuctionSellItemButton_OnEvent(self, event, ...)
         OFSetupDeliveryDropdown(OFAuctionFrameAuctions)
         OFSetupPriceTypeDropdown(OFAuctionFrameAuctions)
         OFUpdateAuctionSellItem()
-	end
+    end
 end
 
 function OFAuctionSellItemButton_OnClick(self, button)
     if button == "RightButton" then
         DeselectAuctionItem()
     end
-	ClickAuctionSellItemButton(self, button)
-	OFAuctionsFrameAuctions_ValidateAuction()
+    ClickAuctionSellItemButton(self, button)
+    OFAuctionsFrameAuctions_ValidateAuction()
 end
 
 function OFAuctionsFrameAuctions_ValidateAuction()
-	OFAuctionsCreateAuctionButton:Disable()
-	-- No item
+    OFAuctionsCreateAuctionButton:Disable()
+    -- No item
     local name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID = OFGetAuctionSellItemInfo()
-	if not name then
-		return
-	end
+    if not name then
+        return
+    end
 
     local priceType = OFAuctionFrameAuctions.priceTypeIndex
     if priceType == ns.PRICE_TYPE_MONEY then
@@ -2576,17 +2576,17 @@ function OFAuctionsFrameAuctions_ValidateAuction()
         end
     end
 
-	OFAuctionsCreateAuctionButton:Enable()
+    OFAuctionsCreateAuctionButton:Enable()
 end
 
 
 function OFAuctionFrame_GetTimeLeftText(id)
-	return _G["AUCTION_TIME_LEFT"..id]
+    return _G["AUCTION_TIME_LEFT"..id]
 end
 
 function OFAuctionFrame_GetTimeLeftTooltipText(id)
-	local text = _G["AUCTION_TIME_LEFT"..id.."_DETAIL"]
-	return text
+    local text = _G["AUCTION_TIME_LEFT"..id.."_DETAIL"]
+    return text
 end
 
 local function SetupUnitPriceTooltip(tooltip, type, auctionItem, excludeMissions)
@@ -2610,7 +2610,7 @@ local function SetupUnitPriceTooltip(tooltip, type, auctionItem, excludeMissions
     end
 
     if ( auctionItem and auctionItem.itemCount > 1 and auctionItem.buyoutPrice > 0 and auctionItem.itemID ~= ns.ITEM_ID_GOLD and (not auctionItem.auction or auctionItem.auction.priceType == ns.PRICE_TYPE_MONEY)) then
-		-- If column is showing total price, then tooltip shows price per unit, and vice versa.
+        -- If column is showing total price, then tooltip shows price per unit, and vice versa.
 
         local prefix
         local amount
@@ -2620,11 +2620,11 @@ local function SetupUnitPriceTooltip(tooltip, type, auctionItem, excludeMissions
         amount = ceil(amount / auctionItem.itemCount)
         SetTooltipMoney(tooltip, amount, nil, prefix)
 
-		-- This is necessary to update the extents of the tooltip
-		tooltip:Show()
+        -- This is necessary to update the extents of the tooltip
+        tooltip:Show()
 
-		return true
-	end
+        return true
+    end
 
     -- Show delivery tooltip if available
     if auctionItem.auction then
@@ -2633,26 +2633,26 @@ local function SetupUnitPriceTooltip(tooltip, type, auctionItem, excludeMissions
         return true
     end
 
-	return false
+    return false
 end
 
 local function GetAuctionButton(buttonType, id)
-	if ( buttonType == "owner" ) then
-		return _G["OFAuctionsButton"..id];
-	elseif ( buttonType == "bidder" ) then
-		return _G["OFBidButton"..id];
-	elseif ( buttonType == "list" ) then
-		return _G["OFBrowseButton"..id];
-	end
+    if ( buttonType == "owner" ) then
+        return _G["OFAuctionsButton"..id];
+    elseif ( buttonType == "bidder" ) then
+        return _G["OFBidButton"..id];
+    elseif ( buttonType == "list" ) then
+        return _G["OFBrowseButton"..id];
+    end
 end
 
 function OFAuctionBrowseFrame_CheckUnlockHighlight(self, selectedType, offset)
-	local selected = OFGetSelectedAuctionItem(selectedType)
+    local selected = OFGetSelectedAuctionItem(selectedType)
     local button = self.auction and self or self:GetParent()
     local auction = button.auction
-	if ( not selected or not auction or selected.id ~= auction.id) then
-		self:GetParent():UnlockHighlight()
-	end
+    if ( not selected or not auction or selected.id ~= auction.id) then
+        self:GetParent():UnlockHighlight()
+    end
 end
 
 function OFAuctionPriceTooltipFrame_OnLoad(self)
@@ -2660,22 +2660,22 @@ function OFAuctionPriceTooltipFrame_OnLoad(self)
 end
 
 function OFAuctionPriceTooltipFrame_OnEnter(self)
-	self:GetParent():LockHighlight();
+    self:GetParent():LockHighlight();
 
-	-- Unit price is only supported on the list tab, no need to pass in buttonType argument
-	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-	local button = GetAuctionButton("list", self:GetParent():GetID());
-	local hasTooltip = SetupUnitPriceTooltip(GameTooltip, "list", button, false);
-	if (not hasTooltip) then
-		GameTooltip_Hide();
-	end
-	activeTooltipPriceTooltipFrame = self;
+    -- Unit price is only supported on the list tab, no need to pass in buttonType argument
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+    local button = GetAuctionButton("list", self:GetParent():GetID());
+    local hasTooltip = SetupUnitPriceTooltip(GameTooltip, "list", button, false);
+    if (not hasTooltip) then
+        GameTooltip_Hide();
+    end
+    activeTooltipPriceTooltipFrame = self;
 end
 
 function OFAuctionPriceTooltipFrame_OnLeave(self)
-	OFAuctionBrowseFrame_CheckUnlockHighlight(self, "list", FauxScrollFrame_GetOffset(OFBrowseScrollFrame));
-	GameTooltip_Hide();
-	activeTooltipPriceTooltipFrame = nil;
+    OFAuctionBrowseFrame_CheckUnlockHighlight(self, "list", FauxScrollFrame_GetOffset(OFBrowseScrollFrame));
+    GameTooltip_Hide();
+    activeTooltipPriceTooltipFrame = nil;
 end
 
 function OFAuctionFrameItem_OnEnter(self, type)
@@ -2727,28 +2727,28 @@ function OFAuctionFrameItem_OnClickModified(self, type, index, overrideID)
 end
 
 function OFAuctionFrameItem_OnLeave(self)
-	GameTooltip_Hide()
-	ResetCursor()
-	activeTooltipAuctionFrameItem = nil
+    GameTooltip_Hide()
+    ResetCursor()
+    activeTooltipAuctionFrameItem = nil
 end
 
 
 -- SortButton functions
 function OFSortButton_UpdateArrow(button, type, sort)
-	local primaryColumn, reversed = GetAuctionSortColumn(type);
-	button.Arrow:SetShown(sort == primaryColumn);
-	if (sort == primaryColumn) then
-		if (reversed) then
-			button.Arrow:SetTexCoord(0, 0.5625, 1, 0);
-		else
-			button.Arrow:SetTexCoord(0, 0.5625, 0, 1);
-		end
-	end
+    local primaryColumn, reversed = GetAuctionSortColumn(type);
+    button.Arrow:SetShown(sort == primaryColumn);
+    if (sort == primaryColumn) then
+        if (reversed) then
+            button.Arrow:SetTexCoord(0, 0.5625, 1, 0);
+        else
+            button.Arrow:SetTexCoord(0, 0.5625, 0, 1);
+        end
+    end
 end
 
 -- Function to close popups if another auction item is selected
 function OFCloseAuctionStaticPopups()
-	StaticPopup_Hide("OF_CANCEL_AUCTION_PENDING")
+    StaticPopup_Hide("OF_CANCEL_AUCTION_PENDING")
     StaticPopup_Hide("OF_BUY_AUCTION_DEATH_ROLL")
     StaticPopup_Hide("OF_BUY_AUCTION_DUEL")
     StaticPopup_Hide("OF_BUY_AUCTION_GOLD")
@@ -2824,17 +2824,17 @@ function OFAuctionsCreateAuctionButton_OnClick()
     local prev = GetCVar("Sound_EnableSFX")
     SetCVar("Sound_EnableSFX", 0)
     ns.TryFinally(
-        function()
-            OFAuctionsNote:SetText(OF_NOTE_PLACEHOLDER)
-            ClickAuctionSellItemButton(OFAuctionsItemButton, "LeftButton")
-            auctionSellItemInfo = nil
-            OFUpdateAuctionSellItem()
-            OFAuctionFrameAuctions_Update()
-            ClearCursor()
-        end,
-        function()
-            SetCVar("Sound_EnableSFX", prev)
-        end
+            function()
+                OFAuctionsNote:SetText(OF_NOTE_PLACEHOLDER)
+                ClickAuctionSellItemButton(OFAuctionsItemButton, "LeftButton")
+                auctionSellItemInfo = nil
+                OFUpdateAuctionSellItem()
+                OFAuctionFrameAuctions_Update()
+                ClearCursor()
+            end,
+            function()
+                SetCVar("Sound_EnableSFX", prev)
+            end
     )
 end
 

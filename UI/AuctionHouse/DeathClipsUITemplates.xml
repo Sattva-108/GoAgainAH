@@ -58,6 +58,26 @@
                     </Anchors>
                     <TexCoords left="0.078125" right="0.75" top="0" bottom="1" />
                 </Texture>
+
+                <!-- Old Level -->
+                <FontString name="$parentOldLevelText" inherits="GameFontNormalLarge" justifyH="CENTER">
+                    <Size><AbsDimension x="40" y="32" /></Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"> <!-- Generic default anchor, will be overridden by Lua -->
+                            <Offset><AbsDimension x="400" y="0" /></Offset> <!-- Arbitrary default X offset -->
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <!-- Old Class -->
+                <FontString name="$parentOldClassText" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size><AbsDimension x="70" y="32" /></Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentOldLevelText" relativePoint="RIGHT">
+                            <Offset><AbsDimension x="5" y="0" /></Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
             </Layer>
         </Layers>
 
@@ -101,21 +121,21 @@
 
             <Frame name="GoAgainAH_StatusTooltip" parent="OFAuctionFrameDeathClips" hidden="true" frameStrata="TOOLTIP">
                 <Size x="230" y="50"/>
-<!--                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"-->
-<!--                          edgeFile="Interface\DialogFrame\UI-Tooltip-Border"-->
-<!--                          tile="true">-->
-<!--                    <EdgeSize val="16"/>-->
-<!--                    <TileSize val="32"/>-->
-<!--                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>-->
-<!--                </Backdrop>-->
+                <!--                <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"-->
+                <!--                          edgeFile="Interface\DialogFrame\UI-Tooltip-Border"-->
+                <!--                          tile="true">-->
+                <!--                    <EdgeSize val="16"/>-->
+                <!--                    <TileSize val="32"/>-->
+                <!--                    <BackgroundInsets left="5" right="5" top="5" bottom="5"/>-->
+                <!--                </Backdrop>-->
                 <Layers>
-<!--                    &lt;!&ndash; ── FULLY OPAQUE BLACK BACKGROUND ── &ndash;&gt;-->
-<!--                    <Layer level="BACKGROUND">-->
-<!--                        <Texture name="$parentSolidBG" file="Interface\Tooltips\UI-Tooltip-Background" tile="true">-->
-<!--                            <Color r="0" g="0" b="0" a="1"/>-->
-<!--                            <AllPoints/>-->
-<!--                        </Texture>-->
-<!--                    </Layer>-->
+                    <!--                    &lt;!&ndash; ── FULLY OPAQUE BLACK BACKGROUND ── &ndash;&gt;-->
+                    <!--                    <Layer level="BACKGROUND">-->
+                    <!--                        <Texture name="$parentSolidBG" file="Interface\Tooltips\UI-Tooltip-Background" tile="true">-->
+                    <!--                            <Color r="0" g="0" b="0" a="1"/>-->
+                    <!--                            <AllPoints/>-->
+                    <!--                        </Texture>-->
+                    <!--                    </Layer>-->
                     <!-- ── YOUR TEXT LAYERS ── -->
                     <Layer level="ARTWORK">
                         <FontString name="$parentLine1" inherits="GameFontNormalSmall" justifyH="LEFT">
@@ -256,11 +276,11 @@
                         </FontString>
                     </Layer>
                 </Layers>
-<!--                <Scripts>-->
-<!--                    <OnLoad>-->
-<!--                        self:SetScale(1.5)-->
-<!--                    </OnLoad>-->
-<!--                </Scripts>-->
+                <!--                <Scripts>-->
+                <!--                    <OnLoad>-->
+                <!--                        self:SetScale(1.5)-->
+                <!--                    </OnLoad>-->
+                <!--                </Scripts>-->
             </Frame>
 
             <!-- Rating Frame -->
@@ -312,10 +332,10 @@
                 <Scripts>
                     <OnLoad>
                         self:SetBackdrop({
-                            bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-                            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-                            tile = true, tileSize = 16, edgeSize = 16,
-                            insets = { left = 3, right = 3, top = 5, bottom = 3 }
+                        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+                        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                        tile = true, tileSize = 16, edgeSize = 16,
+                        insets = { left = 3, right = 3, top = 5, bottom = 3 }
                         })
                         self:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
                         self:SetBackdropBorderColor(0.4, 0.4, 0.4)
@@ -335,7 +355,7 @@
                                 <Anchor point="TOPLEFT" x="5" y="-5"/>
                             </Anchors>
                         </Texture>
-                       <FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
+                        <FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
                             <Anchors>
                                 <Anchor point="TOPLEFT" x="7" y="-7"/>
                             </Anchors>
@@ -355,7 +375,7 @@
                             <Anchor point="TOPLEFT" relativeTo="$parentFactionIcon" relativePoint="BOTTOMLEFT" x="2" y="20"/>
                         </Anchors>
                     </Frame>
-               </Frames>
+                </Frames>
             </Frame>
         </Frames>
     </Frame>

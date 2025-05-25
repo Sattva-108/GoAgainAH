@@ -94,7 +94,7 @@ local function CreateClipsSorter(sortParams)
         elseif k == "clip" then
             addSorter(desc, function(l, r)
                 -- Completed tab: sort by numeric playedTime
-                if ns.isCompletedTabActive then
+                if ns.currentActiveTabId == "COMPLETED_CLIPS" then -- Use ns.currentActiveTabId
                     -- Ensure numeric comparison
                     local a = tonumber(l.playedTime) or 0
                     local b = tonumber(r.playedTime) or 0
@@ -107,6 +107,14 @@ local function CreateClipsSorter(sortParams)
             addSorter(desc, function(l, r) return 0 end)
         elseif k == "rating" then
             addSorter(desc, GetDeathClipRatingSorter(desc))
+        elseif k == "oldlevel" then
+            addSorter(desc, function(l, r)
+                return (tonumber(l.oldLevel) or 0) - (tonumber(r.oldLevel) or 0)
+            end)
+        elseif k == "oldclass" then
+            addSorter(desc, function(l, r)
+                return stringCompare(l, r, "oldClassToken")
+            end)
         end
     end
 
