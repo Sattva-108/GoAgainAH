@@ -68,10 +68,12 @@ function ns.IsPlayerOnFriendsList(characterName)
                         if watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0 then
                             displayLevel = watchedEntry.lastKnownActualLevel
                         else
-                            displayLevel = watchedEntry.clipLevel -- Fallback to clipLevel if lastKnown is invalid
+                            -- lastKnownActualLevel is nil or 0, meaning never truly observed or invalid
+                            displayLevel = 0
                         end
                     else
-                        displayLevel = 0 -- Should not happen for a watched friend, but as a fallback
+                        -- Not a watched friend, or no entry (should ideally not happen if they are on friends list and being processed)
+                        displayLevel = 0
                     end
                 end
 
@@ -233,11 +235,17 @@ local function ShowHoverTooltipForIcon(iconButton)
         if isFriend then
             HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
             if isConnected then
-                HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", displayLevel or 0))
+                HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", displayLevel or 0)) -- displayLevel is a number here
             else
-                HoverTooltip:AddLine(string.format("|cff888888(Не в сети - Уровень: %d)|r", displayLevel or 0))
-                if clipLevelFromDB and clipLevelFromDB ~= displayLevel then
-                    HoverTooltip:AddLine(string.format("|cff888888(Исходный уровень: %d)|r", clipLevelFromDB))
+                -- For displayLevel == 0 (unknown actual level for offline friend), show "0"
+                HoverTooltip:AddLine(string.format("|cffaaaaaa(Не в сети - Уровень: %d)|r", displayLevel)) -- displayLevel is a number >= 0 here
+
+                -- Show original clip level if it exists
+                if clipLevelFromDB then
+                    -- If displayLevel is 0 (unknown), we want to show original. If displayLevel is a known number (>0), only show if different.
+                    if displayLevel == 0 or (type(displayLevel) == "number" and displayLevel > 0 and clipLevelFromDB ~= displayLevel) then
+                        HoverTooltip:AddLine(string.format("|cffaaaaaa(Исходный уровень: %d)|r", clipLevelFromDB))
+                    end
                 end
             end
         else
@@ -328,15 +336,11 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
             AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 
             if wasAlreadyFriend then
-                ns.lastActionStatus = { characterName = characterName, text = string.format("%s |cff00ff00уже в друзьях.|r", characterName) }
-                if wasConnected then
-                    ns.lastActionStatus.line2 = string.format("|cff69ccf0В сети - Ур: %d|r", currentDisplayLevel or 0)
-                else
-                    ns.lastActionStatus.line2 = string.format("|cff888888(Не в сети - Уровень: %d)|r", currentDisplayLevel or 0)
-                    if currentClipLevelFromDB and currentClipLevelFromDB ~= currentDisplayLevel then
-                        ns.lastActionStatus.line2 = ns.lastActionStatus.line2 .. string.format(" (Исходный: %d)", currentClipLevelFromDB)
-                    end
-                end
+                ns.lastActionStatus = {
+                    characterName = characterName,
+                    text = string.format("%s |cff00ff00уже в друзьях.|r", characterName),
+                    line2 = nil -- Simplify by removing the redundant second line
+                }
                 ShowHoverTooltipForIcon(iconFrameElement)
 
                 local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
