@@ -229,27 +229,53 @@ local function ShowHoverTooltipForIcon(iconButton)
     if cd.faction ~= pf then
         HoverTooltip:AddLine("|cffff2020(Другая фракция)|r")
     else
-        local isFriend, isConnected, displayLevel, _, _, clipLevelFromDB = ns.IsPlayerOnFriendsList(name)
+        local characterNameLower = string.lower(name)
+        local isWatched = AuctionHouseDBSaved.watchedFriends[characterNameLower] ~= nil
+        -- Call IsPlayerOnFriendsList to get their current WoW friend status and live level if online.
+        -- displayLevelFromFunc will be their live level if online, or 0 if offline and unknown lastKnownActualLevel.
+        -- clipLvlDB_from_func is the clipLevel from watchedFriends IF they are on WoW friends list.
+        local isFriendOnWoWList, isConnected, displayLevelFromFunc, classToken, area, clipLvlDB_from_func = ns.IsPlayerOnFriendsList(name)
+
         HoverTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
 
-        if isFriend then
-            HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
-            if isConnected then
-                HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", displayLevel or 0)) -- displayLevel is a number here
+        -- "Add/Remove Friend" line (PKМ):
+        if isWatched then
+            if isFriendOnWoWList then
+                HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
             else
-                -- For displayLevel == 0 (unknown actual level for offline friend), show "0"
-                HoverTooltip:AddLine(string.format("|cffaaaaaa(Не в сети - Уровень: %d)|r", displayLevel)) -- displayLevel is a number >= 0 here
-
-                -- Show original clip level if it exists
-                if clipLevelFromDB then
-                    -- If displayLevel is 0 (unknown), we want to show original. If displayLevel is a known number (>0), only show if different.
-                    if displayLevel == 0 or (type(displayLevel) == "number" and displayLevel > 0 and clipLevelFromDB ~= displayLevel) then
-                        HoverTooltip:AddLine(string.format("|cffaaaaaa(Исходный уровень: %d)|r", clipLevelFromDB))
-                    end
-                end
+                HoverTooltip:AddLine("ПКМ: |cff888888Добавить в друзья|r") -- Grayed out as per request
             end
-        else
-            HoverTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r")
+        else -- Not watched (this case might be less relevant if UI is purely from watchedFriends, but as fallback)
+            if isFriendOnWoWList then
+                HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
+            else
+                HoverTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r")
+            end
+        end
+
+        -- Online/Offline Status & Level Line:
+        if isConnected then -- Player is on WoW friends list AND online
+            HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", displayLevelFromFunc or 0))
+        else -- Player is OFFLINE or NOT on WoW friends list (or both)
+            if isWatched then
+                local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
+                -- Prioritize lastKnownActualLevel from the DB if it's valid (>0).
+                -- displayLevelFromFunc is 0 if offline friend's level unknown to IsPlayerOnFriendsList.
+                local levelToDisplay = (watchedEntry and watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0) and watchedEntry.lastKnownActualLevel or displayLevelFromFunc
+                HoverTooltip:AddLine(string.format("|cffaaaaaa(Последний известный уровень: %d)|r", levelToDisplay or 0))
+            else -- Not watched AND not connected (e.g. a player from a standard AH scan not yet watched/friended)
+                HoverTooltip:AddLine("|cffaaaaaa(Не в сети)|r") -- Generic "Не в сети"
+            end
+        end
+
+        -- Original Level Line:
+        if isWatched then
+            -- We need the clipLevel directly from the watchedFriends entry,
+            -- as clipLvlDB_from_func is only populated if they are also on WoW friends list.
+            local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
+            if watchedEntry and watchedEntry.clipLevel then
+                HoverTooltip:AddLine(string.format("|cffaaaaaa(Исходный уровень: %d)|r", watchedEntry.clipLevel))
+            end
         end
     end
 
@@ -329,203 +355,262 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
         -- end
 
         if AddFriend then
-            -- Check existing friend status
-            local wasAlreadyFriend, wasConnected, currentDisplayLevel, currentClass, currentArea, currentClipLevelFromDB =
+            local isWatched = AuctionHouseDBSaved.watchedFriends[characterNameLower] ~= nil
+            local isFriendOnWoWListInitially, isConnectedInitially, currentDisplayLevelInitially, currentClassInitially, currentAreaInitially, _ =
             ns.IsPlayerOnFriendsList(characterName)
 
             AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 
-            if wasAlreadyFriend then
-                ns.lastActionStatus = {
-                    characterName = characterName,
-                    text = string.format("%s |cff00ff00уже в друзьях.|r", characterName),
-                    line2 = nil -- Simplify by removing the redundant second line
-                }
-                ShowHoverTooltipForIcon(iconFrameElement)
+            if isWatched then
+                if isFriendOnWoWListInitially then
+                    -- Watched and already on WoW friends list
+                    ns.lastActionStatus = {
+                        characterName = characterName,
+                        text = string.format("%s |cff00ff00уже в друзьях.|r", characterName),
+                        line2 = nil
+                    }
+                    ShowHoverTooltipForIcon(iconFrameElement)
 
-                local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
-                -- NotifyPlayerLevelDrop should be called with the live level if the player is online.
-                -- currentDisplayLevel will be the live level if wasConnected is true.
-                if wasConnected and watchedEntry and watchedEntry.clipLevel and currentDisplayLevel then
-                    NotifyPlayerLevelDrop(characterName, currentDisplayLevel, watchedEntry.clipLevel, currentClass, currentArea)
-                end
-                return
-            end
-
-            -- Not yet a friend: send request and capture system message
-            ns.capturedFriendAddSystemMessage = nil
-            ns.expectingFriendAddSystemMessageFor = characterNameLower
-            suppressPlayerNotFoundSystemMessageActive = true
-            AddFriend(characterName)
-
-            -- Re-enable error messages after 0.2s
-            C_Timer:After(0.2, function()
-                suppressPlayerNotFoundSystemMessageActive = false
-                if ns.expectingFriendAddSystemMessageFor == characterNameLower then
-                    ns.expectingFriendAddSystemMessageFor = nil
-                end
-            end)
-
-            -- After 0.3s, check whether the add succeeded
-            C_Timer:After(0.3, function()
-                local isNowFriend, isConnected, newFriendDisplayLevel, newFriendClass, newFriendArea, newFriendClipLevelFromDB =
-                ns.IsPlayerOnFriendsList(characterName)
-
-                if isNowFriend then
-                    ns.lastActionStatus = { characterName = characterName, text = string.format("|cff00ff00Добавлен в друзья:|r %s", characterName) }
-                    if isConnected then
-                        ns.lastActionStatus.line2 = "|cff69ccf0В сети|r"
-                        local friendData = {
-                            characterName = characterName,
-                            clipLevel = originalClipLevelFromThisInteraction,
-                            lastKnownActualLevel = newFriendDisplayLevel,
-                            lastKnownActualLevelTimestamp = GetTime(),
-                            hasBeenNotifiedForThisAdd = false,
-                        }
-                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
-
-                        NotifyPlayerLevelDrop(characterName, newFriendDisplayLevel, originalClipLevelFromThisInteraction, newFriendClass, newFriendArea, "added")
-                    else
-                        ns.lastActionStatus.line2 = "|cff888888Не в сети|r"
-                        local friendData = {
-                            characterName = characterName,
-                            clipLevel = originalClipLevelFromThisInteraction,
-                            lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Friend is offline, use clip level as last known
-                            lastKnownActualLevelTimestamp = GetTime(),
-                            hasBeenNotifiedForThisAdd = false,
-                        }
-                        AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
-
+                    local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
+                    if isConnectedInitially and watchedEntry and watchedEntry.clipLevel and currentDisplayLevelInitially and currentDisplayLevelInitially > 0 then
+                        NotifyPlayerLevelDrop(characterName, currentDisplayLevelInitially, watchedEntry.clipLevel, currentClassInitially, currentAreaInitially)
                     end
+                    return
                 else
-                    ns.lastActionStatus = { characterName = characterName, text = string.format("|cffffcc00Не удалось добавить:|r %s", characterName) }
-                    if ns.capturedFriendAddSystemMessage then
-                        ns.lastActionStatus.line2 = "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r"
-                    else
-                        ns.lastActionStatus.line2 = "(Проверьте ошибки игры в чате)"
+                    -- Watched, but NOT on WoW friends list; try to re-add to WoW list
+                    ns.capturedFriendAddSystemMessage = nil
+                    ns.expectingFriendAddSystemMessageFor = characterNameLower
+                    suppressPlayerNotFoundSystemMessageActive = true
+                    AddFriend(characterName)
+
+                    C_Timer:After(0.2, function()
+                        suppressPlayerNotFoundSystemMessageActive = false
+                        if ns.expectingFriendAddSystemMessageFor == characterNameLower then ns.expectingFriendAddSystemMessageFor = nil end
+                    end)
+
+                    C_Timer:After(0.3, function()
+                        local isNowFriendOnWoWList, isNowConnected = ns.IsPlayerOnFriendsList(characterName)
+                        if isNowFriendOnWoWList then
+                            ns.lastActionStatus = {
+                                characterName = characterName,
+                                text = string.format("|cff00ff00Добавлен в друзья:|r %s", characterName),
+                                line2 = isNowConnected and "|cff69ccf0В сети|r" or "|cff888888Не в сети|r"
+                            }
+                        else
+                            ns.lastActionStatus = {
+                                characterName = characterName,
+                                text = string.format("|cffffcc00Не удалось добавить в друзья:|r %s", characterName),
+                                line2 = ns.capturedFriendAddSystemMessage and "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r" or "(Проверьте ошибки игры в чате)"
+                            }
+                        end
+                        ShowHoverTooltipForIcon(iconFrameElement)
+                        ns.capturedFriendAddSystemMessage = nil
+                    end)
+                    return -- Important: Do not proceed to add/modify watchedFriends, they are already watched.
+                end
+            else
+                -- Character is NOT watched. This is the flow to add a new character to WoW Friends and to our watched list.
+                if isFriendOnWoWListInitially then
+                    -- Not watched, but already on WoW friends list. User right-clicked an "Add to friends (WoW)" that was green in tooltip.
+                    -- This implies user wants to start watching them.
+                    -- Add to watchedFriends, then update status.
+                    local friendData = {
+                        characterName = characterName,
+                        clipLevel = originalClipLevelFromThisInteraction, -- Use clip level as original
+                        lastKnownActualLevel = (isConnectedInitially and currentDisplayLevelInitially and currentDisplayLevelInitially > 0) and currentDisplayLevelInitially or originalClipLevelFromThisInteraction,
+                        lastKnownActualLevelTimestamp = GetTime(),
+                        hasBeenNotifiedForThisAdd = false,
+                    }
+                    AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
+                    ns.lastActionStatus = {
+                        characterName = characterName,
+                        text = string.format("%s |cff00cc00теперь отслеживается.|r", characterName),
+                        line2 = nil
+                    }
+                    ShowHoverTooltipForIcon(iconFrameElement)
+                    if isConnectedInitially and friendData.clipLevel and currentDisplayLevelInitially and currentDisplayLevelInitially > 0 then
+                        NotifyPlayerLevelDrop(characterName, currentDisplayLevelInitially, friendData.clipLevel, currentClassInitially, currentAreaInitially)
                     end
+                    return
                 end
-                ShowHoverTooltipForIcon(iconFrameElement) -- Refresh tooltip with status
-                ns.expectingFriendAddSystemMessageFor = nil
+
+                -- Not watched, and not on WoW friends list. Standard add flow.
                 ns.capturedFriendAddSystemMessage = nil
-            end)
-        end
-    end
-end
+                ns.expectingFriendAddSystemMessageFor = characterNameLower
+                suppressPlayerNotFoundSystemMessageActive = true
+                AddFriend(characterName)
 
--- When the mouse enters the icon, show your custom tooltip
-function GoAgainAH_ClipItem_OnEnter(iconButton)
-    ShowHoverTooltipForIcon(iconButton)
-end
+                -- Re-enable error messages after 0.2s
+                C_Timer:After(0.2, function()
+                    suppressPlayerNotFoundSystemMessageActive = false
+                    if ns.expectingFriendAddSystemMessageFor == characterNameLower then
+                        ns.expectingFriendAddSystemMessageFor = nil
+                    end
+                end)
 
--- When the mouse leaves, hide *all* of your tooltips
-function GoAgainAH_ClipItem_OnLeave(iconButton)
-    -- Hide the custom hover tooltip
-    if GoAgainAH_HoverTooltip then
-        GoAgainAH_HoverTooltip:Hide()
-    end
+                -- After 0.3s, check whether the add succeeded
+                C_Timer:After(0.3, function()
+                    local isNowFriend, isConnected, newFriendDisplayLevel, newFriendClass, newFriendArea, _ =
+                    ns.IsPlayerOnFriendsList(characterName)
 
-    ns.lastActionStatus = nil -- Clear status when mouse leaves
-
-    -- In case the default GameTooltip was used, hide that too
-    if GameTooltip:IsOwned(iconButton) then
-        GameTooltip:Hide()
-    end
-end
-
-
-local function FriendAddSystemMessageFilter(self, event, msg, ...)
-    if not msg or type(msg) ~= "string" then return false end
-    if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == PLAYER_NOT_FOUND_RU then
-        if ns.expectingFriendAddSystemMessageFor then ns.capturedFriendAddSystemMessage = msg; ns.expectingFriendAddSystemMessageFor = nil end
-        return true
-    end
-    if event == "CHAT_MSG_SYSTEM" and ns.expectingFriendAddSystemMessageFor and not ns.capturedFriendAddSystemMessage then
-        local shortMsg = msg; if string.len(msg) > 60 then shortMsg = string.sub(msg, 1, 60) .. "..." end
-        ns.capturedFriendAddSystemMessage = shortMsg; ns.expectingFriendAddSystemMessageFor = nil
-    end
-    return false
-end
-
-local function PerformFriendListScan()
-    lastFriendListScanTime = GetTime()
-    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
-
-    for i = 1, GetNumFriends() do
-        local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i) -- Renamed liveLevel to currentActualLevel for clarity
-        if name and connected then -- Only process online friends
-            local lowerName = string.lower(name)
-            local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
-
-            if watchedEntry then
-                -- Check for level change to update lastKnownActualLevel
-                if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
-                    watchedEntry.lastKnownActualLevel = currentActualLevel
-                    watchedEntry.lastKnownActualLevelTimestamp = GetTime()
-
-                end
-
-                -- Logic for level drop notification (original functionality)
-                if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
-                    NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
-                end
+                    if isNowFriend then -- This is isNowFriendOnWoWList after attempting AddFriend for an unwatched player
+                        ns.lastActionStatus = {
+                            characterName = characterName,
+                            text = string.format("|cff00ff00Добавлен в друзья и отслеживается:|r %s", characterName)
+                            -- line2 will be set below
+                        }
+                        if isConnected then -- isNowConnected
+                            ns.lastActionStatus.line2 = "|cff69ccf0В сети|r"
+                            local friendData = {
+                                characterName = characterName,
+                                clipLevel = originalClipLevelFromThisInteraction,
+                                lastKnownActualLevel = newFriendDisplayLevel, -- Live level
+                                lastKnownActualLevelTimestamp = GetTime(),
+                                hasBeenNotifiedForThisAdd = false,
+                            }
+                            AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
+                            if newFriendDisplayLevel and newFriendDisplayLevel > 0 then
+                                NotifyPlayerLevelDrop(characterName, newFriendDisplayLevel, originalClipLevelFromThisInteraction, newFriendClass, newFriendArea, "added")
+                            end
+                        else
+                            ns.lastActionStatus.line2 = "|cff888888Не в сети|r"
+                            local friendData = {
+                                characterName = characterName,
+                                clipLevel = originalClipLevelFromThisInteraction,
+                                lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Friend is offline, use clip level as last known
+                                lastKnownActualLevelTimestamp = GetTime(),
+                                hasBeenNotifiedForThisAdd = false,
+                            }
+                            AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
+                        end
+                    else
+                        ns.lastActionStatus = {
+                            characterName = characterName,
+                            text = string.format("|cffffcc00Не удалось добавить в друзья:|r %s", characterName), -- Updated text
+                            line2 = ns.capturedFriendAddSystemMessage and "|cffffff80Причина: " .. ns.capturedFriendAddSystemMessage .. "|r" or "(Проверьте ошибки игры в чате)"
+                        }
+                    end
+                    ShowHoverTooltipForIcon(iconFrameElement) -- Refresh tooltip with status
+                    ns.expectingFriendAddSystemMessageFor = nil
+                    ns.capturedFriendAddSystemMessage = nil
+                end)
             end
         end
     end
 end
-
-local function HandleFriendListUpdate()
-    if friendListDebounceTimer then return end
-    local currentTime = GetTime()
-    if (currentTime - lastFriendListScanTime) < FRIENDLIST_UPDATE_DEBOUNCE_TIME then
-        local remainingTime = FRIENDLIST_UPDATE_DEBOUNCE_TIME - (currentTime - lastFriendListScanTime)
-        friendListDebounceTimer = C_Timer:After(remainingTime, function()
-            friendListDebounceTimer = nil; PerformFriendListScan()
-        end)
-        return
+    -- When the mouse enters the icon, show your custom tooltip
+    function GoAgainAH_ClipItem_OnEnter(iconButton)
+        ShowHoverTooltipForIcon(iconButton)
     end
-    PerformFriendListScan()
-end
 
-local function CleanupNotifiedFriendsDB()
-    -- Intentionally left empty to preserve watchedFriends entries
-    -- regardless of their hasBeenNotifiedForThisAdd status, allowing
-    -- the "Восставшие" tab to be persistent across sessions.
-    -- Original logic for cleaning up notified friends has been removed.
+    -- When the mouse leaves, hide *all* of your tooltips
+    function GoAgainAH_ClipItem_OnLeave(iconButton)
+        -- Hide the custom hover tooltip
+        if GoAgainAH_HoverTooltip then
+            GoAgainAH_HoverTooltip:Hide()
+        end
 
-    -- If there's any other type of cleanup needed in the future (e.g., removing very old entries
-    -- or entries for characters no longer on friends list for a long time),
-    -- that logic could be added here. For now, no cleanup is performed.
-end
+        ns.lastActionStatus = nil -- Clear status when mouse leaves
 
-local eventFrame = CreateFrame("Frame")
-eventFrame:RegisterEvent("ADDON_LOADED")
-eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-eventFrame:RegisterEvent("PLAYER_LOGOUT")
-eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
-
-eventFrame:SetScript("OnEvent", function(self, event, arg1)
-    if event == "ADDON_LOADED" and arg1 == addonName then
-        if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
-        ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
-
-    elseif event == "PLAYER_ENTERING_WORLD" then
-        if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
-        CleanupNotifiedFriendsDB()
-        lastFriendListScanTime = 0
-        if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
-        if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
-        initialLoginScanTimer = C_Timer:After(15, function()
-            initialLoginScanTimer = nil; PerformFriendListScan()
-        end)
-    elseif event == "PLAYER_LOGOUT" then
-        if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
-        if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
-        -- Watched friends data in AuctionHouseDBSaved persists. No session flags to clear here.
-    elseif event == "FRIENDLIST_UPDATE" then
-        HandleFriendListUpdate()
+        -- In case the default GameTooltip was used, hide that too
+        if GameTooltip:IsOwned(iconButton) then
+            GameTooltip:Hide()
+        end
     end
-end)
+
+
+    local function FriendAddSystemMessageFilter(self, event, msg, ...)
+        if not msg or type(msg) ~= "string" then return false end
+        if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == PLAYER_NOT_FOUND_RU then
+            if ns.expectingFriendAddSystemMessageFor then ns.capturedFriendAddSystemMessage = msg; ns.expectingFriendAddSystemMessageFor = nil end
+            return true
+        end
+        if event == "CHAT_MSG_SYSTEM" and ns.expectingFriendAddSystemMessageFor and not ns.capturedFriendAddSystemMessage then
+            local shortMsg = msg; if string.len(msg) > 60 then shortMsg = string.sub(msg, 1, 60) .. "..." end
+            ns.capturedFriendAddSystemMessage = shortMsg; ns.expectingFriendAddSystemMessageFor = nil
+        end
+        return false
+    end
+
+    local function PerformFriendListScan()
+        lastFriendListScanTime = GetTime()
+        if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
+
+        for i = 1, GetNumFriends() do
+            local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i) -- Renamed liveLevel to currentActualLevel for clarity
+            if name and connected then -- Only process online friends
+                local lowerName = string.lower(name)
+                local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
+
+                if watchedEntry then
+                    -- Check for level change to update lastKnownActualLevel
+                    if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
+                        DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
+                        watchedEntry.lastKnownActualLevel = currentActualLevel
+                        watchedEntry.lastKnownActualLevelTimestamp = GetTime()
+
+                    end
+
+                    -- Logic for level drop notification (original functionality)
+                    if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
+                        NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
+                    end
+                end
+            end
+        end
+    end
+
+    local function HandleFriendListUpdate()
+        if friendListDebounceTimer then return end
+        local currentTime = GetTime()
+        if (currentTime - lastFriendListScanTime) < FRIENDLIST_UPDATE_DEBOUNCE_TIME then
+            local remainingTime = FRIENDLIST_UPDATE_DEBOUNCE_TIME - (currentTime - lastFriendListScanTime)
+            friendListDebounceTimer = C_Timer:After(remainingTime, function()
+                friendListDebounceTimer = nil; PerformFriendListScan()
+            end)
+            return
+        end
+        PerformFriendListScan()
+    end
+
+    local function CleanupNotifiedFriendsDB()
+        -- Intentionally left empty to preserve watchedFriends entries
+        -- regardless of their hasBeenNotifiedForThisAdd status, allowing
+        -- the "Восставшие" tab to be persistent across sessions.
+        -- Original logic for cleaning up notified friends has been removed.
+
+        -- If there's any other type of cleanup needed in the future (e.g., removing very old entries
+        -- or entries for characters no longer on friends list for a long time),
+        -- that logic could be added here. For now, no cleanup is performed.
+    end
+
+    local eventFrame = CreateFrame("Frame")
+    eventFrame:RegisterEvent("ADDON_LOADED")
+    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    eventFrame:RegisterEvent("PLAYER_LOGOUT")
+    eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
+
+    eventFrame:SetScript("OnEvent", function(self, event, arg1)
+        if event == "ADDON_LOADED" and arg1 == addonName then
+            if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
+            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+            ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
+
+        elseif event == "PLAYER_ENTERING_WORLD" then
+            if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
+            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+            CleanupNotifiedFriendsDB()
+            lastFriendListScanTime = 0
+            if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
+            if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
+            initialLoginScanTimer = C_Timer:After(15, function()
+                initialLoginScanTimer = nil; PerformFriendListScan()
+            end)
+        elseif event == "PLAYER_LOGOUT" then
+            if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
+            if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
+            -- Watched friends data in AuctionHouseDBSaved persists. No session flags to clear here.
+        elseif event == "FRIENDLIST_UPDATE" then
+            HandleFriendListUpdate()
+        end
+    end)
