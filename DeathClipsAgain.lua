@@ -244,7 +244,6 @@ HoverTooltip:SetFrameStrata("TOOLTIP")
 
 local function ShowHoverTooltipForIcon(iconButton)
     -- Guard clause: Exit if button is invalid or mouse is not over it.
-    -- Guard clause: Exit if button is invalid or mouse is not over it.
     if not iconButton or not iconButton:IsMouseOver() then
         if GoAgainAH_HoverTooltip then -- Check if tooltip exists
             GoAgainAH_HoverTooltip:Hide()
@@ -510,29 +509,48 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         }
                         if isConnected then -- isNowConnected
                             ns.lastActionStatus.line2 = "|cff69ccf0В сети|r"
+                            local determinedLastKnownLevel
+                            local determinedLocalizedClass
+                            local determinedEnglishClassToken
+
+                            if isConnected and newFriendDisplayLevel and newFriendDisplayLevel > 0 then
+                                determinedLastKnownLevel = newFriendDisplayLevel
+                                determinedLocalizedClass = newFriendClass -- newFriendClass is the localized one from GetFriendInfo
+                                determinedEnglishClassToken = ns.GetEnglishClassToken(newFriendClass)
+                            else
+                                -- Offline or newFriendDisplayLevel is 0 or nil
+                                determinedLastKnownLevel = originalClipLevelFromThisInteraction -- Fallback to original clip's level
+                                determinedLocalizedClass = nil -- No live localized class
+                                determinedEnglishClassToken = clipData.class -- Fallback to English class token from original clipData
+                            end
+
                             local friendData = {
                                 characterName = characterName,
                                 clipLevel = originalClipLevelFromThisInteraction,
-                                lastKnownActualLevel = newFriendDisplayLevel, -- Live level
+                                lastKnownActualLevel = determinedLastKnownLevel,
                                 lastKnownActualLevelTimestamp = GetTime(),
                                 hasBeenNotifiedForThisAdd = false,
-                                localizedClassNameAtLastSighting = newFriendClass, -- Store localized class
-                                currentEnglishClassTokenAtLastSighting = ns.GetEnglishClassToken(newFriendClass) -- Store derived English token
+                                localizedClassNameAtLastSighting = determinedLocalizedClass,
+                                currentEnglishClassTokenAtLastSighting = determinedEnglishClassToken
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
-                            if newFriendDisplayLevel and newFriendDisplayLevel > 0 then
+
+                            -- Notify only if live data was available and level > 0
+                            if isConnected and newFriendDisplayLevel and newFriendDisplayLevel > 0 then
                                 NotifyPlayerLevelDrop(characterName, newFriendDisplayLevel, originalClipLevelFromThisInteraction, newFriendClass, newFriendArea, "added")
                             end
                         else
+                            -- This 'else' corresponds to 'if isConnected then'
+                            -- This means the player was added to WoW friends but is immediately offline or data is missing.
                             ns.lastActionStatus.line2 = "|cff888888Не в сети|r"
                             local friendData = {
                                 characterName = characterName,
                                 clipLevel = originalClipLevelFromThisInteraction,
-                                lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Friend is offline, use clip level as last known
+                                lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Fallback to original clip's level
                                 lastKnownActualLevelTimestamp = GetTime(),
                                 hasBeenNotifiedForThisAdd = false,
-                                localizedClassNameAtLastSighting = nil, -- Offline, no live class info
-                                currentEnglishClassTokenAtLastSighting = nil
+                                localizedClassNameAtLastSighting = nil, -- Offline, no live localized class
+                                currentEnglishClassTokenAtLastSighting = clipData.class -- Fallback to English class token from original clipData
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                         end
