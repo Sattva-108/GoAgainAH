@@ -952,30 +952,13 @@ function OFBrowseResetButton_OnUpdate(self, elapsed)
 end
 
 function OFAuctionFrame_SetSort(sortTable, sortColumn, oppositeOrder)
-    if sortTable == "clips" then
-        -- For "clips", directly set the sort parameters.
-        -- 'params' is an array of sort criteria tables, which CreateClipsSorter expects.
-        -- 'oppositeOrder' means 'descending' if true.
-        currentSortParams["clips"] = {
-            column = sortColumn,
-            desc = oppositeOrder,
-            params = { { column = sortColumn, reverse = oppositeOrder } }
-            -- Example for multi-column sort (if ever needed for clips):
-            -- params = { { column = sortColumn, reverse = oppositeOrder }, { column = "ts", reverse = true } }
-        }
-        -- Note: OFAuctionFrameDeathClips_Update() is called by OFAuctionFrame_OnClickSortColumn
-    else
-        -- Existing logic for other sortTable types (list, bidder, owner)
         local template = OFAuctionSort[sortTable.."_"..sortColumn]
-
-        if template == nil then
-            if ns.debug then print("Warning: OFAuctionSort template is nil for key: " .. sortTable.."_"..sortColumn) end
-            template = {} -- Prevent error in pairs loop
-        end
-
         local sortParams = {}
+	-- set the columns
         for index, row in pairs(template) do
-            local sort = row.column
+		-- Browsing by the "bid" column will sort by whatever price sorrting option the user selected
+		-- instead of always sorting by "bid" (total bid price)
+		local sort = row.column;
             local reverse
             if (oppositeOrder) then
                 reverse = not row.reverse
@@ -989,9 +972,7 @@ function OFAuctionFrame_SetSort(sortTable, sortColumn, oppositeOrder)
             desc = oppositeOrder,
             params = sortParams,
         }
-    end
-
-    if sortTable == "list" then -- This specific condition was from original code for browse tab
+    if sortTable == "list" then
         browseSortDirty = true
     end
 end
