@@ -657,8 +657,13 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
 
         -- ===== LEVEL (Current Level) =====
         if columnVisibility["Level"] then
-            local q = GetQuestDifficultyColor(actualLevelForColor)
-            levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, actualLevelForColor)
+            if actualLevelForColor == 0 then
+                levelFS:SetText("-")
+                levelFS:SetTextColor(0.5, 0.5, 0.5, 0.8) -- Grey color for hyphen, slightly more visible
+            else
+                local q = GetQuestDifficultyColor(actualLevelForColor)
+                levelFS:SetFormattedText("|cff%02x%02x%02x%d|r", q.r * 255, q.g * 255, q.b * 255, actualLevelForColor)
+            end
         end
 
         -- ===== OLD LEVEL =====
@@ -685,11 +690,19 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                 oldClassFS:Show()
                 if clip.isReincarnated then
                     local oldClassToken = clip.oldClassToken
-                    local oldClassLocalizedName = (oldClassToken and LOCALIZED_CLASS_NAMES_MALE[oldClassToken]) or ""
+                    local oldClassLocalizedName = ""
+                    if oldClassToken then
+                        -- Assuming oldClassToken might be localized from GetFriendInfo or an English token
+                        -- If it's English, LOCALIZED_CLASS_NAMES_MALE will work. If it's already localized, this might be redundant or handled by fallback.
+                        oldClassLocalizedName = LOCALIZED_CLASS_NAMES_MALE[string.upper(oldClassToken)] or oldClassToken
+                    end
+
                     local coloredOldClassText = oldClassLocalizedName
-                    if oldClassToken and RAID_CLASS_COLORS[oldClassToken] then
-                        local color = RAID_CLASS_COLORS[oldClassToken]
+                    if oldClassToken and RAID_CLASS_COLORS[string.upper(oldClassToken)] then
+                        local color = RAID_CLASS_COLORS[string.upper(oldClassToken)]
                         coloredOldClassText = string.format("|cff%02x%02x%02x%s|r", color.r*255, color.g*255, color.b*255, oldClassLocalizedName)
+                    elseif oldClassLocalizedName == "" then
+                        coloredOldClassText = "|cffaaaaaaN/A|r"
                     end
                     oldClassFS:SetText(coloredOldClassText)
                 else
@@ -725,7 +738,11 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                 -- For reincarnated, always show original death cause
                 if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
 
-                if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
+                if clip.causeCode == nil then -- No original death info for reincarnated
+                    newClipDisplayText = "|cffaaaaaaN/A|r"
+                    newMobLevelText = ""
+                    mobLevelFS:SetTextColor(0.7,0.7,0.7,1) -- Light gray for N/A
+                elseif causeId == 7 and clip.deathCause and clip.deathCause ~= "" then -- Monster kill
                     local mobLvl = clip.mobLevel or 0
                     local playerLvl = clip.oldLevel or 1 -- Use oldLevel for color calculation against mob
                     local diff = mobLvl - playerLvl
@@ -738,7 +755,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                     newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
                     newMobLevelText = tostring(mobLvl)
                     mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
-                else
+                else -- Other known death causes (environmental, etc.)
                     newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
                     newMobLevelText = ""
                     mobLevelFS:SetTextColor(1,1,1,1)
@@ -822,6 +839,22 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         -- Note: WhenText is updated by a separate ticker in OFAuctionFrameDeathClips_OnShow for live updates
         -- So, it's not managed here for visibility of its data content.
         -- Its layout (position) is handled by UpdateLayout.
+        -- However, for initial setup, especially for reincarnated view where ts might be nil:
+        if columnVisibility["WhenText"] then
+            local whenFS = elements.whenText
+            if clip.isReincarnated and clip.ts == nil then
+                whenFS:SetText("|cffaaaaaaN/A|r") -- Or L["Unknown"] if preferred, styled
+                whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8) -- Match the color of other N/A text
+            else
+                -- Let the hook handle formatting for valid timestamps,
+                -- but ensure it's not empty if the hook hasn't run yet for this specific row update.
+                if whenFS:GetText() == "" then -- Only if not already set by hook
+                    whenFS:SetText(formatWhen(clip))
+                end
+                -- Color will be set by the hook based on playedTime/level or default if ts is valid.
+                -- If ts was nil, we set a specific color above.
+            end
+        end
 
     end -- END of "if button.displayedClipID ~= clip.id or forceFullUpdate then"
 
@@ -884,60 +917,53 @@ function OFAuctionFrameDeathClips_Update()
     local forceFullRowUpdate = false
     if frame.needsDataRefresh then
         local rawPool = ns.GetLiveDeathClips()
-        local pool = ns.FilterClipsThisRealm(rawPool) -- Base pool for LIVE and for finding original clips
+        local pool = ns.FilterClipsThisRealm(rawPool)
         local tempClips = {}
 
         if ns.currentActiveTabId == "REINCARNATED_CLIPS" then
-            if _G.AuctionHouseDBSaved and _G.AuctionHouseDBSaved.watchedFriends then -- Ensure global DB is used
-                for playerNameLower, watchedEntry in pairs(_G.AuctionHouseDBSaved.watchedFriends) do
-                    if watchedEntry.hasBeenNotifiedForThisAdd and watchedEntry.characterName then
-                        -- Call the namespaced function
-                        local _, isConnected, currentLevel, currentClassToken = ns.IsPlayerOnFriendsList(watchedEntry.characterName)
+            local reincarnatedFriendsData = ns.GetReincarnatedFriendsDisplayList and ns.GetReincarnatedFriendsDisplayList()
+            if not reincarnatedFriendsData then reincarnatedFriendsData = {} end
 
-                        if currentLevel and currentClassToken then -- Friend still exists and info retrieved
-                            local latestOriginalClip = nil
-                            for _, clip in ipairs(pool) do -- Search in the 'pool' of live/non-completed clips
-                                if string.lower(clip.characterName or "") == playerNameLower and not clip.completed then
-                                    if not latestOriginalClip or (clip.ts and latestOriginalClip.ts and clip.ts > latestOriginalClip.ts) then
-                                        latestOriginalClip = clip
-                                    end
-                                end
-                            end
+            for _, friendData in ipairs(reincarnatedFriendsData) do
+                local displayClip = {
+                    -- Core identity and current state
+                    characterName = friendData.characterName,
+                    id = friendData.characterName .. "_reincarnated", -- Unique key
+                    isReincarnated = true,
 
-                            if latestOriginalClip then
-                                local displayClip = {
-                                    characterName = watchedEntry.characterName,
-                                    level = currentLevel, -- 'level' for sorting will refer to newLevel
-                                    newLevel = currentLevel,
-                                    -- Assuming ns.russianClassNameToEnglishToken is available in ns
-                                    newClassToken = (ns.russianClassNameToEnglishToken and ns.russianClassNameToEnglishToken[currentClassToken]) or currentClassToken,
-                                    oldLevel = watchedEntry.clipLevel,
-                                    oldClassToken = latestOriginalClip.class,
+                    -- Levels
+                    level = friendData.actualLevel,  -- Current actual level, used for sorting by "Level"
+                    newLevel = friendData.actualLevel, -- Current actual level, for "New Level" display logic
+                    oldLevel = friendData.clipLevel,   -- Original clip level, for "Old Level" display
 
-                                    id = latestOriginalClip.id,
-                                    deathCause = latestOriginalClip.deathCause,
-                                    causeCode = latestOriginalClip.causeCode,
-                                    mobLevel = latestOriginalClip.mobLevel,
-                                    ts = latestOriginalClip.ts, -- This is the original death timestamp
-                                    -- rating = latestOriginalClip.rating, -- If rating is stored directly on clip
-                                    mapId = latestOriginalClip.mapId, -- For 'where' if needed by helper
-                                    where = latestOriginalClip.where, -- For 'where' if needed by helper
-                                    faction = latestOriginalClip.faction,
-                                    class = latestOriginalClip.class, -- Original class for color consistency if newClassToken is not used by nameFS
-                                    -- Mark as reincarnated for potential specific handling in UpdateClipEntry
-                                    isReincarnated = true
-                                }
-                                -- If ratings are fetched by clip.id, this will use original clip's rating
-                                -- The 'rating' field in displayClip might be populated by UpdateClipEntry or here if available on latestOriginalClip
-                                table.insert(tempClips, displayClip)
-                            end
-                        end
-                    end
-                end
+                    -- Class information
+                    class = friendData.localizedClassName,       -- Current localized class name for display in "Class" column
+                    newClassToken = friendData.currentEnglishClassToken, -- Current English class token for icon/color
+                    oldClassToken = friendData.originalEnglishClassToken, -- Original English class token from original clip
+
+                    -- Location
+                    where = friendData.zone, -- Current zone if online, or last known. Potentially original zone if needed.
+                    -- ns.GetReincarnatedFriendsDisplayList provides 'zone = areaFromFunc' (current zone)
+                    -- If originalMapId is preferred for 'where', this needs adjustment or use friendData.originalMapId.
+                    -- For now, using friendData.zone (current zone) is consistent with the structure.
+
+                    -- Timestamp for "When" column sorting and display
+                    ts = friendData.originalTimestamp, -- Will be nil if no original clip, formatWhen handles nil
+
+                    -- Data from original death clip (or nil if not found)
+                    deathCause = friendData.originalDeathCause,
+                    causeCode = friendData.originalCauseCode,
+                    mobLevel = friendData.originalMobLevel,
+                    mapId = friendData.originalMapId,
+                    faction = friendData.originalFaction
+                    -- Note: `race` is not explicitly in friendData, `UpdateClipEntry` uses `clip.race` which would be nil here.
+                    -- If `originalRace` is needed, it should be added to `friendData` from `originalClip.race`.
+                    -- For now, `clip.race` will be nil for reincarnated, and `UpdateClipEntry` handles nil `clip.race`.
+                }
+                table.insert(tempClips, displayClip)
             end
         elseif ns.currentActiveTabId == "COMPLETED_CLIPS" then
-            -- Corrected logic for COMPLETED_CLIPS:
-            -- tempClips is already initialized before this if/elseif/else block
+            -- tempClips is already initialized
             if pool then -- Check if pool is not nil (it's already realm-filtered)
                 for _, clip in ipairs(pool) do -- Iterate 'pool'
                     if clip.completed then

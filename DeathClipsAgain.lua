@@ -494,123 +494,208 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     ns.expectingFriendAddSystemMessageFor = nil
                     ns.capturedFriendAddSystemMessage = nil
                 end)
-            end
+            end -- <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< THIS IS THE MISSING END
         end
     end
 end
-    -- When the mouse enters the icon, show your custom tooltip
-    function GoAgainAH_ClipItem_OnEnter(iconButton)
-        ShowHoverTooltipForIcon(iconButton)
+
+-- When the mouse enters the icon, show your custom tooltip
+function GoAgainAH_ClipItem_OnEnter(iconButton)
+    ShowHoverTooltipForIcon(iconButton)
+end
+
+-- When the mouse leaves, hide *all* of your tooltips
+function GoAgainAH_ClipItem_OnLeave(iconButton)
+    -- Hide the custom hover tooltip
+    if GoAgainAH_HoverTooltip then
+        GoAgainAH_HoverTooltip:Hide()
     end
 
-    -- When the mouse leaves, hide *all* of your tooltips
-    function GoAgainAH_ClipItem_OnLeave(iconButton)
-        -- Hide the custom hover tooltip
-        if GoAgainAH_HoverTooltip then
-            GoAgainAH_HoverTooltip:Hide()
-        end
+    ns.lastActionStatus = nil -- Clear status when mouse leaves
 
-        ns.lastActionStatus = nil -- Clear status when mouse leaves
-
-        -- In case the default GameTooltip was used, hide that too
-        if GameTooltip:IsOwned(iconButton) then
-            GameTooltip:Hide()
-        end
+    -- In case the default GameTooltip was used, hide that too
+    if GameTooltip:IsOwned(iconButton) then
+        GameTooltip:Hide()
     end
+end
 
 
-    local function FriendAddSystemMessageFilter(self, event, msg, ...)
-        if not msg or type(msg) ~= "string" then return false end
-        if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == PLAYER_NOT_FOUND_RU then
-            if ns.expectingFriendAddSystemMessageFor then ns.capturedFriendAddSystemMessage = msg; ns.expectingFriendAddSystemMessageFor = nil end
-            return true
-        end
-        if event == "CHAT_MSG_SYSTEM" and ns.expectingFriendAddSystemMessageFor and not ns.capturedFriendAddSystemMessage then
-            local shortMsg = msg; if string.len(msg) > 60 then shortMsg = string.sub(msg, 1, 60) .. "..." end
-            ns.capturedFriendAddSystemMessage = shortMsg; ns.expectingFriendAddSystemMessageFor = nil
-        end
-        return false
+local function FriendAddSystemMessageFilter(self, event, msg, ...)
+    if not msg or type(msg) ~= "string" then return false end
+    if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == PLAYER_NOT_FOUND_RU then
+        if ns.expectingFriendAddSystemMessageFor then ns.capturedFriendAddSystemMessage = msg; ns.expectingFriendAddSystemMessageFor = nil end
+        return true
     end
+    if event == "CHAT_MSG_SYSTEM" and ns.expectingFriendAddSystemMessageFor and not ns.capturedFriendAddSystemMessage then
+        local shortMsg = msg; if string.len(msg) > 60 then shortMsg = string.sub(msg, 1, 60) .. "..." end
+        ns.capturedFriendAddSystemMessage = shortMsg; ns.expectingFriendAddSystemMessageFor = nil
+    end
+    return false
+end
 
-    local function PerformFriendListScan()
-        lastFriendListScanTime = GetTime()
-        if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
+local function PerformFriendListScan()
+    lastFriendListScanTime = GetTime()
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
 
-        for i = 1, GetNumFriends() do
-            local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i) -- Renamed liveLevel to currentActualLevel for clarity
-            if name and connected then -- Only process online friends
-                local lowerName = string.lower(name)
-                local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
+    for i = 1, GetNumFriends() do
+        local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i) -- Renamed liveLevel to currentActualLevel for clarity
+        if name and connected then -- Only process online friends
+            local lowerName = string.lower(name)
+            local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
-                if watchedEntry then
-                    -- Check for level change to update lastKnownActualLevel
-                    if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
-                        DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
-                        watchedEntry.lastKnownActualLevel = currentActualLevel
-                        watchedEntry.lastKnownActualLevelTimestamp = GetTime()
+            if watchedEntry then
+                -- Check for level change to update lastKnownActualLevel
+                if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
+                    watchedEntry.lastKnownActualLevel = currentActualLevel
+                    watchedEntry.lastKnownActualLevelTimestamp = GetTime()
 
-                    end
+                end
 
-                    -- Logic for level drop notification (original functionality)
-                    if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
-                        NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
-                    end
+                -- Logic for level drop notification (original functionality)
+                if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
+                    NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
                 end
             end
         end
     end
+end
 
-    local function HandleFriendListUpdate()
-        if friendListDebounceTimer then return end
-        local currentTime = GetTime()
-        if (currentTime - lastFriendListScanTime) < FRIENDLIST_UPDATE_DEBOUNCE_TIME then
-            local remainingTime = FRIENDLIST_UPDATE_DEBOUNCE_TIME - (currentTime - lastFriendListScanTime)
-            friendListDebounceTimer = C_Timer:After(remainingTime, function()
-                friendListDebounceTimer = nil; PerformFriendListScan()
-            end)
-            return
-        end
-        PerformFriendListScan()
+local function HandleFriendListUpdate()
+    if friendListDebounceTimer then return end
+    local currentTime = GetTime()
+    if (currentTime - lastFriendListScanTime) < FRIENDLIST_UPDATE_DEBOUNCE_TIME then
+        local remainingTime = FRIENDLIST_UPDATE_DEBOUNCE_TIME - (currentTime - lastFriendListScanTime)
+        friendListDebounceTimer = C_Timer:After(remainingTime, function()
+            friendListDebounceTimer = nil; PerformFriendListScan()
+        end)
+        return
+    end
+    PerformFriendListScan()
+end
+
+local function CleanupNotifiedFriendsDB()
+    -- Intentionally left empty to preserve watchedFriends entries
+    -- regardless of their hasBeenNotifiedForThisAdd status, allowing
+    -- the "Восставшие" tab to be persistent across sessions.
+    -- Original logic for cleaning up notified friends has been removed.
+
+    -- If there's any other type of cleanup needed in the future (e.g., removing very old entries
+    -- or entries for characters no longer on friends list for a long time),
+    -- that logic could be added here. For now, no cleanup is performed.
+end
+
+function ns.GetReincarnatedFriendsDisplayList()
+    local displayList = {}
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then
+        return displayList
     end
 
-    local function CleanupNotifiedFriendsDB()
-        -- Intentionally left empty to preserve watchedFriends entries
-        -- regardless of their hasBeenNotifiedForThisAdd status, allowing
-        -- the "Восставшие" tab to be persistent across sessions.
-        -- Original logic for cleaning up notified friends has been removed.
+    local rawOriginalClips = ns.GetLiveDeathClips and ns.GetLiveDeathClips() or {}
+    local realmFilteredOriginalClips = ns.FilterClipsThisRealm and ns.FilterClipsThisRealm(rawOriginalClips) or rawOriginalClips
 
-        -- If there's any other type of cleanup needed in the future (e.g., removing very old entries
-        -- or entries for characters no longer on friends list for a long time),
-        -- that logic could be added here. For now, no cleanup is performed.
+    local nonCompletedOriginalClips = {}
+    for _, clip in ipairs(realmFilteredOriginalClips) do
+        if not clip.completed then
+            table.insert(nonCompletedOriginalClips, clip)
+        end
     end
 
-    local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent("ADDON_LOADED")
-    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    eventFrame:RegisterEvent("PLAYER_LOGOUT")
-    eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
+    for playerLowerName, watchedEntry in pairs(AuctionHouseDBSaved.watchedFriends) do
+        if watchedEntry and watchedEntry.characterName and watchedEntry.hasBeenNotifiedForThisAdd then
+            local characterName = watchedEntry.characterName
 
-    eventFrame:SetScript("OnEvent", function(self, event, arg1)
-        if event == "ADDON_LOADED" and arg1 == addonName then
-            if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
-            ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
+            local isFriendOnWoWList, isConnected, displayLevelFromFunc, localizedClassFromFunc, areaFromFunc, _ = ns.IsPlayerOnFriendsList(characterName)
 
-        elseif event == "PLAYER_ENTERING_WORLD" then
-            if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
-            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
-            CleanupNotifiedFriendsDB()
-            lastFriendListScanTime = 0
-            if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
-            if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
-            initialLoginScanTimer = C_Timer:After(15, function()
-                initialLoginScanTimer = nil; PerformFriendListScan()
-            end)
-        elseif event == "PLAYER_LOGOUT" then
-            if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
-            if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
-            -- Watched friends data in AuctionHouseDBSaved persists. No session flags to clear here.
-        elseif event == "FRIENDLIST_UPDATE" then
-            HandleFriendListUpdate()
+            local actualLevelToStore = displayLevelFromFunc
+            if not isConnected and watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0 then
+                actualLevelToStore = watchedEntry.lastKnownActualLevel
+            elseif not isConnected and actualLevelToStore == 0 and watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0 then
+                actualLevelToStore = watchedEntry.lastKnownActualLevel
+            end
+
+            local currentEnglishClassToken = nil
+            if localizedClassFromFunc and ns.russianClassNameToEnglishToken then
+                currentEnglishClassToken = ns.russianClassNameToEnglishToken[localizedClassFromFunc]
+                if not currentEnglishClassToken then -- Try uppercase as a fallback
+                    currentEnglishClassToken = ns.russianClassNameToEnglishToken[string.upper(localizedClassFromFunc)]
+                end
+            end
+            if not currentEnglishClassToken and localizedClassFromFunc and localizedClassFromFunc ~= "" then
+                -- If still not found, but we have a localized name, check if it's already an English token (e.g. from other clients)
+                for engToken, _ in pairs(LOCALIZED_CLASS_NAMES_MALE) do -- Check against a known list of English tokens
+                    if string.upper(localizedClassFromFunc) == engToken then
+                        currentEnglishClassToken = engToken
+                        break
+                    end
+                end
+            end
+
+
+            -- Find the corresponding original death clip
+            local bestOriginalClip = nil
+            for _, originalClip in ipairs(nonCompletedOriginalClips) do
+                if string.lower(originalClip.characterName or "") == playerLowerName then
+                    if not bestOriginalClip or (originalClip.ts and bestOriginalClip.ts and originalClip.ts > bestOriginalClip.ts) then
+                        bestOriginalClip = originalClip
+                    end
+                end
+            end
+
+            local friendDisplayData = {
+                characterName = characterName,
+                clipLevel = watchedEntry.clipLevel,
+                actualLevel = actualLevelToStore,
+                isOnline = isConnected,
+                isOnWoWFriends = isFriendOnWoWList,
+                localizedClassName = localizedClassFromFunc,
+                currentEnglishClassToken = currentEnglishClassToken,
+                zone = areaFromFunc,
+                lastKnownActualLevelTimestamp = watchedEntry.lastKnownActualLevelTimestamp,
+                hasBeenNotifiedForThisAdd = watchedEntry.hasBeenNotifiedForThisAdd,
+
+                originalTimestamp = bestOriginalClip and bestOriginalClip.ts or nil,
+                originalDeathCause = bestOriginalClip and bestOriginalClip.deathCause or nil,
+                originalCauseCode = bestOriginalClip and bestOriginalClip.causeCode or nil,
+                originalMobLevel = bestOriginalClip and bestOriginalClip.mobLevel or nil,
+                originalEnglishClassToken = bestOriginalClip and bestOriginalClip.class or nil, -- Assuming originalClip.class is English token
+                originalFaction = bestOriginalClip and bestOriginalClip.faction or nil,
+                originalMapId = bestOriginalClip and bestOriginalClip.mapId or nil
+            }
+            table.insert(displayList, friendDisplayData)
         end
-    end)
+    end
+    return displayList
+end
+
+
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("ADDON_LOADED")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("PLAYER_LOGOUT")
+eventFrame:RegisterEvent("FRIENDLIST_UPDATE")
+
+eventFrame:SetScript("OnEvent", function(self, event, arg1)
+    if event == "ADDON_LOADED" and arg1 == addonName then
+        if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
+        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+        ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
+
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
+        AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+        CleanupNotifiedFriendsDB()
+        lastFriendListScanTime = 0
+        if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
+        if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
+        initialLoginScanTimer = C_Timer:After(15, function()
+            initialLoginScanTimer = nil; PerformFriendListScan()
+        end)
+    elseif event == "PLAYER_LOGOUT" then
+        if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
+        if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
+        -- Watched friends data in AuctionHouseDBSaved persists. No session flags to clear here.
+    elseif event == "FRIENDLIST_UPDATE" then
+        HandleFriendListUpdate()
+    end
+end)
