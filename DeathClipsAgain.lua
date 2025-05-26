@@ -625,11 +625,10 @@ local function PerformFriendListScan()
                     local oldLevel = watchedEntry.lastKnownActualLevel or "неизвестен"
                     local prefix = string.format("|cff888888[%s]|r", addonName)
                     local playerName = string.format("|cff69ccf0%s|r", name)
-                    local levelChange = string.format("|cffffff00%s → %s|r", tostring(oldLevel), tostring(currentActualLevel))
-                    local updateMsg = "|cff90ee90База данных обновлена|r"
+                    local levelChange = string.format("|cffffff00%s на %s|r", tostring(oldLevel), tostring(currentActualLevel))
 
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился: %s. %s",
-                        prefix, playerName, levelChange, updateMsg))
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s. %s",
+                            prefix, playerName, levelChange))
 
                     watchedEntry.lastKnownActualLevel = currentActualLevel
                     watchedEntry.lastKnownActualLevelTimestamp = GetTime()
