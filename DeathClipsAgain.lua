@@ -11,6 +11,7 @@ ns.isFriendCleanupRunning = false -- Mutex for cleanup process
 -- State for AddFriend Error Handling (Session Only)
 local suppressPlayerNotFoundSystemMessageActive = false
 local PLAYER_NOT_FOUND_RU = "Игрок не найден."
+local FRIENDS_MUST_BE_ALLIES_RU = "Друзья должны быть вашими союзниками."
 ns.expectingFriendAddSystemMessageFor = nil
 ns.capturedFriendAddSystemMessage = nil
 ns.lastActionStatus = nil -- Stores feedback from OnClick to be shown in HoverTooltip
@@ -599,6 +600,11 @@ end
 local function FriendAddSystemMessageFilter(self, event, msg, ...)
     if not msg or type(msg) ~= "string" then return false end
     if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == PLAYER_NOT_FOUND_RU then
+        if ns.expectingFriendAddSystemMessageFor then ns.capturedFriendAddSystemMessage = msg; ns.expectingFriendAddSystemMessageFor = nil end
+        return true
+    end
+    -- Suppress faction message when adding friends
+    if event == "CHAT_MSG_SYSTEM" and suppressPlayerNotFoundSystemMessageActive and msg == FRIENDS_MUST_BE_ALLIES_RU then
         if ns.expectingFriendAddSystemMessageFor then ns.capturedFriendAddSystemMessage = msg; ns.expectingFriendAddSystemMessageFor = nil end
         return true
     end
