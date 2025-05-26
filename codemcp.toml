@@ -1,2 +1,14 @@
+project_prompt = """
+This is a World of Warcraft addon project for Sirus server.
+Follow WoW addon conventions and use the existing Ace3 framework patterns.
+"""
+
 [commands]
 git = "git"
+format = ["git", "add", "-A"]
+test = ["echo", "WoW addon - manual testing required in-game"]
+
+# If you have specific WoW addon tools
+[commands.validate]
+command = ["echo", "Manual validation required - load addon in WoW"]
+doc = "WoW addons require manual testing by loading in-game"
