@@ -688,7 +688,7 @@ end
 function GoAgainAH_ClipItem_OnLeave(iconButton)
     -- Use delayed hiding to allow smooth transition
     if GoAgainAH_HoverTooltip and GoAgainAH_HoverTooltip:IsShown() then
-        tooltipHideTimer = C_Timer:After(1.0, function()
+        tooltipHideTimer = C_Timer:After(0.1, function()
             if GoAgainAH_HoverTooltip then
                 GoAgainAH_HoverTooltip:Hide()
             end
