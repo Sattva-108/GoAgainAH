@@ -299,14 +299,42 @@ end
 -- at addon load, create a dedicated hover-tooltip
 local HoverTooltip = CreateFrame("GameTooltip", "GoAgainAH_HoverTooltip", UIParent, "GameTooltipTemplate")
 HoverTooltip:SetFrameStrata("TOOLTIP")
+
+-- Create texture objects for green dots
+local greenDotTextures = {}
+local function GetGreenDotTexture(index)
+    if not greenDotTextures[index] then
+        local texture = HoverTooltip:CreateTexture(nil, "OVERLAY")
+        texture:SetTexture("Interface\\AddOns\\GoAgainAH\\Media\\clean_dot.tga")
+        texture:SetSize(8, 8)
+        texture:SetVertexColor(0, 1, 0, 1) -- Green color
+        greenDotTextures[index] = texture
+    end
+    return greenDotTextures[index]
+end
 -- you can tweak its default anchor offset here if you like:
 -- HoverTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 
+-- Add timer for delayed tooltip hiding
+local tooltipHideTimer = nil
+
 local function ShowHoverTooltipForIcon(iconButton)
+    -- Cancel any pending hide timer since we're showing tooltip
+    if tooltipHideTimer then
+        tooltipHideTimer:Cancel()
+        tooltipHideTimer = nil
+    end
+
     -- Guard clause: Exit if button is invalid or mouse is not over it.
     if not iconButton or not iconButton:IsMouseOver() then
-        if GoAgainAH_HoverTooltip then -- Check if tooltip exists
-            GoAgainAH_HoverTooltip:Hide()
+        -- Delay hiding tooltip to allow smooth transition between icons
+        if GoAgainAH_HoverTooltip and GoAgainAH_HoverTooltip:IsShown() then
+            tooltipHideTimer = C_Timer:After(1, function()
+                if GoAgainAH_HoverTooltip then
+                    GoAgainAH_HoverTooltip:Hide()
+                end
+                tooltipHideTimer = nil
+            end)
         end
         return -- Exit the function if the mouse is not over the iconButton
     end
@@ -335,6 +363,8 @@ local function ShowHoverTooltipForIcon(iconButton)
     if cd.faction ~= pf then
         HoverTooltip:AddLine("|cffff2020(Другая фракция)|r")
     else
+        HoverTooltip:AddLine(" ") -- Vertical spacing after name
+
         local characterNameLower = string.lower(name)
         local isWatched = AuctionHouseDBSaved.watchedFriends[characterNameLower] ~= nil
         -- Call IsPlayerOnFriendsList to get their current WoW friend status and live level if online.
@@ -342,52 +372,42 @@ local function ShowHoverTooltipForIcon(iconButton)
         -- clipLvlDB_from_func is the clipLevel from watchedFriends IF they are on WoW friends list.
         local isFriendOnWoWList, isConnected, displayLevelFromFunc, classToken, area, clipLvlDB_from_func = ns.IsPlayerOnFriendsList(name)
 
-        HoverTooltip:AddLine("ЛКМ: |cffA0A0A0Шёпот|r")
+        HoverTooltip:AddLine("ЛКМ: |TInterface\\AddOns\\GoAgainAH\\Media\\chatbubble_64grey.blp:10:10|t |cffff80ffШёпот|r")
 
-        -- "Add/Remove Friend" line (PKМ):
+        -- "Add/Remove Friend" line (PKМ): Only show if not already friends
+        local showFriendLine = false
         if isWatched then
-            if isFriendOnWoWList then
-                HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
-            else
-                HoverTooltip:AddLine("ПКМ: |cff888888Добавить в друзья|r") -- Grayed out as per request
+            if not isFriendOnWoWList then
+                HoverTooltip:AddLine(" ") -- Spacer line only when showing friend option
+                HoverTooltip:AddLine("ПКМ: |TInterface\\AddOns\\GoAgainAH\\Media\\ui-toast-chatinviteicon.blp:12:12|t |cff888888Добавить в друзья|r") -- Grayed out as per request
+                showFriendLine = true
             end
         else -- Not watched (this case might be less relevant if UI is purely from watchedFriends, but as fallback)
-            if isFriendOnWoWList then
-                HoverTooltip:AddLine("ПКМ: |cff00cc00Уже друг|r")
+            if not isFriendOnWoWList then
+                HoverTooltip:AddLine(" ") -- Spacer line only when showing friend option
+                HoverTooltip:AddLine("ПКМ: |TInterface\\AddOns\\GoAgainAH\\Media\\ui-toast-chatinviteicon.blp:12:12|t |cffA0A0A0В друзья|r")
+                showFriendLine = true
+            end
+        end
+
+        -- Online Status Line: Only show if player is on WoW friends list
+        if isFriendOnWoWList and isConnected then
+            if not showFriendLine then
+                HoverTooltip:AddLine(" ") -- Spacer line only if we didn't show friend line
             else
-                HoverTooltip:AddLine("ПКМ: |cffA0A0A0В друзья|r")
+                HoverTooltip:AddLine(" ") -- Spacer line after friend line
             end
+            HoverTooltip:AddLine(string.format("|cff69ccf0В сети - Ур: %d|r |cff00ff00•|r", displayLevelFromFunc or 0))
         end
 
-        -- Online/Offline Status & Level Line:
-        if isConnected then -- Player is on WoW friends list AND online
-            HoverTooltip:AddLine(string.format("|cff69ccf0(В сети - Ур: %d)|r", displayLevelFromFunc or 0))
-        else -- Player is OFFLINE or NOT on WoW friends list (or both)
-            if isWatched then
-                local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
-                -- Prioritize lastKnownActualLevel from the DB if it's valid (>0).
-                -- displayLevelFromFunc is 0 if offline friend's level unknown to IsPlayerOnFriendsList.
-                local levelToDisplay = (watchedEntry and watchedEntry.lastKnownActualLevel and watchedEntry.lastKnownActualLevel > 0) and watchedEntry.lastKnownActualLevel or displayLevelFromFunc
-                HoverTooltip:AddLine(string.format("|cffaaaaaa(Последний известный уровень: %d)|r", levelToDisplay or 0))
-            else -- Not watched AND not connected (e.g. a player from a standard AH scan not yet watched/friended)
-                HoverTooltip:AddLine("|cffaaaaaa(Не в сети)|r") -- Generic "Не в сети"
-            end
-        end
-
-        -- Original Level Line:
+        -- Last Activity Line: Only show for offline players with activity data
         if isWatched then
-            -- We need the clipLevel directly from the watchedFriends entry,
-            -- as clipLvlDB_from_func is only populated if they are also on WoW friends list.
             local watchedEntry = AuctionHouseDBSaved.watchedFriends[characterNameLower]
-            if watchedEntry and watchedEntry.clipLevel then
-                HoverTooltip:AddLine(string.format("|cffaaaaaa(Исходный уровень: %d)|r", watchedEntry.clipLevel))
-            end
-
-            -- Last Activity Line: Only show for offline players with activity data
             if watchedEntry and watchedEntry.lastActivityTimestamp and watchedEntry.lastActivityTimestamp > 0 and not isConnected then
+                HoverTooltip:AddLine(" ") -- Spacer line before activity
                 local lastActivityText = FormatTimeSince(watchedEntry.lastActivityTimestamp)
                 local activityColor = GetActivityColor(watchedEntry.lastActivityTimestamp)
-                HoverTooltip:AddLine(string.format("|cff%s(Активность: %s)|r", activityColor, lastActivityText))
+                HoverTooltip:AddLine(string.format("|cffaaaaaa(Был в сети: |r|cff%s%s|r|cffaaaaaa)|r", activityColor, lastActivityText))
             end
         end
     end
@@ -406,6 +426,22 @@ local function ShowHoverTooltipForIcon(iconButton)
 
     -- scale *only* your new tooltip
     HoverTooltip:SetScale(1.5)
+
+    -- Change tooltip background color for online friends
+    if cd.faction == pf then -- Same faction
+        local isFriendOnWoWList, isConnected = ns.IsPlayerOnFriendsList(name)
+        if isFriendOnWoWList and isConnected then
+            -- Bright green border for online friends
+            HoverTooltip:SetBackdropBorderColor(0.0, 1.0, 0.0, 1.0) -- Bright green border
+        else
+            -- Default tooltip border color
+            HoverTooltip:SetBackdropBorderColor(0.5, 0.5, 0.5, 1.0) -- Default gray border
+        end
+    else
+        -- Default tooltip border color for different faction
+        HoverTooltip:SetBackdropBorderColor(0.5, 0.5, 0.5, 1.0)
+    end
+
     HoverTooltip:Show()
 end
 
@@ -648,11 +684,16 @@ function GoAgainAH_ClipItem_OnEnter(iconButton)
     ShowHoverTooltipForIcon(iconButton)
 end
 
--- When the mouse leaves, hide *all* of your tooltips
+-- When the mouse leaves, hide *all* of your tooltips with delay
 function GoAgainAH_ClipItem_OnLeave(iconButton)
-    -- Hide the custom hover tooltip
-    if GoAgainAH_HoverTooltip then
-        GoAgainAH_HoverTooltip:Hide()
+    -- Use delayed hiding to allow smooth transition
+    if GoAgainAH_HoverTooltip and GoAgainAH_HoverTooltip:IsShown() then
+        tooltipHideTimer = C_Timer:After(1.0, function()
+            if GoAgainAH_HoverTooltip then
+                GoAgainAH_HoverTooltip:Hide()
+            end
+            tooltipHideTimer = nil
+        end)
     end
 
     ns.lastActionStatus = nil -- Clear status when mouse leaves
@@ -700,11 +741,23 @@ local function PerformFriendListScan()
                 if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
                     local oldLevel = watchedEntry.lastKnownActualLevel or "неизвестен"
                     local prefix = string.format("|cff888888[%s]|r", addonName)
-                    local playerName = string.format("|cff69ccf0%s|r", name)
-                    local levelChange = string.format("|cffffff00%s на %s|r", tostring(oldLevel), tostring(currentActualLevel))
 
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s.",
-                            prefix, playerName, levelChange))
+                    -- Get class color for player name
+                    local classColorHex = "69ccf0" -- Default blue color
+                    if classToken then
+                        local englishToken = ns.GetEnglishClassToken(classToken)
+                        if englishToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[englishToken] then
+                            local c = RAID_CLASS_COLORS[englishToken]
+                            classColorHex = string.format("%02x%02x%02x", c.r * 255, c.g * 255, c.b * 255)
+                        end
+                    end
+
+                    local playerName = string.format("|cff%s%s|r", classColorHex, name)
+                    local levelChange = string.format("|cffffff00%s на %s|r", tostring(oldLevel), tostring(currentActualLevel))
+                    local zoneText = area and area ~= "" and string.format(" |cffffd700(%s)|r", area) or ""
+
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s.%s",
+                            prefix, playerName, levelChange, zoneText))
 
                     watchedEntry.lastKnownActualLevel = currentActualLevel
                     watchedEntry.lastKnownActualLevelTimestamp = time()
