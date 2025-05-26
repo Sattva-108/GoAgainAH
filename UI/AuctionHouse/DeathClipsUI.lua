@@ -1,6 +1,79 @@
 local addonName, ns = ...
 local L = ns.L
 
+-- Time formatting functions for last activity display
+local function FormatLastActivityTime(timestamp, isOnline)
+    -- If player is online, show green dot
+    if isOnline then
+        return "__ONLINE_DOT__"
+    end
+
+    if not timestamp or timestamp == 0 then
+        return "-"
+    end
+
+    local currentTime = time()
+    local timeDiff = currentTime - timestamp
+
+    -- Use the same PrettyDuration function as regular clips
+    return ns.PrettyDuration(timeDiff)
+end
+
+-- Get color for activity time based on how long ago it was
+local function GetLastActivityColor(timestamp, isOnline)
+    -- If player is online, use bright green
+    if isOnline then
+        return 0, 1, 0 -- Bright green for online dot
+    end
+
+    if not timestamp or timestamp == 0 then
+        return 0.6, 0.6, 0.6 -- Gray for unknown
+    end
+
+    local currentTime = time()
+    local timeDiff = currentTime - timestamp
+
+    if timeDiff < 3600 then -- less than 1 hour - GREEN
+        return 0, 1, 0
+    elseif timeDiff < 7200 then -- less than 2 hours - YELLOW
+        return 1, 1, 0
+    elseif timeDiff < 14400 then -- less than 4 hours - WHITE
+        return 1, 1, 1
+    elseif timeDiff < 43200 then -- less than 12 hours - ORANGE
+        return 1, 0.5, 0
+    elseif timeDiff < 86400 then -- less than 1 day - RED
+        return 1, 0, 0
+    else -- more than 1 day - GRAY
+        return 0.6, 0.6, 0.6
+    end
+end
+
+-- Function to create/show online dot texture on whenText FontString
+local function ShowOnlineDot(whenFS)
+    if not whenFS.onlineDot then
+        -- Create the texture once
+        whenFS.onlineDot = whenFS:GetParent():CreateTexture(nil, "OVERLAY")
+        whenFS.onlineDot:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Media\\clean_dot.tga")
+        whenFS.onlineDot:SetSize(12, 12) -- 1.5x larger than original 8x8
+        whenFS.onlineDot:SetVertexColor(0, 1, 0, 1) -- Bright green
+    end
+
+    -- Position the dot relative to the FontString
+    whenFS.onlineDot:ClearAllPoints()
+    whenFS.onlineDot:SetPoint("CENTER", whenFS, "CENTER", 0, 0)
+    whenFS.onlineDot:Show()
+
+    -- Hide the text since we're showing texture instead
+    whenFS:SetText("")
+end
+
+-- Function to hide online dot texture
+local function HideOnlineDot(whenFS)
+    if whenFS.onlineDot then
+        whenFS.onlineDot:Hide()
+    end
+end
+
 -- Keep track if the sort hook has been applied to avoid duplicates
 local sortHookApplied = false
 
@@ -132,14 +205,38 @@ function OFAuctionFrameDeathClips_OnLoad()
         for i = 1, NUM_CLIPS_TO_DISPLAY do
             local el = ns.clipButtonElements[i]
             local clip = el and el.button.clipData
-            if clip and clip.ts then
+            if clip then
                 local whenFS = el.whenText
-                whenFS:SetText(formatWhen(clip))
-                if clip.playedTime and clip.level then
-                    local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-                    whenFS:SetTextColor(r, g, b, .7)
-                else
-                    whenFS:SetTextColor(.6, .6, .6, .5)
+                if clip.isReincarnated then
+                    -- For reincarnated friends, show last activity time
+                    if clip.lastActivityTimestamp and clip.lastActivityTimestamp > 0 then
+                        local activityText = FormatLastActivityTime(clip.lastActivityTimestamp, clip.isOnline)
+                        if activityText == "__ONLINE_DOT__" then
+                            ShowOnlineDot(whenFS)
+                        else
+                            HideOnlineDot(whenFS)
+                            local r, g, b = GetLastActivityColor(clip.lastActivityTimestamp, clip.isOnline)
+                            whenFS:SetText(activityText)
+                            whenFS:SetTextColor(r, g, b, 0.8)
+                        end
+                    elseif clip.isOnline then
+                        -- Player is online but no activity timestamp
+                        ShowOnlineDot(whenFS)
+                    else
+                        HideOnlineDot(whenFS)
+                        whenFS:SetText("-")
+                        whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                    end
+                elseif clip.ts then
+                    -- Regular clips with timestamp
+                    HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
+                    whenFS:SetText(formatWhen(clip))
+                    if clip.playedTime and clip.level then
+                        local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                        whenFS:SetTextColor(r, g, b, .7)
+                    else
+                        whenFS:SetTextColor(.6, .6, .6, .5)
+                    end
                 end
             end
         end
@@ -469,32 +566,59 @@ function OFAuctionFrameDeathClips_OnShow()
                 local button = el and el.button
                 local clip = button and button.clipData      -- актуальные данные
 
-                if button and button:IsShown() and clip and clip.ts then
+                if button and button:IsShown() and clip and (clip.ts or clip.isReincarnated) then
                     ------------------------------------------------------
                     -- 1) «Когда»
                     ------------------------------------------------------
                     local whenFS = el.whenText
-                    whenFS:SetText(formatWhen(clip))
 
-                    if clip.playedTime and clip.level then
-                        local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-                        whenFS:SetTextColor(r, g, b, .7)
+                    if clip.isReincarnated then
+                        -- For reincarnated friends, show last activity time
+                        if clip.lastActivityTimestamp and clip.lastActivityTimestamp > 0 then
+                            local activityText = FormatLastActivityTime(clip.lastActivityTimestamp, clip.isOnline)
+                            if activityText == "__ONLINE_DOT__" then
+                                ShowOnlineDot(whenFS)
+                            else
+                                HideOnlineDot(whenFS)
+                                local r, g, b = GetLastActivityColor(clip.lastActivityTimestamp, clip.isOnline)
+                                whenFS:SetText(activityText)
+                                whenFS:SetTextColor(r, g, b, 0.8)
+                            end
+                        elseif clip.isOnline then
+                            -- Player is online but no activity timestamp
+                            ShowOnlineDot(whenFS)
+                        else
+                            HideOnlineDot(whenFS)
+                            whenFS:SetText("-")
+                            whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                        end
                     else
-                        whenFS:SetTextColor(.6, .6, .6, .5)
+                        -- Regular clips - use original logic
+                        HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
+                        whenFS:SetText(formatWhen(clip))
+
+                        if clip.playedTime and clip.level then
+                            local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                            whenFS:SetTextColor(r, g, b, .7)
+                        else
+                            whenFS:SetTextColor(.6, .6, .6, .5)
+                        end
                     end
 
                     ------------------------------------------------------
-                    -- 2) Подсветка новых клипов (меньше 60 с)
+                    -- 2) Подсветка новых клипов (меньше 60 с) - only for regular clips
                     ------------------------------------------------------
-                    local age = GetServerTime() - clip.ts
-                    if age < 60 and not frame._highlightedClips[clip.id] then
-                        frame._highlightedClips[clip.id] = true
+                    if not clip.isReincarnated and clip.ts then
+                        local age = GetServerTime() - clip.ts
+                        if age < 60 and not frame._highlightedClips[clip.id] then
+                            frame._highlightedClips[clip.id] = true
 
-                        if button.glow then
-                            button.glow.animation:Play()
-                        end
-                        if button.shine then
-                            button.shine.animation:Play()
+                            if button.glow then
+                                button.glow.animation:Play()
+                            end
+                            if button.shine then
+                                button.shine.animation:Play()
+                            end
                         end
                     end
                 end
@@ -870,10 +994,32 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
         -- However, for initial setup, especially for reincarnated view where ts might be nil:
         if columnVisibility["WhenText"] then
             local whenFS = elements.whenText
-            if clip.isReincarnated and clip.ts == nil then
+            if clip.isReincarnated then
+                -- For reincarnated friends, show last activity time if available
+                if clip.lastActivityTimestamp and clip.lastActivityTimestamp > 0 then
+                    local activityText = FormatLastActivityTime(clip.lastActivityTimestamp, clip.isOnline)
+                    if activityText == "__ONLINE_DOT__" then
+                        ShowOnlineDot(whenFS)
+                    else
+                        HideOnlineDot(whenFS)
+                        local r, g, b = GetLastActivityColor(clip.lastActivityTimestamp, clip.isOnline)
+                        whenFS:SetText(activityText)
+                        whenFS:SetTextColor(r, g, b, 0.8)
+                    end
+                elseif clip.isOnline then
+                    -- Player is online but no activity timestamp
+                    ShowOnlineDot(whenFS)
+                else
+                    HideOnlineDot(whenFS)
+                    whenFS:SetText("-") -- No activity data available
+                    whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                end
+            elseif clip.ts == nil then
+                HideOnlineDot(whenFS) -- Make sure dot is hidden for non-reincarnated clips
                 whenFS:SetText("|cffaaaaaaN/A|r") -- Or L["Unknown"] if preferred, styled
                 whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8) -- Match the color of other N/A text
             else
+                HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
                 -- Let the hook handle formatting for valid timestamps,
                 -- but ensure it's not empty if the hook hasn't run yet for this specific row update.
                 if whenFS:GetText() == "" then -- Only if not already set by hook
@@ -958,6 +1104,7 @@ function OFAuctionFrameDeathClips_Update()
                     characterName = friendData.characterName,
                     id = friendData.characterName .. "_reincarnated", -- Unique key
                     isReincarnated = true,
+                    isOnline = friendData.isOnline, -- Add online status for formatting
 
                     -- Levels
                     level = friendData.actualLevel,  -- Current actual level, used for sorting by "Level"
@@ -975,15 +1122,17 @@ function OFAuctionFrameDeathClips_Update()
                     -- If originalMapId is preferred for 'where', this needs adjustment or use friendData.originalMapId.
                     -- For now, using friendData.zone (current zone) is consistent with the structure.
 
-                    -- Timestamp for "When" column sorting and display
-                    ts = friendData.originalTimestamp, -- Will be nil if no original clip, formatWhen handles nil
+                    -- Timestamp for "When" column sorting and display - NOW USE LAST ACTIVITY TIME
+                    ts = friendData.lastActivityTimestamp, -- Use last activity time instead of original death time
+                    lastActivityTimestamp = friendData.lastActivityTimestamp, -- Keep separate field for reference
 
                     -- Data from original death clip (or nil if not found)
                     deathCause = friendData.originalDeathCause,
                     causeCode = friendData.originalCauseCode,
                     mobLevel = friendData.originalMobLevel,
                     mapId = friendData.originalMapId,
-                    faction = friendData.originalFaction
+                    faction = friendData.originalFaction,
+                    originalTimestamp = friendData.originalTimestamp -- Keep original death time for reference
                     -- Note: `race` is not explicitly in friendData, `UpdateClipEntry` uses `clip.race` which would be nil here.
                     -- If `originalRace` is needed, it should be added to `friendData` from `originalClip.race`.
                     -- For now, `clip.race` will be nil for reincarnated, and `UpdateClipEntry` handles nil `clip.race`.
@@ -1206,5 +1355,3 @@ end
 -- (addonName and ns are assumed to be defined at the top of your file)
 -- The large block of code related to saved variables, friend notifications,
 -- tooltips, and event handling has been moved to DeathClipsAgain.lua
-
-

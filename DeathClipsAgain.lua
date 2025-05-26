@@ -863,6 +863,7 @@ function ns.GetReincarnatedFriendsDisplayList()
                 zone = liveArea, -- Will be nil if not connected/not on friends list, which is appropriate
                 lastKnownActualLevelTimestamp = watchedEntry.lastKnownActualLevelTimestamp,
                 hasBeenNotifiedForThisAdd = watchedEntry.hasBeenNotifiedForThisAdd,
+                lastActivityTimestamp = watchedEntry.lastActivityTimestamp, -- Add last activity timestamp
 
                 originalTimestamp = bestOriginalClip and bestOriginalClip.ts or nil,
                 originalDeathCause = bestOriginalClip and bestOriginalClip.deathCause or nil,
