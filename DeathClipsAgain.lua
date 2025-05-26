@@ -52,7 +52,7 @@ local function FormatTimeSince(timestamp)
         return "неизвестно"
     end
 
-    local currentTime = GetTime()
+    local currentTime = time()
     local timeDiff = currentTime - timestamp
 
     if timeDiff < 60 then
@@ -78,7 +78,7 @@ local function GetActivityColor(timestamp)
         return "aaaaaa" -- Gray for unknown
     end
 
-    local currentTime = GetTime()
+    local currentTime = time()
     local timeDiff = currentTime - timestamp
 
     if timeDiff < 3600 then -- less than 1 hour - GREEN
@@ -235,7 +235,7 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
     if watchedEntry and not watchedEntry.hasBeenNotifiedForThisAdd and
             currentLevel and watchedEntry.clipLevel and currentLevel < watchedEntry.clipLevel then
 
-        local currentTime = GetTime()
+        local currentTime = time()
         if (currentTime - lastNotificationTime) < NOTIFICATION_COOLDOWN then
             return
         end
@@ -531,12 +531,12 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         characterName = characterName,
                         clipLevel = originalClipLevelFromThisInteraction, -- Use clip level as original
                         lastKnownActualLevel = (isConnectedInitially and currentDisplayLevelInitially and currentDisplayLevelInitially > 0) and currentDisplayLevelInitially or originalClipLevelFromThisInteraction,
-                        lastKnownActualLevelTimestamp = GetTime(),
+                        lastKnownActualLevelTimestamp = time(),
                         hasBeenNotifiedForThisAdd = false,
                         localizedClassNameAtLastSighting = isConnectedInitially and currentClassInitially or nil,
                         currentEnglishClassTokenAtLastSighting = isConnectedInitially and ns.GetEnglishClassToken(currentClassInitially) or nil,
-                        addedToWatchTimestamp = GetTime(),
-                        lastActivityTimestamp = isConnectedInitially and GetTime() or 0  -- Set activity time if player is online
+                        addedToWatchTimestamp = time(),
+                        lastActivityTimestamp = isConnectedInitially and time() or 0  -- Set activity time if player is online
                     }
                     AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                     ns.lastActionStatus = {
@@ -597,12 +597,12 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 characterName = characterName,
                                 clipLevel = originalClipLevelFromThisInteraction,
                                 lastKnownActualLevel = determinedLastKnownLevel,
-                                lastKnownActualLevelTimestamp = GetTime(),
+                                lastKnownActualLevelTimestamp = time(),
                                 hasBeenNotifiedForThisAdd = false,
                                 localizedClassNameAtLastSighting = determinedLocalizedClass,
                                 currentEnglishClassTokenAtLastSighting = determinedEnglishClassToken,
-                                addedToWatchTimestamp = GetTime(),
-                                lastActivityTimestamp = isConnected and GetTime() or 0  -- Set activity time if player is online
+                                addedToWatchTimestamp = time(),
+                                lastActivityTimestamp = isConnected and time() or 0  -- Set activity time if player is online
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
 
@@ -618,11 +618,11 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 characterName = characterName,
                                 clipLevel = originalClipLevelFromThisInteraction,
                                 lastKnownActualLevel = originalClipLevelFromThisInteraction, -- Fallback to original clip's level
-                                lastKnownActualLevelTimestamp = GetTime(),
+                                lastKnownActualLevelTimestamp = time(),
                                 hasBeenNotifiedForThisAdd = false,
                                 localizedClassNameAtLastSighting = nil, -- Offline, no live localized class
                                 currentEnglishClassTokenAtLastSighting = clipData.class, -- Fallback to English class token from original clipData
-                                addedToWatchTimestamp = GetTime(),
+                                addedToWatchTimestamp = time(),
                                 lastActivityTimestamp = 0  -- Player is offline, no activity timestamp
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
@@ -683,7 +683,7 @@ local function FriendAddSystemMessageFilter(self, event, msg, ...)
 end
 
 local function PerformFriendListScan()
-    lastFriendListScanTime = GetTime()
+    lastFriendListScanTime = time()
     if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
 
     for i = 1, GetNumFriends() do
@@ -694,7 +694,7 @@ local function PerformFriendListScan()
 
             if watchedEntry then
                 -- Update last activity timestamp for online friends
-                watchedEntry.lastActivityTimestamp = GetTime()
+                watchedEntry.lastActivityTimestamp = time()
 
                 -- Check for level change to update lastKnownActualLevel
                 if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
@@ -707,7 +707,7 @@ local function PerformFriendListScan()
                             prefix, playerName, levelChange))
 
                     watchedEntry.lastKnownActualLevel = currentActualLevel
-                    watchedEntry.lastKnownActualLevelTimestamp = GetTime()
+                    watchedEntry.lastKnownActualLevelTimestamp = time()
                 end
 
                 -- Update class info at last sighting
@@ -727,7 +727,7 @@ end
 
 local function HandleFriendListUpdate()
     if friendListDebounceTimer then return end
-    local currentTime = GetTime()
+    local currentTime = time()
     if (currentTime - lastFriendListScanTime) < FRIENDLIST_UPDATE_DEBOUNCE_TIME then
         local remainingTime = FRIENDLIST_UPDATE_DEBOUNCE_TIME - (currentTime - lastFriendListScanTime)
         friendListDebounceTimer = C_Timer:After(remainingTime, function()
@@ -940,10 +940,10 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
     end
 end)
 
--- Development helper function to test time formatting
--- Usage: /run ns.TestTimeFormatting()
-function ns.TestTimeFormatting()
-    local currentTime = GetTime()
+-- Development helper function to test time formatting and colors
+-- Usage: /run TestGoAgainTimeFormatting()
+function TestGoAgainTimeFormatting()
+    local currentTime = time()
     local testCases = {
         { timestamp = currentTime - 30, expected = "менее минуты назад" },
         { timestamp = currentTime - 300, expected = "5 мин. назад" },
@@ -959,4 +959,52 @@ function ns.TestTimeFormatting()
         local color = GetActivityColor(testCase.timestamp)
         print(string.format("Test %d: %s (color: #%s)", i, result, color))
     end
+end
+
+-- Global helper function to migrate database from GetTime() to time()
+-- Usage: /run MigrateGoAgainActivityData()
+function MigrateGoAgainActivityData()
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then
+        print("GoAgainAH: No watchedFriends data found to migrate.")
+        return
+    end
+
+    local currentUnixTime = time()
+    local migratedCount = 0
+    local removedCount = 0
+
+    print("GoAgainAH: Starting migration from GetTime() to time()...")
+
+    for playerLowerName, entry in pairs(AuctionHouseDBSaved.watchedFriends) do
+        if entry then
+            -- Check if lastActivityTimestamp looks like GetTime() (small number, likely session time)
+            if entry.lastActivityTimestamp and entry.lastActivityTimestamp > 0 and entry.lastActivityTimestamp < 1000000 then
+                -- This looks like GetTime() data, remove it since it's invalid
+                entry.lastActivityTimestamp = 0
+                removedCount = removedCount + 1
+                print(string.format("  - Removed invalid GetTime() data for %s", entry.characterName or playerLowerName))
+            elseif entry.lastActivityTimestamp and entry.lastActivityTimestamp > currentUnixTime then
+                -- Future timestamp, also invalid
+                entry.lastActivityTimestamp = 0
+                removedCount = removedCount + 1
+                print(string.format("  - Removed future timestamp for %s", entry.characterName or playerLowerName))
+            elseif entry.lastActivityTimestamp and entry.lastActivityTimestamp > 0 then
+                -- This looks like valid Unix timestamp, keep it
+                migratedCount = migratedCount + 1
+            end
+
+            -- Also check addedToWatchTimestamp and lastKnownActualLevelTimestamp
+            if entry.addedToWatchTimestamp and entry.addedToWatchTimestamp < 1000000 then
+                entry.addedToWatchTimestamp = currentUnixTime -- Set to now
+            end
+            if entry.lastKnownActualLevelTimestamp and entry.lastKnownActualLevelTimestamp < 1000000 then
+                entry.lastKnownActualLevelTimestamp = currentUnixTime -- Set to now
+            end
+        end
+    end
+
+    print(string.format("GoAgainAH: Migration complete!"))
+    print(string.format("  - Valid timestamps kept: %d", migratedCount))
+    print(string.format("  - Invalid timestamps removed: %d", removedCount))
+    print("GoAgainAH: Activity tracking will start fresh for affected players.")
 end
