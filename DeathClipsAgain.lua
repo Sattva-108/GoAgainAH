@@ -4,7 +4,14 @@ local L = ns.L -- Assuming L is properly part of the ns table or loaded globally
 -- SAVED VARIABLES:
 if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
 AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
--- Structure: { [playerLowerName] = { clipLevel = number, hasBeenNotifiedForThisAdd = boolean } }
+-- Structure: { [playerLowerName] = {
+--   clipLevel = number,
+--   hasBeenNotifiedForThisAdd = boolean,
+--   lastActivityTimestamp = number,  -- when player was last seen online
+--   lastKnownActualLevel = number,
+--   lastKnownActualLevelTimestamp = number,
+--   addedToWatchTimestamp = number
+-- } }
 
 ns.isFriendCleanupRunning = false -- Mutex for cleanup process
 
@@ -38,6 +45,56 @@ local TOOLTIP_VERTICAL_PADDING = 16
 local LINE_SPACING = 2
 
 -- ShowStatusTooltip and HideStatusTooltip are removed.
+
+-- Format time since last activity in a human-readable way
+local function FormatTimeSince(timestamp)
+    if not timestamp or timestamp == 0 then
+        return "неизвестно"
+    end
+
+    local currentTime = GetTime()
+    local timeDiff = currentTime - timestamp
+
+    if timeDiff < 60 then
+        return "менее минуты назад"
+    elseif timeDiff < 3600 then -- less than 1 hour
+        local minutes = math.floor(timeDiff / 60)
+        return string.format("%d мин. назад", minutes)
+    elseif timeDiff < 86400 then -- less than 1 day
+        local hours = math.floor(timeDiff / 3600)
+        return string.format("%d ч. назад", hours)
+    elseif timeDiff < 604800 then -- less than 1 week
+        local days = math.floor(timeDiff / 86400)
+        return string.format("%d дн. назад", days)
+    else
+        local weeks = math.floor(timeDiff / 604800)
+        return string.format("%d нед. назад", weeks)
+    end
+end
+
+-- Get color for activity time based on how long ago it was
+local function GetActivityColor(timestamp)
+    if not timestamp or timestamp == 0 then
+        return "aaaaaa" -- Gray for unknown
+    end
+
+    local currentTime = GetTime()
+    local timeDiff = currentTime - timestamp
+
+    if timeDiff < 3600 then -- less than 1 hour - GREEN
+        return "00ff00"
+    elseif timeDiff < 7200 then -- less than 2 hours - YELLOW
+        return "ffff00"
+    elseif timeDiff < 14400 then -- less than 4 hours - WHITE
+        return "ffffff"
+    elseif timeDiff < 43200 then -- less than 12 hours - ORANGE
+        return "ff8000"
+    elseif timeDiff < 86400 then -- less than 1 day - RED
+        return "ff0000"
+    else -- more than 1 day - GRAY
+        return "aaaaaa"
+    end
+end
 
 function ns.IsPlayerOnFriendsList(characterName)
     if not characterName or characterName == "" then
@@ -325,6 +382,13 @@ local function ShowHoverTooltipForIcon(iconButton)
             if watchedEntry and watchedEntry.clipLevel then
                 HoverTooltip:AddLine(string.format("|cffaaaaaa(Исходный уровень: %d)|r", watchedEntry.clipLevel))
             end
+
+            -- Last Activity Line: Only show for offline players with activity data
+            if watchedEntry and watchedEntry.lastActivityTimestamp and watchedEntry.lastActivityTimestamp > 0 and not isConnected then
+                local lastActivityText = FormatTimeSince(watchedEntry.lastActivityTimestamp)
+                local activityColor = GetActivityColor(watchedEntry.lastActivityTimestamp)
+                HoverTooltip:AddLine(string.format("|cff%s(Активность: %s)|r", activityColor, lastActivityText))
+            end
         end
     end
 
@@ -471,7 +535,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         hasBeenNotifiedForThisAdd = false,
                         localizedClassNameAtLastSighting = isConnectedInitially and currentClassInitially or nil,
                         currentEnglishClassTokenAtLastSighting = isConnectedInitially and ns.GetEnglishClassToken(currentClassInitially) or nil,
-                        addedToWatchTimestamp = GetTime()
+                        addedToWatchTimestamp = GetTime(),
+                        lastActivityTimestamp = isConnectedInitially and GetTime() or 0  -- Set activity time if player is online
                     }
                     AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                     ns.lastActionStatus = {
@@ -536,7 +601,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 hasBeenNotifiedForThisAdd = false,
                                 localizedClassNameAtLastSighting = determinedLocalizedClass,
                                 currentEnglishClassTokenAtLastSighting = determinedEnglishClassToken,
-                                addedToWatchTimestamp = GetTime()
+                                addedToWatchTimestamp = GetTime(),
+                                lastActivityTimestamp = isConnected and GetTime() or 0  -- Set activity time if player is online
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
 
@@ -556,7 +622,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 hasBeenNotifiedForThisAdd = false,
                                 localizedClassNameAtLastSighting = nil, -- Offline, no live localized class
                                 currentEnglishClassTokenAtLastSighting = clipData.class, -- Fallback to English class token from original clipData
-                                addedToWatchTimestamp = GetTime()
+                                addedToWatchTimestamp = GetTime(),
+                                lastActivityTimestamp = 0  -- Player is offline, no activity timestamp
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                         end
@@ -626,6 +693,9 @@ local function PerformFriendListScan()
             local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
             if watchedEntry then
+                -- Update last activity timestamp for online friends
+                watchedEntry.lastActivityTimestamp = GetTime()
+
                 -- Check for level change to update lastKnownActualLevel
                 if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
                     local oldLevel = watchedEntry.lastKnownActualLevel or "неизвестен"
@@ -827,6 +897,17 @@ function ns.InitiateFriendCleanup()
 end
 
 
+local function MigrateWatchedFriendsData()
+    -- Migrate existing watchedFriends entries to include lastActivityTimestamp
+    if type(AuctionHouseDBSaved) == "table" and type(AuctionHouseDBSaved.watchedFriends) == "table" then
+        for playerLowerName, entry in pairs(AuctionHouseDBSaved.watchedFriends) do
+            if entry and not entry.lastActivityTimestamp then
+                entry.lastActivityTimestamp = 0  -- Default to unknown for existing entries
+            end
+        end
+    end
+end
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -837,6 +918,7 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == addonName then
         if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
         AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+        MigrateWatchedFriendsData()  -- Migrate existing data to include lastActivityTimestamp
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", FriendAddSystemMessageFilter)
 
     elseif event == "PLAYER_ENTERING_WORLD" then
@@ -857,3 +939,24 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         HandleFriendListUpdate()
     end
 end)
+
+-- Development helper function to test time formatting
+-- Usage: /run ns.TestTimeFormatting()
+function ns.TestTimeFormatting()
+    local currentTime = GetTime()
+    local testCases = {
+        { timestamp = currentTime - 30, expected = "менее минуты назад" },
+        { timestamp = currentTime - 300, expected = "5 мин. назад" },
+        { timestamp = currentTime - 7200, expected = "2 ч. назад" },
+        { timestamp = currentTime - 172800, expected = "2 дн. назад" },
+        { timestamp = currentTime - 1209600, expected = "2 нед. назад" },
+        { timestamp = 0, expected = "неизвестно" }
+    }
+
+    print("Testing time formatting and colors:")
+    for i, testCase in ipairs(testCases) do
+        local result = FormatTimeSince(testCase.timestamp)
+        local color = GetActivityColor(testCase.timestamp)
+        print(string.format("Test %d: %s (color: #%s)", i, result, color))
+    end
+end
