@@ -1272,7 +1272,7 @@ ns.RaceInfoByID = {
     [27] = { name = "Драктир", faction = "Horde" }
 }
 
--- Build race name → ID map for the sender
+-- Build race name -> ID map for the sender
 ns.RaceIDByName = {}
 for id, info in pairs(ns.RaceInfoByID) do
     ns.RaceIDByName[info.name] = id
