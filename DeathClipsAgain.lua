@@ -627,7 +627,7 @@ local function PerformFriendListScan()
                     local playerName = string.format("|cff69ccf0%s|r", name)
                     local levelChange = string.format("|cffffff00%s на %s|r", tostring(oldLevel), tostring(currentActualLevel))
 
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s. %s",
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s.",
                             prefix, playerName, levelChange))
 
                     watchedEntry.lastKnownActualLevel = currentActualLevel
