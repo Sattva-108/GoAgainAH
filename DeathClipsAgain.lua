@@ -622,7 +622,15 @@ local function PerformFriendListScan()
             if watchedEntry then
                 -- Check for level change to update lastKnownActualLevel
                 if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format("GoAgainAH Debug: %s level changed from %s to %s. DB updated.", name, tostring(watchedEntry.lastKnownActualLevel or "nil"), tostring(currentActualLevel)))
+                    local oldLevel = watchedEntry.lastKnownActualLevel or "неизвестен"
+                    local prefix = string.format("|cff888888[%s]|r", addonName)
+                    local playerName = string.format("|cff69ccf0%s|r", name)
+                    local levelChange = string.format("|cffffff00%s → %s|r", tostring(oldLevel), tostring(currentActualLevel))
+                    local updateMsg = "|cff90ee90База данных обновлена|r"
+
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился: %s. %s",
+                        prefix, playerName, levelChange, updateMsg))
+
                     watchedEntry.lastKnownActualLevel = currentActualLevel
                     watchedEntry.lastKnownActualLevelTimestamp = GetTime()
                 end
