@@ -6,6 +6,8 @@ if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
 AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 -- Structure: { [playerLowerName] = { clipLevel = number, hasBeenNotifiedForThisAdd = boolean } }
 
+ns.isFriendCleanupRunning = false -- Mutex for cleanup process
+
 -- State for AddFriend Error Handling (Session Only)
 local suppressPlayerNotFoundSystemMessageActive = false
 local PLAYER_NOT_FOUND_RU = "Игрок не найден."
@@ -467,7 +469,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         lastKnownActualLevelTimestamp = GetTime(),
                         hasBeenNotifiedForThisAdd = false,
                         localizedClassNameAtLastSighting = isConnectedInitially and currentClassInitially or nil,
-                        currentEnglishClassTokenAtLastSighting = isConnectedInitially and ns.GetEnglishClassToken(currentClassInitially) or nil
+                        currentEnglishClassTokenAtLastSighting = isConnectedInitially and ns.GetEnglishClassToken(currentClassInitially) or nil,
+                        addedToWatchTimestamp = GetTime()
                     }
                     AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                     ns.lastActionStatus = {
@@ -531,7 +534,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 lastKnownActualLevelTimestamp = GetTime(),
                                 hasBeenNotifiedForThisAdd = false,
                                 localizedClassNameAtLastSighting = determinedLocalizedClass,
-                                currentEnglishClassTokenAtLastSighting = determinedEnglishClassToken
+                                currentEnglishClassTokenAtLastSighting = determinedEnglishClassToken,
+                                addedToWatchTimestamp = GetTime()
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
 
@@ -550,7 +554,8 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                                 lastKnownActualLevelTimestamp = GetTime(),
                                 hasBeenNotifiedForThisAdd = false,
                                 localizedClassNameAtLastSighting = nil, -- Offline, no live localized class
-                                currentEnglishClassTokenAtLastSighting = clipData.class -- Fallback to English class token from original clipData
+                                currentEnglishClassTokenAtLastSighting = clipData.class, -- Fallback to English class token from original clipData
+                                addedToWatchTimestamp = GetTime()
                             }
                             AuctionHouseDBSaved.watchedFriends[characterNameLower] = friendData
                         end
@@ -735,6 +740,77 @@ function ns.GetReincarnatedFriendsDisplayList()
         end
     end
     return displayList
+end
+
+function ns.InitiateFriendCleanup()
+    local prefix = addonName .. ": "
+    if ns.isFriendCleanupRunning then
+        DEFAULT_CHAT_FRAME:AddMessage(prefix .. "Friend cleanup process is already running.")
+        return
+    end
+    ns.isFriendCleanupRunning = true
+
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" or not next(AuctionHouseDBSaved.watchedFriends) then
+        DEFAULT_CHAT_FRAME:AddMessage(prefix .. "No watched friends to process for cleanup.")
+        ns.isFriendCleanupRunning = false
+        return
+    end
+
+    local candidatesForRemoval = {}
+    for playerLowerName, entry in pairs(AuctionHouseDBSaved.watchedFriends) do
+        if entry and entry.characterName and not entry.hasBeenNotifiedForThisAdd then
+            table.insert(candidatesForRemoval, {
+                characterName = entry.characterName,
+                addedToWatchTimestamp = entry.addedToWatchTimestamp or 0
+            })
+        end
+    end
+
+    if #candidatesForRemoval == 0 then
+        DEFAULT_CHAT_FRAME:AddMessage(prefix .. "No unnotified watched friends to process for cleanup.")
+        ns.isFriendCleanupRunning = false
+        return
+    end
+
+    table.sort(candidatesForRemoval, function(a, b)
+        return a.addedToWatchTimestamp < b.addedToWatchTimestamp
+    end)
+
+    DEFAULT_CHAT_FRAME:AddMessage(prefix .. "Starting cleanup of " .. #candidatesForRemoval .. " unnotified watched friend(s)...")
+
+    local removedFromWoWListCount = 0
+    local removedFromDBCount = 0
+
+    local function ProcessNextRemoval(index)
+        if index > #candidatesForRemoval then
+            DEFAULT_CHAT_FRAME:AddMessage(prefix .. "Friend cleanup process complete.")
+            DEFAULT_CHAT_FRAME:AddMessage(prefix .. "Removed " .. removedFromWoWListCount .. " players from WoW friends list.")
+            DEFAULT_CHAT_FRAME:AddMessage(prefix .. "Removed " .. removedFromDBCount .. " unnotified entries (not on WoW list) from the watch list database.")
+            ns.isFriendCleanupRunning = false -- Release lock
+            return
+        end
+
+        local candidate = candidatesForRemoval[index]
+        local characterNameLower = string.lower(candidate.characterName)
+
+        local isActuallyOnWoWFriends = GetFriendInfo(candidate.characterName) ~= nil
+
+        if isActuallyOnWoWFriends then -- Player IS on WoW friends list
+            RemoveFriend(candidate.characterName)
+            DEFAULT_CHAT_FRAME:AddMessage(prefix .. candidate.characterName .. " removed from WoW friends list.")
+            removedFromWoWListCount = removedFromWoWListCount + 1
+        else -- Player is NOT on WoW friends list
+            AuctionHouseDBSaved.watchedFriends[characterNameLower] = nil
+            DEFAULT_CHAT_FRAME:AddMessage(prefix .. candidate.characterName .. " (unnotified, not on WoW list) removed from watch list database.")
+            removedFromDBCount = removedFromDBCount + 1
+        end
+
+        C_Timer:After(3, function()
+            ProcessNextRemoval(index + 1)
+        end)
+    end
+
+    ProcessNextRemoval(1)
 end
 
 

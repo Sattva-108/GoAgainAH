@@ -320,6 +320,33 @@ function OFAuctionFrameDeathClips_OnLoad()
     end
     -- ---- END OF MINIMAL CHANGE TO DISABLE MOUSE WHEEL SCROLLING ----
 
+    -- Create Cleanup Friends Button
+    local cleanupButton = CreateFrame("Button", "OFDeathClipsCleanupButton", OFAuctionFrameDeathClips, "UIPanelButtonTemplate")
+    cleanupButton:SetText("Очистить друзей")
+    cleanupButton:SetSize(120, 22)
+    -- Anchor it to the right of OFAuctionFrameCloseButton, but as a child of OFAuctionFrameDeathClips.
+    -- This requires OFAuctionFrameCloseButton to be a global name or accessible.
+    if _G["OFAuctionFrameCloseButton"] then
+        cleanupButton:SetPoint("RIGHT", _G["OFAuctionFrameCloseButton"], "LEFT", -10, 0)
+    else
+        -- Fallback positioning if OFAuctionFrameCloseButton is not found (e.g. top right of the panel)
+        cleanupButton:SetPoint("TOPRIGHT", OFAuctionFrameDeathClips, "TOPRIGHT", -10, -10)
+        if ns.debug then print(addonName .. ": OFAuctionFrameCloseButton not found, using fallback for CleanupButton position.") end
+    end
+
+    cleanupButton:SetScript("OnClick", function()
+        if ns.InitiateFriendCleanup then
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            ns.InitiateFriendCleanup()
+        else
+            DEFAULT_CHAT_FRAME:AddMessage(addonName .. ": Cleanup function (InitiateFriendCleanup) not found in ns.")
+        end
+    end)
+
+    -- Set initial visibility (will be updated by OFAuctionFrameDeathClips_Update)
+    cleanupButton:Hide()
+    OFAuctionFrameDeathClips.cleanupButton = cleanupButton -- Store reference if needed elsewhere or for clarity
+
 end
 
 function ns.SetupClipHighlight(button)
@@ -1070,7 +1097,15 @@ function OFAuctionFrameDeathClips_Update()
         end
     end
 
-
+    -- Update visibility of the cleanup button
+    local cleanupButton = OFAuctionFrameDeathClips.cleanupButton or _G["OFDeathClipsCleanupButton"]
+    if cleanupButton then
+        if OFAuctionFrameDeathClips:IsShown() and ns.currentActiveTabId == "REINCARNATED_CLIPS" then
+            cleanupButton:Show()
+        else
+            cleanupButton:Hide()
+        end
+    end
 
 end
 
