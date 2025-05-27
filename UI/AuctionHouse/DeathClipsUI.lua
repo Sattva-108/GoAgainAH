@@ -54,7 +54,7 @@ local function ShowOnlineDot(whenFS)
         -- Create the texture once
         whenFS.onlineDot = whenFS:GetParent():CreateTexture(nil, "OVERLAY")
         whenFS.onlineDot:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Media\\clean_dot.tga")
-        whenFS.onlineDot:SetSize(12, 12) -- 1.5x larger than original 8x8
+        whenFS.onlineDot:SetSize(22, 22) -- 1.5x larger than original 8x8
         whenFS.onlineDot:SetVertexColor(0, 1, 0, 1) -- Bright green
     end
 

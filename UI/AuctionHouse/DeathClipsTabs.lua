@@ -24,7 +24,7 @@ ns.DeathClipsTabSettings = {
     ["COMPLETED_CLIPS"] = {
         tabId = "COMPLETED_CLIPS",
         tabName = "Выжившие",
-        defaultSortKey = "CLIP_INFO",
+        defaultSortKey = "WHEN_HAPPENED",
         defaultSortAscending = false,
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 140, sortKey = "streamer", fontStringName = "Name" },
@@ -40,8 +40,8 @@ ns.DeathClipsTabSettings = {
     ["REINCARNATED_CLIPS"] = {
         tabId = "REINCARNATED_CLIPS",
         tabName = "Восставшие",
-        defaultSortKey = "LEVEL", -- Original death time
-        defaultSortAscending = true,      -- Most recent original deaths first
+        defaultSortKey = "WHEN_HAPPENED", -- Original death time
+        defaultSortAscending = false,      -- Most recent original deaths first
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },
             { id = "LEVEL", headerText = "Уровень", visible = true, baseWidth = 70, sortKey = "level", fontStringName = "Level" }, -- New Level
