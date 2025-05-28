@@ -554,6 +554,9 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                         end
                         ShowHoverTooltipForIcon(iconFrameElement)
                         ns.capturedFriendAddSystemMessage = nil
+
+                        -- Refresh death clips UI after friend status change
+                        ns.RefreshDeathClipsUIForFriendUpdates()
                     end)
                     return -- Important: Do not proceed to add/modify watchedFriends, they are already watched.
                 end
@@ -584,6 +587,9 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     if isConnectedInitially and friendData.clipLevel and currentDisplayLevelInitially and currentDisplayLevelInitially > 0 then
                         NotifyPlayerLevelDrop(characterName, currentDisplayLevelInitially, friendData.clipLevel, currentClassInitially, currentAreaInitially)
                     end
+
+                    -- Refresh death clips UI after friend status change
+                    ns.RefreshDeathClipsUIForFriendUpdates()
                     return
                 end
 
@@ -727,54 +733,83 @@ local function PerformFriendListScan()
     lastFriendListScanTime = time()
     if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
 
+    local friendDataChanged = false
+
     for i = 1, GetNumFriends() do
         local name, currentActualLevel, classToken, area, connected = GetFriendInfo(i) -- Renamed liveLevel to currentActualLevel for clarity
-        if name and connected then -- Only process online friends
+        if name then -- Process all friends, not just online ones
             local lowerName = string.lower(name)
             local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
 
             if watchedEntry then
-                -- Update last activity timestamp for online friends
-                watchedEntry.lastActivityTimestamp = time()
+                -- Track current online status for comparison
+                local wasOnlineBefore = watchedEntry.wasOnlineInLastScan
+                watchedEntry.wasOnlineInLastScan = connected
 
-                -- Check for level change to update lastKnownActualLevel
-                if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
-                    local oldLevel = watchedEntry.lastKnownActualLevel or "неизвестен"
-                    local prefix = string.format("|cff888888[%s]|r", addonName)
+                -- Check if online status changed
+                if wasOnlineBefore ~= connected then
+                    friendDataChanged = true
+                end
 
-                    -- Get class color for player name
-                    local classColorHex = "69ccf0" -- Default blue color
+                if connected then -- Only process online friends for activity updates
+                    -- Update last activity timestamp for online friends
+                    local previousActivityTimestamp = watchedEntry.lastActivityTimestamp
+                    watchedEntry.lastActivityTimestamp = time()
+                    if previousActivityTimestamp ~= watchedEntry.lastActivityTimestamp then
+                        friendDataChanged = true
+                    end
+
+                    -- Check for level change to update lastKnownActualLevel
+                    if currentActualLevel ~= watchedEntry.lastKnownActualLevel then
+                        local oldLevel = watchedEntry.lastKnownActualLevel or "неизвестен"
+                        local prefix = string.format("|cff888888[%s]|r", addonName)
+
+                        -- Get class color for player name
+                        local classColorHex = "69ccf0" -- Default blue color
+                        if classToken then
+                            local englishToken = ns.GetEnglishClassToken(classToken)
+                            if englishToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[englishToken] then
+                                local c = RAID_CLASS_COLORS[englishToken]
+                                classColorHex = string.format("%02x%02x%02x", c.r * 255, c.g * 255, c.b * 255)
+                            end
+                        end
+
+                        local playerName = string.format("|cff%s%s|r", classColorHex, name)
+                        local levelChange = string.format("|cffffff00%s на %s|r", tostring(oldLevel), tostring(currentActualLevel))
+                        local zoneText = area and area ~= "" and string.format(" |cffffd700(%s)|r", area) or ""
+
+                        DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s.%s",
+                                prefix, playerName, levelChange, zoneText))
+
+                        watchedEntry.lastKnownActualLevel = currentActualLevel
+                        watchedEntry.lastKnownActualLevelTimestamp = time()
+                        friendDataChanged = true
+                    end
+
+                    -- Update class info at last sighting
                     if classToken then
-                        local englishToken = ns.GetEnglishClassToken(classToken)
-                        if englishToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[englishToken] then
-                            local c = RAID_CLASS_COLORS[englishToken]
-                            classColorHex = string.format("%02x%02x%02x", c.r * 255, c.g * 255, c.b * 255)
+                        local previousClass = watchedEntry.localizedClassNameAtLastSighting
+                        local previousToken = watchedEntry.currentEnglishClassTokenAtLastSighting
+                        watchedEntry.localizedClassNameAtLastSighting = classToken
+                        watchedEntry.currentEnglishClassTokenAtLastSighting = ns.GetEnglishClassToken(classToken)
+                        if previousClass ~= watchedEntry.localizedClassNameAtLastSighting or
+                           previousToken ~= watchedEntry.currentEnglishClassTokenAtLastSighting then
+                            friendDataChanged = true
                         end
                     end
 
-                    local playerName = string.format("|cff%s%s|r", classColorHex, name)
-                    local levelChange = string.format("|cffffff00%s на %s|r", tostring(oldLevel), tostring(currentActualLevel))
-                    local zoneText = area and area ~= "" and string.format(" |cffffd700(%s)|r", area) or ""
-
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s уровень изменился с %s.%s",
-                            prefix, playerName, levelChange, zoneText))
-
-                    watchedEntry.lastKnownActualLevel = currentActualLevel
-                    watchedEntry.lastKnownActualLevelTimestamp = time()
-                end
-
-                -- Update class info at last sighting
-                if classToken then
-                    watchedEntry.localizedClassNameAtLastSighting = classToken
-                    watchedEntry.currentEnglishClassTokenAtLastSighting = ns.GetEnglishClassToken(classToken)
-                end
-
-                -- Logic for level drop notification (original functionality)
-                if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
-                    NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
+                    -- Logic for level drop notification (original functionality)
+                    if watchedEntry.clipLevel and not watchedEntry.hasBeenNotifiedForThisAdd then
+                        NotifyPlayerLevelDrop(name, currentActualLevel, watchedEntry.clipLevel, classToken, area, "friend_online_event")
+                    end
                 end
             end
         end
+    end
+
+    -- Update death clips UI if friend data changed
+    if friendDataChanged then
+        ns.RefreshDeathClipsUIForFriendUpdates()
     end
 end
 
@@ -952,12 +987,37 @@ end
 
 
 local function MigrateWatchedFriendsData()
-    -- Migrate existing watchedFriends entries to include lastActivityTimestamp
+    -- Migrate existing watchedFriends entries to include lastActivityTimestamp and wasOnlineInLastScan
     if type(AuctionHouseDBSaved) == "table" and type(AuctionHouseDBSaved.watchedFriends) == "table" then
         for playerLowerName, entry in pairs(AuctionHouseDBSaved.watchedFriends) do
-            if entry and not entry.lastActivityTimestamp then
-                entry.lastActivityTimestamp = 0  -- Default to unknown for existing entries
+            if entry then
+                if not entry.lastActivityTimestamp then
+                    entry.lastActivityTimestamp = 0  -- Default to unknown for existing entries
+                end
+                if entry.wasOnlineInLastScan == nil then
+                    entry.wasOnlineInLastScan = false  -- Default to offline for existing entries
+                end
             end
+        end
+    end
+end
+
+-- Function to trigger death clips UI update when friend data changes
+function ns.RefreshDeathClipsUIForFriendUpdates()
+    if ns.debug then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff888888[GoAgainAH]|r Friend data changed, refreshing death clips UI")
+    end
+
+    -- Force data refresh for Death Clips UI
+    if OFAuctionFrameDeathClips then
+        OFAuctionFrameDeathClips.needsDataRefresh = true
+    end
+
+    -- Update UI if it's currently visible
+    if OFAuctionFrame and OFAuctionFrame:IsShown() and
+       OFAuctionFrameDeathClips and OFAuctionFrameDeathClips:IsShown() then
+        if OFAuctionFrameDeathClips_Update then
+            OFAuctionFrameDeathClips_Update()
         end
     end
 end
