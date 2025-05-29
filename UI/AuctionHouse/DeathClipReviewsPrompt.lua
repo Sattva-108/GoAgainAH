@@ -17,36 +17,35 @@ local playedTimeVerticalOffset = -35      -- Vertical offset for played time fro
 local playedTimeLeftOffset = 4            -- Left offset for played time label
 local playedTimeRightOffset = -10         -- Right offset for played time value
 local levelRankVerticalOffset = -60       -- Vertical offset for level/rank from header (5px more from time)
-local levelLabelSpacing = 5               -- Spacing between level label and value
-local rankLabelSpacing = 15               -- Spacing between level value and rank label
-local rankValueSpacing = 5                -- Spacing between rank label and value
 local midPadding = 25                     -- Padding between level/rank and emotion section (increased by 15px)
 local emotionSummaryHeight = 60           -- Height of emotion summary widget
 local emotionSummaryWidth = 320           -- Width of emotion summary widget
 local emotionIconSize = 40                -- Size of emotion icons
-local emotionIconSpacing = 4              -- Calculated spacing between icons
 local emotionLabelHeight = 25             -- Height of emotion label container
-local emotionLabelLeftOffset = 4          -- Left offset for emotion label
 local emotionContainerHeight = 70         -- Height of emotion container
 local emotionContainerVerticalOffset = -5 -- Vertical offset for emotion summary
-local scrollFrameWidth = 344              -- Width of scroll frame (increased to include scrollbar area)
+local scrollFrameWidth = 300              -- Width of scroll frame (MAIN CONTROL)
 local scrollFrameHeight = 230             -- Height of scroll frame
-local scrollFrameHorizontalOffset = -13    -- Horizontal offset for scroll frame (moved further left for scrollbar)
+local scrollFrameHorizontalOffset = -14   -- Horizontal offset for scroll frame (moved further left for scrollbar)
 local scrollFrameVerticalOffset = -10     -- Vertical offset for scroll frame
 local scrollContainerHeight = 250         -- Height of scroll container (reduced)
+local scrollEntryWidth = scrollFrameWidth - 5  -- Width calculated from scroll frame (320-5=315)
 local scrollEntryHeight = 75              -- Height of each review entry (increased for 3 entries)
 local scrollEntrySpacing = 1              -- Spacing between entries (minimal)
 local scrollEntryPadding = 12             -- Internal padding for entries (slightly increased)
+local scrollEntryLeftOffset = 2           -- Left offset for entry positioning
 local scrollEntryIconSize = 18            -- Size of emotion icons in entries (slightly smaller)
 local scrollEntryIconOffset = -12         -- Right offset for entry icons (restored to normal)
 local scrollEntryTextVerticalOffset = -26 -- Vertical offset for entry text (adjusted for more spacing)
 local scrollEntryTextRightOffset = -32    -- Right offset for entry text (restored to normal)
+local scrollEntryTextHeight = 40          -- Height for multi-line text
+local scrollSeparatorLeftOffset = 2       -- Left offset for separator lines
+local scrollSeparatorRightOffset = -2     -- Right offset for separator lines
 local maxScrollEntries = 3                -- Maximum visible entries at once (reduced to 3)
-local buttonPaddingHeight = -10           -- Negative padding to bring button closer (more space saving)
+local buttonPaddingHeight = 0           -- Negative padding to bring button closer (more space saving)
 local buttonContainerHeight = 45          -- Height of button container (slightly larger for better button)
-local buttonWidth = 360                   -- Width of write review button (full width)
+local buttonWidth = scrollFrameWidth +1 -- Width calculated from scroll frame (320+35=355)
 local buttonHeight = 35                   -- Height of write review button
-local buttonVerticalOffset = -5           -- Vertical offset for button
 local tooltipPadding = 8                  -- Tooltip padding
 local tooltipHeaderVerticalOffset = -16   -- Vertical offset for tooltip header
 local tooltipSpacing = 6                  -- Spacing in tooltip between elements
@@ -263,7 +262,7 @@ local function CreateDeathClipReviewsPrompt()
 
     -- Create NATIVE WoW ScrollFrame (not AceGUI) to avoid visibility bugs
     local scrollFrame = CreateFrame("ScrollFrame", "DeathClipReviewsScrollFrame", UIParent, "FauxScrollFrameTemplate")
-    scrollFrame:SetSize(scrollFrameWidth - 5, scrollFrameHeight) -- Reduce width to fit within boundaries (360-5=355)
+    scrollFrame:SetSize(scrollFrameWidth, scrollFrameHeight) -- Make narrower to match text widths above
     -- Позиционирование будет установлено после создания контейнера
     scrollFrame:SetBackdrop(ScrollBackdrop)
     scrollFrame:SetBackdropColor(0, 0, 0)
@@ -276,12 +275,12 @@ local function CreateDeathClipReviewsPrompt()
 
     for i = 1, MAX_ENTRIES do
         local button = CreateFrame("Frame", nil, scrollFrame)
-        button:SetSize(scrollFrameWidth - 20, ENTRY_HEIGHT - scrollEntrySpacing) -- Normal width with padding
+        button:SetSize(scrollEntryWidth, ENTRY_HEIGHT - scrollEntrySpacing)
         -- Remove backdrop - no more individual frames
         button:EnableMouse(true) -- Enable mouse for hover effects
 
         if i == 1 then
-            button:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", scrollEntryPadding, -scrollEntrySpacing)
+            button:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", scrollEntryLeftOffset, -scrollEntrySpacing)
         else
             button:SetPoint("TOPLEFT", scrollFrame.buttons[i-1], "BOTTOMLEFT", 0, -scrollEntrySpacing)
         end
@@ -292,8 +291,8 @@ local function CreateDeathClipReviewsPrompt()
             button.separator:SetTexture("Interface\\Buttons\\WHITE8X8")
             button.separator:SetVertexColor(0.3, 0.3, 0.3, 0.8) -- Dark gray separator
             button.separator:SetHeight(1)
-            button.separator:SetPoint("TOPLEFT", button, "TOPLEFT", -scrollEntryPadding, 0) -- Extend to left edge
-            button.separator:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0, 0)
+            button.separator:SetPoint("TOPLEFT", button, "TOPLEFT", scrollSeparatorLeftOffset, 0)
+            button.separator:SetPoint("TOPRIGHT", button, "TOPRIGHT", scrollSeparatorRightOffset, 0)
         end
 
         -- Add hover effect
@@ -324,7 +323,9 @@ local function CreateDeathClipReviewsPrompt()
         button.textLabel = button:CreateFontString(nil, "OVERLAY", "GameFontNormal") -- Changed from GameFontHighlightSmall to GameFontNormal
         button.textLabel:SetPoint("TOPLEFT", button, "TOPLEFT", scrollEntryPadding, scrollEntryTextVerticalOffset - scrollEntryNameToTextSpacing) -- Added extra spacing
         button.textLabel:SetPoint("TOPRIGHT", button, "TOPRIGHT", scrollEntryTextRightOffset, scrollEntryTextVerticalOffset - scrollEntryNameToTextSpacing) -- More space for scrollbar
+        button.textLabel:SetHeight(scrollEntryTextHeight) -- Set explicit height for multi-line text
         button.textLabel:SetJustifyH("LEFT")
+        button.textLabel:SetJustifyV("TOP") -- Align text to top
         button.textLabel:SetTextColor(0.9, 0.9, 0.9, 1)
         button.textLabel:SetWordWrap(true)
 
@@ -376,7 +377,7 @@ local function CreateDeathClipReviewsPrompt()
 
     -- Write review button using same style as RatePrompt
     local writeReviewButton = AceGUI:Create("PKBTRedButton")
-    writeReviewButton:SetWidth(355) -- Match scroll frame width (scrollFrameWidth - 5)
+    writeReviewButton:SetWidth(buttonWidth)
     writeReviewButton:SetHeight(buttonHeight)
     writeReviewButton:SetText(L["Write Review"])
     buttonContainer:AddChild(writeReviewButton)
@@ -420,6 +421,11 @@ local function CreateDeathClipReviewsPrompt()
     function prompt:Hide()
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
         self.frame:Hide()
+        -- Clean up ticker when hiding
+        if ns._reviewPromptTicker then
+            ns._reviewPromptTicker:Cancel()
+            ns._reviewPromptTicker = nil
+        end
     end
 
     function prompt:SetTargetName(name, classColor, level)
@@ -496,18 +502,59 @@ local function CreateDeathClipReviewsPrompt()
             tip.maxRank = maxRank_val
             tip.r_player, tip.g_player, tip.b_player = r_player, g_player, b_player
 
+            -- Cancel any existing countdown ticker
+            if ns._reviewPromptTicker then
+                ns._reviewPromptTicker:Cancel()
+                ns._reviewPromptTicker = nil
+            end
+
         elseif ns.nextUpdateDeadline then
             self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
             self.playedTime:SetTextColor(0.6, 0.6, 0.6, 1)
             self.rankValue:SetText("Обновляется...")
             self.rankValue:SetTextColor(0.6, 0.6, 0.6, 1)
             self.playedTimeTooltipData.median_boundary = nil
+
+            if not ns._reviewPromptTicker then
+                ns._reviewPromptTicker = C_Timer:NewTicker(1, function()
+                    if self.frame:IsShown() and ns.nextUpdateDeadline then
+                        local remaining = ns.nextUpdateDeadline - time()
+                        if remaining <= 0 then
+                            -- Countdown over → recurse or show error
+                            if clip and clip.playedTime then
+                                self:SetPlayedTime(clip.playedTime, clip)
+                            else
+                                self.playedTime:SetText("N/A")
+                                self.playedTime:SetTextColor(1, 0, 0, 1)
+                                self.rankValue:SetText("N/A")
+                                self.rankValue:SetTextColor(1, 0, 0, 1)
+                                self.playedTimeTooltipData = {}
+                            end
+                            if ns._reviewPromptTicker then
+                                ns._reviewPromptTicker:Cancel()
+                                ns._reviewPromptTicker = nil
+                            end
+                        else
+                            self.playedTime:SetText(SecondsToTime(remaining))
+                        end
+                    elseif ns._reviewPromptTicker then
+                        ns._reviewPromptTicker:Cancel()
+                        ns._reviewPromptTicker = nil
+                    end
+                end)
+            end
         else
             self.playedTime:SetText("~10 минут")
             self.playedTime:SetTextColor(1, 1, 1, 1)
             self.rankValue:SetText("N/A")
             self.rankValue:SetTextColor(0.7, 0.7, 0.7, 1)
             self.playedTimeTooltipData = {}
+
+            -- Cancel ticker if exists
+            if ns._reviewPromptTicker then
+                ns._reviewPromptTicker:Cancel()
+                ns._reviewPromptTicker = nil
+            end
         end
     end
 
