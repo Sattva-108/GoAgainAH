@@ -2810,11 +2810,16 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     :gsub("|r", "")
 
             -- determine causeCode
-            local causeCode = 7
-            for id, text in pairs(ns.DeathCauseByID) do
-                if id ~= 7 and c.deathCause:find(text, 1, true) then
-                    causeCode = id
-                    break
+            local causeCode
+            if c.deathCause == "ALIVE" then
+                causeCode = "A"
+            else
+                causeCode = 7
+                for id, text in pairs(ns.DeathCauseByID) do
+                    if id ~= 7 and c.deathCause:find(text, 1, true) then
+                        causeCode = id
+                        break
+                    end
                 end
             end
             local mobData
@@ -2986,7 +2991,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     or "UnknownRealm"
 
             local clipCompleted  = arr[14] ~= nil
-            local causeID        = arr[4] or 0
+            local causeID        = arr[4] -- может быть nil
             local mobPayload     = arr[12] or ""
             local mobNameForCause = ""
             if type(mobPayload) == "number" then
@@ -2995,8 +3000,15 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 mobNameForCause = mobPayload
             end
 
-            local causeStr = clipCompleted and ""
-                    or ns.GetDeathCauseByID(causeID, mobNameForCause)
+            -- deathCause
+            local causeStr
+            if causeID == "A" then
+                causeStr = "ALIVE"
+            elseif clipCompleted then
+                causeStr = ""
+            else
+                causeStr = ns.GetDeathCauseByID(causeID, mobNameForCause)
+            end
 
             ----------------------------------------------------------------
             -- 3) class & race names
@@ -3012,7 +3024,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 ts            = clipTS,
                 classCode     = arr[3],
                 class         = classStr,
-                causeCode     = causeID,
+                causeCode     = (causeStr ~= "ALIVE" and causeID) or (causeID == "A" and "A" or nil),
                 deathCause    = causeStr,
                 raceCode      = arr[5],
                 race          = raceInfo.name,
