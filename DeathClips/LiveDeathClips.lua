@@ -226,22 +226,21 @@ ns.GetNoPlayedDeathClips = function()
 end
 
 
--- Полная замена функции ns.GetPlayedTimeColor
--- LiveDeathClips.lua
--- Полная замена функции ns.GetPlayedTimeColor
-ns.GetPlayedTimeColor = function(seconds, level)
-    if not seconds or not level then
-        return 1,1,1,
-        nil,nil,nil,       -- median, p25, p75
-        nil,nil,           -- rank, count
-        nil,nil,nil,nil,nil, -- boundaries
-        nil,nil,nil,nil,nil  -- firsts
+-- Cache for level statistics to avoid recalculating
+local levelStatsCache = {}
+local lastCacheUpdate = 0
+local CACHE_DURATION = 5 -- seconds
+
+-- Helper function to get or calculate level statistics
+local function GetLevelStats(level)
+    local now = GetServerTime()
+
+    -- Check if cache is valid and has data for this level
+    if now - lastCacheUpdate < CACHE_DURATION and levelStatsCache[level] then
+        return levelStatsCache[level]
     end
 
-    seconds = tonumber(seconds)
-    level   = tonumber(level)
-
-    -- собрать клипы текущего уровня и сервера
+    -- Recalculate if cache is expired or missing this level
     local relevant = {}
     for _, clip in pairs(ns.FilterClipsThisRealm(ns.GetLiveDeathClips())) do
         if tonumber(clip.level) == level and clip.playedTime then
@@ -250,11 +249,8 @@ ns.GetPlayedTimeColor = function(seconds, level)
     end
 
     if #relevant < 5 then
-        return 1,1,1,
-        nil,nil,nil,
-        nil,nil,
-        nil,nil,nil,nil,nil,
-        nil,nil,nil,nil,nil
+        levelStatsCache[level] = nil
+        return nil
     end
 
     table.sort(relevant)
@@ -267,37 +263,65 @@ ns.GetPlayedTimeColor = function(seconds, level)
     local idx75 = math.max(1, math.ceil(count * 0.75))
     local idx90 = math.max(1, math.ceil(count * 0.90))
 
-    -- boundaries (пороги)
-    local legend_boundary  = relevant[idx10]   -- p10
-    local fast_boundary    = relevant[idx25]   -- p25
-    local medium_boundary  = relevant[idx50]   -- p50
-    local slow_boundary    = relevant[idx75]   -- p75
-    local wave_boundary    = relevant[idx90]   -- p90
+    local stats = {
+        count = count,
+        sorted = relevant,
+        legend_boundary = relevant[idx10],   -- p10
+        fast_boundary = relevant[idx25],     -- p25
+        medium_boundary = relevant[idx50],   -- p50
+        slow_boundary = relevant[idx75],     -- p75
+        wave_boundary = relevant[idx90],     -- p90
+        legend_first = relevant[1],
+        fast_first = relevant[idx10 + 1] or relevant[count],
+        medium_first = relevant[idx25 + 1] or relevant[count],
+        slow_first = relevant[idx50 + 1] or relevant[count],
+        wave_first = relevant[idx75 + 1] or relevant[count]
+    }
 
-    -- первые значения в каждой категории
-    local legend_first  = relevant[1]
-    local fast_first    = relevant[idx10 + 1] or relevant[count]
-    local medium_first  = relevant[idx25 + 1] or relevant[count]
-    local slow_first    = relevant[idx50 + 1] or relevant[count]
-    local wave_first    = relevant[idx75 + 1] or relevant[count]
+    levelStatsCache[level] = stats
+    lastCacheUpdate = now
+    return stats
+end
+
+-- Optimized GetPlayedTimeColor function
+ns.GetPlayedTimeColor = function(seconds, level)
+    if not seconds or not level then
+        return 1,1,1,
+        nil,nil,nil,       -- median, p25, p75
+        nil,nil,           -- rank, count
+        nil,nil,nil,nil,nil, -- boundaries
+        nil,nil,nil,nil,nil  -- firsts
+    end
+
+    seconds = tonumber(seconds)
+    level = tonumber(level)
+
+    local stats = GetLevelStats(level)
+    if not stats then
+        return 1,1,1,
+        nil,nil,nil,
+        nil,nil,
+        nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil
+    end
 
     -- цвет игрока по границам
     local r,g,b
-    if seconds <= legend_boundary then
+    if seconds <= stats.legend_boundary then
         r,g,b = 0.0, 1.0, 0.0
-    elseif seconds <= fast_boundary then
+    elseif seconds <= stats.fast_boundary then
         r,g,b = 1.0, 1.0, 0.0
-    elseif seconds <= medium_boundary then
+    elseif seconds <= stats.medium_boundary then
         r,g,b = 1.0, 1.0, 1.0
-    elseif seconds <= slow_boundary then
+    elseif seconds <= stats.slow_boundary then
         r,g,b = 1.0, 0.5, 0.0
     else
         r,g,b = 1.0, 0.0, 0.0
     end
 
     -- ранг
-    local rank = count + 1
-    for i, v in ipairs(relevant) do
+    local rank = stats.count + 1
+    for i, v in ipairs(stats.sorted) do
         if seconds <= v then
             rank = i
             break
@@ -306,11 +330,22 @@ ns.GetPlayedTimeColor = function(seconds, level)
 
     -- вернуть 18 значений
     return r, g, b,
-    medium_boundary, fast_boundary, slow_boundary, -- p50, p25, p75 (в прежнем порядке)
-    rank, count,                                   -- ранг, всего
-    legend_boundary, fast_boundary, medium_boundary, slow_boundary, wave_boundary,
-    legend_first, fast_first, medium_first, slow_first, wave_first
+    stats.medium_boundary, stats.fast_boundary, stats.slow_boundary, -- p50, p25, p75
+    rank, stats.count,
+    stats.legend_boundary, stats.fast_boundary, stats.medium_boundary, stats.slow_boundary, stats.wave_boundary,
+    stats.legend_first, stats.fast_first, stats.medium_first, stats.slow_first, stats.wave_first
 end
+
+-- Clear cache when clips change
+ns.AuctionHouseAPI:RegisterEvent(ns.EV_DEATH_CLIPS_CHANGED, function()
+    levelStatsCache = {}
+    lastCacheUpdate = 0
+end)
+
+ns.AuctionHouseAPI:RegisterEvent(ns.EV_PLAYED_TIME_UPDATED, function()
+    levelStatsCache = {}
+    lastCacheUpdate = 0
+end)
 
 
 
@@ -754,4 +789,3 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
     end
     ns.nextUpdateDeadline = nextUpdateDeadline
 end)
-
