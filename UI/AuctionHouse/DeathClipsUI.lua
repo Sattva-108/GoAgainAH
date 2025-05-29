@@ -227,6 +227,28 @@ function OFAuctionFrameDeathClips_OnLoad()
                         whenFS:SetText("-")
                         whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                     end
+                elseif ns.currentActiveTabId == "SPEED_CLIPS" and clip.playedTime and clip.level then
+                    -- For speed tab, show the speed category
+                    HideOnlineDot(whenFS)
+                    local r, g, b, median, p25, p75, rank, count, legend_boundary, fast_boundary, medium_boundary, slow_boundary, wave_boundary = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                    local statusText = ""
+
+                    if not legend_boundary or not fast_boundary or not medium_boundary or not slow_boundary then
+                        statusText = "-"
+                    elseif clip.playedTime <= legend_boundary then
+                        statusText = "Легенда"
+                    elseif clip.playedTime <= fast_boundary then
+                        statusText = "Быстрый"
+                    elseif clip.playedTime <= medium_boundary then
+                        statusText = "Средний"
+                    elseif clip.playedTime <= slow_boundary then
+                        statusText = "Медленный"
+                    else
+                        statusText = "Волна"
+                    end
+
+                    whenFS:SetText(statusText)
+                    whenFS:SetTextColor(r, g, b, 0.9)
                 elseif clip.ts then
                     -- Regular clips with timestamp
                     HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
@@ -690,6 +712,12 @@ local function UpdateLayout(buttonName)
                     -- For the "Clip" frame, baseWidth applies to the container. Its internal elements are set in UpdateClipEntry.
                     fs:SetWidth(columnConfig.baseWidth)
 
+                    -- Debug logging
+                    if ns.debug and ns.currentActiveTabId == "SPEED_CLIPS" then
+                        print(string.format("UpdateLayout: Positioning %s (id=%s, sortKey=%s)",
+                            buttonName .. columnConfig.fontStringName, columnConfig.id, columnConfig.sortKey or "none"))
+                    end
+
                     if columnConfig.fontObject then
                         local font = _G[columnConfig.fontObject] or columnConfig.fontObject -- Check global first, then direct
                         if font then
@@ -867,13 +895,43 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
 
         -- ===== WHERE =====
         if columnVisibility["WhereText"] then
-            whereFS:SetJustifyH("LEFT")
-            local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
-            if zone == "Полуостров Адского Пламени" then
-                zone = "Полуостров\nАдского Пламени"
-            end
-            if whereFS:GetText() ~= zone then
-                whereFS:SetText(zone)
+            if ns.currentActiveTabId == "SPEED_CLIPS" and clip.playedTime and clip.level then
+                -- For speed tab, show rank instead of zone
+                whereFS:SetJustifyH("CENTER")
+                if whereFS:GetFontObject() ~= GameFontNormalLarge then
+                    whereFS:SetFontObject("GameFontNormalLarge")
+                end
+                local r, g, b, median, p25, p75, rank, count = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                if rank then
+                    whereFS:SetText(tostring(rank))
+                    whereFS:SetTextColor(r, g, b)
+                    -- Debug logging
+                    if ns.debug then
+                        print(string.format("SPEED_CLIPS: Setting rank for %s: rank=%s, playedTime=%s",
+                            clip.characterName or "unknown", tostring(rank), tostring(clip.playedTime)))
+                    end
+                else
+                    whereFS:SetText("-")
+                    whereFS:SetTextColor(0.5, 0.5, 0.5)
+                end
+                -- Debug check after setting
+                if ns.debug then
+                    print(string.format("SPEED_CLIPS whereFS after update: %s", whereFS:GetText() or "nil"))
+                end
+            else
+                -- Reset to normal font and left alignment for other tabs
+                whereFS:SetJustifyH("LEFT")
+                if whereFS:GetFontObject() ~= GameFontHighlight then
+                    whereFS:SetFontObject("GameFontHighlight")
+                end
+                local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
+                if zone == "Полуостров Адского Пламени" then
+                    zone = "Полуостров\nАдского Пламени"
+                end
+                if whereFS:GetText() ~= zone then
+                    whereFS:SetText(zone)
+                end
+                whereFS:SetTextColor(1, 1, 1) -- Reset to white for other tabs
             end
         end
 
@@ -885,7 +943,17 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             local newMobLevelText = ""
             local mr, mg, mb
 
-            if clip.isReincarnated then
+            if ns.currentActiveTabId == "SPEED_CLIPS" and clip.playedTime then
+                -- For speed tab, show played time with color coding
+                if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
+                local s = clip.playedTime
+                local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                newClipDisplayText = string.format("|cFF%02X%02X%02X%dд %dч %dм %dс|r",
+                        r * 255, g * 255, b * 255,
+                        math.floor(s / 86400), math.floor(s % 86400 / 3600),
+                        math.floor(s % 3600 / 60), s % 60)
+                newMobLevelText = "" -- No mob level for speed tab
+            elseif clip.isReincarnated then
                 -- For reincarnated, always show original death cause
                 if clipTextFS:GetFontObject() ~= GameFontNormal then clipTextFS:SetFontObject("GameFontNormal") end
 
@@ -1146,6 +1214,18 @@ function OFAuctionFrameDeathClips_Update()
                     if clip.completed then
                         table.insert(tempClips, clip)
                     end
+                end
+            end
+        elseif ns.currentActiveTabId == "SPEED_CLIPS" then
+            -- Speed ranking for living players at the same level
+            local myLevel = UnitLevel("player")
+            for _, clip in ipairs(pool) do
+                -- Only include clips that:
+                -- 1. Have playedTime (means they are processed)
+                -- 2. Are at the same level as the player
+                -- 3. Are not completed (still alive)
+                if clip.playedTime and tonumber(clip.level) == myLevel and not clip.completed then
+                    table.insert(tempClips, clip)
                 end
             end
         else -- Default to "LIVE_CLIPS"

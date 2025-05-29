@@ -55,19 +55,19 @@ ns.DeathClipsTabSettings = {
             { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 70, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     },
-    ["NEW_TAB_2"] = { -- This tab configuration remains untouched
-        tabId = "NEW_TAB_2",
-        tabName = "Новый Таб 2",
-        defaultSortKey = "REACTION",
+    ["SPEED_CLIPS"] = { -- Speed ranking tab for living players
+        tabId = "SPEED_CLIPS",
+        tabName = "Скорость",
+        defaultSortKey = "LEVEL",
         defaultSortAscending = false,
         columns = {
-            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 140, sortKey = "streamer", fontStringName = "Name" },
-            { id = "LEVEL", headerText = "Level", visible = false, baseWidth = 50, sortKey = "level", fontStringName = "Level" },
-            { id = "CLIP_INFO", headerText = "Время прохождения", visible = true, baseWidth = 210, sortKey = "clip", fontStringName = "Clip", dataRowXOffset = -8 },
-            { id = "WHERE_DIED", headerText = "Где умер", visible = true, baseWidth = 125, sortKey = "where", fontStringName = "WhereText" },
-            { id = "CLASS_TYPE", headerText = "CLASS", visible = true, baseWidth = 133, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 15 },
-            { id = "RACE_TYPE", headerText = "RACE", visible = true, baseWidth = 144, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontNormal", justifyH = "CENTER", dataRowXOffset = 2 },
-            { id = "WHEN_HAPPENED", headerText = "Когда", visible = true, baseWidth = 55, sortKey = "when", fontStringName = "WhenText" },
+            { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },
+            { id = "LEVEL", headerText = "Ур.", visible = true, baseWidth = 40, sortKey = "level", fontStringName = "Level" },
+            { id = "CLIP_INFO", headerText = "Время игры", visible = true, baseWidth = 160, sortKey = "playedTime", fontStringName = "Clip" },
+            { id = "CLASS_TYPE", headerText = "Класс", visible = true, baseWidth = 100, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "CENTER" },
+            { id = "RACE_TYPE", headerText = "Раса", visible = true, baseWidth = 100, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "CENTER" },
+            { id = "WHERE_DIED", headerText = "Ранг", visible = true, baseWidth = 70, sortKey = "rank", fontStringName = "WhereText", justifyH = "CENTER" },
+            { id = "WHEN_HAPPENED", headerText = "Статус", visible = true, baseWidth = 70, sortKey = "status", fontStringName = "WhenText" },
             { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     }
@@ -204,7 +204,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     local liveConfig = ns.DeathClipsTabSettings["LIVE_CLIPS"]
     local compConfig = ns.DeathClipsTabSettings["COMPLETED_CLIPS"]
     local newTab1Config = ns.DeathClipsTabSettings["REINCARNATED_CLIPS"] -- Updated key
-    local newTab2Config = ns.DeathClipsTabSettings["NEW_TAB_2"]
+    local newTab2Config = ns.DeathClipsTabSettings["SPEED_CLIPS"]
 
     -- Size & Positioning & Text
     liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 90, -12)
@@ -219,14 +219,14 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     newTab1Btn:SetText(newTab1Config.tabName)
     newTab1Btn:SetSize(100, 40) -- Ensure size
 
-    --newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
-    --newTab2Btn:SetText(newTab2Config.tabName)
-    --newTab2Btn:SetSize(100, 40) -- Ensure size
+    newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    newTab2Btn:SetText(newTab2Config.tabName)
+    newTab2Btn:SetSize(100, 40) -- Ensure size
 
     -- Glow properties
     liveBtn.selectedGlow:SetAlpha(0.60); compBtn.selectedGlow:SetAlpha(0.60); newTab1Btn.selectedGlow:SetAlpha(0.60); newTab2Btn.selectedGlow:SetAlpha(0.60)
     liveBtn.selectedGlow:SetVertexColor(0.78, 0.35, 0.33); compBtn.selectedGlow:SetVertexColor(0.5, 0.7, 0.5)
-    newTab1Btn.selectedGlow:SetVertexColor(0.5, 0.5, 0.7); newTab2Btn.selectedGlow:SetVertexColor(0.7, 0.5, 0.5)
+    newTab1Btn.selectedGlow:SetVertexColor(0.5, 0.5, 0.7); newTab2Btn.selectedGlow:SetVertexColor(1.0, 0.84, 0.0)
     liveBtn.selectedGlow:SetHeight(10); compBtn.selectedGlow:SetHeight(10); newTab1Btn.selectedGlow:SetHeight(10); newTab2Btn.selectedGlow:SetHeight(10)
 
     -- Style toggle
@@ -247,7 +247,7 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
         elseif frame.currentSubTab == newTab1Config.tabId then -- newTab1Config now refers to REINCARNATED_CLIPS
             newTab1Btn.selectedGlow:Show()
             newTab1Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        elseif frame.currentSubTab == newTab2Config.tabId then -- This is still NEW_TAB_2
+        elseif frame.currentSubTab == newTab2Config.tabId then -- This is SPEED_CLIPS
             newTab2Btn.selectedGlow:Show()
             newTab2Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
         end

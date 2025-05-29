@@ -103,6 +103,76 @@ local function CreateClipsSorter(sortParams)
                 -- Live tab: sort by deathCause string (stripping any color codes)
                 return stringCompare(l, r, "deathCause")
             end)
+        elseif k == "playedTime" then
+            -- For SPEED_CLIPS tab, sort by numeric playedTime
+            addSorter(desc, function(l, r)
+                local a = tonumber(l.playedTime) or 0
+                local b = tonumber(r.playedTime) or 0
+                return a - b
+            end)
+        elseif k == "rank" then
+            -- For SPEED_CLIPS tab, sort by calculated rank
+            addSorter(desc, function(l, r)
+                -- Get rank for each clip
+                local myLevel = UnitLevel("player")
+                local rankL, rankR = 999999, 999999 -- Default high value for clips without rank
+
+                if l.playedTime and tonumber(l.level) == myLevel then
+                    local _, _, _, _, _, _, rank = ns.GetPlayedTimeColor(l.playedTime, l.level)
+                    if rank then rankL = rank end
+                end
+
+                if r.playedTime and tonumber(r.level) == myLevel then
+                    local _, _, _, _, _, _, rank = ns.GetPlayedTimeColor(r.playedTime, r.level)
+                    if rank then rankR = rank end
+                end
+
+                return rankL - rankR
+            end)
+        elseif k == "status" then
+            -- For SPEED_CLIPS tab, sort by speed category
+            addSorter(desc, function(l, r)
+                -- Define category order: Legend < Fast < Medium < Slow < Wave
+                local categoryOrder = {
+                    ["Легенда"] = 1,
+                    ["Быстрый"] = 2,
+                    ["Средний"] = 3,
+                    ["Медленный"] = 4,
+                    ["Волна"] = 5
+                }
+
+                local function getCategory(clip)
+                    if not clip.playedTime or not clip.level then return 6 end -- Unknown
+
+                    local _, _, _, _, _, _, _, _, legend_boundary, fast_boundary, medium_boundary, slow_boundary = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+
+                    if not legend_boundary or not fast_boundary or not medium_boundary or not slow_boundary then
+                        return 6 -- Unknown
+                    elseif clip.playedTime <= legend_boundary then
+                        return 1 -- Legend
+                    elseif clip.playedTime <= fast_boundary then
+                        return 2 -- Fast
+                    elseif clip.playedTime <= medium_boundary then
+                        return 3 -- Medium
+                    elseif clip.playedTime <= slow_boundary then
+                        return 4 -- Slow
+                    else
+                        return 5 -- Wave
+                    end
+                end
+
+                local catL = getCategory(l)
+                local catR = getCategory(r)
+
+                -- If same category, sort by playedTime
+                if catL == catR then
+                    local a = tonumber(l.playedTime) or 0
+                    local b = tonumber(r.playedTime) or 0
+                    return a - b
+                end
+
+                return catL - catR
+            end)
         elseif k == "rate" then
             addSorter(desc, function(l, r) return 0 end)
         elseif k == "rating" then
@@ -680,5 +750,4 @@ hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
         end)
     end
 end)
-
 
