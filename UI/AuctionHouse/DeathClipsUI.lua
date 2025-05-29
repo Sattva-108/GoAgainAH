@@ -903,7 +903,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                 if whereFS:GetText() ~= zone then
                     whereFS:SetText(zone)
                 end
-                whereFS:SetTextColor(1, 1, 1) -- Reset to white for other tabs
+                whereFS:SetTextColor(1, 0.82, 0)  -- Reset to gold color for other tabs.
             end
         end
 
