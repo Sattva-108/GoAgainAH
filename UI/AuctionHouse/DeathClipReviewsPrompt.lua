@@ -3,6 +3,56 @@ local L = ns.L
 
 local AceGUI = LibStub("AceGUI-3.0")
 
+-- Local Variables for Layout Customization
+local frameWidth = 380                    -- Main frame width
+local frameHeight = 520                   -- Main frame total height (reduced by 30px)
+local frameVerticalOffset = -15           -- Frame vertical positioning offset
+local borderedGroupHeight = 500           -- Height of the main bordered group (reduced by 30px)
+local borderedGroupPadding = 25           -- Horizontal padding for bordered group
+local borderedGroupVerticalPadding = 20   -- Vertical padding for bordered group
+local headerTopPadding = 10               -- Top padding before header
+local headerScale = 1.5                   -- Scale factor for header text
+local headerLeftOffset = 3                -- Left offset for header text
+local playedTimeVerticalOffset = -35      -- Vertical offset for played time from header (increased spacing)
+local playedTimeLeftOffset = 4            -- Left offset for played time label
+local playedTimeRightOffset = -10         -- Right offset for played time value
+local levelRankVerticalOffset = -60       -- Vertical offset for level/rank from header (5px more from time)
+local levelLabelSpacing = 5               -- Spacing between level label and value
+local rankLabelSpacing = 15               -- Spacing between level value and rank label
+local rankValueSpacing = 5                -- Spacing between rank label and value
+local midPadding = 25                     -- Padding between level/rank and emotion section (increased by 15px)
+local emotionSummaryHeight = 60           -- Height of emotion summary widget
+local emotionSummaryWidth = 320           -- Width of emotion summary widget
+local emotionIconSize = 40                -- Size of emotion icons
+local emotionIconSpacing = 4              -- Calculated spacing between icons
+local emotionLabelHeight = 25             -- Height of emotion label container
+local emotionLabelLeftOffset = 4          -- Left offset for emotion label
+local emotionContainerHeight = 70         -- Height of emotion container
+local emotionContainerVerticalOffset = -5 -- Vertical offset for emotion summary
+local scrollFrameWidth = 344              -- Width of scroll frame (increased to include scrollbar area)
+local scrollFrameHeight = 230             -- Height of scroll frame
+local scrollFrameHorizontalOffset = -13    -- Horizontal offset for scroll frame (moved further left for scrollbar)
+local scrollFrameVerticalOffset = -10     -- Vertical offset for scroll frame
+local scrollContainerHeight = 250         -- Height of scroll container (reduced)
+local scrollEntryHeight = 75              -- Height of each review entry (increased for 3 entries)
+local scrollEntrySpacing = 1              -- Spacing between entries (minimal)
+local scrollEntryPadding = 12             -- Internal padding for entries (slightly increased)
+local scrollEntryIconSize = 18            -- Size of emotion icons in entries (slightly smaller)
+local scrollEntryIconOffset = -12         -- Right offset for entry icons (restored to normal)
+local scrollEntryTextVerticalOffset = -26 -- Vertical offset for entry text (adjusted for more spacing)
+local scrollEntryTextRightOffset = -32    -- Right offset for entry text (restored to normal)
+local maxScrollEntries = 3                -- Maximum visible entries at once (reduced to 3)
+local buttonPaddingHeight = -10           -- Negative padding to bring button closer (more space saving)
+local buttonContainerHeight = 45          -- Height of button container (slightly larger for better button)
+local buttonWidth = 360                   -- Width of write review button (full width)
+local buttonHeight = 35                   -- Height of write review button
+local buttonVerticalOffset = -5           -- Vertical offset for button
+local tooltipPadding = 8                  -- Tooltip padding
+local tooltipHeaderVerticalOffset = -16   -- Vertical offset for tooltip header
+local tooltipSpacing = 6                  -- Spacing in tooltip between elements
+local tooltipLabelWidth = 100             -- Width of tooltip labels
+local scrollEntryNameToTextSpacing = 4    -- Additional spacing between name and review text
+
 -- Same reaction icons as in rate prompt
 local REACTION_ICONS = {
     [1] = "Interface\\AddOns\\GoAgainAH\\Media\\smiley_64x64.tga",       -- 😂 Funny
@@ -38,13 +88,13 @@ end
 
 local function CreateEmotionSummaryWidget(reviews)
     local group = AceGUI:Create("MinimalFrame")
-    group:SetHeight(60) -- Taller for bigger icons
-    group:SetWidth(320)
+    group:SetHeight(emotionSummaryHeight)
+    group:SetWidth(emotionSummaryWidth)
     group:SetLayout("Flow")
     group:Show()
 
-    local ICON_SIZE = 40 -- Bigger icons
-    local TOTAL_WIDTH = 320 -- Full width to align with scroll frame
+    local ICON_SIZE = emotionIconSize
+    local TOTAL_WIDTH = emotionSummaryWidth
     local ICON_SPACING = (TOTAL_WIDTH - (ICON_SIZE * 4)) / 5 -- Equal spacing including edges
     local iconWrapper = CreateFrame("Frame", nil, group.frame)
     iconWrapper:SetSize(TOTAL_WIDTH, ICON_SIZE + 20)
@@ -108,21 +158,21 @@ local function CreateDeathClipReviewsPrompt()
     local frame = AceGUI:Create("CustomFrame")
     local point, relativeTo, relativePoint, xOfs, yOfs = frame.frame:GetPoint()
     frame.frame:ClearAllPoints()
-    frame.frame:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs - 15)
+    frame.frame:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs + frameVerticalOffset)
 
     frame:SetTitle("")
     frame.titlebg:Hide()
     frame.titlebg_l:Hide()
     frame.titlebg_r:Hide()
     frame:SetLayout("Flow")
-    frame:SetWidth(380)
-    frame:SetHeight(550) -- Увеличили высоту для лучшего размещения элементов
+    frame:SetWidth(frameWidth)
+    frame:SetHeight(frameHeight)
 
     ns.CustomFrameSetAllPoints()
     ns.CustomFrameHideBackDrop()
 
-    frame:OnWidthSet(380, true)
-    frame:OnHeightSet(550, true)
+    frame:OnWidthSet(frameWidth, true)
+    frame:OnHeightSet(frameHeight, true)
 
     local closeButton = CreateFrame("Button", "GoAHExitButtonDeathReview", frame.frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", frame.frame, "TOPRIGHT", 5, 1)
@@ -136,13 +186,13 @@ local function CreateDeathClipReviewsPrompt()
     end)
     closeButton:SetFrameLevel(frame.frame:GetFrameLevel()+10)
 
-    local reviewGroup = CreateBorderedGroup(1, 550) -- Соответствует высоте фрейма
-    reviewGroup:SetPadding(25, 20)
+    local reviewGroup = CreateBorderedGroup(1, borderedGroupHeight)
+    reviewGroup:SetPadding(borderedGroupPadding, borderedGroupVerticalPadding)
     frame:AddChild(reviewGroup)
 
     local labelPaddingTop = AceGUI:Create("MinimalFrame")
     labelPaddingTop:SetFullWidth(true)
-    labelPaddingTop:SetHeight(10)
+    labelPaddingTop:SetHeight(headerTopPadding)
     reviewGroup:AddChild(labelPaddingTop)
 
     local targetLabel = AceGUI:Create("Label")
@@ -151,101 +201,129 @@ local function CreateDeathClipReviewsPrompt()
     reviewGroup:AddChild(targetLabel)
 
     local labelFontString = targetLabel.label
-    labelFontString:SetScale(1.5)
+    labelFontString:SetScale(headerScale)
     labelFontString:ClearAllPoints()
-    labelFontString:SetPoint("LEFT", targetLabel.frame, "LEFT", 3, 0)
+    labelFontString:SetPoint("LEFT", targetLabel.frame, "LEFT", headerLeftOffset, 0)
 
     -- Add played time display (правильно позиционируем)
     local playedTimeLabel = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Такой же размер как время
-    playedTimeLabel:SetPoint("LEFT", targetLabel.frame, "LEFT", 4, -25) -- Ближе к заголовку
+    playedTimeLabel:SetPoint("LEFT", targetLabel.frame, "LEFT", playedTimeLeftOffset, playedTimeVerticalOffset) -- Ближе к заголовку
     playedTimeLabel:SetText("Время в игре:")
     playedTimeLabel:SetTextColor(0.6, 0.6, 0.6, 1) -- Серый цвет
 
     local playedTime = targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Оставили большой шрифт
-    playedTime:SetPoint("RIGHT", targetLabel.frame, "RIGHT", -10, -25) -- Справа от заголовка
+    playedTime:SetPoint("RIGHT", targetLabel.frame, "RIGHT", playedTimeRightOffset, playedTimeVerticalOffset) -- Справа от заголовка
     playedTime:SetText("")
     playedTime:SetTextColor(1, 1, 1, 1)
 
     -- Add level and rank display (под played time)
     local levelRankFrame = CreateFrame("Frame", nil, targetLabel.frame:GetParent())
     levelRankFrame:SetSize(300, 20)
-    levelRankFrame:SetPoint("LEFT", targetLabel.frame, "LEFT", 4, -45) -- Под played time
+    levelRankFrame:SetPoint("LEFT", targetLabel.frame, "LEFT", playedTimeLeftOffset, levelRankVerticalOffset) -- Под played time
 
-    local levelLabel = levelRankFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Такой же размер
-    levelLabel:SetPoint("LEFT", levelRankFrame, "LEFT", 0, 0)
-    levelLabel:SetText("Уровень:")
-    levelLabel:SetTextColor(0.6, 0.6, 0.6, 1) -- Серый цвет как у played time
-
-    local levelValue = levelRankFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Такой же размер
-    levelValue:SetPoint("LEFT", levelLabel, "RIGHT", 5, 0)
-    levelValue:SetText("")
-    levelValue:SetTextColor(1, 1, 1, 1)
-
-    local rankLabel = levelRankFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Такой же размер
-    rankLabel:SetPoint("LEFT", levelValue, "RIGHT", 15, 0)
+    -- Only show rank, not level (level is in title now)
+    local rankLabel = levelRankFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    rankLabel:SetPoint("LEFT", levelRankFrame, "LEFT", 0, 0)
     rankLabel:SetText("Ранг:")
     rankLabel:SetTextColor(0.6, 0.6, 0.6, 1) -- Серый цвет как у played time
 
-    local rankValue = levelRankFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Такой же размер
-    rankValue:SetPoint("LEFT", rankLabel, "RIGHT", 5, 0)
+    local rankValue = levelRankFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    rankValue:SetPoint("RIGHT", targetLabel.frame, "RIGHT", playedTimeRightOffset, levelRankVerticalOffset) -- Right aligned like played time
     rankValue:SetText("")
     rankValue:SetTextColor(1, 1, 1, 1)
 
     -- Create tooltip wrapper for played time
     local playedTimeWrapper = CreateFrame("Frame", nil, targetLabel.frame:GetParent())
-    playedTimeWrapper:SetPoint("RIGHT", targetLabel.frame, "RIGHT", -10, -25) -- Точно над played time
+    playedTimeWrapper:SetPoint("RIGHT", targetLabel.frame, "RIGHT", playedTimeRightOffset, playedTimeVerticalOffset) -- Точно над played time
     playedTimeWrapper:SetSize(150, 20)
     playedTimeWrapper:EnableMouse(true)
     playedTimeWrapper:SetFrameStrata("TOOLTIP")
 
+    -- Create tooltip wrapper for rank (reuses same tooltip)
+    local rankWrapper = CreateFrame("Frame", nil, targetLabel.frame:GetParent())
+    rankWrapper:SetPoint("RIGHT", targetLabel.frame, "RIGHT", playedTimeRightOffset, levelRankVerticalOffset) -- Same position as rank value
+    rankWrapper:SetSize(150, 20)
+    rankWrapper:EnableMouse(true)
+    rankWrapper:SetFrameStrata("TOOLTIP")
+
     local labelPaddingMid = AceGUI:Create("MinimalFrame")
     labelPaddingMid:SetFullWidth(true)
-    labelPaddingMid:SetHeight(45) -- Увеличили отступ между level/rank и Player Reactions (было 35px)
+    labelPaddingMid:SetHeight(midPadding) -- Увеличили отступ между level/rank и Player Reactions (было 35px)
     reviewGroup:AddChild(labelPaddingMid)
 
     -- Emotion summary widget placeholder
     local emotionSummary = nil
 
+    local ScrollBackdrop = {
+        bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+        edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
+        edgeSize = 16,
+        insets = { left = 4, right = 3, top = 4, bottom = 3 }
+    }
+
     -- Create NATIVE WoW ScrollFrame (not AceGUI) to avoid visibility bugs
     local scrollFrame = CreateFrame("ScrollFrame", "DeathClipReviewsScrollFrame", UIParent, "FauxScrollFrameTemplate")
-    scrollFrame:SetSize(320, 230)
+    scrollFrame:SetSize(scrollFrameWidth - 5, scrollFrameHeight) -- Reduce width to fit within boundaries (360-5=355)
     -- Позиционирование будет установлено после создания контейнера
-    scrollFrame:SetBackdrop(PaneBackdrop)
-    scrollFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.3)
-    scrollFrame:SetBackdropBorderColor(0.3, 0.3, 0.3)
+    scrollFrame:SetBackdrop(ScrollBackdrop)
+    scrollFrame:SetBackdropColor(0, 0, 0)
+    scrollFrame:SetBackdropBorderColor(0.4, 0.4, 0.4)
 
     -- Create entry buttons for native ScrollFrame
-    local ENTRY_HEIGHT = 75
-    local MAX_ENTRIES = 3 -- Visible entries at once
+    local ENTRY_HEIGHT = scrollEntryHeight
+    local MAX_ENTRIES = maxScrollEntries -- Visible entries at once
     scrollFrame.buttons = {}
 
     for i = 1, MAX_ENTRIES do
         local button = CreateFrame("Frame", nil, scrollFrame)
-        button:SetSize(300, ENTRY_HEIGHT - 5)
-        button:SetBackdrop(PaneBackdrop)
-        button:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
-        button:SetBackdropBorderColor(0.4, 0.4, 0.4)
+        button:SetSize(scrollFrameWidth - 20, ENTRY_HEIGHT - scrollEntrySpacing) -- Normal width with padding
+        -- Remove backdrop - no more individual frames
+        button:EnableMouse(true) -- Enable mouse for hover effects
 
         if i == 1 then
-            button:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 10, -5)
+            button:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", scrollEntryPadding, -scrollEntrySpacing)
         else
-            button:SetPoint("TOPLEFT", scrollFrame.buttons[i-1], "BOTTOMLEFT", 0, -5)
+            button:SetPoint("TOPLEFT", scrollFrame.buttons[i-1], "BOTTOMLEFT", 0, -scrollEntrySpacing)
         end
+
+        -- Add separator line (except for first entry)
+        if i > 1 then
+            button.separator = button:CreateTexture(nil, "OVERLAY")
+            button.separator:SetTexture("Interface\\Buttons\\WHITE8X8")
+            button.separator:SetVertexColor(0.3, 0.3, 0.3, 0.8) -- Dark gray separator
+            button.separator:SetHeight(1)
+            button.separator:SetPoint("TOPLEFT", button, "TOPLEFT", -scrollEntryPadding, 0) -- Extend to left edge
+            button.separator:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0, 0)
+        end
+
+        -- Add hover effect
+        button.hoverTexture = button:CreateTexture(nil, "BACKGROUND")
+        button.hoverTexture:SetAllPoints()
+        button.hoverTexture:SetTexture("Interface\\Buttons\\WHITE8X8")
+        button.hoverTexture:SetVertexColor(0.2, 0.2, 0.2, 0.3) -- Subtle hover highlight
+        button.hoverTexture:Hide()
+
+        button:SetScript("OnEnter", function(self)
+            self.hoverTexture:Show()
+        end)
+        button:SetScript("OnLeave", function(self)
+            self.hoverTexture:Hide()
+        end)
 
         -- Player name
         button.nameLabel = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        button.nameLabel:SetPoint("TOPLEFT", button, "TOPLEFT", 10, -8)
+        button.nameLabel:SetPoint("TOPLEFT", button, "TOPLEFT", scrollEntryPadding, -6) -- Adjusted for smaller height
         button.nameLabel:SetTextColor(1, 1, 1, 1)
 
         -- Emotion icon
         button.icon = button:CreateTexture(nil, "ARTWORK")
-        button.icon:SetSize(20, 20)
-        button.icon:SetPoint("TOPRIGHT", button, "TOPRIGHT", -10, -5)
+        button.icon:SetSize(scrollEntryIconSize, scrollEntryIconSize)
+        button.icon:SetPoint("TOPRIGHT", button, "TOPRIGHT", scrollEntryIconOffset, -4) -- More space for scrollbar
 
-        -- Review text
-        button.textLabel = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        button.textLabel:SetPoint("TOPLEFT", button, "TOPLEFT", 10, -28)
-        button.textLabel:SetPoint("TOPRIGHT", button, "TOPRIGHT", -30, -28)
+        -- Review text (larger font)
+        button.textLabel = button:CreateFontString(nil, "OVERLAY", "GameFontNormal") -- Changed from GameFontHighlightSmall to GameFontNormal
+        button.textLabel:SetPoint("TOPLEFT", button, "TOPLEFT", scrollEntryPadding, scrollEntryTextVerticalOffset - scrollEntryNameToTextSpacing) -- Added extra spacing
+        button.textLabel:SetPoint("TOPRIGHT", button, "TOPRIGHT", scrollEntryTextRightOffset, scrollEntryTextVerticalOffset - scrollEntryNameToTextSpacing) -- More space for scrollbar
         button.textLabel:SetJustifyH("LEFT")
         button.textLabel:SetTextColor(0.9, 0.9, 0.9, 1)
         button.textLabel:SetWordWrap(true)
@@ -267,63 +345,53 @@ local function CreateDeathClipReviewsPrompt()
     -- Create containers once (not in Setup to prevent duplication)
     local emotionLabelContainer = AceGUI:Create("MinimalFrame")
     emotionLabelContainer:SetFullWidth(true)
-    emotionLabelContainer:SetHeight(25)
+    emotionLabelContainer:SetHeight(emotionLabelHeight)
     emotionLabelContainer:SetLayout("Flow")
     reviewGroup:AddChild(emotionLabelContainer)
 
     local emotionContainer = AceGUI:Create("MinimalFrame")
     emotionContainer:SetFullWidth(true)
-    emotionContainer:SetHeight(70) -- Уменьшили на 10px для меньшего отступа между лейблом и иконками
+    emotionContainer:SetHeight(emotionContainerHeight)
     emotionContainer:SetLayout("Flow")
     reviewGroup:AddChild(emotionContainer)
 
+    -- Removed separator after emotions
+
     local scrollContainer = AceGUI:Create("MinimalFrame")
     scrollContainer:SetFullWidth(true)
-    scrollContainer:SetHeight(260) -- Увеличили высоту для scroll + spacing
+    scrollContainer:SetHeight(scrollContainerHeight)
     scrollContainer:SetLayout("Flow")
     reviewGroup:AddChild(scrollContainer)
 
     local buttonPadding = AceGUI:Create("MinimalFrame")
     buttonPadding:SetFullWidth(true)
-    buttonPadding:SetHeight(5) -- Уменьшили на 15px отступ между scroll и кнопкой (было 20px)
+    buttonPadding:SetHeight(buttonPaddingHeight)
     reviewGroup:AddChild(buttonPadding)
 
     local buttonContainer = AceGUI:Create("MinimalFrame")
     buttonContainer:SetFullWidth(true)
-    buttonContainer:SetHeight(50) -- Увеличили высоту для кнопки
+    buttonContainer:SetHeight(buttonContainerHeight)
     buttonContainer:SetLayout("Flow")
     reviewGroup:AddChild(buttonContainer)
 
-    -- Write review button (created once)
-    local writeReviewButton = CreateFrame("Button", nil, buttonContainer.frame)
-    writeReviewButton:SetSize(320, 35)
-    writeReviewButton:SetPoint("CENTER", buttonContainer.frame, "CENTER", 0, -5)
+    -- Write review button using same style as RatePrompt
+    local writeReviewButton = AceGUI:Create("PKBTRedButton")
+    writeReviewButton:SetWidth(355) -- Match scroll frame width (scrollFrameWidth - 5)
+    writeReviewButton:SetHeight(buttonHeight)
     writeReviewButton:SetText(L["Write Review"])
-    writeReviewButton:SetNormalFontObject("GameFontNormal")
-    writeReviewButton:SetHighlightFontObject("GameFontHighlight")
-
-    -- Simple red button styling
-    local normalTex = writeReviewButton:CreateTexture(nil, "BACKGROUND")
-    normalTex:SetAllPoints()
-    normalTex:SetTexture("Interface\\Buttons\\WHITE8X8")
-    normalTex:SetVertexColor(0.8, 0.2, 0.2, 1)
-    writeReviewButton:SetNormalTexture(normalTex)
-
-    local highlightTex = writeReviewButton:CreateTexture(nil, "HIGHLIGHT")
-    highlightTex:SetAllPoints()
-    highlightTex:SetTexture("Interface\\Buttons\\WHITE8X8")
-    highlightTex:SetVertexColor(1.0, 0.3, 0.3, 0.5)
-    writeReviewButton:SetHighlightTexture(highlightTex)
+    buttonContainer:AddChild(writeReviewButton)
 
     local prompt = {
         frame = frame,
         closeButton = closeButton,
         targetLabel = targetLabel,
         labelFontString = labelFontString,
+        levelDisplay = nil, -- Will be created in SetTargetName
+        levelWrapper = nil, -- Will be created in SetTargetName
         playedTime = playedTime,
         playedTimeWrapper = playedTimeWrapper,
-        levelValue = levelValue,
         rankValue = rankValue,
+        rankWrapper = rankWrapper,
         emotionSummary = nil, -- Will be set when reviews are loaded
         emotionLabel = nil, -- Will be set when emotion summary is created
         emotionLabelContainer = emotionLabelContainer,
@@ -342,9 +410,9 @@ local function CreateDeathClipReviewsPrompt()
         self.frame:Show()
         C_Timer:After(0.001, function()
             if self.labelFontString then
-                self.labelFontString:SetScale(1.5)
+                self.labelFontString:SetScale(headerScale)
                 self.labelFontString:ClearAllPoints()
-                self.labelFontString:SetPoint("LEFT", self.targetLabel.frame, "LEFT", 3, 0)
+                self.labelFontString:SetPoint("LEFT", self.targetLabel.frame, "LEFT", headerLeftOffset, 0)
             end
         end)
     end
@@ -354,12 +422,33 @@ local function CreateDeathClipReviewsPrompt()
         self.frame:Hide()
     end
 
-    function prompt:SetTargetName(name, classColor)
-        self.targetLabel:SetText(name .. " - " .. L["Reviews"])
+    function prompt:SetTargetName(name, classColor, level)
+        -- Show only name in title
+        self.targetLabel:SetText(name)
         if classColor then
             self.labelFontString:SetTextColor(classColor.r, classColor.g, classColor.b)
         else
             self.labelFontString:SetTextColor(1, 1, 1)
+        end
+
+        -- Create level display on the right side like played time
+        if not self.levelDisplay then
+            self.levelDisplay = self.targetLabel.frame:GetParent():CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+            self.levelDisplay:SetPoint("RIGHT", self.targetLabel.frame, "RIGHT", playedTimeRightOffset, 0) -- Same position as played time but for title
+            self.levelDisplay:SetTextColor(1, 1, 1, 1)
+
+            -- Create tooltip wrapper for level display
+            self.levelWrapper = CreateFrame("Frame", nil, self.targetLabel.frame:GetParent())
+            self.levelWrapper:SetPoint("RIGHT", self.targetLabel.frame, "RIGHT", playedTimeRightOffset, 0) -- Same position as level
+            self.levelWrapper:SetSize(100, 20)
+            self.levelWrapper:EnableMouse(true)
+            self.levelWrapper:SetFrameStrata("TOOLTIP")
+        end
+
+        if level then
+            self.levelDisplay:SetText("Уровень " .. tostring(level))
+        else
+            self.levelDisplay:SetText("")
         end
     end
 
@@ -381,8 +470,7 @@ local function CreateDeathClipReviewsPrompt()
 
             self.playedTime:SetTextColor(r_player, g_player, b_player, 1)
 
-            -- Set level and rank values
-            self.levelValue:SetText(tostring(clip.level))
+            -- Set rank value only (level is now in title)
             if rank_val and maxRank_val then
                 self.rankValue:SetText(string.format("%s из %s", rank_val, maxRank_val))
                 self.rankValue:SetTextColor(r_player, g_player, b_player, 1)
@@ -411,14 +499,12 @@ local function CreateDeathClipReviewsPrompt()
         elseif ns.nextUpdateDeadline then
             self.playedTime:SetText(SecondsToTime(ns.nextUpdateDeadline - time()))
             self.playedTime:SetTextColor(0.6, 0.6, 0.6, 1)
-            self.levelValue:SetText(clip and clip.level and tostring(clip.level) or "N/A")
             self.rankValue:SetText("Обновляется...")
             self.rankValue:SetTextColor(0.6, 0.6, 0.6, 1)
             self.playedTimeTooltipData.median_boundary = nil
         else
             self.playedTime:SetText("~10 минут")
             self.playedTime:SetTextColor(1, 1, 1, 1)
-            self.levelValue:SetText(clip and clip.level and tostring(clip.level) or "N/A")
             self.rankValue:SetText("N/A")
             self.rankValue:SetTextColor(0.7, 0.7, 0.7, 1)
             self.playedTimeTooltipData = {}
@@ -520,24 +606,20 @@ local function CreateDeathClipReviewsPrompt()
 
         -- Set class color from RAID_CLASS_COLORS
         local classColor = RAID_CLASS_COLORS[clip.class]
-        self:SetTargetName(ns.GetDisplayName(clip.characterName), classColor)
+        self:SetTargetName(ns.GetDisplayName(clip.characterName), classColor, clip.level)
 
         -- Set played time with all the logic from rate prompt
         self:SetPlayedTime(clip.playedTime, clip)
 
         -- Create or update emotion summary widget
         if not self.emotionSummary then
-            -- Add emotion label FIRST using existing container, aligned with level on X
-            self.emotionLabel = self.emotionLabelContainer.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            self.emotionLabel:SetPoint("TOPLEFT", self.emotionLabelContainer.frame, "TOPLEFT", 4, -5) -- X=4 как у level
-            self.emotionLabel:SetText("Player Reactions:")
-            self.emotionLabel:SetTextColor(0.8, 0.8, 0.8, 1)
+            -- Remove emotion label - no more "Player Reactions:" text
 
             self.emotionSummary = CreateEmotionSummaryWidget(self.reviews)
 
             -- Position emotion summary in existing container (centered)
             self.emotionSummary.frame:SetParent(self.emotionContainer.frame)
-            self.emotionSummary.frame:SetPoint("CENTER", self.emotionContainer.frame, "CENTER", 0, -5)
+            self.emotionSummary.frame:SetPoint("CENTER", self.emotionContainer.frame, "CENTER", 0, emotionContainerVerticalOffset)
             self.emotionSummary.frame:Show()
         else
             self.emotionSummary:UpdateCounts(self.reviews)
@@ -545,7 +627,7 @@ local function CreateDeathClipReviewsPrompt()
 
         -- Position ScrollFrame in existing container (slightly left of center)
         self.scrollFrame:SetParent(self.scrollContainer.frame)
-        self.scrollFrame:SetPoint("CENTER", self.scrollContainer.frame, "CENTER", -20, -10)
+        self.scrollFrame:SetPoint("CENTER", self.scrollContainer.frame, "CENTER", scrollFrameHorizontalOffset, scrollFrameVerticalOffset)
 
         -- Setup scroll frame
         FauxScrollFrame_SetOffset(self.scrollFrame, 0)
@@ -557,8 +639,8 @@ local function CreateDeathClipReviewsPrompt()
 
         self:UpdateReviews()
 
-        -- Setup button click handler (button already created)
-        self.writeReviewButton:SetScript("OnClick", function()
+        -- Setup button click handler (AceGUI callback)
+        self.writeReviewButton:SetCallback("OnClick", function()
             ns.ShowDeathClipRatePrompt(clip)
             self:Hide()
         end)
@@ -566,10 +648,10 @@ local function CreateDeathClipReviewsPrompt()
 
     -- Add tooltip functionality (copied from rate prompt)
     local ReviewTip = CreateFrame("GameTooltip", "GoAgainAH_ReviewTooltip", UIParent, "GameTooltipTemplate")
-    ReviewTip:SetPadding(8, 8)
+    ReviewTip:SetPadding(tooltipPadding, tooltipPadding)
 
     local ReviewTipHeader = ReviewTip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    ReviewTipHeader:SetPoint("TOP", ReviewTip, "TOP", 0, -16)
+    ReviewTipHeader:SetPoint("TOP", ReviewTip, "TOP", 0, tooltipHeaderVerticalOffset)
     ReviewTipHeader:SetJustifyH("CENTER")
     ReviewTipHeader:SetFontObject("PKBT_Font_16")
 
@@ -594,7 +676,7 @@ local function CreateDeathClipReviewsPrompt()
 
         -- Check for data
         if tip and tip.medium_boundary and tip.legend_first then
-            local LABEL_WIDTH, SPACING = 100, 6
+            local LABEL_WIDTH, SPACING = tooltipLabelWidth, tooltipSpacing
 
             local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
                 local timeStr = value and SecondsToTime(value) or "N/A"
@@ -658,6 +740,171 @@ local function CreateDeathClipReviewsPrompt()
         ReviewTip:Hide()
         self:SetScript("OnUpdate", nil)
     end)
+
+    -- Add same tooltip events for rank wrapper
+    rankWrapper:SetScript("OnEnter", function(self)
+        local tip = prompt.playedTimeTooltipData
+        ReviewTip:SetOwner(self, "ANCHOR_NONE")
+        ReviewTip:ClearLines()
+        self:SetScript("OnUpdate", UpdateTooltipPosition)
+
+        ReviewTipHeader:SetText("Средние значения:")
+        ReviewTipHeader:SetTextColor(0.9, 0.8, 0.5)
+        ReviewTip:AddLine(" ")
+        ReviewTip:AddLine(" ")
+
+        -- Check for data
+        if tip and tip.medium_boundary and tip.legend_first then
+            local LABEL_WIDTH, SPACING = tooltipLabelWidth, tooltipSpacing
+
+            local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
+                local timeStr = value and SecondsToTime(value) or "N/A"
+                ReviewTip:AddDoubleLine(("     "):rep(1)..label, timeStr,
+                        lr, lg, lb, rr, rg, rb)
+
+                local num = ReviewTip:NumLines()
+                local leftFS = _G["GoAgainAH_ReviewTooltipTextLeft"..num]
+                local rightFS = _G["GoAgainAH_ReviewTooltipTextRight"..num]
+
+                if leftFS then
+                    leftFS:SetWidth(LABEL_WIDTH)
+                    leftFS:SetJustifyH("LEFT")
+                end
+                if rightFS and leftFS then
+                    rightFS:ClearAllPoints()
+                    rightFS:SetPoint("LEFT", leftFS, "RIGHT", SPACING, 0)
+                    rightFS:SetJustifyH("LEFT")
+                    rightFS:SetWidth(rightFS:GetStringWidth() - 30)
+                end
+            end
+
+            -- Show category values
+            AddRow("Легенда",    tip.legend_first, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0)
+            AddRow("Быстро",     tip.fast_first,   1.0, 1.0, 0.0, 1.0, 1.0, 0.0)
+            AddRow("Средне",     tip.medium_first, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+            AddRow("Медленно",   tip.slow_first,   1.0, 0.5, 0.0, 1.0, 0.5, 0.0)
+            AddRow("Своя волна", tip.wave_first,   1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+            ReviewTip:AddLine(" ")
+
+            -- Rank line color by boundaries
+            local played = tip.playedTime or 0
+            local cr,cg,cb = 1,1,1
+            if     played <= tip.legend_boundary then cr,cg,cb = 0.0, 1.0, 0.0
+            elseif played <= tip.fast_boundary   then cr,cg,cb = 1.0, 1.0, 0.0
+            elseif played <= tip.medium_boundary then cr,cg,cb = 1.0, 1.0, 1.0
+            elseif played <= tip.slow_boundary   then cr,cg,cb = 1.0, 0.5, 0.0
+            else                                       cr,cg,cb = 1.0, 0.0, 0.0
+            end
+
+            local rankStr = tip.rank and tip.maxRank
+                    and string.format(" %s из %s", tip.rank, tip.maxRank)
+                    or " N/A"
+            ReviewTip:AddLine("|cffffd100Ранг:|r"..rankStr, cr, cg, cb)
+
+            local last = _G["GoAgainAH_ReviewTooltipTextLeft"..ReviewTip:NumLines()]
+            if last then
+                last:SetFontObject("PKBT_Font_16")
+                last:ClearAllPoints()
+                last:SetPoint("BOTTOM", ReviewTip, "BOTTOM", 0, 16)
+                last:SetJustifyH("CENTER")
+            end
+        else
+            ReviewTip:AddLine("    Недостаточно данных для оценки", 1, 1, 1)
+        end
+        ReviewTip:Show()
+    end)
+
+    rankWrapper:SetScript("OnLeave", function(self)
+        ReviewTip:Hide()
+        self:SetScript("OnUpdate", nil)
+    end)
+
+    -- Add tooltip events for level wrapper (same tooltip as played time and rank)
+    local function SetupLevelTooltip()
+        if not prompt.levelWrapper then return end
+
+        prompt.levelWrapper:SetScript("OnEnter", function(self)
+            local tip = prompt.playedTimeTooltipData
+            ReviewTip:SetOwner(self, "ANCHOR_NONE")
+            ReviewTip:ClearLines()
+            self:SetScript("OnUpdate", UpdateTooltipPosition)
+
+            ReviewTipHeader:SetText("Средние значения:")
+            ReviewTipHeader:SetTextColor(0.9, 0.8, 0.5)
+            ReviewTip:AddLine(" ")
+            ReviewTip:AddLine(" ")
+
+            -- Check for data
+            if tip and tip.medium_boundary and tip.legend_first then
+                local LABEL_WIDTH, SPACING = tooltipLabelWidth, tooltipSpacing
+
+                local function AddRow(label, value, lr, lg, lb, rr, rg, rb)
+                    local timeStr = value and SecondsToTime(value) or "N/A"
+                    ReviewTip:AddDoubleLine(("     "):rep(1)..label, timeStr,
+                            lr, lg, lb, rr, rg, rb)
+
+                    local num = ReviewTip:NumLines()
+                    local leftFS = _G["GoAgainAH_ReviewTooltipTextLeft"..num]
+                    local rightFS = _G["GoAgainAH_ReviewTooltipTextRight"..num]
+
+                    if leftFS then
+                        leftFS:SetWidth(LABEL_WIDTH)
+                        leftFS:SetJustifyH("LEFT")
+                    end
+                    if rightFS and leftFS then
+                        rightFS:ClearAllPoints()
+                        rightFS:SetPoint("LEFT", leftFS, "RIGHT", SPACING, 0)
+                        rightFS:SetJustifyH("LEFT")
+                        rightFS:SetWidth(rightFS:GetStringWidth() - 30)
+                    end
+                end
+
+                -- Show category values
+                AddRow("Легенда",    tip.legend_first, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0)
+                AddRow("Быстро",     tip.fast_first,   1.0, 1.0, 0.0, 1.0, 1.0, 0.0)
+                AddRow("Средне",     tip.medium_first, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+                AddRow("Медленно",   tip.slow_first,   1.0, 0.5, 0.0, 1.0, 0.5, 0.0)
+                AddRow("Своя волна", tip.wave_first,   1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+                ReviewTip:AddLine(" ")
+
+                -- Rank line color by boundaries
+                local played = tip.playedTime or 0
+                local cr,cg,cb = 1,1,1
+                if     played <= tip.legend_boundary then cr,cg,cb = 0.0, 1.0, 0.0
+                elseif played <= tip.fast_boundary   then cr,cg,cb = 1.0, 1.0, 0.0
+                elseif played <= tip.medium_boundary then cr,cg,cb = 1.0, 1.0, 1.0
+                elseif played <= tip.slow_boundary   then cr,cg,cb = 1.0, 0.5, 0.0
+                else                                       cr,cg,cb = 1.0, 0.0, 0.0
+                end
+
+                local rankStr = tip.rank and tip.maxRank
+                        and string.format(" %s из %s", tip.rank, tip.maxRank)
+                        or " N/A"
+                ReviewTip:AddLine("|cffffd100Ранг:|r"..rankStr, cr, cg, cb)
+
+                local last = _G["GoAgainAH_ReviewTooltipTextLeft"..ReviewTip:NumLines()]
+                if last then
+                    last:SetFontObject("PKBT_Font_16")
+                    last:ClearAllPoints()
+                    last:SetPoint("BOTTOM", ReviewTip, "BOTTOM", 0, 16)
+                    last:SetJustifyH("CENTER")
+                end
+            else
+                ReviewTip:AddLine("    Недостаточно данных для оценки", 1, 1, 1)
+            end
+            ReviewTip:Show()
+        end)
+
+        prompt.levelWrapper:SetScript("OnLeave", function(self)
+            ReviewTip:Hide()
+            self:SetScript("OnUpdate", nil)
+        end)
+    end
+
+    -- Call setup function after prompt is fully initialized
+    C_Timer:After(0.1, SetupLevelTooltip)
 
     return prompt
 end
