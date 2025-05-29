@@ -1627,7 +1627,7 @@ function ns.GetRaceInfoByID(id)
     return ns.RaceInfoByID[id] or { name = ("UnknownRace(%d)"):format(id), faction = nil }
 end
 
--- Only the “world” zones (zoneID → localized name)
+-- Only the "world" zones (zoneID → localized name)
 ns.ZoneNameByID = {
     [4] = "Дуротар",
     [9] = "Мулгор",
@@ -2216,7 +2216,7 @@ function AuctionHouse:Initialize()
 
         -- TRADES -----------------------------------------------------------------
         broadcastTradeUpdate = function(dataType, payload)
-            -- Trades inherit the auction’s realm when they are created
+            -- Trades inherit the auction's realm when they are created
             if payload.trade and payload.trade.realm == ns.CURRENT_REALM then
                 self:BroadcastTradeUpdate(dataType, payload)
             end
@@ -2240,7 +2240,7 @@ function AuctionHouse:Initialize()
 
         -- BLACKLIST --------------------------------------------------------------
         broadcastBlacklistUpdate = function(dataType, payload)
-            -- Blacklist entries carry the offending player’s realm
+            -- Blacklist entries carry the offending player's realm
             if payload.entry and payload.realm == ns.CURRENT_REALM then
                 self:BroadcastBlacklistUpdate(dataType, payload)
             end
@@ -2286,6 +2286,37 @@ function AuctionHouse:Initialize()
     LfgUI_Initialize()
     SettingsUI_Initialize()
     OFAtheneUI_Initialize()
+
+    -- === SPEED_CLIPS: PlayedTime Tracking ===
+    -- Register for TIME_PLAYED_MSG event
+    if not self.frame then
+        self.frame = CreateFrame("Frame")
+    end
+    self.frame:RegisterEvent("TIME_PLAYED_MSG")
+    self.frame:RegisterEvent("PLAYER_LOGOUT")
+    self.frame:SetScript("OnEvent", function(_, event, ...)
+        if event == "TIME_PLAYED_MSG" then
+            local totalTimePlayed, levelTimePlayed = ...
+            if ns.AuctionHouse and ns.AuctionHouse.OnTimePlayedUpdate then
+                ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePlayed)
+            end
+        elseif event == "PLAYER_LOGOUT" then
+            if ns.playedTimeUpdateTicker then
+                ns.playedTimeUpdateTicker:Cancel()
+                ns.playedTimeUpdateTicker = nil
+            end
+        end
+    end)
+
+    -- Periodically request played time every 5 minutes
+    if ns.playedTimeUpdateTicker then
+        ns.playedTimeUpdateTicker:Cancel()
+    end
+    ns.playedTimeUpdateTicker = C_Timer:NewTicker(300, function()
+        if UnitIsConnected("player") then
+            RequestTimePlayed()
+        end
+    end)
 
     local age = time() - ns.AuctionHouseDB.lastUpdateAt
     local auctions = ns.AuctionHouseDB.auctions
@@ -2544,7 +2575,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         return
     end
 
-    -- only handle our addon’s COMM_PREFIX from here
+    -- only handle our addon's COMM_PREFIX from here
     if prefix ~= COMM_PREFIX then
         return
     end
@@ -2552,7 +2583,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         return
     end
 
-    -- ==== DESERIALIZE: either compressed “DF:” payload or raw ====
+    -- ==== DESERIALIZE: either compressed "DF:" payload or raw ====
     local dataType, payload
 
     if message:sub(1, 3) == "DF:" then
@@ -3952,4 +3983,43 @@ ns.AuctionHouse = AuctionHouse.new(UnitName("player"))
 
 function Addon:OnInitialize()
     ns.AuctionHouse:Initialize()
+end
+
+function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePlayed)
+    local playerName = UnitName("player")
+    local playerRealm = GetRealmName()
+    local playerKey = playerName .. "-" .. playerRealm
+    local existingClip = nil
+    for clipId, clipData in pairs(ns.GetLiveDeathClips()) do
+        if clipData.characterName == playerName and clipData.realm == playerRealm and not clipData.completed then
+            existingClip = clipData
+            playerKey = clipId
+            break
+        end
+    end
+    if not existingClip then
+        local raceInfo = ns.GetRaceInfoByID and ns.GetRaceInfoByID(select(3, UnitRace("player")))
+        existingClip = {
+            characterName = playerName,
+            realm = playerRealm,
+            level = UnitLevel("player"),
+            faction = raceInfo and raceInfo.faction or "Unknown",
+            class = select(2, UnitClass("player")),
+            race = select(2, UnitRace("player")),
+            completed = false,
+            id = ns.GenerateClipID({
+                characterName = playerName,
+                level = UnitLevel("player"),
+                faction = raceInfo and raceInfo.faction or "Unknown",
+                where = GetZoneText(),
+                deathCause = "ALIVE"
+            }, false)
+        }
+        playerKey = existingClip.id
+        ns.GetLiveDeathClips()[playerKey] = existingClip
+    end
+    existingClip.playedTime = totalTimePlayed
+    existingClip.ts = GetServerTime()
+    existingClip.completed = false
+    ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, playerKey)
 end

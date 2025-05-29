@@ -126,7 +126,7 @@ function GOAGAINAH_TOGGLE_CLIPS()
         tab6:Click()
     end
 
-    -- click the “Live” sub-tab
+    -- click the "Live" sub-tab
     local liveTab = _G["OFDeathClipsTabLive"]
     if liveTab and liveTab:IsShown() then
         liveTab:Click()
@@ -1189,14 +1189,12 @@ function OFAuctionFrameDeathClips_Update()
                 end
             end
         elseif ns.currentActiveTabId == "SPEED_CLIPS" then
-            -- Speed ranking for living players at the same level
-            local myLevel = UnitLevel("player")
+            -- Speed ranking for living players
             for _, clip in ipairs(pool) do
                 -- Only include clips that:
                 -- 1. Have playedTime (means they are processed)
-                -- 2. Are at the same level as the player
-                -- 3. Are not completed (still alive)
-                if clip.playedTime and tonumber(clip.level) == myLevel and not clip.completed then
+                -- 2. Are not completed (still alive)
+                if clip.playedTime and not clip.completed then
                     table.insert(tempClips, clip)
                 end
             end
