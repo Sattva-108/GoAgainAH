@@ -227,28 +227,6 @@ function OFAuctionFrameDeathClips_OnLoad()
                         whenFS:SetText("-")
                         whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                     end
-                elseif ns.currentActiveTabId == "SPEED_CLIPS" and clip.playedTime and clip.level then
-                    -- For speed tab, show the speed category
-                    HideOnlineDot(whenFS)
-                    local r, g, b, median, p25, p75, rank, count, legend_boundary, fast_boundary, medium_boundary, slow_boundary, wave_boundary = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-                    local statusText = ""
-
-                    if not legend_boundary or not fast_boundary or not medium_boundary or not slow_boundary then
-                        statusText = "-"
-                    elseif clip.playedTime <= legend_boundary then
-                        statusText = "Легенда"
-                    elseif clip.playedTime <= fast_boundary then
-                        statusText = "Быстрый"
-                    elseif clip.playedTime <= medium_boundary then
-                        statusText = "Средний"
-                    elseif clip.playedTime <= slow_boundary then
-                        statusText = "Медленный"
-                    else
-                        statusText = "Волна"
-                    end
-
-                    whenFS:SetText(statusText)
-                    whenFS:SetTextColor(r, g, b, 0.9)
                 elseif clip.ts then
                     -- Regular clips with timestamp
                     HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
@@ -1431,7 +1409,3 @@ function OFAuctionFrameDeathClips_OnHide()
         ns.HideAllClipPrompts()
     end
 end
-
--- (addonName and ns are assumed to be defined at the top of your file)
--- The large block of code related to saved variables, friend notifications,
--- tooltips, and event handling has been moved to DeathClipsAgain.lua

@@ -63,11 +63,11 @@ ns.DeathClipsTabSettings = {
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },
             { id = "LEVEL", headerText = "Ур.", visible = true, baseWidth = 40, sortKey = "level", fontStringName = "Level" },
-            { id = "CLIP_INFO", headerText = "Время игры", visible = true, baseWidth = 160, sortKey = "playedTime", fontStringName = "Clip" },
+            { id = "CLIP_INFO", headerText = "Время игры", visible = true, baseWidth = 160, sortKey = "clip", fontStringName = "Clip" },
             { id = "CLASS_TYPE", headerText = "Класс", visible = true, baseWidth = 100, sortKey = "class", fontStringName = "ClassText", fontObject = "GameFontHighlightSmall", justifyH = "CENTER" },
             { id = "RACE_TYPE", headerText = "Раса", visible = true, baseWidth = 100, sortKey = "race", fontStringName = "RaceText", fontObject = "GameFontHighlightSmall", justifyH = "CENTER" },
-            { id = "WHERE_DIED", headerText = "Ранг", visible = true, baseWidth = 70, sortKey = "rank", fontStringName = "WhereText", justifyH = "CENTER" },
-            { id = "WHEN_HAPPENED", headerText = "Статус", visible = true, baseWidth = 70, sortKey = "status", fontStringName = "WhenText" },
+            { id = "WHERE_DIED", headerText = "Ранг", visible = true, baseWidth = 70, sortKey = "where", fontStringName = "WhereText", justifyH = "CENTER" },
+            { id = "WHEN_HAPPENED", headerText = "Статус", visible = true, baseWidth = 70, sortKey = "when", fontStringName = "WhenText" },
             { id = "REACTION", headerText = "Реакция", visible = true, baseWidth = 66, sortKey = "rating", fontStringName = "Rating", dataRowXOffset = 5 }
         }
     }
