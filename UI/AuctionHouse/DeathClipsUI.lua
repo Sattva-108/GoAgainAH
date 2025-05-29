@@ -690,12 +690,6 @@ local function UpdateLayout(buttonName)
                     -- For the "Clip" frame, baseWidth applies to the container. Its internal elements are set in UpdateClipEntry.
                     fs:SetWidth(columnConfig.baseWidth)
 
-                    -- Debug logging
-                    if ns.debug and ns.currentActiveTabId == "SPEED_CLIPS" then
-                        print(string.format("UpdateLayout: Positioning %s (id=%s, sortKey=%s)",
-                            buttonName .. columnConfig.fontStringName, columnConfig.id, columnConfig.sortKey or "none"))
-                    end
-
                     if columnConfig.fontObject then
                         local font = _G[columnConfig.fontObject] or columnConfig.fontObject -- Check global first, then direct
                         if font then
