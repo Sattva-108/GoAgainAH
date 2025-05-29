@@ -3988,52 +3988,49 @@ function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePla
     local playerName = UnitName("player")
     local playerRealm = GetRealmName()
     local playerLevel = UnitLevel("player")
-    local playerClass = select(2, UnitClass("player"))
-    local raceName, raceFile, raceId = UnitRace("player")
-    raceId = tonumber(raceId)
-    local raceInfo = ns.GetRaceInfoByID and ns.GetRaceInfoByID(raceId)
-    local playerRace = raceInfo and raceInfo.name or raceName
-    local playerFaction = raceInfo and raceInfo.faction or "Unknown"
+    -- === ИСПРАВЛЕНИЕ ДЛЯ КЛАССА: Используем playerClassToken (английский токен) ===
+    local _, playerClassLocalized, playerClassID = UnitClass("player") -- Получаем ID класса
+    local playerClassToken = ns.ClassNameByID and ns.ClassNameByID[playerClassID] -- Получаем английский токен по ID
+    -- === КОНЕЦ ИСПРАВЛЕНИЯ ДЛЯ КЛАССА ===
+
+    local localizedRaceName, _, _ = UnitRace("player")
+    local raceIDFromMap = ns.RaceIDByName and ns.RaceIDByName[localizedRaceName]
+    local raceInfo = raceIDFromMap and ns.GetRaceInfoByID and ns.GetRaceInfoByID(raceIDFromMap)
+    local playerFaction = (raceInfo and raceInfo.faction) or "UnknownFaction"
+
     local playerZone = GetZoneText() or "Неизвестно"
 
-    -- Формируем "живой" клип
     local clip = nil
-    -- Ищем существующий живой клип
     for clipId, clipData in pairs(ns.GetLiveDeathClips()) do
         if clipData.characterName == playerName and clipData.realm == playerRealm and not clipData.completed and clipData.deathCause == "ALIVE" then
             clip = clipData
             break
         end
     end
+
     if not clip then
         clip = {
             characterName = playerName,
             realm = playerRealm,
-            level = playerLevel,
-            faction = playerFaction,
-            class = playerClass,
-            race = playerRace,
-            where = playerZone,
             deathCause = "ALIVE",
             completed = false,
         }
+    else
+        clip.deathCause = "ALIVE"
     end
-    -- Обновляем все ключевые поля
+
     clip.level = playerLevel
     clip.faction = playerFaction
-    clip.class = playerClass
-    clip.race = playerRace
+    clip.class = playerClassToken -- <<<< ТЕПЕРЬ ЗДЕСЬ ТОЧНО АНГЛИЙСКИЙ ТОКЕН
+    clip.race = localizedRaceName
     clip.where = playerZone
-    clip.deathCause = "ALIVE"
-    clip.completed = false
     clip.playedTime = totalTimePlayed
     clip.ts = GetServerTime()
-    -- Формируем id по новой логике
+    -- Важно: ns.GenerateClipID должен быть адаптирован, чтобы ID для "ALIVE" клипов не включал зону, если это требуется
     clip.id = ns.GenerateClipID(clip, false)
-    -- Сохраняем клип
+
     ns.GetLiveDeathClips()[clip.id] = clip
-    -- Синхронизируем с другими игроками
+
     ns.AuctionHouse:BroadcastDeathClipAdded(clip)
-    -- Обновляем UI
     ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 end
