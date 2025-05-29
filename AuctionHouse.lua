@@ -1181,7 +1181,6 @@ local uniqueMobNamesCause7 = {
     "Сектант из клана Пылающего Клинка", -- [1168]
     "Сектант из клана Темной Нити", -- [1169]
     "Сектантка из племени Мертвой Головы", -- [1170]
-    "Сердитый краб", -- [1171]
     "Серена Кровавое Перо", -- [1172]
     "Сестра Горя", -- [1173]
     "Сестра Пустоты", -- [1174]
@@ -3988,38 +3987,53 @@ end
 function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePlayed)
     local playerName = UnitName("player")
     local playerRealm = GetRealmName()
-    local playerKey = playerName .. "-" .. playerRealm
-    local existingClip = nil
+    local playerLevel = UnitLevel("player")
+    local playerClass = select(2, UnitClass("player"))
+    local raceName, raceFile, raceId = UnitRace("player")
+    raceId = tonumber(raceId)
+    local raceInfo = ns.GetRaceInfoByID and ns.GetRaceInfoByID(raceId)
+    local playerRace = raceInfo and raceInfo.name or raceName
+    local playerFaction = raceInfo and raceInfo.faction or "Unknown"
+    local playerZone = GetZoneText() or "Неизвестно"
+
+    -- Формируем "живой" клип
+    local clip = nil
+    -- Ищем существующий живой клип
     for clipId, clipData in pairs(ns.GetLiveDeathClips()) do
-        if clipData.characterName == playerName and clipData.realm == playerRealm and not clipData.completed then
-            existingClip = clipData
-            playerKey = clipId
+        if clipData.characterName == playerName and clipData.realm == playerRealm and not clipData.completed and clipData.deathCause == "ALIVE" then
+            clip = clipData
             break
         end
     end
-    if not existingClip then
-        local raceInfo = ns.GetRaceInfoByID and ns.GetRaceInfoByID(select(3, UnitRace("player")))
-        existingClip = {
+    if not clip then
+        clip = {
             characterName = playerName,
             realm = playerRealm,
-            level = UnitLevel("player"),
-            faction = raceInfo and raceInfo.faction or "Unknown",
-            class = select(2, UnitClass("player")),
-            race = select(2, UnitRace("player")),
+            level = playerLevel,
+            faction = playerFaction,
+            class = playerClass,
+            race = playerRace,
+            where = playerZone,
+            deathCause = "ALIVE",
             completed = false,
-            id = ns.GenerateClipID({
-                characterName = playerName,
-                level = UnitLevel("player"),
-                faction = raceInfo and raceInfo.faction or "Unknown",
-                where = GetZoneText(),
-                deathCause = "ALIVE"
-            }, false)
         }
-        playerKey = existingClip.id
-        ns.GetLiveDeathClips()[playerKey] = existingClip
     end
-    existingClip.playedTime = totalTimePlayed
-    existingClip.ts = GetServerTime()
-    existingClip.completed = false
-    ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, playerKey)
+    -- Обновляем все ключевые поля
+    clip.level = playerLevel
+    clip.faction = playerFaction
+    clip.class = playerClass
+    clip.race = playerRace
+    clip.where = playerZone
+    clip.deathCause = "ALIVE"
+    clip.completed = false
+    clip.playedTime = totalTimePlayed
+    clip.ts = GetServerTime()
+    -- Формируем id по новой логике
+    clip.id = ns.GenerateClipID(clip, false)
+    -- Сохраняем клип
+    ns.GetLiveDeathClips()[clip.id] = clip
+    -- Синхронизируем с другими игроками
+    ns.AuctionHouse:BroadcastDeathClipAdded(clip)
+    -- Обновляем UI
+    ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 end
