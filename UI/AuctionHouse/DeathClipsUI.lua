@@ -592,17 +592,22 @@ function OFAuctionFrameDeathClips_OnShow()
                             whenFS:SetText("-")
                             whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                         end
+                    elseif ns.currentActiveTabId == "SPEED_CLIPS" and clip.isOnline then
+                        -- Для живых онлайн игроков на вкладке "Скорость" показываем зелёную точку
+                        ShowOnlineDot(whenFS)
+                    elseif clip.ts == nil then
+                        HideOnlineDot(whenFS) -- Make sure dot is hidden for non-reincarnated clips
+                        whenFS:SetText("|cffaaaaaa-|r") -- Or L["Unknown"] if preferred, styled
+                        whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8) -- Match the color of other N/A text
                     else
-                        -- Regular clips - use original logic
                         HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
-                        whenFS:SetText(formatWhen(clip))
-
-                        if clip.playedTime and clip.level then
-                            local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
-                            whenFS:SetTextColor(r, g, b, .7)
-                        else
-                            whenFS:SetTextColor(.6, .6, .6, .5)
+                        -- Let the hook handle formatting for valid timestamps,
+                        -- but ensure it's not empty if the hook hasn't run yet for this specific row update.
+                        if whenFS:GetText() == "" then -- Only if not already set by hook
+                            whenFS:SetText(formatWhen(clip))
                         end
+                        -- Color will be set by the hook based on playedTime/level or default if ts is valid.
+                        -- If ts was nil, we set a specific color above.
                     end
 
                     ------------------------------------------------------
@@ -1054,6 +1059,9 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                     whenFS:SetText("-") -- No activity data available
                     whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                 end
+            elseif ns.currentActiveTabId == "SPEED_CLIPS" and clip.isOnline then
+                -- Для живых онлайн игроков на вкладке "Скорость" показываем зелёную точку
+                ShowOnlineDot(whenFS)
             elseif clip.ts == nil then
                 HideOnlineDot(whenFS) -- Make sure dot is hidden for non-reincarnated clips
                 whenFS:SetText("|cffaaaaaaN/A|r") -- Or L["Unknown"] if preferred, styled
@@ -1189,14 +1197,18 @@ function OFAuctionFrameDeathClips_Update()
                 end
             end
         elseif ns.currentActiveTabId == "SPEED_CLIPS" then
-            -- Speed ranking for living players at the same level
-            local myLevel = UnitLevel("player")
+            -- Speed ranking for living players (ALIVE only)
             for _, clip in ipairs(pool) do
-                -- Only include clips that:
-                -- 1. Have playedTime (means they are processed)
-                -- 2. Are at the same level as the player
-                -- 3. Are not completed (still alive)
-                if clip.playedTime and tonumber(clip.level) == myLevel and not clip.completed then
+                if clip.playedTime and not clip.completed and clip.deathCause == "ALIVE" then
+                    -- Обновляем онлайн-статус, уровень и зону из гильд-ростера
+                    local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                    if memberData and memberData.isOnline then
+                        clip.isOnline = true
+                        clip.level = memberData.level or clip.level
+                        clip.where = memberData.zone or clip.where
+                    else
+                        clip.isOnline = false
+                    end
                     table.insert(tempClips, clip)
                 end
             end
