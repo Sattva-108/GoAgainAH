@@ -2311,7 +2311,7 @@ function AuctionHouse:Initialize()
     if ns.playedTimeUpdateTicker then
         ns.playedTimeUpdateTicker:Cancel()
     end
-    ns.playedTimeUpdateTicker = C_Timer:NewTicker(300, function()
+    ns.playedTimeUpdateTicker = C_Timer:NewTicker(2000, function()
         if UnitIsConnected("player") then
             RequestTimePlayed()
         end

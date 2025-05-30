@@ -601,13 +601,14 @@ function OFAuctionFrameDeathClips_OnShow()
                         whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8) -- Match the color of other N/A text
                     else
                         HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
-                        -- Let the hook handle formatting for valid timestamps,
-                        -- but ensure it's not empty if the hook hasn't run yet for this specific row update.
-                        if whenFS:GetText() == "" then -- Only if not already set by hook
-                            whenFS:SetText(formatWhen(clip))
+                    whenFS:SetText(formatWhen(clip))
+
+                        if clip.playedTime and clip.level then
+                            local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                            whenFS:SetTextColor(r, g, b, .7)
+                        else
+                            whenFS:SetTextColor(.6, .6, .6, .5)
                         end
-                        -- Color will be set by the hook based on playedTime/level or default if ts is valid.
-                        -- If ts was nil, we set a specific color above.
                     end
 
                     ------------------------------------------------------
