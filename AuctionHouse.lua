@@ -542,16 +542,37 @@ function AuctionHouse:Initialize()
     end
     self.frame:RegisterEvent("TIME_PLAYED_MSG")
     self.frame:RegisterEvent("PLAYER_LOGOUT")
+    self.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    self.frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     self.frame:SetScript("OnEvent", function(_, event, ...)
         if event == "TIME_PLAYED_MSG" then
             local totalTimePlayed, levelTimePlayed = ...
             if ns.AuctionHouse and ns.AuctionHouse.OnTimePlayedUpdate then
                 ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePlayed)
             end
+        elseif event == "PLAYER_ENTERING_WORLD" then
+            -- Request played time immediately when entering world (don't wait 5 minutes)
+            print("[DEBUG] Player entering world - requesting played time immediately")
+            -- Small delay to ensure player data is ready
+            C_Timer:After(2, function()
+                if UnitIsConnected("player") then
+                    RequestTimePlayed()
+                end
+            end)
+        elseif event == "ZONE_CHANGED_NEW_AREA" then
+            -- Update played time when entering new zones (important for location tracking)
+            print("[DEBUG] Zone changed - updating played time")
+            if UnitIsConnected("player") then
+                RequestTimePlayed()
+            end
         elseif event == "PLAYER_LOGOUT" then
             if ns.playedTimeUpdateTicker then
                 ns.playedTimeUpdateTicker:Cancel()
                 ns.playedTimeUpdateTicker = nil
+            end
+            -- Cleanup played time simulations
+            if ns.CleanupPlayedTimeSimulations then
+                ns.CleanupPlayedTimeSimulations()
             end
         end
     end)
@@ -560,7 +581,7 @@ function AuctionHouse:Initialize()
     if ns.playedTimeUpdateTicker then
         ns.playedTimeUpdateTicker:Cancel()
     end
-    ns.playedTimeUpdateTicker = C_Timer:NewTicker(2000, function()
+    ns.playedTimeUpdateTicker = C_Timer:NewTicker(300, function()
         if UnitIsConnected("player") then
             RequestTimePlayed()
         end
@@ -624,7 +645,7 @@ function AuctionHouse:Initialize()
     end
     if self.db.openAHOnLoad then
         -- needs a delay to work properly, for whatever reason
-        C_Timer:NewTimer(0.5, function()
+        C_Timer:After(0.5, function()
             OFAuctionFrame_OverrideInitialTab(ns.AUCTION_TAB_BROWSE)
             OFAuctionFrame:Show()
         end)
@@ -1367,6 +1388,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         ns.RemoveDeathClip(payload.clipID)
     elseif dataType == ns.T_DEATH_CLIP_ADDED then
         ns.AddNewDeathClips({ payload })
+
+        -- Start simulation for ALIVE clips from other players
+        if payload.deathCause == "ALIVE" and payload.characterName ~= UnitName("player") then
+            ns.StartPlayedTimeSimulation(payload)
+        end
+
         local magicLink = ns.CreateMagicLink(ns.SPELL_ID_DEATH_CLIPS, L["watch death clip"])
         print(string.format(L["%s has died at Lv. %d."], ns.GetDisplayName(payload.characterName), payload.level) .. " " .. magicLink)
     elseif dataType == T_CONFIG_CHANGED then
@@ -2293,5 +2320,9 @@ function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePla
     ns.GetLiveDeathClips()[clip.id] = clip
 
     ns.AuctionHouse:BroadcastDeathClipAdded(clip)
+
+    -- Update/start simulation for own character
+    ns.UpdatePlayedTimeSimulation(clip)
+
     ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 end

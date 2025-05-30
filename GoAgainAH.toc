@@ -73,6 +73,7 @@ UI\AuctionHouse\ReviewUI.lua
 
 DeathClips\DeathClipReviews.lua
 DeathClips\DeathClipUtils.lua
+DeathClips\PlayedTimeSimulator.lua
 DeathClips\LiveDeathClips.lua
 DeathClipsAgain.lua
 LFG\LFGUtils.lua

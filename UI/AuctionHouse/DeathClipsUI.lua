@@ -146,6 +146,9 @@ local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsOldClassSort, "clips", "oldclass")
 end
 
+-- Forward declaration of UpdateClipEntry for use in event handlers
+local UpdateClipEntry
+
 -- OFAuctionFrameDeathClips_OnLoad
 function OFAuctionFrameDeathClips_OnLoad()
     OFAuctionFrameDeathClips.page = 0
@@ -246,6 +249,31 @@ function OFAuctionFrameDeathClips_OnLoad()
         OFAuctionFrameDeathClips.needsDataRefresh = true -- Mark data as needing refresh
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()
+        end
+    end)
+
+    -- Listen for played time updates to refresh UI in real-time
+    ns.AuctionHouseAPI:RegisterEvent(ns.EV_PLAYED_TIME_UPDATED, function(clipID)
+        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+            -- Update only the specific clip row if visible, otherwise full refresh
+            local updated = false
+            for i = 1, NUM_CLIPS_TO_DISPLAY do
+                local el = ns.clipButtonElements[i]
+                local button = el and el.button
+                if button and button.clipData and button.clipData.id == clipID then
+                    -- Update just this row with proper parameters
+                    local state = nil -- We don't have state in this context
+                    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll) or 0
+                    local ratings = ns.GetTopReactions(clipID, 1) or {}
+                    UpdateClipEntry(state, i, offset, el, button.clipData, ratings, 1, 1, true)
+                    updated = true
+                    break
+                end
+            end
+            if not updated then
+                -- Clip not visible, do full refresh
+                OFAuctionFrameDeathClips_Update()
+            end
         end
     end)
 
@@ -740,7 +768,7 @@ local function UpdateLayout(buttonName)
 end
 ns.ApplyClipLayout = UpdateLayout
 
-local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
+UpdateClipEntry = function(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
     -- 'clip' is the newClipData for this row
     -- 'ratingsFromParent' is the pre-fetched ratings for this specific clip.id, passed from OFAuctionFrameDeathClips_Update
     -- However, your original code called state:GetRatingsByClip() and then ns.GetTopReactions(clip.id, 1) inside here.
@@ -924,8 +952,8 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             if ns.currentActiveTabId == "SPEED_CLIPS" and clip.playedTime then
                 -- For speed tab, show played time with color coding
                 if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
-                local s = clip.playedTime
-                local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                local s = ns.GetCurrentPlayedTime and ns.GetCurrentPlayedTime(clip) or clip.playedTime
+                local r, g, b = ns.GetPlayedTimeColor(s, clip.level)
                 newClipDisplayText = string.format("|cFF%02X%02X%02X%dд %dч %dм %dс|r",
                         r * 255, g * 255, b * 255,
                         math.floor(s / 86400), math.floor(s % 86400 / 3600),
