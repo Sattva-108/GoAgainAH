@@ -1241,9 +1241,10 @@ function OFAuctionFrameDeathClips_Update()
                     table.insert(tempClips, clip)
                 end
             end
-        else -- Default to "LIVE_CLIPS"
+        else -- Default to "LIVE_CLIPS" - exclude living players
             for _, clip in ipairs(pool) do -- 'pool' here is already non-completed clips
-                if not clip.completed then -- This check is redundant if 'pool' is already filtered
+                -- Only show dead players (exclude ALIVE status from death clips tab)
+                if not clip.completed and clip.deathCause ~= "ALIVE" then
                     table.insert(tempClips, clip)
                 end
             end
