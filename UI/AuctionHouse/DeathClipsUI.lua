@@ -230,6 +230,29 @@ function OFAuctionFrameDeathClips_OnLoad()
                         whenFS:SetText("-")
                         whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                     end
+                elseif ns.currentActiveTabId == "SPEED_CLIPS" then
+                    -- Для живых игроков на вкладке "Скорость" проверяем онлайн-статус в реальном времени
+                    local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                    local isCurrentlyOnline = memberData and memberData.isOnline
+
+                    if isCurrentlyOnline then
+                        ShowOnlineDot(whenFS)
+                    else
+                        HideOnlineDot(whenFS)
+                        -- Показываем время последнего онлайна для оффлайн игроков
+                        if clip.ts then
+                            whenFS:SetText(formatWhen(clip))
+                            if clip.playedTime and clip.level then
+                                local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                                whenFS:SetTextColor(r, g, b, .7)
+                            else
+                                whenFS:SetTextColor(.6, .6, .6, .5)
+                            end
+                        else
+                            whenFS:SetText("-")
+                            whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                        end
+                    end
                 elseif clip.ts then
                     -- Regular clips with timestamp
                     HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
@@ -620,9 +643,29 @@ function OFAuctionFrameDeathClips_OnShow()
                             whenFS:SetText("-")
                             whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                         end
-                    elseif ns.currentActiveTabId == "SPEED_CLIPS" and clip.isOnline then
-                        -- Для живых онлайн игроков на вкладке "Скорость" показываем зелёную точку
-                        ShowOnlineDot(whenFS)
+                    elseif ns.currentActiveTabId == "SPEED_CLIPS" then
+                        -- Для живых игроков на вкладке "Скорость" проверяем онлайн-статус в реальном времени
+                        local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                        local isCurrentlyOnline = memberData and memberData.isOnline
+
+                        if isCurrentlyOnline then
+                            ShowOnlineDot(whenFS)
+                        else
+                            HideOnlineDot(whenFS)
+                            -- Показываем время последнего онлайна для оффлайн игроков
+                            if clip.ts then
+                                whenFS:SetText(formatWhen(clip))
+                                if clip.playedTime and clip.level then
+                                    local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                                    whenFS:SetTextColor(r, g, b, .7)
+                                else
+                                    whenFS:SetTextColor(.6, .6, .6, .5)
+                                end
+                            else
+                                whenFS:SetText("-")
+                                whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                            end
+                        end
                     elseif clip.ts == nil then
                         HideOnlineDot(whenFS) -- Make sure dot is hidden for non-reincarnated clips
                         whenFS:SetText("|cffaaaaaa-|r") -- Or L["Unknown"] if preferred, styled
