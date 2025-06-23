@@ -32,6 +32,8 @@ ItemDB\ItemsBoP.lua
 ItemDB\ItemDB.lua
 ItemDB\Enchants.lua
 ItemDB\SpecialItems.lua
+DeathClipsDB\MobNames.lua
+DeathClipsDB\Zones.lua
 StreamerDB\StreamerDB.lua
 GuildRegister.lua
 Chat\ChatUtils.lua
@@ -71,6 +73,7 @@ UI\AuctionHouse\ReviewUI.lua
 
 DeathClips\DeathClipReviews.lua
 DeathClips\DeathClipUtils.lua
+DeathClips\PlayedTimeSimulator.lua
 DeathClips\LiveDeathClips.lua
 DeathClipsAgain.lua
 LFG\LFGUtils.lua

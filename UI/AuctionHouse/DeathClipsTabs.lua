@@ -58,7 +58,7 @@ ns.DeathClipsTabSettings = {
     ["SPEED_CLIPS"] = { -- Speed ranking tab for living players
         tabId = "SPEED_CLIPS",
         tabName = "Скорость",
-        defaultSortKey = "LEVEL",
+        defaultSortKey = "CLIP_INFO",
         defaultSortAscending = false,
         columns = {
             { id = "STREAMER", headerText = "Имя", visible = true, baseWidth = 120, sortKey = "streamer", fontStringName = "Name" },

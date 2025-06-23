@@ -126,7 +126,7 @@ function GOAGAINAH_TOGGLE_CLIPS()
         tab6:Click()
     end
 
-    -- click the “Live” sub-tab
+    -- click the "Live" sub-tab
     local liveTab = _G["OFDeathClipsTabLive"]
     if liveTab and liveTab:IsShown() then
         liveTab:Click()
@@ -145,6 +145,9 @@ local function updateSortArrows()
     OFSortButton_UpdateArrow(OFDeathClipsOldLevelSort, "clips", "oldlevel")
     OFSortButton_UpdateArrow(OFDeathClipsOldClassSort, "clips", "oldclass")
 end
+
+-- Forward declaration of UpdateClipEntry for use in event handlers
+local UpdateClipEntry
 
 -- OFAuctionFrameDeathClips_OnLoad
 function OFAuctionFrameDeathClips_OnLoad()
@@ -227,6 +230,29 @@ function OFAuctionFrameDeathClips_OnLoad()
                         whenFS:SetText("-")
                         whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                     end
+                elseif ns.currentActiveTabId == "SPEED_CLIPS" then
+                    -- Для живых игроков на вкладке "Скорость" проверяем онлайн-статус в реальном времени
+                    local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                    local isCurrentlyOnline = memberData and memberData.isOnline
+
+                    if isCurrentlyOnline then
+                        ShowOnlineDot(whenFS)
+                    else
+                        HideOnlineDot(whenFS)
+                        -- Показываем время последнего онлайна для оффлайн игроков
+                        if clip.ts then
+                            whenFS:SetText(formatWhen(clip))
+                            if clip.playedTime and clip.level then
+                                local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                                whenFS:SetTextColor(r, g, b, .7)
+                            else
+                                whenFS:SetTextColor(.6, .6, .6, .5)
+                            end
+                        else
+                            whenFS:SetText("-")
+                            whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                        end
+                    end
                 elseif clip.ts then
                     -- Regular clips with timestamp
                     HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
@@ -246,6 +272,31 @@ function OFAuctionFrameDeathClips_OnLoad()
         OFAuctionFrameDeathClips.needsDataRefresh = true -- Mark data as needing refresh
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()
+        end
+    end)
+
+    -- Listen for played time updates to refresh UI in real-time
+    ns.AuctionHouseAPI:RegisterEvent(ns.EV_PLAYED_TIME_UPDATED, function(clipID)
+        if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
+            -- Update only the specific clip row if visible, otherwise full refresh
+            local updated = false
+            for i = 1, NUM_CLIPS_TO_DISPLAY do
+                local el = ns.clipButtonElements[i]
+                local button = el and el.button
+                if button and button.clipData and button.clipData.id == clipID then
+                    -- Update just this row with proper parameters
+                    local state = nil -- We don't have state in this context
+                    local offset = FauxScrollFrame_GetOffset(OFDeathClipsScroll) or 0
+                    local ratings = ns.GetTopReactions(clipID, 1) or {}
+                    UpdateClipEntry(state, i, offset, el, button.clipData, ratings, 1, 1, true)
+                    updated = true
+                    break
+                end
+            end
+            if not updated then
+                -- Clip not visible, do full refresh
+                OFAuctionFrameDeathClips_Update()
+            end
         end
     end)
 
@@ -592,10 +643,36 @@ function OFAuctionFrameDeathClips_OnShow()
                             whenFS:SetText("-")
                             whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                         end
+                    elseif ns.currentActiveTabId == "SPEED_CLIPS" then
+                        -- Для живых игроков на вкладке "Скорость" проверяем онлайн-статус в реальном времени
+                        local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                        local isCurrentlyOnline = memberData and memberData.isOnline
+
+                        if isCurrentlyOnline then
+                            ShowOnlineDot(whenFS)
+                        else
+                            HideOnlineDot(whenFS)
+                            -- Показываем время последнего онлайна для оффлайн игроков
+                            if clip.ts then
+                                whenFS:SetText(formatWhen(clip))
+                                if clip.playedTime and clip.level then
+                                    local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                                    whenFS:SetTextColor(r, g, b, .7)
+                                else
+                                    whenFS:SetTextColor(.6, .6, .6, .5)
+                                end
+                            else
+                                whenFS:SetText("-")
+                                whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
+                            end
+                        end
+                    elseif clip.ts == nil then
+                        HideOnlineDot(whenFS) -- Make sure dot is hidden for non-reincarnated clips
+                        whenFS:SetText("|cffaaaaaa-|r") -- Or L["Unknown"] if preferred, styled
+                        whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8) -- Match the color of other N/A text
                     else
-                        -- Regular clips - use original logic
                         HideOnlineDot(whenFS) -- Make sure dot is hidden for regular clips
-                        whenFS:SetText(formatWhen(clip))
+                    whenFS:SetText(formatWhen(clip))
 
                         if clip.playedTime and clip.level then
                             local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
@@ -734,7 +811,7 @@ local function UpdateLayout(buttonName)
 end
 ns.ApplyClipLayout = UpdateLayout
 
-local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
+UpdateClipEntry = function(state, i, offset, elements, clip, ratingsFromParent, numBatchClips, totalClips, forceFullUpdate)
     -- 'clip' is the newClipData for this row
     -- 'ratingsFromParent' is the pre-fetched ratings for this specific clip.id, passed from OFAuctionFrameDeathClips_Update
     -- However, your original code called state:GetRatingsByClip() and then ns.GetTopReactions(clip.id, 1) inside here.
@@ -903,7 +980,7 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                 if whereFS:GetText() ~= zone then
                     whereFS:SetText(zone)
                 end
-                whereFS:SetTextColor(1, 1, 1) -- Reset to white for other tabs
+                whereFS:SetTextColor(1, 0.82, 0)  -- Reset to gold color for other tabs.
             end
         end
 
@@ -918,8 +995,8 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
             if ns.currentActiveTabId == "SPEED_CLIPS" and clip.playedTime then
                 -- For speed tab, show played time with color coding
                 if clipTextFS:GetFontObject() ~= GameFontNormalLarge then clipTextFS:SetFontObject("GameFontNormalLarge") end
-                local s = clip.playedTime
-                local r, g, b = ns.GetPlayedTimeColor(clip.playedTime, clip.level)
+                local s = ns.GetCurrentPlayedTime and ns.GetCurrentPlayedTime(clip) or clip.playedTime
+                local r, g, b = ns.GetPlayedTimeColor(s, clip.level)
                 newClipDisplayText = string.format("|cFF%02X%02X%02X%dд %dч %dм %dс|r",
                         r * 255, g * 255, b * 255,
                         math.floor(s / 86400), math.floor(s % 86400 / 3600),
@@ -1054,6 +1131,9 @@ local function UpdateClipEntry(state, i, offset, elements, clip, ratingsFromPare
                     whenFS:SetText("-") -- No activity data available
                     whenFS:SetTextColor(0.6, 0.6, 0.6, 0.8)
                 end
+            elseif ns.currentActiveTabId == "SPEED_CLIPS" and clip.isOnline then
+                -- Для живых онлайн игроков на вкладке "Скорость" показываем зелёную точку
+                ShowOnlineDot(whenFS)
             elseif clip.ts == nil then
                 HideOnlineDot(whenFS) -- Make sure dot is hidden for non-reincarnated clips
                 whenFS:SetText("|cffaaaaaaN/A|r") -- Or L["Unknown"] if preferred, styled
@@ -1189,20 +1269,25 @@ function OFAuctionFrameDeathClips_Update()
                 end
             end
         elseif ns.currentActiveTabId == "SPEED_CLIPS" then
-            -- Speed ranking for living players at the same level
-            local myLevel = UnitLevel("player")
+            -- Speed ranking for living players (ALIVE only)
             for _, clip in ipairs(pool) do
-                -- Only include clips that:
-                -- 1. Have playedTime (means they are processed)
-                -- 2. Are at the same level as the player
-                -- 3. Are not completed (still alive)
-                if clip.playedTime and tonumber(clip.level) == myLevel and not clip.completed then
+                if clip.playedTime and not clip.completed and clip.deathCause == "ALIVE" then
+                    -- Обновляем онлайн-статус, уровень и зону из гильд-ростера
+                    local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                    if memberData and memberData.isOnline then
+                        clip.isOnline = true
+                        clip.level = memberData.level or clip.level
+                        clip.where = memberData.zone or clip.where
+                    else
+                        clip.isOnline = false
+                    end
                     table.insert(tempClips, clip)
                 end
             end
-        else -- Default to "LIVE_CLIPS"
+        else -- Default to "LIVE_CLIPS" - exclude living players
             for _, clip in ipairs(pool) do -- 'pool' here is already non-completed clips
-                if not clip.completed then -- This check is redundant if 'pool' is already filtered
+                -- Only show dead players (exclude ALIVE status from death clips tab)
+                if not clip.completed and clip.deathCause ~= "ALIVE" then
                     table.insert(tempClips, clip)
                 end
             end

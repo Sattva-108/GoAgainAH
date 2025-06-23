@@ -90,15 +90,24 @@ local deathCauses = {
 function ns.GenerateClipID(clip, isCompleted)
     local parts = {
         clip.characterName,
-        clip.level,
+        -- clip.level, -- Уровень будет добавлен условно ниже
         clip.faction,
     }
     if not isCompleted then
-        -- only live‐death clips get zone+cause
-        parts[#parts+1] = clip.where
-        parts[#parts+1] = clip.deathCause
+        if clip.deathCause == "ALIVE" then
+            -- Для живых: не включаем зону и УРОВЕНЬ, только признак ALIVE
+            parts[#parts+1] = "ALIVE"
+        else
+            -- Для обычных смертей: добавляем УРОВЕНЬ, зону и причину
+            parts[#parts+1] = clip.level -- <<<< УРОВЕНЬ ДОБАВЛЯЕТСЯ ЗДЕСЬ
+            parts[#parts+1] = clip.where
+            parts[#parts+1] = clip.deathCause
+        end
+    else
+        -- Для completed клипов (если такие будут), также добавляем уровень
+        parts[#parts+1] = clip.level -- <<<< И ЗДЕСЬ
+        -- Можно добавить другие части для completed, если нужно
     end
-    -- completed clips stop here (no ts, no zone/cause)
     return table.concat(parts, "-")
 end
 
@@ -155,7 +164,7 @@ ns.GetNewDeathClips = function(since, existing)
         newClips, seen = capped, capSeen
     end
 
-    -- 3) merge back any clips ≥ since that the receiver doesn’t already have
+    -- 3) merge back any clips ≥ since that the receiver doesn't already have
     if existing then
         local fromTs      = existing.fromTs or since
         local existingMap = existing.clips or existing

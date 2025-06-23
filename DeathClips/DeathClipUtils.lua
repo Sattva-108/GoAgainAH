@@ -105,8 +105,8 @@ local function CreateClipsSorter(sortParams)
             addSorter(desc, function(l, r)
                  --SPEED_CLIPS tab: sort by numeric playedTime
                 if ns.currentActiveTabId == "SPEED_CLIPS" then
-                    local a = tonumber(l.playedTime) or 0
-                    local b = tonumber(r.playedTime) or 0
+                    local a = tonumber(l.playedTime) or math.huge
+                    local b = tonumber(r.playedTime) or math.huge
                     return a - b
                 end
                 -- Completed tab: sort by numeric playedTime
