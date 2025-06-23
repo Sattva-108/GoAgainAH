@@ -119,7 +119,10 @@
 					</Anchor>
 				</Anchors>
 			</Button>
-			<Button name="OFAuctionFrameTab8" inherits="OFAuctionTabTemplate" id="8" text="">
+			<Button name="OFAuctionFrameTab8" inherits="OFAuctionTabTemplate" id="8" text="Athene">
+				<Size>
+					<AbsDimension x="90" y="32" />
+				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OFAuctionFrameTab7" relativePoint="TOPRIGHT">
 						<Offset>

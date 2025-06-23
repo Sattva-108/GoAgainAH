@@ -226,11 +226,11 @@
                         </Anchors>
                         <Layers>
                             <Layer level="ARTWORK">
-                                <Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
+                                <!--<Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
                                     <Anchors>
                                         <Anchor x="0" y="0" point="LEFT"/>
                                     </Anchors>
-                                </Texture>
+                                </Texture>-->
                             </Layer>
                         </Layers>
                         <TextInsets>
@@ -277,11 +277,11 @@
                         </Anchors>
                         <Layers>
                             <Layer level="ARTWORK">
-                                <Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
+                                <!--<Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
                                     <Anchors>
                                         <Anchor x="0" y="0" point="LEFT"/>
                                     </Anchors>
-                                </Texture>
+                                </Texture>-->
                             </Layer>
                         </Layers>
                         <TextInsets>
@@ -435,10 +435,10 @@
                                 </Frames>
                                 <Scripts>
                                     <OnLoad>
-                                        local basePath = "Interface\\AddOns\\".. OF_AH_ADDON_NAME .."\\Media\\AtheneTab\\"
+                                        --[[local basePath = "Interface\\AddOns\\".. OF_AH_ADDON_NAME .."\\Media\\AtheneTab\\"
                                         for i=0, 3 do
                                             _G[self:GetName() .. "Texture" .. i]:SetTexture(basePath .. "AtheneTab_Part0" .. i)
-                                        end
+                                        end]]
                                     </OnLoad>
                                 </Scripts>
                             </Frame>

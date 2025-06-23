@@ -48,7 +48,7 @@ function OFWhisperFrame_OnShow(self, userName)
         _G[self:GetName().."Button"]:Disable()
         iconName = "Icn_Offline.tga"
     end
-    self.inputField.onlineIcon:SetTexture("Interface\\Addons\\" .. addonName .. "\\Media\\Icons\\" .. iconName)
+    --self.inputField.onlineIcon:SetTexture("Interface\\Addons\\" .. addonName .. "\\Media\\Icons\\" .. iconName)
 end
 
 local function GetPatchNotes()
@@ -153,11 +153,11 @@ end
 
 
 function OFAuctionFrame_UpdateAtheneTab()
-    if ns.AuctionHouse:IsUpdateAvailable() or not HasSeenLatestVersion() then
-        OFAuctionFrameTab8:SetText("Athene (1)")
-    else
+    --if ns.AuctionHouse:IsUpdateAvailable() or not HasSeenLatestVersion() then
+    --    OFAuctionFrameTab8:SetText("Athene (1)")
+    --else
         OFAuctionFrameTab8:SetText("Athene")
-    end
+    --end
 end
 
 function OFAtheneAdBlockContainer_Update(self)
