@@ -693,6 +693,83 @@ function AuctionHouse:BroadcastDeathClipAdded(clip)
     self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_ADDED, clip }))
 end
 
+function AuctionHouse:SendAuctionStateChunked(responsePayload, recipient, auctionCount, deletionCount)
+    -- Debug timing
+    self.benchDebugCounter = (self.benchDebugCounter or 0) + 1
+    local dbgID = self.benchDebugCounter
+    local syncStart = GetTime()
+    
+    -- Serialize the full payload once to check size
+    local fullSerialized = Addon:Serialize(responsePayload)
+    local fullSize = #fullSerialized
+    
+    -- If small enough, send as single chunk (legacy format)
+    if fullSize <= 8192 then -- 8KB threshold
+        local compressed = LibDeflate:CompressDeflate(fullSerialized)
+        self:SendDm(Addon:Serialize({ T_AUCTION_STATE, compressed }), recipient, "BULK")
+        
+        local dt = GetTime() - syncStart
+        print(("[AUCTION-%d] single chunk: %d auctions, %d bytes → took %.2f s"):format(
+            dbgID, auctionCount, fullSize, dt))
+        return
+    end
+    
+    -- Large payload - chunk the data objects, not serialized string
+    local auctions = {}
+    for id, auction in pairs(responsePayload.auctions or {}) do
+        auctions[#auctions + 1] = {id = id, auction = auction}
+    end
+    
+    local CHUNK_SIZE = 50 -- auctions per chunk
+    local totalChunks = math.ceil(#auctions / CHUNK_SIZE)
+    local chunkIndex = 1
+    local totalComp = 0
+    
+    local function sendNext()
+        if chunkIndex > totalChunks then
+            local dt = GetTime() - syncStart
+            print(("[AUCTION-%d] sync completed: %d auctions → %d chunks, %d→%d bytes, took %.2f s"):format(
+                dbgID, auctionCount, totalChunks, fullSize, totalComp, dt))
+            return
+        end
+        
+        local i1 = (chunkIndex - 1) * CHUNK_SIZE + 1
+        local iN = math.min(chunkIndex * CHUNK_SIZE, #auctions)
+        local chunkAuctions = {}
+        
+        for i = i1, iN do
+            local entry = auctions[i]
+            chunkAuctions[entry.id] = entry.auction
+        end
+        
+        local chunkPayload = {
+            v = responsePayload.v,
+            auctions = chunkAuctions,
+            deletedAuctionIds = (chunkIndex == 1) and responsePayload.deletedAuctionIds or {},
+            revision = responsePayload.revision,
+            lastUpdateAt = responsePayload.lastUpdateAt,
+        }
+        
+        local ser = Addon:Serialize(chunkPayload)
+        local compressed = LibDeflate:CompressDeflate(ser, { level = 1 })
+        totalComp = totalComp + #compressed
+        
+        local payload = {
+            label = ("chunk_%dof%d"):format(chunkIndex, totalChunks),
+            data = LibDeflate:EncodeForWoWAddonChannel(compressed),
+        }
+        
+        self:SendDm(Addon:Serialize({ T_AUCTION_STATE, payload }), recipient, "BULK")
+        
+        chunkIndex = chunkIndex + 1
+        if chunkIndex <= totalChunks then
+            C_Timer:After(0.05, sendNext)
+        end
+    end
+    
+    sendNext()
+end
+
 function AuctionHouse:IsSyncWindowExpired()
     -- safety: only allow initial state within 2 minutes after login (chat can be very slow due to ratelimit, so has to be high)
     -- just in case there's a bug we didn't anticipate
@@ -968,24 +1045,101 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         }, function()
             local responsePayload, auctionCount, deletionCount = self:BuildDeltaState(payload.revision, payload.auctions)
             print((" >> DEBUG: Sending %d auctions, %d deletions to %s"):format(auctionCount, deletionCount, sender))
-            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-
-            self:SendDm(Addon:Serialize({ T_AUCTION_STATE, compressed }), sender, "BULK")
+            
+            -- Chunked sending for large auction payloads
+            self:SendAuctionStateChunked(responsePayload, sender, auctionCount, deletionCount)
         end)
 
     elseif dataType == T_AUCTION_STATE then
-        local decompressStart = GetTimePreciseSec()
-        local decompressed = LibDeflate:DecompressDeflate(payload)
-        local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
-
-        local deserializeStart = GetTimePreciseSec()
-        local success, state = Addon:Deserialize(decompressed)
-        local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
+        -- Handle both chunked and non-chunked formats
+        local decompressed, label
         
-        -- Removed decompress/deserialize debug print for cleaner output
+        if type(payload) == "table" and payload.label then
+            -- Chunked format - accumulate chunks
+            label = payload.label
+            local compressed = LibDeflate:DecodeForWoWAddonChannel(payload.data)
+            if not compressed then
+                return
+            end
+            decompressed = LibDeflate:DecompressDeflate(compressed)
+            
+            if not decompressed then
+                return
+            end
 
-        if not success then
-            return
+            local success, chunkState = Addon:Deserialize(decompressed)
+            if not success then
+                return
+            end
+            
+            -- Initialize chunk accumulation buffer for this sender
+            self.auctionChunkBuffer = self.auctionChunkBuffer or {}
+            self.auctionChunkBuffer[sender] = self.auctionChunkBuffer[sender] or {}
+            local buffer = self.auctionChunkBuffer[sender]
+            
+            -- Parse chunk info
+            local chunkNum, totalChunks = label:match("chunk_(%d+)of(%d+)")
+            chunkNum, totalChunks = tonumber(chunkNum), tonumber(totalChunks)
+            
+            if not chunkNum or not totalChunks then
+                return
+            end
+            
+            -- Store this chunk's auctions
+            buffer.chunks = buffer.chunks or {}
+            buffer.chunks[chunkNum] = chunkState.auctions or {}
+            buffer.totalChunks = totalChunks
+            buffer.revision = chunkState.revision
+            buffer.lastUpdateAt = chunkState.lastUpdateAt
+            buffer.deletedAuctionIds = chunkState.deletedAuctionIds or {}
+            
+            -- Check if we have all chunks
+            local receivedCount = 0
+            for i = 1, totalChunks do
+                if buffer.chunks[i] then
+                    receivedCount = receivedCount + 1
+                end
+            end
+            
+            if receivedCount < totalChunks then
+                -- Still waiting for more chunks
+                return
+            end
+            
+            -- All chunks received - merge them into a single state
+            local mergedAuctions = {}
+            for i = 1, totalChunks do
+                for id, auction in pairs(buffer.chunks[i]) do
+                    mergedAuctions[id] = auction
+                end
+            end
+            
+            local mergedState = {
+                auctions = mergedAuctions,
+                revision = buffer.revision,
+                lastUpdateAt = buffer.lastUpdateAt,
+                deletedAuctionIds = buffer.deletedAuctionIds,
+            }
+            
+            -- Clean up buffer
+            self.auctionChunkBuffer[sender] = nil
+            
+            -- Process merged state
+            state = mergedState
+        else
+            -- Legacy single-chunk format 
+            decompressed = LibDeflate:DecompressDeflate(payload)
+            
+            if not decompressed then
+                return
+            end
+
+            local success, singleState = Addon:Deserialize(decompressed)
+            if not success then
+                return
+            end
+            
+            state = singleState
         end
 
         -- Update revision and lastUpdateAt if necessary
@@ -1030,11 +1184,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
             API:FireEvent(ns.T_ON_AUCTION_STATE_UPDATE)
 
-            ns.DebugLog(string.format("[DEBUG] Updated local state with %d new auctions, %d deleted auctions, revision %d (bytes-compressed: %d, decompress: %.0fms, deserialize: %.0fms)",
+            ns.DebugLog(string.format("[DEBUG] Updated local state with %d new auctions, %d deleted auctions, revision %d",
                     #(state.auctions or {}), #(state.deletedAuctionIds or {}),
-                    self.db.revision,
-                    #payload,
-                    decompressTime, deserializeTime
+                    self.db.revision
             ))
         end
 
@@ -2373,7 +2525,7 @@ function CreateTestAuctions()
     local deliveryTypes = {0, 1, 2} -- any, mail, trade
     local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
     
-    for i = 1, math.min(1000, #realItemIDs) do
+    for i = 1, math.min(100, #realItemIDs) do
         local itemID = realItemIDs[i] -- Use unique itemID for each auction
         local price = math.random(1, 1000000)
         local quantity = math.random(1, 50)
