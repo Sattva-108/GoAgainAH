@@ -589,7 +589,7 @@ function AuctionWishlistConfirmPrompt:Show(itemID, onSuccess, onError, onCancel)
             return
         end
         if priceType == ns.PRICE_TYPE_MONEY and price > GetMoney() then
-            PlayVocalErrorSoundID(40)
+            PlaySoundFile("sound/interface/error.ogg", "Dialog")
             UIErrorsFrame:AddMessage(ERR_NOT_ENOUGH_MONEY, 1.0, 0.1, 0.1, 1.0)
             return
         end
