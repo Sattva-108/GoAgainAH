@@ -982,9 +982,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local success, state = Addon:Deserialize(decompressed)
         local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
         
-        print(("DBG: Received AUCTION_STATE from %s - decompress=%.1fms, deserialize=%.1fms"):format(
-            sender, decompressTime, deserializeTime
-        ))
+        -- Removed decompress/deserialize debug print for cleaner output
 
         if not success then
             return
@@ -1042,6 +1040,15 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
         -- Broadcast an ACK on the guild channel
         self:BroadcastAck(ns.T_AUCTION_ACK, self.db.revision, isHigherRevision, "ackBroadcasted")
+
+        -- ── AUCTION BENCHMARK END ──
+        local entry = table.remove(self.auctionBenchQueue or {}, 1)
+        if entry then
+            local elapsed = GetTime() - entry.start
+            print(("|cff00ff00>> [AUCTION-%d] sync completed at %s (took %.2f s)|r"):format(
+                entry.id, date("%H:%M"), elapsed
+            ))
+        end
 
         -- Added hook call so that (for example) tests can capture state response data:
         if self.OnStateResponseHandled then
@@ -2067,9 +2074,16 @@ function AuctionHouse:RequestLatestState()
     self.ackBroadcasted = false
     self.lastAckAuctionRevisions = {} -- Clear all ACKs when starting a new request
 
+    -- ── AUCTION BENCHMARK ──
+    self.auctionBenchCounter = (self.auctionBenchCounter or 0) + 1
+    local dbgID = self.auctionBenchCounter
+    local dbgStart = GetTime()
+    self.auctionBenchQueue = self.auctionBenchQueue or {}
+    table.insert(self.auctionBenchQueue, { id = dbgID, start = dbgStart })
+
     local auctions = self:BuildAuctionsTable()
-    print(("DBG: RequestLatestState - revision=%d, auctions=%d"):format(
-        self.db.revision or 0, #auctions
+    print(("DBG: [AUCTION-%d] RequestLatestState at %s - revision=%d, auctions=%d"):format(
+        dbgID, date("%H:%M"), self.db.revision or 0, #auctions
     ))
     local payload = { T_AUCTION_STATE_REQUEST, { revision = self.db.revision, auctions = auctions } }
     local msg = Addon:Serialize(payload)
@@ -2346,21 +2360,21 @@ function CreateTestAuctions()
     local allItems = ns.ItemDB:Find() -- Get all items
     local realItemIDs = {-1} -- Start with gold
     
-    -- Collect first 100 real itemIDs for variety
+    -- Collect first 1000 real itemIDs for unique auctions
     for i, item in ipairs(allItems) do
-        if i <= 100 and item.id then
+        if i <= 1000 and item.id then
             table.insert(realItemIDs, item.id)
         end
     end
     
-    print("Using " .. #realItemIDs .. " real itemIDs for test auctions")
+    print("Using " .. #realItemIDs .. " unique itemIDs for test auctions")
     
     local auctionTypes = {0, 1} -- sell, buy-order  
     local deliveryTypes = {0, 1, 2} -- any, mail, trade
     local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
     
-    for i = 1, 1000 do
-        local itemID = realItemIDs[math.random(#realItemIDs)]
+    for i = 1, math.min(1000, #realItemIDs) do
+        local itemID = realItemIDs[i] -- Use unique itemID for each auction
         local price = math.random(1, 1000000)
         local quantity = math.random(1, 50)
         local allowLoan = math.random() > 0.5
