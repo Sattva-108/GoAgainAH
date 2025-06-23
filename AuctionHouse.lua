@@ -953,6 +953,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
     elseif dataType == T_AUCTION_STATE_REQUEST then
+        print(("DBG: Received AUCTION_STATE_REQUEST from %s - their_rev=%d, our_rev=%d, their_auctions=%d"):format(
+            sender, payload.revision or 0, self.db.revision or 0, #(payload.auctions or {})
+        ))
         self:HandleStateUpdate(sender, T_AUCTION_STATE_REQUEST, {
             rev = self.db.revision,
             payloadRev = payload.revision,
@@ -963,7 +966,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 self.lastAckAuctionRevisions[sender] = value
             end
         }, function()
-            local responsePayload, _, __ = self:BuildDeltaState(payload.revision, payload.auctions)
+            local responsePayload, auctionCount, deletionCount = self:BuildDeltaState(payload.revision, payload.auctions)
+            print((" >> DEBUG: Sending %d auctions, %d deletions to %s"):format(auctionCount, deletionCount, sender))
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
 
             self:SendDm(Addon:Serialize({ T_AUCTION_STATE, compressed }), sender, "BULK")
@@ -977,6 +981,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local deserializeStart = GetTimePreciseSec()
         local success, state = Addon:Deserialize(decompressed)
         local deserializeTime = (GetTimePreciseSec() - deserializeStart) * 1000
+        
+        print(("DBG: Received AUCTION_STATE from %s - decompress=%.1fms, deserialize=%.1fms"):format(
+            sender, decompressTime, deserializeTime
+        ))
 
         if not success then
             return
@@ -1050,12 +1058,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     elseif dataType == ns.T_DEATH_CLIPS_STATE_REQUEST then
         local since = payload.since
         local clips = payload.clips or {}
-        print(("🔍DBG: Payload since TS = %s, have %d clip-IDs"):format(
-                tostring(since), #clips
-        ))
+        --print(("🔍DBG: Payload since TS = %s, have %d clip-IDs"):format(
+        --        tostring(since), #clips
+        --))
 
         local rawClips = ns.GetNewDeathClips(since, clips)
-        print((" >> DEBUG: %d death-clips to sync"):format(#rawClips))
+        --print((" >> DEBUG: %d death-clips to sync"):format(#rawClips))
         if #rawClips == 0 then
             return
         end
@@ -1203,9 +1211,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 C_Timer:After(batchAfter, sendNext)
             else
                 local dt = GetTime() - syncStart
-                print((" >> DEBUG: serialized rows = %d bytes"):format(totalSer))
-                print((" >> DEBUG: compressed rows = %d bytes (Level 1)"):format(totalComp))
-                print((" >> DEBUG: sent %d clips in %d chunks, took %.2f s total"):format(#rows, totalChunks, dt))
+                --print((" >> DEBUG: serialized rows = %d bytes"):format(totalSer))
+                --print((" >> DEBUG: compressed rows = %d bytes (Level 1)"):format(totalComp))
+                --print((" >> DEBUG: sent %d clips in %d chunks, took %.2f s total"):format(#rows, totalChunks, dt))
             end
         end
         sendNext()
@@ -1345,8 +1353,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 local entry = table.remove(self.benchDebugQueue or {}, 1)
                 if entry then
                     local elapsed = GetTime() - entry.start
-                    print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
-                            :format(entry.id, date("%H:%M"), elapsed))
+                    --print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
+                    --        :format(entry.id, date("%H:%M"), elapsed))
                 end
             end
         else
@@ -1354,8 +1362,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             local entry = table.remove(self.benchDebugQueue or {}, 1)
             if entry then
                 local elapsed = GetTime() - entry.start
-                print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
-                        :format(entry.id, date("%H:%M"), elapsed))
+                --print(("|cff00ff00>> Bench[%d]: DeathClip sync completed at %s (took %.2f s)|r")
+                --        :format(entry.id, date("%H:%M"), elapsed))
             end
         end
 
@@ -2060,6 +2068,9 @@ function AuctionHouse:RequestLatestState()
     self.lastAckAuctionRevisions = {} -- Clear all ACKs when starting a new request
 
     local auctions = self:BuildAuctionsTable()
+    print(("DBG: RequestLatestState - revision=%d, auctions=%d"):format(
+        self.db.revision or 0, #auctions
+    ))
     local payload = { T_AUCTION_STATE_REQUEST, { revision = self.db.revision, auctions = auctions } }
     local msg = Addon:Serialize(payload)
 
@@ -2092,8 +2103,8 @@ function AuctionHouse:RequestLatestDeathClipState(now)
     table.insert(self.benchDebugQueue, { id = dbgID, start = dbgStart })
 
     -- unchanged print
-    print(("|cff00ff00>> Bench[%d]: DeathClip sync requested at %s|r")
-            :format(dbgID, date("%H:%M")))
+    --print(("|cff00ff00>> Bench[%d]: DeathClip sync requested at %s|r")
+    --        :format(dbgID, date("%H:%M")))
 
     local clips   = self:BuildDeathClipsTable(now)
     local payload = {
@@ -2325,4 +2336,59 @@ function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePla
     ns.UpdatePlayedTimeSimulation(clip)
 
     ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
+end
+
+-- Global test function for creating 1000 test auctions
+function CreateTestAuctions()
+    local count = 0
+    
+    -- Get real itemIDs from ItemDB
+    local allItems = ns.ItemDB:Find() -- Get all items
+    local realItemIDs = {-1} -- Start with gold
+    
+    -- Collect first 100 real itemIDs for variety
+    for i, item in ipairs(allItems) do
+        if i <= 100 and item.id then
+            table.insert(realItemIDs, item.id)
+        end
+    end
+    
+    print("Using " .. #realItemIDs .. " real itemIDs for test auctions")
+    
+    local auctionTypes = {0, 1} -- sell, buy-order  
+    local deliveryTypes = {0, 1, 2} -- any, mail, trade
+    local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
+    
+    for i = 1, 1000 do
+        local itemID = realItemIDs[math.random(#realItemIDs)]
+        local price = math.random(1, 1000000)
+        local quantity = math.random(1, 50)
+        local allowLoan = math.random() > 0.5
+        local priceType = priceTypes[math.random(#priceTypes)]
+        local deliveryType = deliveryTypes[math.random(#deliveryTypes)]
+        local auctionType = auctionTypes[math.random(#auctionTypes)]
+        local roleplay = math.random() > 0.8
+        local deathRoll = math.random() > 0.9
+        local duel = math.random() > 0.9
+        local raidAmount = priceType == 1 and math.random(1, 100) or 0
+        local points = priceType == 3 and math.random(1, 1000) or 0
+        local note = i % 10 == 0 and ("Test note " .. i) or ""
+        
+        local success, err = ns.AuctionHouseAPI:CreateAuction(
+            itemID, price, quantity, allowLoan, priceType, deliveryType, 
+            auctionType, roleplay, deathRoll, duel, raidAmount, points, note
+        )
+        
+        if success then
+            count = count + 1
+        else
+            print("Failed to create auction " .. i .. ": " .. (err or "unknown error"))
+        end
+        
+        if count % 100 == 0 then
+            print("Created " .. count .. " test auctions...")
+        end
+    end
+    
+    print("Created " .. count .. " test auctions total!")
 end
