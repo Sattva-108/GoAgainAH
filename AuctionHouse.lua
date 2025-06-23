@@ -761,7 +761,7 @@ function AuctionHouse:SendAuctionStateChunked(responsePayload, recipient, auctio
         auctions[#auctions + 1] = {id = id, auction = auction}
     end
     
-    local CHUNK_SIZE = 250 -- auctions per chunk (increased to reduce serialization overhead)
+    local CHUNK_SIZE = 400 -- auctions per chunk (increased to reduce serialization overhead)
     local totalChunks = math.ceil(#auctions / CHUNK_SIZE)
     local chunkIndex = 1
     local totalComp = 0
@@ -918,7 +918,7 @@ function AuctionHouse:HandleStateUpdate(sender, dataType, cfg, sendPayloadFn)
         ns.DebugLog("[DEBUG] Immediate " .. dataType .. " state update (primary responder)")
         sendUpdate()
     else
-        local delay = randomBiasedDelay(5, 15)
+        local delay = randomBiasedDelay(1, 4)
         ns.DebugLog("[DEBUG] Scheduling delayed " .. dataType .. " state update in " .. math.floor(delay) .. "s")
         self:After(delay, sendUpdate)
     end
@@ -2279,7 +2279,16 @@ function AuctionHouse:RequestLatestState()
         dbgID, date("%H:%M"), self.db.revision or 0, #auctions
     ))
     local payload = { T_AUCTION_STATE_REQUEST, { revision = self.db.revision, auctions = auctions } }
-    local msg = Addon:Serialize(payload)
+    
+    -- 1. Serialize
+    local serialized = Addon:Serialize(payload)
+    -- 2. Compress (raw bytes)
+    local compressionConfigs = {level = 9}
+    local compressed = LibDeflate:CompressDeflate(serialized, compressionConfigs)
+    -- 3. Encode (ASCII-safe)
+    local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+    -- 4. Prepend our marker
+    local msg = "DF:" .. encoded
 
     self:BroadcastMessage(msg)
 end
