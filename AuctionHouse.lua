@@ -761,7 +761,7 @@ function AuctionHouse:SendAuctionStateChunked(responsePayload, recipient, auctio
         auctions[#auctions + 1] = {id = id, auction = auction}
     end
     
-    local CHUNK_SIZE = 50 -- auctions per chunk
+    local CHUNK_SIZE = 250 -- auctions per chunk (increased to reduce serialization overhead)
     local totalChunks = math.ceil(#auctions / CHUNK_SIZE)
     local chunkIndex = 1
     local totalComp = 0
