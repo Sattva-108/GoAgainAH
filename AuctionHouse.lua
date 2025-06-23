@@ -693,6 +693,47 @@ function AuctionHouse:BroadcastDeathClipAdded(clip)
     self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_ADDED, clip }))
 end
 
+function AuctionHouse:TrimAuctionForSync(auction)
+    -- Create a copy to avoid modifying original
+    local trimmed = {}
+    for k, v in pairs(auction) do
+        trimmed[k] = v
+    end
+    
+    -- WHITE-LIST: Remove only fields that are safe to omit
+    -- Based on code analysis - these fields are checked with nil-safe patterns
+    
+    if trimmed.roleplay == false then
+        trimmed.roleplay = nil
+    end
+    
+    if trimmed.deathRoll == false then
+        trimmed.deathRoll = nil
+    end
+    
+    if trimmed.duel == false then
+        trimmed.duel = nil
+    end
+    
+    if trimmed.allowLoan == false then
+        trimmed.allowLoan = nil
+    end
+    
+    if trimmed.wish == false then
+        trimmed.wish = nil
+    end
+    
+    if trimmed.note == "" then
+        trimmed.note = nil
+    end
+    
+    if trimmed.buyer == nil then
+        trimmed.buyer = nil -- already nil, but explicit for clarity
+    end
+    
+    return trimmed
+end
+
 function AuctionHouse:SendAuctionStateChunked(responsePayload, recipient, auctionCount, deletionCount)
     -- Debug timing
     self.benchDebugCounter = (self.benchDebugCounter or 0) + 1
@@ -1929,7 +1970,7 @@ function AuctionHouse:BuildDeltaState(requesterRevision, requesterAuctions)
         for id, auction in pairs(ns.FilterAuctionsThisRealm(self.db.auctions)) do
             local requesterRev = requesterAuctionLookup[id]
             if not requesterRev or (auction.rev > requesterRev) then
-                auctionsToSend[id] = auction
+                auctionsToSend[id] = self:TrimAuctionForSync(auction)
                 auctionCount = auctionCount + 1
             end
         end
@@ -2525,7 +2566,7 @@ function CreateTestAuctions()
     local deliveryTypes = {0, 1, 2} -- any, mail, trade
     local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
     
-    for i = 1, math.min(100, #realItemIDs) do
+    for i = 1, math.min(1000, #realItemIDs) do
         local itemID = realItemIDs[i] -- Use unique itemID for each auction
         local price = math.random(1, 1000000)
         local quantity = math.random(1, 50)
