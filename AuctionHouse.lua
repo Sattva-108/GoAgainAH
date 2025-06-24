@@ -2105,11 +2105,24 @@ function AuctionHouse:BuildDeltaState(requesterRevision, requesterAuctions)
             end
         end
 
-        -- Find deleted auctions (present in requester but not in current state)
-        for id, _ in pairs(requesterAuctionLookup) do
-            if not self.db.auctions[id] then
-                table.insert(deletedAuctionIds, id)
-                deletionCount = deletionCount + 1
+        -- Only send deletions if the requester is at the same revision or newer.
+        -- This prevents the rare edge-case where we would delete a brand-new
+        -- auction created while the initial sync of the other side was
+        -- incomplete (requesterRevision < self.db.revision).
+        if requesterRevision and requesterRevision >= self.db.revision then
+            -- Use tombstones to decide safe deletions (avoid nuking brand-new auctions created only on requester).
+            local tombstones = (self.db.deletedHistory or {})
+            local retention  = 7 * 24 * 60 * 60 -- 7 дней
+            local nowTs      = time()
+
+            for id, _ in pairs(requesterAuctionLookup) do
+                if not self.db.auctions[id] then
+                    local delTs = tombstones[id]
+                    if delTs and (nowTs - delTs < retention) then
+                        table.insert(deletedAuctionIds, id)
+                        deletionCount = deletionCount + 1
+                    end
+                end
             end
         end
     end
@@ -2705,7 +2718,7 @@ function CreateTestAuctions()
     local deliveryTypes = {0, 1, 2} -- any, mail, trade
     local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
     
-    for i = 1, math.min(1000, #realItemIDs) do
+    for i = 1, math.min(200, #realItemIDs) do
         local itemID = realItemIDs[i] -- Use unique itemID for each auction
         local price = math.random(1, 1000000)
         local quantity = math.random(1, 50)

@@ -740,6 +740,10 @@ function AuctionHouseAPI:DeleteAuctionInternal(auctionID, isNetworkUpdate)
         return nil, L["Auction does not exist"]
     end
 
+    -- mark tombstone for at least 7 days so peers can receive a deletion marker
+    DB.deletedHistory = DB.deletedHistory or {}
+    DB.deletedHistory[auctionID] = time()
+
     DB.auctions[auctionID] = nil
     DB.lastUpdateAt = time()
     DB.revision = DB.revision + 1
