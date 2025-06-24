@@ -425,6 +425,9 @@ function AuctionHouse.new()
     instance.blacklistAckBroadcasted = false
     instance.pendingTransactionAckBroadcasted = false
 
+    -- Track ongoing bulk sync sessions (recipient -> expiryTimestamp)
+    instance._activeSyncSessions = {}
+
     -- Hooks for testing; by default they do nothing.
     instance.OnStateRequestHandled = function(self, sender, payload)
     end
@@ -685,7 +688,6 @@ function AuctionHouse:Initialize()
     if not self._playerNotFoundFilterRegistered then
         local function PlayerNotFoundFilter(chatFrame, event, msg, ...)
             if not msg then return false end
-            print("DEBUG: System message:", msg)
 
             -- Try to extract the player name from common RU / EN variants.
             local player = msg:match("Персонаж по имени \"([^\"]+)\"")
@@ -693,37 +695,30 @@ function AuctionHouse:Initialize()
                 player = msg:match("Player '([^']+)' not found")
             end
             if not player then
-                print("DEBUG: Could not parse player name from:", msg)
                 return false
             end
-            
-            print("DEBUG: Parsed player name:", player)
 
             -- Suppress if player is already known offline OR if we just attempted whisper
             local now = GetTime()
-            print("DEBUG: _pendingWhisperTarget =", ns.AuctionHouse and ns.AuctionHouse._pendingWhisperTarget)
             
             -- Check if player is already in offline cache
             if ns.AuctionHouse and ns.AuctionHouse._offlineWhisperCache[player] then
                 local ttl = ns.AuctionHouse._offlineWhisperCache[player]
                 if ttl > now then
-                    print("DEBUG: SUPPRESSING message for known offline player:", player)
                     return true -- suppress - we know they're offline
                 end
             end
             
-            -- Check if this matches our recent whisper attempt
-            if ns.AuctionHouse and ns.AuctionHouse._pendingWhisperTarget == player then
-                local timeDiff = now - (ns.AuctionHouse._pendingWhisperTs or 0)
-                print("DEBUG: Time since whisper attempt:", timeDiff, "seconds")
-                if timeDiff < 10 then  -- allow 10 seconds for large syncs
-                    print("DEBUG: SUPPRESSING message for recent whisper target:", player)
+            -- Check if we have active sync session with this player
+            if ns.AuctionHouse and ns.AuctionHouse._activeSyncSessions and ns.AuctionHouse._activeSyncSessions[player] then
+                local sessionEnd = ns.AuctionHouse._activeSyncSessions[player]
+                if sessionEnd > now then
                     -- Mark as offline for 3 minutes
                     ns.AuctionHouse._offlineWhisperCache[player] = now + 180
                     return true  -- suppress message
                 end
             end
-
+            
             return false -- let it through
         end
 
@@ -744,23 +739,25 @@ function AuctionHouse:SendDm(message, recipient, prio)
     local now = GetTime()
     local ttl = self._offlineWhisperCache[recipient]
     if ttl and ttl > now then
-        print("DEBUG: Skipping SendDm to", recipient, "- known offline")
         return -- skip: we know the player is offline, avoid chat spam
+    end
+
+    -- If this is part of a bulk sync, extend/mark an active sync session window
+    if prio == "BULK" then
+        -- Keep the session active for up to 15 minutes after the last BULK whisper
+        self._activeSyncSessions[recipient] = now + 900 -- 900s = 15min
     end
 
     -- 2) Remember that we're about to whisper this target so the CHAT_MSG_SYSTEM
     --    filter can suppress the inevitable "player not found" line (if any).
     self._pendingWhisperTarget = recipient
     self._pendingWhisperTs = now
-    print("DEBUG: Setting _pendingWhisperTarget =", recipient, "at time", now)
 
     -- 3) Fire the whisper. Any system-level "player not found" will be filtered
     --    in the message filter registered during Initialise().
-    print("DEBUG: About to send whisper to", recipient)
     pcall(function()
         Addon:SendCommMessage(COMM_PREFIX, message, "WHISPER", recipient, prio)
     end)
-    print("DEBUG: Whisper sent, _pendingWhisperTarget should still be", self._pendingWhisperTarget)
 end
 
 function AuctionHouse:BroadcastAuctionUpdate(dataType, payload)
