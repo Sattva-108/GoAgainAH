@@ -169,7 +169,7 @@ end
   wire-format change.  Keep the total length ≤16 characters.
 -----------------------------------------------------------------]]
 
-local PROTOTYPE_SUFFIX = "C"        -- change to "B", "C" … on next break
+local PROTOTYPE_SUFFIX = "A"        -- change to "B", "C" … on next break
 local COMM_PREFIX = "OFAuctionHouse" .. PROTOTYPE_SUFFIX  -- 14+1 = 15 ≤ 16
 local OF_COMM_PREFIX = "OnlyFangsAddon"
 local T_AUCTION_STATE_REQUEST = "AUCTION_STATE_REQUEST"
@@ -410,6 +410,12 @@ function AuctionHouse.new()
     instance.lastAckLFGRevisions = {}
     instance.lastAckBlacklistRevisions = {}
     instance.lastAckPendingTransactionRevisions = {}
+
+    -- Cache for players we recently detected as offline when whispering. key -> expireTime (GetTime())
+    instance._offlineWhisperCache = {}
+    -- Helper vars for temporarily suppressing the next PLAYER_NOT_FOUND system message
+    instance._pendingWhisperTarget = nil
+    instance._pendingWhisperTs = 0
 
     -- Initialize ack broadcast flags for various state types
     instance.ackBroadcasted = false
@@ -667,7 +673,64 @@ function AuctionHouse:Initialize()
     end
 
     self.ignoreSenderCheck = false
-end
+
+    -- ---------------------------------------------------------------------
+    -- Spam-suppression: filter the system error that appears when trying to
+    -- whisper an offline character ("Персонаж по имени \"X\" в игре не найден.").
+    -- We only suppress the line if it matches the very last whisper target we
+    -- attempted from SendDm and that attempt happened very recently (< 2s).
+    -- When such a line is detected we also mark the target as offline for the
+    -- next 3 minutes so future SendDm calls are short-circuited.
+    -- ---------------------------------------------------------------------
+    if not self._playerNotFoundFilterRegistered then
+        local function PlayerNotFoundFilter(chatFrame, event, msg, ...)
+            if not msg then return false end
+            print("DEBUG: System message:", msg)
+
+            -- Try to extract the player name from common RU / EN variants.
+            local player = msg:match("Персонаж по имени \"([^\"]+)\"")
+            if not player then
+                player = msg:match("Player '([^']+)' not found")
+            end
+            if not player then
+                print("DEBUG: Could not parse player name from:", msg)
+                return false
+            end
+            
+            print("DEBUG: Parsed player name:", player)
+
+            -- Suppress if player is already known offline OR if we just attempted whisper
+            local now = GetTime()
+            print("DEBUG: _pendingWhisperTarget =", ns.AuctionHouse and ns.AuctionHouse._pendingWhisperTarget)
+            
+            -- Check if player is already in offline cache
+            if ns.AuctionHouse and ns.AuctionHouse._offlineWhisperCache[player] then
+                local ttl = ns.AuctionHouse._offlineWhisperCache[player]
+                if ttl > now then
+                    print("DEBUG: SUPPRESSING message for known offline player:", player)
+                    return true -- suppress - we know they're offline
+                end
+            end
+            
+            -- Check if this matches our recent whisper attempt
+            if ns.AuctionHouse and ns.AuctionHouse._pendingWhisperTarget == player then
+                local timeDiff = now - (ns.AuctionHouse._pendingWhisperTs or 0)
+                print("DEBUG: Time since whisper attempt:", timeDiff, "seconds")
+                if timeDiff < 10 then  -- allow 10 seconds for large syncs
+                    print("DEBUG: SUPPRESSING message for recent whisper target:", player)
+                    -- Mark as offline for 3 minutes
+                    ns.AuctionHouse._offlineWhisperCache[player] = now + 180
+                    return true  -- suppress message
+                end
+            end
+
+            return false -- let it through
+        end
+
+        ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", PlayerNotFoundFilter)
+        self._playerNotFoundFilterRegistered = true
+    end
+ end
 
 function AuctionHouse:BroadcastMessage(message)
     local channel = "GUILD"
@@ -676,8 +739,28 @@ function AuctionHouse:BroadcastMessage(message)
 end
 
 function AuctionHouse:SendDm(message, recipient, prio)
-    -- FIXME TODO 3.3.5 HC guys must have weird names right???
-    Addon:SendCommMessage(COMM_PREFIX, message, "WHISPER", recipient, prio)
+    -- Lightweight spam-suppression for offline whisper targets.
+    -- 1) If we recently detected that the recipient is offline, skip the send entirely
+    local now = GetTime()
+    local ttl = self._offlineWhisperCache[recipient]
+    if ttl and ttl > now then
+        print("DEBUG: Skipping SendDm to", recipient, "- known offline")
+        return -- skip: we know the player is offline, avoid chat spam
+    end
+
+    -- 2) Remember that we're about to whisper this target so the CHAT_MSG_SYSTEM
+    --    filter can suppress the inevitable "player not found" line (if any).
+    self._pendingWhisperTarget = recipient
+    self._pendingWhisperTs = now
+    print("DEBUG: Setting _pendingWhisperTarget =", recipient, "at time", now)
+
+    -- 3) Fire the whisper. Any system-level "player not found" will be filtered
+    --    in the message filter registered during Initialise().
+    print("DEBUG: About to send whisper to", recipient)
+    pcall(function()
+        Addon:SendCommMessage(COMM_PREFIX, message, "WHISPER", recipient, prio)
+    end)
+    print("DEBUG: Whisper sent, _pendingWhisperTarget should still be", self._pendingWhisperTarget)
 end
 
 function AuctionHouse:BroadcastAuctionUpdate(dataType, payload)
