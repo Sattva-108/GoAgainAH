@@ -87,6 +87,8 @@ function BlacklistAPI:AddToBlacklist(playerName, blType, blacklistedName)
 
     self:UpdateDBBlacklist(payload)
     API:FireEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, payload)
+    
+    
     API.broadcastBlacklistUpdate(ns.T_BLACKLIST_ADD_OR_UPDATE, payload)
     return payload
 end

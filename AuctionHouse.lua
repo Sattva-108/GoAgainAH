@@ -513,7 +513,8 @@ function AuctionHouse:Initialize()
         -- BLACKLIST --------------------------------------------------------------
         broadcastBlacklistUpdate = function(dataType, payload)
             -- Blacklist entries carry the offending player's realm
-            if payload.entry and payload.realm == ns.CURRENT_REALM then
+            -- For Speed Clips removal, payload doesn't have 'entry' field, check realm directly
+            if payload.realm == ns.CURRENT_REALM then
                 self:BroadcastBlacklistUpdate(dataType, payload)
             end
         end,
@@ -725,6 +726,27 @@ function AuctionHouse:Initialize()
         ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", PlayerNotFoundFilter)
         self._playerNotFoundFilterRegistered = true
     end
+    
+    -- Global handler for Speed Clips removal requests (works in background)
+    local function HandleSpeedClipsRemovalRequest(event)
+        if event and event.blType == ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL then
+            local names = event.names or {}
+            
+            for _, playerName in ipairs(names) do
+                -- Remove all clips that belong to this player
+                local removed = ns.RemovePlayerFromSpeedClips and ns.RemovePlayerFromSpeedClips(playerName) or 0
+                if ns.SpeedClipsOptedOut then
+                    ns.SpeedClipsOptedOut[playerName] = true
+                end
+                if removed > 0 then
+                    print(string.format("Удален %s (%d клипов) из Speed Clips по их запросу.", playerName, removed))
+                end
+            end
+        end
+    end
+    
+    -- Register the handler immediately after initialization
+    ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, HandleSpeedClipsRemovalRequest)
  end
 
 function AuctionHouse:BroadcastMessage(message)
@@ -1918,6 +1940,8 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
     elseif dataType == ns.T_BLACKLIST_ADD_OR_UPDATE then
         -- "payload" looks like { playerName = "Alice", rev = 5, namesByType = { review = { "enemy1", "enemy2" } } }
+        
+        
         ns.BlacklistAPI:UpdateDBBlacklist(payload)
         API:FireEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, payload)
 

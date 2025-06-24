@@ -72,24 +72,9 @@ function OFAtheneUI_Initialize()
         OFAtheneUI_Update(false)
     end
     
-    local function HandleSpeedClipsRemovalRequest(event)
-        if event and event.blType == ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL then
-            local names = event.names or {}
-            for _, playerName in ipairs(names) do
-                -- Remove all clips that belong to this player (local helper in LiveDeathClips.lua)
-                local removed = ns.RemovePlayerFromSpeedClips and ns.RemovePlayerFromSpeedClips(playerName) or 0
-                ns.SpeedClipsOptedOut[playerName] = true
-                if removed > 0 then
-                    print(string.format("Удален %s (%d клипов) из Speed Clips по их запросу.", playerName, removed))
-                end
-            end
-        end
-    end
-    
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, Update)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_DELETED, Update)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_SYNCED, Update)
-    ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, HandleSpeedClipsRemovalRequest)
 end
 
 local function HasSeenLatestVersion()
@@ -143,12 +128,9 @@ function OFSettings_UpdateUI()
     
     -- Update speed clips checkbox
     local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
-    print("DEBUG: participateInSpeedClips from PlayerPrefs:", participateInSpeedClips)
     if participateInSpeedClips == nil then 
         participateInSpeedClips = true -- default to true
-        print("DEBUG: Setting default participateInSpeedClips to true")
     end
-    print("DEBUG: Setting checkbox to:", participateInSpeedClips)
     OFSettingsSpeedClipsCheckButton:SetChecked(participateInSpeedClips and 1 or nil)  -- Convert true/false to 1/nil
     
     -- Update duration slider
@@ -182,9 +164,7 @@ end
 
 function OFSettings_SpeedClips_OnClick(self)
     local isChecked = self:GetChecked() and true or false  -- Convert 1/nil to true/false
-    print("DEBUG: Speed clips checkbox clicked, isChecked:", isChecked)
     ns.PlayerPrefs:Set("participateInSpeedClips", isChecked)
-    print("DEBUG: Saved participateInSpeedClips to PlayerPrefs:", isChecked)
 
     local playerName = UnitName("player")
 
@@ -200,7 +180,9 @@ function OFSettings_SpeedClips_OnClick(self)
         end
     else
         ns.BlacklistAPI:RemoveFromBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
-        ns.SpeedClipsOptedOut[playerName] = nil
+        if ns.SpeedClipsOptedOut then
+            ns.SpeedClipsOptedOut[playerName] = nil
+        end
     end
 end
 
