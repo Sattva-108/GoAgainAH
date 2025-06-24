@@ -731,17 +731,62 @@ function AuctionHouse:Initialize()
     local function HandleSpeedClipsRemovalRequest(event)
         if event and event.blType == ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL then
             local names = event.names or {}
+            local ownerName = event.playerName
             
+            -- Track previous state for this owner to detect removals
+            if not ns._speedClipsBlacklistState then
+                ns._speedClipsBlacklistState = {}
+            end
+            
+            local previousNames = ns._speedClipsBlacklistState[ownerName] or {}
+            local currentNames = {}
+            
+            -- Convert current names to lookup table
             for _, playerName in ipairs(names) do
-                -- Remove all clips that belong to this player
-                local removed = ns.RemovePlayerFromSpeedClips and ns.RemovePlayerFromSpeedClips(playerName) or 0
-                if ns.SpeedClipsOptedOut then
-                    ns.SpeedClipsOptedOut[playerName] = true
-                end
-                if removed > 0 then
-                    print(string.format("Удален %s (%d клипов) из Speed Clips по их запросу.", playerName, removed))
+                currentNames[playerName] = true
+            end
+            
+            -- Process additions (players now in blacklist = opt-out)
+            for _, playerName in ipairs(names) do
+                if not previousNames[playerName] then
+                    -- Player was added to opt-out
+                    local removed = ns.RemovePlayerFromSpeedClips and ns.RemovePlayerFromSpeedClips(playerName) or 0
+                    if ns.SpeedClipsOptedOut then
+                        ns.SpeedClipsOptedOut[playerName] = true
+                    end
+                    if removed > 0 then
+                        print(string.format("Удален %s (%d клипов) из Speed Clips по их запросу.", playerName, removed))
+                    end
                 end
             end
+            
+            -- Process removals (players no longer in blacklist = opt-in)
+            for playerName, _ in pairs(previousNames) do
+                if not currentNames[playerName] then
+                    -- Player was removed from opt-out (opted back in)
+                    -- Restore clips from archive if available
+                    local restoredCount = 0
+                    if ns.RestorePlayerSpeedClips then
+                        restoredCount = ns.RestorePlayerSpeedClips(playerName)
+                    else
+                        -- Fallback: just clear opt-out status
+                        if ns.SpeedClipsOptedOut then
+                            ns.SpeedClipsOptedOut[playerName] = nil
+                        end
+                        -- Trigger UI update
+                        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+                    end
+                    
+                    if restoredCount > 0 then
+                        print(string.format("%s восстановил участие в Speed Clips (%d клипов)", ns.GetDisplayName(playerName), restoredCount))
+                    else
+                        print(string.format("%s восстановил участие в Speed Clips", ns.GetDisplayName(playerName)))
+                    end
+                end
+            end
+            
+            -- Update state tracking
+            ns._speedClipsBlacklistState[ownerName] = currentNames
         end
     end
     

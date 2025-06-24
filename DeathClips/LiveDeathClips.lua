@@ -254,6 +254,7 @@ ns.RestorePlayerSpeedClips = function(playerName)
             restoredCount = restoredCount + 1
         end
         
+        
         -- Clear archive
         ns.SpeedClipsArchive[playerName] = nil
     end
