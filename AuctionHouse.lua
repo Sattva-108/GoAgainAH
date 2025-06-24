@@ -155,7 +155,22 @@ local function GetTimePreciseSec()
     return Time - InitalGTPSCall
 end
 
-local COMM_PREFIX = "OFAuctionHouse"
+--[[-----------------------------------------------------------------
+  PROTOTYPE / EXPERIMENTAL NETWORK ISOLATION
+  ---------------------------------------------------------------
+  All AceComm traffic is namespaced by the *prefix* (max 16 chars).
+  By appending a one-character protocol tag we ensure that only
+  clients built from the same branch ("prototype A") will talk to
+  each other.  Users on the public/stable release (old prefix
+  "OFAuctionHouse") will silently ignore messages coming from this
+  build and vice-versa – no risk of desync or Lua errors.
+
+  Increase/alter the suffix whenever you introduce an incompatible
+  wire-format change.  Keep the total length ≤16 characters.
+-----------------------------------------------------------------]]
+
+local PROTOTYPE_SUFFIX = "C"        -- change to "B", "C" … on next break
+local COMM_PREFIX = "OFAuctionHouse" .. PROTOTYPE_SUFFIX  -- 14+1 = 15 ≤ 16
 local OF_COMM_PREFIX = "OnlyFangsAddon"
 local T_AUCTION_STATE_REQUEST = "AUCTION_STATE_REQUEST"
 local T_AUCTION_STATE = "AUCTION_STATE"
