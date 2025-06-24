@@ -409,7 +409,9 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
     -- Create the record
     local id = ns.NewId()
     local now = time()
-    local expiresAt = now + ns.GetConfig().auctionExpiry
+    -- Use user setting for auction duration, fallback to config default
+    local durationDays = ns.PlayerPrefs:Get("defaultAuctionDuration") or 14
+    local expiresAt = now + (durationDays * 24 * 60 * 60)
 
     local auction = {
         id = id,
@@ -670,7 +672,8 @@ function AuctionHouseAPI:UpdateAuctionStatus(auctionID, status)
     if status == ns.AUCTION_STATUS_SENT_LOAN then
         auction.expiresAt = time() + ns.GetConfig().loanDuration
     elseif status == ns.AUCTION_STATUS_SENT_COD then
-        auction.expiresAt = time() + ns.GetConfig().auctionExpiry
+        local durationDays = ns.PlayerPrefs:Get("defaultAuctionDuration") or 14
+        auction.expiresAt = time() + (durationDays * 24 * 60 * 60)
     end
 
     self:UpdateDB({auction = auction})
@@ -1398,7 +1401,8 @@ function AuctionHouseAPI:ExtendAuction(auctionId)
         return nil, L["Wrong realm"]
     end
 
-    auction.expiresAt = time() + ns.GetConfig().auctionExpiry
+    local durationDays = ns.PlayerPrefs:Get("defaultAuctionDuration") or 14
+    auction.expiresAt = time() + (durationDays * 24 * 60 * 60)
     self:UpdateDB({auction = auction})
     self:FireEvent(ns.T_AUCTION_ADD_OR_UPDATE, {auction = auction, source = "extend"})
     self.broadcastAuctionUpdate(ns.T_AUCTION_ADD_OR_UPDATE, {auction = auction, source = "extend"})

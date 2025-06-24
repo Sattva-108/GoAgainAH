@@ -107,7 +107,54 @@ function OFAtheneUI_Update(resetScroll)
         OFUpdateAvailableFrame:Hide()
         OFAtheneUpToDateText:Show()
     end
+    
+    -- Update settings UI
+    OFSettings_UpdateUI()
+    
     OFAtheneAdContainer:Show()
+end
+
+function OFSettings_UpdateUI()
+    -- Update minimap checkbox
+    if not GoAgainAH_MinimapDB then
+        GoAgainAH_MinimapDB = { hide = false }
+    end
+    local showMinimap = not GoAgainAH_MinimapDB.hide
+    OFSettingsMinimapCheckButton:SetChecked(showMinimap)
+    
+    -- Update duration slider
+    local duration = ns.PlayerPrefs:Get("defaultAuctionDuration")
+    if duration == nil then duration = 14 end -- default 14 days
+    OFSettingsDurationSlider:SetValue(duration)
+    _G[OFSettingsDurationSlider:GetName().."Text"]:SetText("Длительность аукциона: " .. duration .. " дней")
+end
+
+function OFSettings_MinimapIcon_OnClick(self)
+    local isChecked = self:GetChecked()
+    
+    -- Initialize if needed
+    if not GoAgainAH_MinimapDB then
+        GoAgainAH_MinimapDB = { hide = false }
+    end
+    
+    -- Update the setting (LibDBIcon uses 'hide' property, so invert the checkbox)
+    GoAgainAH_MinimapDB.hide = not isChecked
+    
+    -- Update minimap icon visibility
+    local icon = LibStub("LibDBIcon-1.0", true)
+    if icon then
+        if isChecked then
+            icon:Show("GoAgainAH")
+        else
+            icon:Hide("GoAgainAH")
+        end
+    end
+end
+
+function OFSettings_Duration_OnValueChanged(self, value)
+    local days = math.floor(value)
+    ns.PlayerPrefs:Set("defaultAuctionDuration", days)
+    _G[self:GetName().."Text"]:SetText("Длительность аукциона: " .. days .. " дней")
 end
 
 local function CreateReviewForAthene(idPrefix, text, reply)
@@ -156,7 +203,7 @@ function OFAuctionFrame_UpdateAtheneTab()
     --if ns.AuctionHouse:IsUpdateAvailable() or not HasSeenLatestVersion() then
     --    OFAuctionFrameTab8:SetText("Athene (1)")
     --else
-        OFAuctionFrameTab8:SetText("Athene")
+        OFAuctionFrameTab8:SetText("Настройки")
     --end
 end
 

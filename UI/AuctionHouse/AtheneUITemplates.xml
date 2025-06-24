@@ -6,7 +6,7 @@
         </Anchors>
         <Layers>
             <Layer level="BACKGROUND">
-                <FontString name="AtheneTitle" inherits="GameFontNormal" text="Athene">
+                <FontString name="AtheneTitle" inherits="GameFontNormal" text="Настройки">
                     <Anchors>
                         <Anchor x="52"  y="-18" point="TOP" />
                     </Anchors>
@@ -375,63 +375,47 @@
                                     </Layer>
                                 </Layers>
                                 <Frames>
-                                    <EditBox autoFocus="false">
-                                        <Size x="175" y="24"/>
+                                    <!-- Settings Content -->
+                                    <CheckButton name="OFSettingsMinimapCheckButton" inherits="UICheckButtonTemplate">
+                                        <Size x="24" y="24"/>
                                         <Anchors>
-                                            <Anchor point="TOPRIGHT" x="-8" y="47" relativePoint="BOTTOMRIGHT" relativeTo="$parentTexture0"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-80"/>
                                         </Anchors>
                                         <Scripts>
                                             <OnLoad>
-                                                OFReadOnlyEditBox_OnLoad(self, "tinyurl.com/onlyfangs-youtube")
+                                                OFSettingsMinimapCheckButtonText:SetFontObject(GameFontNormal);
+                                                OFSettingsMinimapCheckButtonText:SetText("Показать иконку у миникарты");
                                             </OnLoad>
+                                            <OnClick>
+                                                OFSettings_MinimapIcon_OnClick(self)
+                                            </OnClick>
                                         </Scripts>
-                                        <FontString inherits="ChatFontNormal"/>
-                                    </EditBox>
-                                    <Button name="OFAtheneAIRequestSubmitButton" inherits="UIPanelButtonTemplate" text="L_I_WANT_MY_OWN_AI" >
-                                        <Size x="180" y="25"/>
+                                    </CheckButton>
+                                    
+                                    <FontString name="OFSettingsDurationLabel" inherits="GameFontNormal" text="Длительность аукциона по умолчанию:">
                                         <Anchors>
-                                            <Anchor point="TOPRIGHT" x="-90" y="193" relativePoint="BOTTOMRIGHT" relativeTo="$parentTexture1"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-130"/>
                                         </Anchors>
-                                        <Scripts>
-                                            <OnClick function="OFAtheneAIRequest_OnSubmit" />
-                                        </Scripts>
-                                    </Button>
-                                    <EditBox name="$parentBattleNet" autoFocus="false">
-                                        <Size x="130" y="24"/>
+                                    </FontString>
+                                    
+                                    <Slider name="OFSettingsDurationSlider" inherits="OptionsSliderTemplate">
+                                        <Size x="200" y="20"/>
                                         <Anchors>
-                                            <Anchor point="TOPRIGHT" x="-110" y="97" relativePoint="BOTTOMRIGHT" relativeTo="$parentTexture1"/>
-                                        </Anchors>
-                                        <Scripts>
-                                            <OnLoad>
-                                                OFReadOnlyEditBox_OnLoad(self, "Athene#1780")
-                                            </OnLoad>
-                                        </Scripts>
-                                        <FontString inherits="ChatFontNormal"/>
-                                    </EditBox>
-                                    <EditBox autoFocus="false">
-                                        <Size x="130" y="24"/>
-                                        <Anchors>
-                                            <Anchor point="LEFT"  relativePoint="RIGHT" relativeTo="$parentBattleNet" x="0"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-160"/>
                                         </Anchors>
                                         <Scripts>
                                             <OnLoad>
-                                                OFReadOnlyEditBox_OnLoad(self, "Athenelive")
+                                                _G[self:GetName().."Low"]:SetText("1 день");
+                                                _G[self:GetName().."High"]:SetText("30 дней");
+                                                _G[self:GetName().."Text"]:SetText("Длительность аукциона");
+                                                self:SetMinMaxValues(1, 30);
+                                                self:SetValueStep(1);
                                             </OnLoad>
+                                            <OnValueChanged>
+                                                OFSettings_Duration_OnValueChanged(self, value)
+                                            </OnValueChanged>
                                         </Scripts>
-                                        <FontString inherits="ChatFontNormal"/>
-                                    </EditBox>
-                                    <EditBox autoFocus="false">
-                                        <Size x="180" y="24"/>
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT"  relativePoint="BOTTOMLEFT" relativeTo="$parentTexture3" x="34" y="28"/>
-                                        </Anchors>
-                                        <Scripts>
-                                            <OnLoad>
-                                                OFReadOnlyEditBox_OnLoad(self, "contact@gamingforgood.net")
-                                            </OnLoad>
-                                        </Scripts>
-                                        <FontString inherits="ChatFontNormal"/>
-                                    </EditBox>
+                                    </Slider>
                                 </Frames>
                                 <Scripts>
                                     <OnLoad>

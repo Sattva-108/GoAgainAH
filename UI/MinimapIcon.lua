@@ -47,5 +47,12 @@ end
 ns.GameEventHandler:On("PLAYER_LOGIN", function()
     local icon = LibStub("LibDBIcon-1.0", true)
     if not icon then return end
-    icon:Register(addonName, plugin, {})
+    
+    -- Initialize saved variables if needed
+    if not GoAgainAH_MinimapDB then
+        GoAgainAH_MinimapDB = { hide = false }
+    end
+    
+    -- Register the icon with saved settings
+    icon:Register(addonName, plugin, GoAgainAH_MinimapDB)
 end)
