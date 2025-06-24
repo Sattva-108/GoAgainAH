@@ -1240,8 +1240,16 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                         self.db.auctions[id] = nil
                     end
 
-                    -- Bump revision if newer
-                    if partial.revision and partial.revision > (self.db.revision or 0) then
+                    -- Only bump revision on the last chunk (to avoid prematurely claiming full sync)
+                    local allowRevisionBump = true
+                    if label then
+                        local cNum, cTot = label:match("chunk_(%d+)of(%d+)")
+                        cNum, cTot = tonumber(cNum), tonumber(cTot)
+                        if cNum and cTot and cNum < cTot then
+                            allowRevisionBump = false -- not the final chunk yet
+                        end
+                    end
+                    if allowRevisionBump and partial.revision and partial.revision > (self.db.revision or 0) then
                         self.db.revision     = partial.revision
                         self.db.lastUpdateAt = partial.lastUpdateAt
                     end
