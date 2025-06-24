@@ -145,7 +145,8 @@ local function ShowTooltip(self, meetsRequirements, requirementsReason, entry, c
 
 
             if hasRP then
-                if IsInGroup() and UnitInParty(entry.name) then
+                local inGroup = GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0
+                if inGroup and UnitInParty(entry.name) then
                     GameTooltip:AddLine(L["Roleplay"])
                     GameTooltip:AddLine(L["This party has roleplay enabled."], 1, 1, 1)
                 else

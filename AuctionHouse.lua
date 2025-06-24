@@ -481,7 +481,10 @@ function AuctionHouse:Initialize()
         -- AUCTIONS ---------------------------------------------------------------
         broadcastAuctionUpdate = function(dataType, payload)
             -- Only ship auctions from my realm
-            if payload.auction and payload.auction.realm == ns.CURRENT_REALM then
+            if dataType == ns.T_AUCTION_DELETED then
+                -- For deletions, payload is just auctionID - always broadcast
+                self:BroadcastAuctionUpdate(dataType, payload)
+            elseif payload.auction and payload.auction.realm == ns.CURRENT_REALM then
                 self:BroadcastAuctionUpdate(dataType, payload)
             end
         end,
@@ -505,7 +508,10 @@ function AuctionHouse:Initialize()
         -- LFG POSTS --------------------------------------------------------------
         broadcastLFGUpdate = function(dataType, payload)
             -- LFG posts are always realm-scoped by design, keep the symmetry
-            if payload.lfg and payload.lfg.realm == ns.CURRENT_REALM then
+            if dataType == ns.T_LFG_DELETED then
+                -- For LFG deletions, payload is just player name - always broadcast
+                self:BroadcastLFGUpdate(dataType, payload)
+            elseif payload.lfg and payload.lfg.realm == ns.CURRENT_REALM then
                 self:BroadcastLFGUpdate(dataType, payload)
             end
         end,

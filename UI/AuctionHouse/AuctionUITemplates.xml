@@ -856,7 +856,7 @@
                         </Anchors>
                         <Layers>
                             <Layer level="BACKGROUND">
-                                <FontString parentKey="Text" inherits="GameFontNormalSmall" justifyH="RIGHT" setAllPoints="true" text="L_Tip"/>
+                                <FontString parentKey="Text" inherits="GameFontNormalSmall" justifyH="RIGHT" setAllPoints="true" text="Чаевые:  "/>
                             </Layer>
                         </Layers>
                     </Frame>

@@ -1989,7 +1989,11 @@ function OFAuctionFrameBid_OnLoad()
     end
 
     ns.AuctionHouseAPI:RegisterEvent(ns.T_AUCTION_ADD_OR_UPDATE, callback)
-    ns.AuctionHouseAPI:RegisterEvent(ns.T_AUCTION_DELETED, callback)
+    ns.AuctionHouseAPI:RegisterEvent(ns.T_AUCTION_DELETED, function(auctionID)
+        if OFAuctionFrame:IsShown() and OFAuctionFrameBid:IsShown() then
+            OFAuctionFrameBid_Update();
+        end
+    end)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_ON_AUCTION_STATE_UPDATE, callback)
 end
 
