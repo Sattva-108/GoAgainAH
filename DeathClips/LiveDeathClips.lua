@@ -195,6 +195,12 @@ ns.AddNewDeathClips = function(newClips)
                 clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
                 clip.getPlayedTry = 0
                 existingClips[clip.id] = clip
+                
+                -- Add to queue if no playedTime (for died/completed clips)
+                if not clip.playedTime and clip.deathCause ~= "ALIVE" then
+                    queue[clip.characterName] = queue[clip.characterName] or {}
+                    table.insert(queue[clip.characterName], clip)
+                end
             end
         end
     end
