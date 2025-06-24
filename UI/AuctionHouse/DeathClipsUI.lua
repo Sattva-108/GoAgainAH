@@ -1543,14 +1543,24 @@ function OFDeathClips_SpeedClips_OnClick(self)
         end
     else
         ns.BlacklistAPI:RemoveFromBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
-        if ns.SpeedClipsOptedOut then
-            ns.SpeedClipsOptedOut[playerName] = nil
+        
+        -- Restore speed clips from archive for immediate display
+        if ns.RestorePlayerSpeedClips then
+            local restoredCount = ns.RestorePlayerSpeedClips(playerName)
+            if restoredCount > 0 then
+                print(string.format("Восстановлено %d Speed Clips", restoredCount))
+            end
+        else
+            -- Fallback if restore function is not available
+            if ns.SpeedClipsOptedOut then
+                ns.SpeedClipsOptedOut[playerName] = nil
+            end
+            -- Request immediate played time sync when opting back in
+            if UnitIsConnected("player") then
+                RequestTimePlayed()
+            end
+            -- Fire event to update UI immediately
+            ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
         end
-        -- Request immediate played time sync when opting back in
-        if UnitIsConnected("player") then
-            RequestTimePlayed()
-        end
-        -- Fire event to update UI immediately
-        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
     end
 end

@@ -205,16 +205,26 @@ ns.RemoveDeathClip = function(clipID)
     existingClips[clipID] = nil
 end
 
+-- Archive for quick restoration
+ns.SpeedClipsArchive = ns.SpeedClipsArchive or {}
+
 ns.RemovePlayerFromSpeedClips = function(playerName)
     local existingClips = ns.GetLiveDeathClips()
     local removedCount = 0
+    local archivedClips = {}
     
-    -- Remove all clips for this player
+    -- Archive and remove all clips for this player
     for clipID, clip in pairs(existingClips) do
         if clip.characterName == playerName then
+            archivedClips[clipID] = clip -- Archive before removing
             existingClips[clipID] = nil
             removedCount = removedCount + 1
         end
+    end
+    
+    -- Store in archive for quick restoration
+    if removedCount > 0 then
+        ns.SpeedClipsArchive[playerName] = archivedClips
     end
     
     -- Also remove from queue if present
@@ -230,6 +240,33 @@ ns.RemovePlayerFromSpeedClips = function(playerName)
     ns.SpeedClipsOptedOut[playerName] = true -- remember preference
     
     return removedCount
+end
+
+ns.RestorePlayerSpeedClips = function(playerName)
+    local existingClips = ns.GetLiveDeathClips()
+    local archivedClips = ns.SpeedClipsArchive[playerName]
+    local restoredCount = 0
+    
+    if archivedClips then
+        -- Restore clips from archive
+        for clipID, clip in pairs(archivedClips) do
+            existingClips[clipID] = clip
+            restoredCount = restoredCount + 1
+        end
+        
+        -- Clear archive
+        ns.SpeedClipsArchive[playerName] = nil
+    end
+    
+    -- Clear opt-out status
+    ns.SpeedClipsOptedOut[playerName] = nil
+    
+    -- Fire event to update UI immediately
+    if restoredCount > 0 then
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+    end
+    
+    return restoredCount
 end
 
 ns.GetCompletedDeathClips = function()
