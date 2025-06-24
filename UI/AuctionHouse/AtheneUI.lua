@@ -183,6 +183,10 @@ function OFSettings_SpeedClips_OnClick(self)
         if ns.SpeedClipsOptedOut then
             ns.SpeedClipsOptedOut[playerName] = nil
         end
+        -- Request immediate played time sync when opting back in
+        if UnitIsConnected("player") then
+            RequestTimePlayed()
+        end
     end
 end
 
