@@ -156,6 +156,11 @@ local function OnSubTabChanged(frame, newTabId)
 
     ns.currentActiveTabId = newTabId -- Set the new active tab ID
 
+    -- Update Speed Clips checkbox visibility when switching tabs
+    if OFDeathClips_UpdateSpeedClipsCheckbox then
+        OFDeathClips_UpdateSpeedClipsCheckbox()
+    end
+
     local tabConfig = ns.DeathClipsTabSettings[newTabId]
     if not tabConfig then
         if ns.debug then print("Error: OnSubTabChanged - No tab configuration found for ID: " .. newTabId) end

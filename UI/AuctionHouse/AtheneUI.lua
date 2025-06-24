@@ -3,8 +3,6 @@ local L = ns.L
 
 local SEEN_CHANGELOG_VERSION_KEY = "SeenChangelogVersion"
 
--- Timestamp of the last opt-out broadcast to avoid chat spam
-local _speedClipsLastBroadcastTs = 0
 
 ns.IsAtheneBlocked = function()
     local me = UnitName("player")
@@ -126,13 +124,6 @@ function OFSettings_UpdateUI()
     local showMinimap = not GoAgainAH_MinimapDB.hide
     OFSettingsMinimapCheckButton:SetChecked(showMinimap and 1 or nil)  -- Convert true/false to 1/nil
     
-    -- Update speed clips checkbox
-    local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
-    if participateInSpeedClips == nil then 
-        participateInSpeedClips = true -- default to true
-    end
-    OFSettingsSpeedClipsCheckButton:SetChecked(participateInSpeedClips and 1 or nil)  -- Convert true/false to 1/nil
-    
     -- Update duration slider
     local duration = ns.PlayerPrefs:Get("defaultAuctionDuration")
     if duration == nil then duration = 14 end -- default 14 days
@@ -162,33 +153,6 @@ function OFSettings_MinimapIcon_OnClick(self)
     end
 end
 
-function OFSettings_SpeedClips_OnClick(self)
-    local isChecked = self:GetChecked() and true or false  -- Convert 1/nil to true/false
-    ns.PlayerPrefs:Set("participateInSpeedClips", isChecked)
-
-    local playerName = UnitName("player")
-
-    if not isChecked then
-        if ns.RemovePlayerFromSpeedClips then
-            ns.RemovePlayerFromSpeedClips(playerName)
-        end
-
-        if (time() - _speedClipsLastBroadcastTs) > 2 then
-            ns.BlacklistAPI:AddToBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
-            _speedClipsLastBroadcastTs = time()
-            print("Запрос на удаление из Speed Clips отправлен другим игрокам.")
-        end
-    else
-        ns.BlacklistAPI:RemoveFromBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
-        if ns.SpeedClipsOptedOut then
-            ns.SpeedClipsOptedOut[playerName] = nil
-        end
-        -- Request immediate played time sync when opting back in
-        if UnitIsConnected("player") then
-            RequestTimePlayed()
-        end
-    end
-end
 
 function OFSettings_Duration_OnValueChanged(self, value)
     local days = math.floor(value)

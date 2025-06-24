@@ -273,6 +273,8 @@ function OFAuctionFrameDeathClips_OnLoad()
         if OFAuctionFrame:IsShown() and OFAuctionFrameDeathClips:IsShown() then
             OFAuctionFrameDeathClips_Update()
         end
+        -- Update checkbox state when clips change
+        OFDeathClips_UpdateSpeedClipsCheckbox()
     end)
 
     -- Listen for played time updates to refresh UI in real-time
@@ -573,6 +575,7 @@ end
 local initialized = false
 function OFAuctionFrameDeathClips_OnShow()
     OFAuctionFrameDeathClips_Update()
+    OFDeathClips_UpdateSpeedClipsCheckbox()
     if not initialized then
         initialized = true
         local state = ns.GetDeathClipReviewState()
@@ -1499,5 +1502,55 @@ function OFAuctionFrameDeathClips_OnHide()
     end
     if ns.HideAllClipPrompts then
         ns.HideAllClipPrompts()
+    end
+end
+
+-- Timestamp of the last opt-out broadcast to avoid chat spam
+local _speedClipsLastBroadcastTs = 0
+
+function OFDeathClips_UpdateSpeedClipsCheckbox()
+    local checkbox = OFDeathClipsSpeedClipsCheckButton
+    if not checkbox then return end
+    
+    -- Only show checkbox in Speed Clips tab
+    if ns.currentActiveTabId == "SPEED_CLIPS" then
+        checkbox:Show()
+        local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
+        if participateInSpeedClips == nil then 
+            participateInSpeedClips = true -- default to true
+        end
+        checkbox:SetChecked(participateInSpeedClips and 1 or nil)
+    else
+        checkbox:Hide()
+    end
+end
+
+function OFDeathClips_SpeedClips_OnClick(self)
+    local isChecked = self:GetChecked() and true or false
+    ns.PlayerPrefs:Set("participateInSpeedClips", isChecked)
+
+    local playerName = UnitName("player")
+
+    if not isChecked then
+        if ns.RemovePlayerFromSpeedClips then
+            ns.RemovePlayerFromSpeedClips(playerName)
+        end
+
+        if (time() - _speedClipsLastBroadcastTs) > 2 then
+            ns.BlacklistAPI:AddToBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
+            _speedClipsLastBroadcastTs = time()
+            print("Запрос на удаление из Speed Clips отправлен другим игрокам.")
+        end
+    else
+        ns.BlacklistAPI:RemoveFromBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
+        if ns.SpeedClipsOptedOut then
+            ns.SpeedClipsOptedOut[playerName] = nil
+        end
+        -- Request immediate played time sync when opting back in
+        if UnitIsConnected("player") then
+            RequestTimePlayed()
+        end
+        -- Fire event to update UI immediately
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
     end
 end

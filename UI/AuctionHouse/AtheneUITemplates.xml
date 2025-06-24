@@ -392,32 +392,17 @@
                                         </Scripts>
                                     </CheckButton>
                                     
-                                    <CheckButton name="OFSettingsSpeedClipsCheckButton" inherits="UICheckButtonTemplate">
-                                        <Size x="24" y="24"/>
-                                        <Anchors>
-                                            <Anchor point="TOPLEFT" x="30" y="-120"/>
-                                        </Anchors>
-                                        <Scripts>
-                                            <OnLoad>
-                                                OFSettingsSpeedClipsCheckButtonText:SetFontObject(GameFontNormal);
-                                                OFSettingsSpeedClipsCheckButtonText:SetText("Участвовать в Speed Clips");
-                                            </OnLoad>
-                                            <OnClick>
-                                                OFSettings_SpeedClips_OnClick(self)
-                                            </OnClick>
-                                        </Scripts>
-                                    </CheckButton>
                                     
                                     <FontString name="OFSettingsDurationLabel" inherits="GameFontNormal" text="Длительность аукциона по умолчанию:">
                                         <Anchors>
-                                            <Anchor point="TOPLEFT" x="30" y="-160"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-130"/>
                                         </Anchors>
                                     </FontString>
                                     
                                     <Slider name="OFSettingsDurationSlider" inherits="OptionsSliderTemplate">
                                         <Size x="200" y="20"/>
                                         <Anchors>
-                                            <Anchor point="TOPLEFT" x="30" y="-220"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-160"/>
                                         </Anchors>
                                         <Scripts>
                                             <OnLoad>

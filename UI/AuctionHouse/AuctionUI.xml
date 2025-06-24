@@ -1378,6 +1378,23 @@
 					</Layer>
 				</Layers>
 				<Frames>
+					<!-- Speed Clips Participation Checkbox -->
+					<CheckButton name="OFDeathClipsSpeedClipsCheckButton" inherits="UICheckButtonTemplate">
+						<Size x="20" y="20"/>
+						<Anchors>
+							<Anchor point="RIGHT" relativeTo="OFAuctionFrameCloseButton" relativePoint="LEFT" x="-160" y="0"/>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								OFDeathClipsSpeedClipsCheckButtonText:SetFontObject(GameFontNormal);
+								OFDeathClipsSpeedClipsCheckButtonText:SetText("Участвовать в Speed Clips");
+							</OnLoad>
+							<OnClick>
+								OFDeathClips_SpeedClips_OnClick(self)
+							</OnClick>
+						</Scripts>
+					</CheckButton>
+					
 					<!-- Streamer sort remains first -->
 					<Button name="OFDeathClipsStreamerSort" inherits="OFAuctionSortButtonTemplate" text="Имя">
 						<Size><AbsDimension x="90" y="19" /></Size>
