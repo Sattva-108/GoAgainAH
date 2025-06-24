@@ -715,6 +715,23 @@ function AuctionHouse:TrimAuctionForSync(auction)
         trimmed.duel = nil
     end
     
+    -- Remove numeric fields with default/zero values
+    if trimmed.priceType == 0 then
+        trimmed.priceType = nil
+    end
+    
+    if trimmed.deliveryType == 0 then
+        trimmed.deliveryType = nil
+    end
+    
+    if trimmed.raidAmount == 0 then
+        trimmed.raidAmount = nil
+    end
+    
+    if trimmed.points == 0 then
+        trimmed.points = nil
+    end
+    
     if trimmed.allowLoan == false then
         trimmed.allowLoan = nil
     end
@@ -740,7 +757,7 @@ function AuctionHouse:SendAuctionStateChunked(responsePayload, recipient, auctio
     local dbgID = self.benchDebugCounter
     local syncStart = GetTime()
     
-    -- Serialize the full payload once to check size
+    -- Serialize the full payload once 
     local fullSerialized = Addon:Serialize(responsePayload)
     local fullSize = #fullSerialized
     
@@ -755,49 +772,30 @@ function AuctionHouse:SendAuctionStateChunked(responsePayload, recipient, auctio
         return
     end
     
-    -- Large payload - chunk the data objects, not serialized string
-    local auctions = {}
-    for id, auction in pairs(responsePayload.auctions or {}) do
-        auctions[#auctions + 1] = {id = id, auction = auction}
-    end
+    -- Large payload - use death-clips approach: serialize once, compress once, chunk compressed data
+    local fullCompressed = LibDeflate:CompressDeflate(fullSerialized, { level = 1 })
+    local compressedSize = #fullCompressed
     
-    local CHUNK_SIZE = 400 -- auctions per chunk (increased to reduce serialization overhead)
-    local totalChunks = math.ceil(#auctions / CHUNK_SIZE)
+    -- Split compressed data into chunks
+    local CHUNK_SIZE = 6144 -- 6KB chunks of compressed data
+    local totalChunks = math.ceil(compressedSize / CHUNK_SIZE)
     local chunkIndex = 1
-    local totalComp = 0
     
     local function sendNext()
         if chunkIndex > totalChunks then
             local dt = GetTime() - syncStart
             print(("[AUCTION-%d] sync completed: %d auctions → %d chunks, %d→%d bytes, took %.2f s"):format(
-                dbgID, auctionCount, totalChunks, fullSize, totalComp, dt))
+                dbgID, auctionCount, totalChunks, fullSize, compressedSize, dt))
             return
         end
         
         local i1 = (chunkIndex - 1) * CHUNK_SIZE + 1
-        local iN = math.min(chunkIndex * CHUNK_SIZE, #auctions)
-        local chunkAuctions = {}
-        
-        for i = i1, iN do
-            local entry = auctions[i]
-            chunkAuctions[entry.id] = entry.auction
-        end
-        
-        local chunkPayload = {
-            v = responsePayload.v,
-            auctions = chunkAuctions,
-            deletedAuctionIds = (chunkIndex == 1) and responsePayload.deletedAuctionIds or {},
-            revision = responsePayload.revision,
-            lastUpdateAt = responsePayload.lastUpdateAt,
-        }
-        
-        local ser = Addon:Serialize(chunkPayload)
-        local compressed = LibDeflate:CompressDeflate(ser, { level = 1 })
-        totalComp = totalComp + #compressed
+        local iN = math.min(chunkIndex * CHUNK_SIZE, compressedSize)
+        local chunkData = fullCompressed:sub(i1, iN)
         
         local payload = {
             label = ("chunk_%dof%d"):format(chunkIndex, totalChunks),
-            data = LibDeflate:EncodeForWoWAddonChannel(compressed),
+            data = LibDeflate:EncodeForWoWAddonChannel(chunkData),
         }
         
         self:SendDm(Addon:Serialize({ T_AUCTION_STATE, payload }), recipient, "BULK")
@@ -1096,20 +1094,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local decompressed, label
         
         if type(payload) == "table" and payload.label then
-            -- Chunked format - accumulate chunks
+            -- Chunked format - accumulate compressed chunks
             label = payload.label
             local compressed = LibDeflate:DecodeForWoWAddonChannel(payload.data)
             if not compressed then
-                return
-            end
-            decompressed = LibDeflate:DecompressDeflate(compressed)
-            
-            if not decompressed then
-                return
-            end
-
-            local success, chunkState = Addon:Deserialize(decompressed)
-            if not success then
                 return
             end
             
@@ -1126,13 +1114,10 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 return
             end
             
-            -- Store this chunk's auctions
+            -- Store this compressed chunk
             buffer.chunks = buffer.chunks or {}
-            buffer.chunks[chunkNum] = chunkState.auctions or {}
+            buffer.chunks[chunkNum] = compressed
             buffer.totalChunks = totalChunks
-            buffer.revision = chunkState.revision
-            buffer.lastUpdateAt = chunkState.lastUpdateAt
-            buffer.deletedAuctionIds = chunkState.deletedAuctionIds or {}
             
             -- Check if we have all chunks
             local receivedCount = 0
@@ -1147,20 +1132,22 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 return
             end
             
-            -- All chunks received - merge them into a single state
-            local mergedAuctions = {}
+            -- All chunks received - reconstruct full compressed data
+            local fullCompressed = ""
             for i = 1, totalChunks do
-                for id, auction in pairs(buffer.chunks[i]) do
-                    mergedAuctions[id] = auction
-                end
+                fullCompressed = fullCompressed .. buffer.chunks[i]
             end
             
-            local mergedState = {
-                auctions = mergedAuctions,
-                revision = buffer.revision,
-                lastUpdateAt = buffer.lastUpdateAt,
-                deletedAuctionIds = buffer.deletedAuctionIds,
-            }
+            -- Decompress once and deserialize once
+            decompressed = LibDeflate:DecompressDeflate(fullCompressed)
+            if not decompressed then
+                return
+            end
+            
+            local success, mergedState = Addon:Deserialize(decompressed)
+            if not success then
+                return
+            end
             
             -- Clean up buffer
             self.auctionChunkBuffer[sender] = nil
