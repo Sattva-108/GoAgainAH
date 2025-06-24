@@ -2643,6 +2643,14 @@ function Addon:OnInitialize()
 end
 
 function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePlayed)
+    -- Respect the user's Speed-Clips privacy preference
+    if ns.PlayerPrefs and ns.PlayerPrefs.Get then
+        local participate = ns.PlayerPrefs:Get("participateInSpeedClips")
+        if participate == false then
+            return -- user opted-out; do not record or broadcast
+        end
+    end
+
     local playerName = UnitName("player")
     local playerRealm = GetRealmName()
     local playerLevel = UnitLevel("player")

@@ -5,9 +5,11 @@ L = ns.L
 -----------------------------------------------------------------------------
 local BL_TYPE_REVIEW = 1
 local BL_TYPE_ORDERS = 2
+local BL_TYPE_SPEED_CLIPS_REMOVAL = 3
 
 ns.BLACKLIST_TYPE_REVIEW = BL_TYPE_REVIEW
 ns.BLACKLIST_TYPE_ORDERS = BL_TYPE_ORDERS
+ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL = BL_TYPE_SPEED_CLIPS_REMOVAL
 
 local BlacklistAPI = {}
 ns.BlacklistAPI = BlacklistAPI

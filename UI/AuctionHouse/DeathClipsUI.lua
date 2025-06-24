@@ -1272,16 +1272,29 @@ function OFAuctionFrameDeathClips_Update()
             -- Speed ranking for living players (ALIVE only)
             for _, clip in ipairs(pool) do
                 if clip.playedTime and not clip.completed and clip.deathCause == "ALIVE" then
-                    -- Обновляем онлайн-статус, уровень и зону из гильд-ростера
-                    local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
-                    if memberData and memberData.isOnline then
-                        clip.isOnline = true
-                        clip.level = memberData.level or clip.level
-                        clip.where = memberData.zone or clip.where
-                    else
-                        clip.isOnline = false
+                    -- Check if current player opted out and skip their own clips
+                    local currentPlayer = UnitName("player")
+                    local shouldIncludeClip = true
+                    
+                    if clip.characterName == currentPlayer then
+                        local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
+                        if participateInSpeedClips == false then
+                            shouldIncludeClip = false
+                        end
                     end
-                    table.insert(tempClips, clip)
+                    
+                    if shouldIncludeClip then
+                        -- Обновляем онлайн-статус, уровень и зону из гильд-ростера
+                        local memberData = ns.GuildRegister and ns.GuildRegister.GetMemberData and ns.GuildRegister:GetMemberData(clip.characterName)
+                        if memberData and memberData.isOnline then
+                            clip.isOnline = true
+                            clip.level = memberData.level or clip.level
+                            clip.where = memberData.zone or clip.where
+                        else
+                            clip.isOnline = false
+                        end
+                        table.insert(tempClips, clip)
+                    end
                 end
             end
         else -- Default to "LIVE_CLIPS" - exclude living players

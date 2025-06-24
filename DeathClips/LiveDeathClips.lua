@@ -183,16 +183,19 @@ ns.GetNewDeathClips = function(since, existing)
     return newClips
 end
 
+-- Players who opted out of Speed Clips (populated via Blacklist events)
+ns.SpeedClipsOptedOut = ns.SpeedClipsOptedOut or {}
+
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        -- Ensure that the clip has a valid ID and playedTime before attempting to add it
-        if clip.id then
-            clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
-            clip.getPlayedTry = 0
-            existingClips[clip.id] = clip
-        else
-            --print("Error: Clip ID is nil for character:", clip.characterName)
+        -- Skip clips from players that opted-out
+        if not ns.SpeedClipsOptedOut[clip.characterName] then
+            if clip.id then
+                clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
+                clip.getPlayedTry = 0
+                existingClips[clip.id] = clip
+            end
         end
     end
 end
@@ -200,6 +203,33 @@ end
 ns.RemoveDeathClip = function(clipID)
     local existingClips = ns.GetLiveDeathClips()
     existingClips[clipID] = nil
+end
+
+ns.RemovePlayerFromSpeedClips = function(playerName)
+    local existingClips = ns.GetLiveDeathClips()
+    local removedCount = 0
+    
+    -- Remove all clips for this player
+    for clipID, clip in pairs(existingClips) do
+        if clip.characterName == playerName then
+            existingClips[clipID] = nil
+            removedCount = removedCount + 1
+        end
+    end
+    
+    -- Also remove from queue if present
+    if queue[playerName] then
+        queue[playerName] = nil
+    end
+    
+    -- Fire event to update UI
+    if removedCount > 0 then
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+    end
+    
+    ns.SpeedClipsOptedOut[playerName] = true -- remember preference
+    
+    return removedCount
 end
 
 ns.GetCompletedDeathClips = function()
@@ -425,7 +455,17 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             clip.getPlayedTry = 0
             table.insert(queue[name], clip)
 
-            -- 7) Merge, notify UI and broadcast
+            -- 7) Check opt-out preference for current player
+            local currentPlayer = UnitName("player")
+            if name == currentPlayer then
+                local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
+                if participateInSpeedClips == false then
+                    -- Player opted out, don't add their clip
+                    return
+                end
+            end
+            
+            -- 8) Merge, notify UI and broadcast
             ns.AddNewDeathClips({ clip })
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
             ns.AuctionHouse:BroadcastDeathClipAdded(clip)
@@ -481,6 +521,16 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             clip.getPlayedTry = 0
             table.insert(queue[name], clip)
 
+            -- Check opt-out preference for current player
+            local currentPlayer = UnitName("player")
+            if name == currentPlayer then
+                local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
+                if participateInSpeedClips == false then
+                    -- Player opted out, don't add their clip
+                    return
+                end
+            end
+            
             -- If no duplicate, add the clip
             --            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
 

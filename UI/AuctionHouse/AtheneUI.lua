@@ -3,6 +3,9 @@ local L = ns.L
 
 local SEEN_CHANGELOG_VERSION_KEY = "SeenChangelogVersion"
 
+-- Timestamp of the last opt-out broadcast to avoid chat spam
+local _speedClipsLastBroadcastTs = 0
+
 ns.IsAtheneBlocked = function()
     local me = UnitName("player")
 
@@ -68,9 +71,25 @@ function OFAtheneUI_Initialize()
     local function Update()
         OFAtheneUI_Update(false)
     end
+    
+    local function HandleSpeedClipsRemovalRequest(event)
+        if event and event.blType == ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL then
+            local names = event.names or {}
+            for _, playerName in ipairs(names) do
+                -- Remove all clips that belong to this player (local helper in LiveDeathClips.lua)
+                local removed = ns.RemovePlayerFromSpeedClips and ns.RemovePlayerFromSpeedClips(playerName) or 0
+                ns.SpeedClipsOptedOut[playerName] = true
+                if removed > 0 then
+                    print(string.format("Удален %s (%d клипов) из Speed Clips по их запросу.", playerName, removed))
+                end
+            end
+        end
+    end
+    
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, Update)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_DELETED, Update)
     ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_SYNCED, Update)
+    ns.AuctionHouseAPI:RegisterEvent(ns.T_BLACKLIST_ADD_OR_UPDATE, HandleSpeedClipsRemovalRequest)
 end
 
 local function HasSeenLatestVersion()
@@ -120,7 +139,17 @@ function OFSettings_UpdateUI()
         GoAgainAH_MinimapDB = { hide = false }
     end
     local showMinimap = not GoAgainAH_MinimapDB.hide
-    OFSettingsMinimapCheckButton:SetChecked(showMinimap)
+    OFSettingsMinimapCheckButton:SetChecked(showMinimap and 1 or nil)  -- Convert true/false to 1/nil
+    
+    -- Update speed clips checkbox
+    local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
+    print("DEBUG: participateInSpeedClips from PlayerPrefs:", participateInSpeedClips)
+    if participateInSpeedClips == nil then 
+        participateInSpeedClips = true -- default to true
+        print("DEBUG: Setting default participateInSpeedClips to true")
+    end
+    print("DEBUG: Setting checkbox to:", participateInSpeedClips)
+    OFSettingsSpeedClipsCheckButton:SetChecked(participateInSpeedClips and 1 or nil)  -- Convert true/false to 1/nil
     
     -- Update duration slider
     local duration = ns.PlayerPrefs:Get("defaultAuctionDuration")
@@ -130,7 +159,7 @@ function OFSettings_UpdateUI()
 end
 
 function OFSettings_MinimapIcon_OnClick(self)
-    local isChecked = self:GetChecked()
+    local isChecked = self:GetChecked() and true or false  -- Convert 1/nil to true/false
     
     -- Initialize if needed
     if not GoAgainAH_MinimapDB then
@@ -148,6 +177,30 @@ function OFSettings_MinimapIcon_OnClick(self)
         else
             icon:Hide("GoAgainAH")
         end
+    end
+end
+
+function OFSettings_SpeedClips_OnClick(self)
+    local isChecked = self:GetChecked() and true or false  -- Convert 1/nil to true/false
+    print("DEBUG: Speed clips checkbox clicked, isChecked:", isChecked)
+    ns.PlayerPrefs:Set("participateInSpeedClips", isChecked)
+    print("DEBUG: Saved participateInSpeedClips to PlayerPrefs:", isChecked)
+
+    local playerName = UnitName("player")
+
+    if not isChecked then
+        if ns.RemovePlayerFromSpeedClips then
+            ns.RemovePlayerFromSpeedClips(playerName)
+        end
+
+        if (time() - _speedClipsLastBroadcastTs) > 2 then
+            ns.BlacklistAPI:AddToBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
+            _speedClipsLastBroadcastTs = time()
+            print("Запрос на удаление из Speed Clips отправлен другим игрокам.")
+        end
+    else
+        ns.BlacklistAPI:RemoveFromBlacklist(playerName, ns.BLACKLIST_TYPE_SPEED_CLIPS_REMOVAL, playerName)
+        ns.SpeedClipsOptedOut[playerName] = nil
     end
 end
 
