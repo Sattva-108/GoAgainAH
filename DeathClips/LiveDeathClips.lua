@@ -25,6 +25,15 @@ end
 -- Define the global queue table to track both completed and death event characters
 local queue = {}
 
+-- Expose queue access for external modules
+ns.AddClipToQueue = function(clip)
+    if not clip.playedTime and clip.deathCause ~= "ALIVE" and clip.getPlayedTry ~= "failed" then
+        queue[clip.characterName] = queue[clip.characterName] or {}
+        --print("Added " .. clip.characterName .. " to the ladder queue.")
+        table.insert(queue[clip.characterName], clip)
+    end
+end
+
 local races = {
     [1] = { name = "Человек", faction = "Alliance" },
     [2] = { name = "Орк", faction = "Horde" },
@@ -765,9 +774,10 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             if nextUpdateDeadline then
                 local left = nextUpdateDeadline - time()
                 if left < 0 then
-                    left = 0
+                    nextUpdateDeadline = nil -- Сбросить устаревший таймер
+                else
+                    print(("%s died — next ladder in %s"):format(name, SecondsToTime(left)))
                 end
-                print(("%s died — next ladder in %s"):format(name, SecondsToTime(left)))
             end
         end
 

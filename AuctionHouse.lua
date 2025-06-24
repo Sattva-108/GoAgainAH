@@ -1738,6 +1738,11 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ----------------------------------------------------------------
             clip.id = ns.GenerateClipID(clip, clip.completed)
             LiveDeathClips[clip.id] = clip
+            
+            -- Add to queue if no playedTime and not failed (same logic as AddNewDeathClips)
+            if ns.AddClipToQueue then
+                ns.AddClipToQueue(clip)
+            end
         end
 
         ------------------------------------------------------------------
@@ -1798,6 +1803,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         if payload.deathCause == "ALIVE" and payload.characterName ~= UnitName("player") then
             ns.StartPlayedTimeSimulation(payload)
         end
+
+        -- Fire event to update UI immediately for incoming clips
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
 
         local magicLink = ns.CreateMagicLink(ns.SPELL_ID_DEATH_CLIPS, L["watch death clip"])
         print(string.format(L["%s has died at Lv. %d."], ns.GetDisplayName(payload.characterName), payload.level) .. " " .. magicLink)
