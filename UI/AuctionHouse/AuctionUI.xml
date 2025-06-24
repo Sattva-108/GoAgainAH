@@ -1382,7 +1382,7 @@
 					<CheckButton name="OFDeathClipsSpeedClipsCheckButton" inherits="UICheckButtonTemplate">
 						<Size x="20" y="20"/>
 						<Anchors>
-							<Anchor point="RIGHT" relativeTo="OFAuctionFrameCloseButton" relativePoint="LEFT" x="-160" y="0"/>
+							<Anchor point="RIGHT" relativeTo="OFAuctionFrameCloseButton" relativePoint="LEFT" x="-160" y="-2"/>
 						</Anchors>
 						<Scripts>
 							<OnLoad>
