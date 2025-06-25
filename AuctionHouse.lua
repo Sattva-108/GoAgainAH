@@ -2546,30 +2546,8 @@ function AuctionHouse:BuildPendingTransactionsTable()
 end
 
 function AuctionHouse:RequestLatestState()
-    -- Refresh our local revision from the per-guild table every time in
-    -- case the addon initialised before GetGuildInfo() was available.
-    local guildName = GetGuildInfo("player") or "noguild"
-    if AuctionHouseDBSaved and AuctionHouseDBSaved.guildRevisions then
-        local storedRev = AuctionHouseDBSaved.guildRevisions[guildName]
-        if storedRev and storedRev ~= self.db.revision then
-            self.db.revision = storedRev
-        end
-    end
-    
-    -- If we are in a guild but its name is still not available (happens very
-    -- early during login), postpone the sync a little so that we don't send
-    -- rev=0 by accident.
-    if IsInGuild() and guildName == "noguild" then
-        print("DEBUG: Guild name missing at RequestLatestState – postponing 2s")
-        C_Timer:After(2, function()
-            if self and self.RequestLatestState then
-                self:RequestLatestState()
-            end
-        end)
-        return
-    end
-    
-    local currentGuild = guildName
+    local currentGuild = GetGuildInfo("player") or "noguild"
+    print("DEBUG: RequestLatestState - current guild:", currentGuild)
     
     -- Reset ACK flags for a new request cycle.
     self.ackBroadcasted = false
