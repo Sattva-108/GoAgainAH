@@ -316,6 +316,9 @@ ns.T_ADDON_VERSION_RESPONSE = "ADDON_VERSION_RESPONSE"
 
 ns.T_SET_GUILD_POINTS = "SET_GUILD_POINTS"
 
+-- Watched friend / resurrected notification
+ns.T_WATCH_ADD_OR_UPDATE = "WATCH_ADD_OR_UPDATE"
+
 local G, W = "GUILD", "WHISPER"
 
 local CHANNEL_WHITELIST = {
@@ -376,6 +379,8 @@ local CHANNEL_WHITELIST = {
     [ns.T_PENDING_TRANSACTION_ADD_OR_UPDATE] = { [G] = 1 },
     [ns.T_PENDING_TRANSACTION_STATE_REQUEST] = { [G] = 1 },
     [ns.T_PENDING_TRANSACTION_STATE] = { [W] = 1 },
+    -- Watched friends sync
+    [ns.T_WATCH_ADD_OR_UPDATE] = { [G] = 1 },
 }
 
 -- make isMessageAllowed use name-only
@@ -2161,6 +2166,25 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
     elseif dataType == ns.T_PENDING_TRANSACTION_ACK then
         self:HandleAck("pending transaction", sender, payload, self.lastAckPendingTransactionRevisions)
 
+    elseif dataType == ns.T_WATCH_ADD_OR_UPDATE then
+        if payload and payload.characterName then
+            local lowerName = string.lower(payload.characterName)
+            AuctionHouseDBSaved = AuctionHouseDBSaved or {}
+            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+
+            -- Avoid overwriting if user already tracks with more info
+            if not AuctionHouseDBSaved.watchedFriends[lowerName] then
+                AuctionHouseDBSaved.watchedFriends[lowerName] = payload
+                if DEFAULT_CHAT_FRAME then
+                    DEFAULT_CHAT_FRAME:AddMessage(ChatPrefix() .. string.format(" %s сообщил о возродившемся геройе %s (ур. %d). Щёлкните клип, чтобы добавить в отслеживание.", sender, payload.characterName, payload.clipLevel or 0))
+                end
+
+                if ns.RefreshDeathClipsUIForFriendUpdates then
+                    ns.RefreshDeathClipsUIForFriendUpdates()
+                end
+            end
+        end
+
     else
         ns.DebugLog("[DEBUG] unknown event type", dataType)
     end
@@ -2842,3 +2866,6 @@ function CreateTestAuctions()
     
     print("Created " .. count .. " test auctions total!")
 end
+
+-- =====================  WATCHED FRIEND SYNC  =====================
+ns.T_WATCH_ADD_OR_UPDATE = "WATCH_ADD_OR_UPDATE"

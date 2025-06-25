@@ -341,7 +341,7 @@ local function ShowHoverTooltipForIcon(iconButton)
 
     HoverTooltip:ClearLines() -- Clear lines at the beginning
 
-    -- hide the standard GameTooltip if it’s on this button
+    -- hide the standard GameTooltip if it's on this button
     if GameTooltip:IsShown() and GameTooltip:IsOwned(iconButton) then
         GameTooltip:Hide()
     end
@@ -447,7 +447,7 @@ end
 
 
 function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
-    -- Hide the GameTooltip if it’s showing for this icon
+    -- Hide the GameTooltip if it's showing for this icon
     if GameTooltip:IsShown() and GameTooltip:IsOwned(iconFrameElement) then
         GameTooltip:Hide()
     end
@@ -557,6 +557,7 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
 
                         -- Refresh death clips UI after friend status change
                         ns.RefreshDeathClipsUIForFriendUpdates()
+                        ns.BroadcastWatchedFriend(friendData)
                     end)
                     return -- Important: Do not proceed to add/modify watchedFriends, they are already watched.
                 end
@@ -590,6 +591,7 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
 
                     -- Refresh death clips UI after friend status change
                     ns.RefreshDeathClipsUIForFriendUpdates()
+                    ns.BroadcastWatchedFriend(friendData)
                     return
                 end
 
@@ -679,6 +681,7 @@ function GoAgainAH_ClipItem_OnClick(iconFrameElement, receivedMouseButton)
                     ShowHoverTooltipForIcon(iconFrameElement) -- Refresh tooltip with status
                     ns.expectingFriendAddSystemMessageFor = nil
                     ns.capturedFriendAddSystemMessage = nil
+                    ns.BroadcastWatchedFriend(friendData)
                 end)
             end -- <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< THIS IS THE MISSING END
         end
@@ -1019,6 +1022,15 @@ function ns.RefreshDeathClipsUIForFriendUpdates()
         if OFAuctionFrameDeathClips_Update then
             OFAuctionFrameDeathClips_Update()
         end
+    end
+end
+
+-- Helper: broadcast info about a watched friend to guild
+ns.BroadcastWatchedFriend = function(friendData)
+    if not friendData or not friendData.characterName then return end
+    if ns.AuctionHouse and ns.AuctionHouse.BroadcastMessage and ns.AuctionHouseAddon then
+        local msg = ns.AuctionHouseAddon:Serialize({ ns.T_WATCH_ADD_OR_UPDATE, friendData })
+        ns.AuctionHouse:BroadcastMessage(msg)
     end
 end
 
