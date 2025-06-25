@@ -6,7 +6,7 @@
 ## Notes-esMX: Casa de subastas para |cFFFF0000Go Again|r
 ## Author: Athene, MottiDowerro
 ## SavedVariables: AuctionHouseDBSaved, AHConfigSaved, LiveDeathClips, PlayerPrefsSaved, DeathClipReviewsSaved, GoAgainAH_MinimapDB
-## SavedVariablesPerCharacter: CharacterPrefsSaved
+## SavedVariablesPerCharacter: CharacterPrefsSaved, AuctionHouseDBChar
 
 dependencies.xml
 # Debug\testLocale.lua

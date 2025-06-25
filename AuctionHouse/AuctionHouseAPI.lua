@@ -65,7 +65,21 @@ function AuctionHouseAPI:GetSerializableState()
 end
 
 function AuctionHouseAPI:Load()
-    if AuctionHouseDBSaved then
+    --------------------------------------------------------------------
+    -- 1. Primary source: per-character DB (new).                       --
+    -- 2. Fallback   : legacy account-wide DB for one-time migration.   --
+    --------------------------------------------------------------------
+    if AuctionHouseDBChar then
+        for k, v in pairs(AuctionHouseDBChar) do
+            if k ~= "listeners" then
+                DB[k] = v
+            end
+        end
+
+    elseif AuctionHouseDBSaved then
+        -- One-time migration path. We copy the legacy data into the
+        -- new per-character container, leaving the old table intact so
+        -- that DeathClip helpers and other global users continue to work.
         for k, v in pairs(AuctionHouseDBSaved) do
             if k ~= "listeners" then
                 DB[k] = v
@@ -119,8 +133,10 @@ function AuctionHouseAPI:Load()
         DB.lastPendingTransactionUpdateAt = 0
     end
 
-    -- After requesting other states, also request the blacklist state:
-    AuctionHouseDBSaved = DB
+    -- Persist to the per-character SavedVariable. We intentionally keep
+    -- the legacy global table untouched to avoid breaking DeathClip
+    -- modules that still rely on it for watchedFriends and similar data.
+    AuctionHouseDBChar = DB
 
     -- Back-fill legacy data on load (auctions that dont have realm realm yet.)
     for _, a in pairs(DB.auctions or {}) do
@@ -141,7 +157,8 @@ function AuctionHouseAPI:Initialize(deps)
 end
 
 function AuctionHouseAPI:ClearPersistence()
-    AuctionHouseDBSaved = nil
+    AuctionHouseDBSaved = nil -- legacy/global data (death clips watchers, etc.)
+    AuctionHouseDBChar  = nil -- new per-character data
     AHConfigSaved = nil
     LiveDeathClips = nil
     PlayerPrefsSaved = nil
