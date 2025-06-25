@@ -133,14 +133,47 @@ function AuctionHouseAPI:Load()
         AuctionHouseDBSaved.guildRevisions = {}
     end
     
-    -- Switch to current guild's revision
-    local currentGuildName = GetGuildInfo("player") or "noguild"
-    if not AuctionHouseDBSaved.guildRevisions[currentGuildName] then
-        AuctionHouseDBSaved.guildRevisions[currentGuildName] = 0
+    -- Try to get guild info with retry mechanism
+    local function setupGuildRevision()
+        print("ticking")
+        local currentGuildName = GetGuildInfo("player")
+        if currentGuildName then
+            -- Found guild, use it
+            if not AuctionHouseDBSaved.guildRevisions[currentGuildName] then
+                AuctionHouseDBSaved.guildRevisions[currentGuildName] = 0
+            end
+            ns.AuctionHouseDB.revision = AuctionHouseDBSaved.guildRevisions[currentGuildName]
+            print("Guild found:", currentGuildName, "revision:", ns.AuctionHouseDB.revision)
+            return true
+        else
+            -- No guild found, use noguild
+            local noguildName = "noguild"
+            if not AuctionHouseDBSaved.guildRevisions[noguildName] then
+                AuctionHouseDBSaved.guildRevisions[noguildName] = 0
+            end
+            ns.AuctionHouseDB.revision = AuctionHouseDBSaved.guildRevisions[noguildName]
+            print("No guild found, using noguild, revision:", ns.AuctionHouseDB.revision)
+            return false
+        end
     end
-    ns.AuctionHouseDB.revision = AuctionHouseDBSaved.guildRevisions[currentGuildName]
+    
+    -- Always use ticker to ensure guild info is properly loaded
+    local retryCount = 0
+    local maxRetries = 18
+    local retryTimer
+    retryTimer = C_Timer:NewTicker(0.5, function()
+        retryCount = retryCount + 1
+        if setupGuildRevision() or retryCount >= maxRetries then
+            retryTimer:Cancel()
+            if retryCount >= maxRetries then
+                print("Guild lookup timeout after 9 seconds, using noguild")
+            end
+        end
+    end)
+
 
     -- Ensure guild tag recorded for future comparison  
+    local currentGuildName = GetGuildInfo("player") or "noguild"
     if type(AuctionHouseDBSaved) ~= "table" then
         AuctionHouseDBSaved = { _suffix = ns.PROTOTYPE_SUFFIX, _guildName = currentGuildName }
     else
@@ -432,15 +465,14 @@ function AuctionHouseAPI:UpdateDB(payload)
 
     DB.auctions[payload.auction.id] = payload.auction
     DB.lastUpdateAt = time()
-    DB.revision = DB.revision + 1
-    -- Mirror the per-guild revision to the legacy top-level value so that
-    -- SavedVariables dumps look consistent and do not confuse users/tools
-    AuctionHouseDBSaved.revision = DB.revision
-    -- Save revision for current guild
+    
+    -- Update guild-specific revision only
     local currentGuildName = GetGuildInfo("player") or "noguild"
-    if AuctionHouseDBSaved.guildRevisions then
-        AuctionHouseDBSaved.guildRevisions[currentGuildName] = DB.revision
+    if not AuctionHouseDBSaved.guildRevisions then
+        AuctionHouseDBSaved.guildRevisions = {}
     end
+    AuctionHouseDBSaved.guildRevisions[currentGuildName] = (AuctionHouseDBSaved.guildRevisions[currentGuildName] or 0) + 1
+    DB.revision = AuctionHouseDBSaved.guildRevisions[currentGuildName]
 end
 
 function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, priceType, deliveryType, auctionType, roleplay, deathRoll, duel, raidAmount, points, note, overrides)
@@ -813,15 +845,14 @@ function AuctionHouseAPI:DeleteAuctionInternal(auctionID, isNetworkUpdate)
 
     DB.auctions[auctionID] = nil
     DB.lastUpdateAt = time()
-    DB.revision = DB.revision + 1
-    -- Mirror the per-guild revision to the legacy top-level value so that
-    -- SavedVariables dumps look consistent and do not confuse users/tools
-    AuctionHouseDBSaved.revision = DB.revision
-    -- Save revision for current guild
+    
+    -- Update guild-specific revision only
     local currentGuildName = GetGuildInfo("player") or "noguild"
-    if AuctionHouseDBSaved.guildRevisions then
-        AuctionHouseDBSaved.guildRevisions[currentGuildName] = DB.revision
+    if not AuctionHouseDBSaved.guildRevisions then
+        AuctionHouseDBSaved.guildRevisions = {}
     end
+    AuctionHouseDBSaved.guildRevisions[currentGuildName] = (AuctionHouseDBSaved.guildRevisions[currentGuildName] or 0) + 1
+    DB.revision = AuctionHouseDBSaved.guildRevisions[currentGuildName]
 
     if not isNetworkUpdate then
         self:FireEvent(ns.T_AUCTION_DELETED, auctionID)
