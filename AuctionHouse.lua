@@ -621,7 +621,7 @@ function AuctionHouse:Initialize()
     local age = time() - ns.AuctionHouseDB.lastUpdateAt
     local auctions = ns.AuctionHouseDB.auctions
     local auctionCount = 0
-    for _ in pairs(ns.FilterAuctionsThisRealm(auctions)) do
+    for _ in pairs(ns.FilterAuctionsThisGuild(auctions)) do
         auctionCount = auctionCount + 1
     end
     ns.DebugLog(string.format("[DEBUG] db loaded from persistence. rev: %s, lastUpdateAt: %d (%ds old) with %d auctions",
@@ -834,27 +834,70 @@ function AuctionHouse:SendDm(message, recipient, prio)
 end
 
 function AuctionHouse:BroadcastAuctionUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    local serialized = Addon:Serialize({ dataType, payload })
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        -- Fallback to uncompressed if compression fails
+        self:BroadcastMessage(serialized)
+    end
 end
 
 function AuctionHouse:BroadcastTradeUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    local serialized = Addon:Serialize({ dataType, payload })
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        self:BroadcastMessage(serialized)
+    end
 end
 
 function AuctionHouse:BroadcastRatingUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    local serialized = Addon:Serialize({ dataType, payload })
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        self:BroadcastMessage(serialized)
+    end
 end
 
 function AuctionHouse:BroadcastLFGUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    local serialized = Addon:Serialize({ dataType, payload })
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        self:BroadcastMessage(serialized)
+    end
 end
 
 function AuctionHouse:BroadcastBlacklistUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    local serialized = Addon:Serialize({ dataType, payload })
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        self:BroadcastMessage(serialized)
+    end
 end
 
 function AuctionHouse:BroadcastPendingTransactionUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    local serialized = Addon:Serialize({ dataType, payload })
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        self:BroadcastMessage(serialized)
+    end
 end
 
 function AuctionHouse:BroadcastDeathClipAdded(clip)
@@ -1106,7 +1149,7 @@ function AuctionHouse:HandleStateUpdate(sender, dataType, cfg, sendPayloadFn)
         ns.DebugLog("[DEBUG] Immediate " .. dataType .. " state update (primary responder)")
         sendUpdate()
     else
-        local delay = randomBiasedDelay(1, 4)
+        local delay = randomBiasedDelay(6, 8)
         ns.DebugLog("[DEBUG] Scheduling delayed " .. dataType .. " state update in " .. math.floor(delay) .. "s")
         self:After(delay, sendUpdate)
     end
@@ -1207,6 +1250,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
 
     -- Auction
     if dataType == T_AUCTION_ADD_OR_UPDATE then
+        print("DEBUG: Received AUCTION_ADD_OR_UPDATE from", sender)
         API:UpdateDB(payload)
         API:FireEvent(ns.T_AUCTION_ADD_OR_UPDATE, { auction = payload.auction, source = payload.source })
 
@@ -1259,7 +1303,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end
 
     elseif dataType == T_AUCTION_STATE_REQUEST then
-        print(("DBG: Received AUCTION_STATE_REQUEST from %s - their_rev=%d, our_rev=%d, their_auctions=%d"):format(
+        print(("DEBUG: Received AUCTION_STATE_REQUEST from %s - their_rev=%d, our_rev=%d, their_auctions=%d"):format(
             sender, payload.revision or 0, self.db.revision or 0, #(payload.auctions or {})
         ))
         self:HandleStateUpdate(sender, T_AUCTION_STATE_REQUEST, {
@@ -1280,6 +1324,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         end)
 
     elseif dataType == T_AUCTION_STATE then
+        print("DEBUG: Received AUCTION_STATE from", sender)
         -- Handle both chunked and non-chunked formats
         local decompressed, label
         
@@ -1298,13 +1343,19 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 if ok and type(partial) == "table" then
                     -- Merge auctions
                     for id, auction in pairs(partial.auctions or {}) do
-                        local prev = self.db.auctions[id]
-                        self.db.auctions[id] = auction
+                        local myGuild = GetGuildInfo("player") or "noguild"
+                        local auctionGuild = auction.guild or "noguild"
+                        print("DEBUG: Processing auction", id, "auctionGuild =", auctionGuild, "myGuild =", myGuild)
+                        -- Фильтр: realm + guild
+                        if auction.realm == ns.CURRENT_REALM and auctionGuild == myGuild then
+                            local prev = self.db.auctions[id]
+                            self.db.auctions[id] = auction
 
-                        if not prev then
-                            API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction, source = "create" })
-                        elseif prev.rev ~= auction.rev or prev.status ~= auction.status then
-                            API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction })
+                            if not prev then
+                                API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction, source = "create" })
+                            elseif prev.rev ~= auction.rev or prev.status ~= auction.status then
+                                API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction })
+                            end
                         end
                     end
 
@@ -1391,30 +1442,36 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         if isHigherRevision then
             -- Update local auctions with received data
             for id, auction in pairs(state.auctions or {}) do
-                local oldAuction = self.db.auctions[id]
-                self.db.auctions[id] = auction
+                local myGuild = GetGuildInfo("player") or "noguild"
+                local auctionGuild = auction.guild or "noguild"
+                print("DEBUG: Processing auction (legacy)", id, "auctionGuild =", auctionGuild, "myGuild =", myGuild)
+                -- Фильтр: realm + guild
+                if auction.realm == ns.CURRENT_REALM and auctionGuild == myGuild then
+                    local oldAuction = self.db.auctions[id]
+                    self.db.auctions[id] = auction
 
-                -- Fire event only if auction changed, with appropriate source
-                if not oldAuction then
-                    -- New auction
-                    API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction, source = "create" })
+                    -- Fire event only if auction changed, with appropriate source
+                    if not oldAuction then
+                        -- New auction
+                        API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction, source = "create" })
 
-                elseif oldAuction.rev == auction.rev then
-                    -- no events to fire
+                    elseif oldAuction.rev == auction.rev then
+                        -- no events to fire
 
-                elseif oldAuction.status ~= auction.status then
-                    -- status change event
-                    local source = "status_update"
-                    if auction.status == ns.AUCTION_STATUS_PENDING_TRADE then
-                        source = "buy"
-                    elseif auction.status == ns.AUCTION_STATUS_PENDING_LOAN then
-                        source = "buy_loan"
+                    elseif oldAuction.status ~= auction.status then
+                        -- status change event
+                        local source = "status_update"
+                        if auction.status == ns.AUCTION_STATUS_PENDING_TRADE then
+                            source = "buy"
+                        elseif auction.status == ns.AUCTION_STATUS_PENDING_LOAN then
+                            source = "buy_loan"
+                        end
+
+                        API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction, source = source })
+                    else
+                        -- unknown update reason (source)
+                        API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction })
                     end
-
-                    API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction, source = source })
-                else
-                    -- unknown update reason (source)
-                    API:FireEvent(ns.T_AUCTION_SYNCED, { auction = auction })
                 end
             end
 
@@ -2180,7 +2237,7 @@ function AuctionHouse:BuildDeltaState(requesterRevision, requesterAuctions)
         end
 
         -- Find auctions to send (those that requester doesn't have or has older revision)
-        for id, auction in pairs(ns.FilterAuctionsThisRealm(self.db.auctions)) do
+        for id, auction in pairs(ns.FilterAuctionsThisGuild(self.db.auctions)) do
             local requesterRev = requesterAuctionLookup[id]
             if not requesterRev or (auction.rev > requesterRev) then
                 auctionsToSend[id] = self:TrimAuctionForSync(auction)
@@ -2427,7 +2484,7 @@ end
 
 function AuctionHouse:BuildAuctionsTable()
     local auctions = {}
-    for id, auction in pairs(ns.FilterAuctionsThisRealm(self.db.auctions)) do
+    for id, auction in pairs(ns.FilterAuctionsThisGuild(self.db.auctions)) do
         table.insert(auctions, { id = id, rev = auction.rev })
     end
     return auctions
@@ -2489,6 +2546,9 @@ function AuctionHouse:BuildPendingTransactionsTable()
 end
 
 function AuctionHouse:RequestLatestState()
+    local currentGuild = GetGuildInfo("player") or "noguild"
+    print("DEBUG: RequestLatestState - current guild:", currentGuild)
+    
     -- Reset ACK flags for a new request cycle.
     self.ackBroadcasted = false
     self.lastAckAuctionRevisions = {} -- Clear all ACKs when starting a new request
@@ -2501,9 +2561,10 @@ function AuctionHouse:RequestLatestState()
     table.insert(self.auctionBenchQueue, { id = dbgID, start = dbgStart })
 
     local auctions = self:BuildAuctionsTable()
-    print(("DBG: [AUCTION-%d] RequestLatestState at %s - revision=%d, auctions=%d"):format(
+    print(("DEBUG: [AUCTION-%d] RequestLatestState at %s - revision=%d, auctions=%d"):format(
         dbgID, date("%H:%M"), self.db.revision or 0, #auctions
     ))
+    print("DEBUG: RequestLatestState - sending STATE_REQUEST to guild")
     local payload = { T_AUCTION_STATE_REQUEST, { revision = self.db.revision, auctions = auctions } }
     
     -- 1. Serialize
@@ -2602,6 +2663,12 @@ SLASH_atheneclear1 = "/atheneclear"
 SlashCmdList["atheneclear"] = function(msg)
     AtheneClearPersistence()
 end
+
+SlashCmdList["atheneSync"] = function(msg)
+    print("DEBUG: Manual sync requested")
+    ns.AuctionHouse:RequestLatestState()
+end
+SLASH_athenesync1 = "/athenesync"
 
 function AtheneClearPersistence()
     ns.AuctionHouseAPI:ClearPersistence()
@@ -2713,9 +2780,27 @@ end
 ns.GameEventHandler:On("PLAYER_GUILD_UPDATE", function()
     -- Check guild status after some time, to make sure IsInGuild is accurate
     C_Timer:After(3, cleanupIfKicked)
+    
+    -- Update guild name after guild change
+    C_Timer:After(5, function()
+        local currentGuildName = GetGuildInfo("player") or "noguild"
+        if AuctionHouseDBSaved then
+            AuctionHouseDBSaved._guildName = currentGuildName
+            print("DEBUG: Updated _guildName to:", currentGuildName, "(guild change)")
+        end
+    end)
 end)
 ns.GameEventHandler:On("PLAYER_ENTERING_WORLD", function()
     C_Timer:After(10, cleanupIfKicked)
+    
+    -- Update guild name after entering world (when GetGuildInfo is reliable)
+    C_Timer:After(5, function()
+        local currentGuildName = GetGuildInfo("player") or "noguild"
+        if AuctionHouseDBSaved then
+            AuctionHouseDBSaved._guildName = currentGuildName
+            print("DEBUG: Updated _guildName to:", currentGuildName)
+        end
+    end)
 end)
 
 ns.AuctionHouseClass = AuctionHouse
