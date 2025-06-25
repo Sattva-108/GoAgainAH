@@ -2710,6 +2710,42 @@ function AuctionHouse:CleanupAuctionsAndTrades()
             API:SetSellerDead(trade.id)
         end
     end
+
+    ------------------------------------------------------------------
+    -- NEW: also reset other per-char guild-sensitive tables so that
+    --       nothing leaks into a future guild with higher revisions.
+    ------------------------------------------------------------------
+    local DB = ns.AuctionHouseDB
+
+    -- Ratings
+    DB.ratings               = {}
+    DB.revRatings            = 0
+
+    -- LFG entries
+    DB.lfg                   = {}
+    DB.revLfg                = 0
+
+    -- Blacklists
+    DB.blacklists            = {}
+    DB.revBlacklists         = 0
+
+    -- Pending transactions
+    DB.pendingTransactions   = {}
+    DB.revPendingTransactions = 0
+
+    -- Reset their timestamps to avoid triggering unnecessary syncs
+    DB.lastRatingUpdateAt            = 0
+    DB.lastLfgUpdateAt               = 0
+    DB.lastBlacklistUpdateAt         = 0
+    DB.lastPendingTransactionUpdateAt = 0
+
+    -- Notify interested UI modules, if any
+    if ns.AuctionHouseAPI and ns.AuctionHouseAPI.FireEvent then
+        ns.AuctionHouseAPI:FireEvent(ns.T_RATING_DELETED, {})
+        ns.AuctionHouseAPI:FireEvent(ns.T_LFG_DELETED, {})
+        ns.AuctionHouseAPI:FireEvent(ns.T_BLACKLIST_DELETED, {})
+        ns.AuctionHouseAPI:FireEvent(ns.T_PENDING_TRANSACTION_DELETED, {})
+    end
 end
 
 local function playRandomDeathClip()
@@ -2729,7 +2765,7 @@ end)
 
 local function cleanupIfKicked()
     if not IsInGuild() then
-        print(ChatPrefix() .. " " .. L["removing auctions after gkick"])
+        --print(ChatPrefix() .. " " .. L["removing auctions after gkick"])
         AuctionHouse:CleanupAuctionsAndTrades()
     end
 end
