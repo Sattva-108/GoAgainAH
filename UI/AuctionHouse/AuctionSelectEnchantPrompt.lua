@@ -5,7 +5,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 local function CreateSpellScroll()
     -- Create the main frame
     local frame = AceGUI:Create("CustomFrame")
-    frame:SetTitle("Выбрать зачарование")
+    frame:SetTitle(L["Select Enchant"])
     frame:SetLayout("Flow")
     frame:SetWidth(400)
     frame:SetHeight(450)

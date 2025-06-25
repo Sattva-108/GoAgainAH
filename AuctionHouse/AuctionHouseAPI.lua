@@ -211,23 +211,6 @@ function ns.FilterAuctionsThisRealm(pool)
     return list
 end
 
-function ns.FilterAuctionsThisGuild(pool)
-    local list = {}
-    local myGuild = GetGuildInfo("player") or ""
-    for id, a in pairs(pool) do
-        if a.realm == CURRENT_REALM then
-            -- Если у меня есть гильдия И у аукциона есть guild поле И они совпадают
-            if myGuild ~= "" and a.guild and a.guild == myGuild then
-                list[id] = a
-            -- Или если у меня нет гильдии И у аукциона нет guild поля (старые аукционы)
-            elseif myGuild == "" and not a.guild then
-                list[id] = a
-            end
-        end
-    end
-    return list
-end
-
 
 -- GetMyUnsoldAuctions()
 --   Return all auctions that I own and are still in "active" or perhaps "unsold" states.
@@ -434,7 +417,6 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
         id = id,
         owner = owner,
         realm = CURRENT_REALM,
-        guild = GetGuildInfo("player") or "",
         itemID = itemID,
         quantity = quantity,
         price = price, -- amount of copper
