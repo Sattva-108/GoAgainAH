@@ -650,7 +650,7 @@ local function saveLogoutData()
     -- Simply store the current time as the last logout time
     AuctionHouseDBSaved.lastLogoutTime = now  -- Store the last logout time (current time)
     AuctionHouseDBSaved.nextUpdateDeadline = nextUpdateDeadline  -- Store the next update deadline
-    print("lastLogoutTime and nextUpdateDeadline saved during logout: ", AuctionHouseDBSaved.lastLogoutTime, AuctionHouseDBSaved.nextUpdateDeadline)
+    --print("lastLogoutTime and nextUpdateDeadline saved during logout: ", AuctionHouseDBSaved.lastLogoutTime, AuctionHouseDBSaved.nextUpdateDeadline)
 end
 
 -- Event handler for all the registered events
@@ -683,10 +683,10 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     AuctionHouseDBSaved.nextUpdateDeadline = predictedNext
 
 
-                    deadlineStatusMessage = string.format("Saved deadline passed %s ago. Predicting next ladder event in ~%s.", SecondsToTime(passedBy), SecondsToTime(nextIn))
+                    --deadlineStatusMessage = string.format("Saved deadline passed %s ago. Predicting next ladder event in ~%s.", SecondsToTime(passedBy), SecondsToTime(nextIn))
                 else
                     -- Store the message instead of printing
-                    deadlineStatusMessage = string.format("Recent login (<300s): Using saved deadline. Next update in: %s", SecondsToTime(remaining))
+--                    deadlineStatusMessage = string.format("Recent login (<300s): Using saved deadline. Next update in: %s", SecondsToTime(remaining))
                 end
             else
                 -- Store the message instead of printing
@@ -698,11 +698,11 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             -- No, login was > 300s ago OR no logout time saved: Do NOT use the saved deadline.
             if savedLogoutTime then
                 -- Store the message instead of printing
-                deadlineStatusMessage = string.format("Login >300s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
+                --deadlineStatusMessage = string.format("Login >300s ago (%s). Ignoring saved deadline. Waiting for ladder event.", SecondsToTime(now - savedLogoutTime))
                 savedLogoutTime = nil
             else
                 -- Store the message instead of printing
-                deadlineStatusMessage = "No previous logout time. Ignoring saved deadline. Waiting for ladder event."
+--                deadlineStatusMessage = "No previous logout time. Ignoring saved deadline. Waiting for ladder event."
             end
             nextUpdateDeadline = nil -- Start fresh, wait for ladder event to set it
         end
@@ -712,7 +712,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         -- Schedule the stored message to be printed after 9 seconds
         if deadlineStatusMessage ~= "" then
             C_Timer:After(9, function()
-                print(deadlineStatusMessage)
+                --print(deadlineStatusMessage)
             end)
         end
         -- *** END ADDED DELAY ***
@@ -888,7 +888,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     end -- End if queue
                     -- This reset happens *only* when the deadline check passes
                     nextUpdateDeadline = now + 600
-                    print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - time()))
+                    --print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - time()))
                 end -- End deadline check
             end -- End do block
 

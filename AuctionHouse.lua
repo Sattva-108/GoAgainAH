@@ -588,7 +588,7 @@ function AuctionHouse:Initialize()
             end
         elseif event == "PLAYER_ENTERING_WORLD" then
             -- Request played time immediately when entering world (don't wait 5 minutes)
-            print("[DEBUG] Player entering world - requesting played time immediately")
+            --print("[DEBUG] Player entering world - requesting played time immediately")
             -- Small delay to ensure player data is ready
             C_Timer:After(2, function()
                 if UnitIsConnected("player") then
@@ -601,7 +601,7 @@ function AuctionHouse:Initialize()
             end)
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             -- Update played time when entering new zones (important for location tracking)
-            print("[DEBUG] Zone changed - updating played time")
+            --print("[DEBUG] Zone changed - updating played time")
             if UnitIsConnected("player") then
                 if ns.SuppressTimePlayedMessages then ns.SuppressTimePlayedMessages() end
                 RequestTimePlayed()
@@ -1831,7 +1831,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
 
         local magicLink = ns.CreateMagicLink(ns.SPELL_ID_DEATH_CLIPS, L["watch death clip"])
-        print(string.format(L["%s has died at Lv. %d."], ns.GetDisplayName(payload.characterName), payload.level) .. " " .. magicLink)
+        --print(string.format(L["%s has died at Lv. %d."], ns.GetDisplayName(payload.characterName), payload.level) .. " " .. magicLink)
     elseif dataType == T_CONFIG_CHANGED then
         if payload.version > AHConfigSaved.version then
             AHConfigSaved = payload
@@ -2772,7 +2772,7 @@ end
 ns.GameEventHandler:On("PLAYER_DEAD", function()
     print(ChatPrefix() .. " " .. L["removing auctions after death"])
     AuctionHouse:CleanupAuctionsAndTrades()
-    playRandomDeathClip()
+    --playRandomDeathClip()
 end)
 
 local function cleanupIfKicked()
@@ -2861,6 +2861,7 @@ function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePla
 end
 
 -- Global test function for creating 1000 test auctions
+-- TODO REMOVE ME BEFORE RELEASE
 function CreateTestAuctions()
     local count = 0
     
