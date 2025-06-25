@@ -139,6 +139,7 @@ function AuctionHouseAPI:Load()
         AuctionHouseDBSaved.guildRevisions[currentGuildName] = 0
     end
     ns.AuctionHouseDB.revision = AuctionHouseDBSaved.guildRevisions[currentGuildName]
+    print("DEBUG: Loaded revision", ns.AuctionHouseDB.revision, "for guild:", currentGuildName)
 
     -- Ensure guild tag recorded for future comparison  
     if type(AuctionHouseDBSaved) ~= "table" then
@@ -233,22 +234,27 @@ function ns.FilterAuctionsThisGuild(pool)
     local list = {}
     local myGuild = GetGuildInfo("player") or "noguild"
     
+    print("DEBUG FilterAuctionsThisGuild: myGuild =", myGuild)
     
     for id, a in pairs(pool) do
         if a.realm == ns.CURRENT_REALM then
             local auctionGuild = a.guild or "noguild"
             
+            print("DEBUG: auction", id, "guild =", auctionGuild, "myGuild =", myGuild)
             
             -- Сравниваем гильдии (включая случай noguild для персонажей без гильдии)
             if auctionGuild == myGuild then
                 list[id] = a
+                print("DEBUG: auction", id, "included")
             else
+                print("DEBUG: auction", id, "filtered out")
             end
         end
     end
     
     local count = 0
     for _ in pairs(list) do count = count + 1 end
+    print("DEBUG FilterAuctionsThisGuild: returning", count, "auctions")
     return list
 end
 
