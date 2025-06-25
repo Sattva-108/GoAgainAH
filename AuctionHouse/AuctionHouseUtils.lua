@@ -675,6 +675,17 @@ ns.GetBrowseAuctions = function(browseParams)
     return auctions
 end
 
+ns.GetGuildBrowseAuctions = function(browseParams)
+    local filter = CreateBrowseAuctionFilters(browseParams)
+    local auctionList = {}
+    for _, auction in pairs(ns.FilterAuctionsThisGuild(ns.AuctionHouseDB.auctions)) do
+        if filter(auction) then
+            table.insert(auctionList, auction)
+        end
+    end
+    return auctionList
+end
+
 ns.SortAuctions = function(auctions, sortParams)
     if #sortParams == 0 then
         return auctions

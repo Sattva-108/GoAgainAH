@@ -1170,7 +1170,7 @@
                     </OnLeave>
 				</Scripts>
 			</Frame>
-            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="L_Select">
+            <Button name="$parentRequestItem" inherits="UIPanelButtonTemplate" text="Выбрать">
                 <Size x="98" y="28" />
                 <Anchors>
                     <Anchor point="RIGHT">

@@ -1061,7 +1061,7 @@ function OFAuctionFrameBrowse_OnShow()
     OFOnlineOnlyCheckButton:SetChecked(ns.PlayerPrefs:Get("OFOnlineOnlyCheckButton") or false)
     OFAuctionsOnlyCheckButton:SetChecked(ns.PlayerPrefs:Get("OFAuctionsOnlyCheckButton") or false)
 
-    local auctions = ns.GetBrowseAuctions({}, {})
+    local auctions = ns.GetGuildBrowseAuctions({})
     local itemIds = {}
     for _, auction in ipairs(auctions) do
         itemIds[auction.itemID] = ns.GetItemInfo(auction.itemID) ~= nil
@@ -1740,7 +1740,7 @@ function OFAuctionFrameBrowse_Update()
     if browseResultCache ~= nil then
         auctions, items = browseResultCache.auctions, browseResultCache.items
     else
-        auctions = ns.GetBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
+        auctions = ns.GetGuildBrowseAuctions(prevBrowseParams or BrowseParams.Empty())
         if prevBrowseParams and not ns.IsDefaultBrowseParams(prevBrowseParams) then
             items = ns.ItemDB:Find(ns.BrowseParamsToItemDBArgs(prevBrowseParams))
             -- Filter out items that are in ns.itemsBoP
