@@ -905,7 +905,7 @@ function AuctionHouse:BroadcastPendingTransactionUpdate(dataType, payload)
 end
 
 function AuctionHouse:BroadcastDeathClipAdded(clip)
-    self:BroadcastMessage(Addon:Serialize({ ns.T_DEATH_CLIP_ADDED, clip }))
+    SendCompressedGuild(self, { ns.T_DEATH_CLIP_ADDED, clip })
 end
 
 function AuctionHouse:TrimAuctionForSync(auction)
