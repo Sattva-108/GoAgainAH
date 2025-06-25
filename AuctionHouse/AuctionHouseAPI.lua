@@ -440,6 +440,7 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
         note = note or "",
         rev = 0,
         displayName = overrides.displayName, -- Store the name with suffix
+        link = overrides.link,             -- Full ItemLink with suffix/enchant data (for proper tooltips)
     }
     for k, v in pairs(overrides) do
         auction[k] = v
@@ -461,7 +462,7 @@ function AuctionHouseAPI:CreateTrade(auction)
         sellerText = nil,
         sellerRating = nil,
         rev = 0,
-        realm         = auction.realm,        -- stamp with the auction’s realm
+        realm         = auction.realm,        -- stamp with the auction's realm
     }
 
     self:UpdateDBTrade({trade = trade})

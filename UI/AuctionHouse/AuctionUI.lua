@@ -2271,12 +2271,12 @@ function OFAuctionFrameAuctions_OnLoad(self)
     hooksecurefunc(_G, "ContainerFrameItemButton_OnModifiedClick", function(item, button, ...)
         if button == "RightButton" and IsShiftKeyDown() and OFAuctionFrame:IsShown() and OFAuctionFrameAuctions:IsShown() then
             local bagIdx, slotIdx = item:GetParent():GetID(), item:GetID()
-            C_Container.PickupContainerItem(bagIdx, slotIdx);
+            PickupContainerItem(bagIdx, slotIdx);
             OFAuctionSellItemButton_OnClick(OFAuctionsItemButton, "LeftButton")
         end
         if button == "LeftButton" and IsShiftKeyDown() and OFAuctionFrame:IsShown() and OFAuctionFrameBrowse:IsShown() then
             local bagIdx, slotIdx = item:GetParent():GetID(), item:GetID()
-            local itemName = C_Container.GetContainerItemInfo(bagIdx, slotIdx).itemName
+            local _, _, _, _, _, _, itemName = GetContainerItemInfo(bagIdx, slotIdx)
             if itemName then
                 OFBrowseName:SetText(itemName)
                 OFBrowseName:SetTextColor(1, 1, 1)
@@ -2545,6 +2545,7 @@ end
 function OFAuctionSellItemButton_OnEvent(self, event, ...)
     if ( event == "NEW_AUCTION_UPDATE") then
         auctionSellItemInfo = pack(GetAuctionSellItemInfo())
+        local name, _, count = OFGetAuctionSellItemInfo()
         if ( name == OF_LAST_ITEM_AUCTIONED and count == OF_LAST_ITEM_COUNT ) then
             MoneyInputFrame_SetCopper(OFBuyoutPrice, OF_LAST_ITEM_BUYOUT)
         else
@@ -2567,6 +2568,13 @@ function OFAuctionSellItemButton_OnClick(self, button)
     if button == "RightButton" then
         DeselectAuctionItem()
     end
+    
+    -- Capture ItemLink from cursor before placing item in auction slot
+    local cursorType, cursorItemID, cursorItemLink = GetCursorInfo()
+    if cursorType == "item" and cursorItemLink then
+        _G.LastAuctionItemLink = cursorItemLink
+    end
+    
     ClickAuctionSellItemButton(self, button)
     OFAuctionsFrameAuctions_ValidateAuction()
 end
@@ -2729,7 +2737,12 @@ function OFAuctionFrameItem_OnEnter(self, type)
             GameTooltip:SetHyperlink("spell:" .. spellID)
         end
     else
-        GameTooltip:SetHyperlink("item:" .. button.itemID)
+        -- Use full ItemLink if available (for items with suffixes/enchants)
+        if button.auction and button.auction.link then
+            GameTooltip:SetHyperlink(button.auction.link)   -- Full link with suffix/enchants
+        else
+            GameTooltip:SetHyperlink("item:" .. button.itemID)  -- Fallback to base item
+        end
     end
     GameTooltip:Show()
 
@@ -2750,9 +2763,11 @@ end
 
 function OFAuctionFrameItem_OnClickModified(self, type, index, overrideID)
     local button = GetAuctionButton(type, overrideID or self:GetParent():GetID())
-    local _, link = ns.GetItemInfo(button.itemID)
-    if link then
-        HandleModifiedItemClick(link)
+    if button and button.itemID then
+        local _, link = ns.GetItemInfo(button.itemID)
+        if link then
+            HandleModifiedItemClick(link)
+        end
     end
 end
 
@@ -2841,13 +2856,19 @@ function OFAuctionsCreateAuctionButton_OnClick()
     if #ns.GetMyAuctions() >= auctionCap then
         error = string.format(L["You cannot have more than %d auctions"], auctionCap)
     else
-        -- Get the display name with suffix for the auction
+        -- Get the display name and full ItemLink for the auction
         local displayName = nil
+        local fullItemLink = nil
         if auctionSellItemInfo then
             displayName = select(1, unpack(auctionSellItemInfo))
         end
         
-        _, error = ns.AuctionHouseAPI:CreateAuction(itemID, buyoutPrice, count, allowLoans, priceType, deliveryType, ns.AUCTION_TYPE_SELL, roleplay, deathRoll, duel, raidAmount, points, note, {displayName = displayName})
+        -- Use stored ItemLink from when item was placed in slot
+        if _G.LastAuctionItemLink then
+            fullItemLink = _G.LastAuctionItemLink
+        end
+        
+        _, error = ns.AuctionHouseAPI:CreateAuction(itemID, buyoutPrice, count, allowLoans, priceType, deliveryType, ns.AUCTION_TYPE_SELL, roleplay, deathRoll, duel, raidAmount, points, note, {displayName = displayName, link = fullItemLink})
     end
     if error then
         UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0);
