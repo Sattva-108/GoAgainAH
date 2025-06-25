@@ -1557,7 +1557,11 @@ function OFDeathClips_SpeedClips_OnClick(self)
             end
             -- Request immediate played time sync when opting back in
             if UnitIsConnected("player") then
+                if ns.SuppressTimePlayedMessages then ns.SuppressTimePlayedMessages() end
                 RequestTimePlayed()
+                C_Timer:After(1, function()
+                    if ns.AllowTimePlayedMessages then ns.AllowTimePlayedMessages() end
+                end)
             end
             -- Fire event to update UI immediately
             ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)

@@ -38,6 +38,31 @@ local lastNotificationTime = 0
 local friendListDebounceTimer = nil
 local initialLoginScanTimer = nil
 
+-- TIME_PLAYED_MSG spam suppression
+local suppressTimePlayedMessages = false
+
+-- Hook DEFAULT_CHAT_FRAME:AddMessage to suppress time played messages
+local originalAddMessage = DEFAULT_CHAT_FRAME.AddMessage
+DEFAULT_CHAT_FRAME.AddMessage = function(self, text, ...)
+    if suppressTimePlayedMessages and text then
+        -- Suppress /played time messages when addon requests them automatically
+        if string.find(text, "Общее время игры:") or string.find(text, "Время игры на этом уровне:") or
+           string.find(text, "Total time played:") or string.find(text, "Time played this level:") then
+            return -- Suppress the message
+        end
+    end
+    return originalAddMessage(self, text, ...)
+end
+
+-- Functions to control time played message suppression
+ns.SuppressTimePlayedMessages = function()
+    suppressTimePlayedMessages = true
+end
+
+ns.AllowTimePlayedMessages = function()
+    suppressTimePlayedMessages = false
+end
+
 local TOOLTIP_MIN_WIDTH = 150
 local TOOLTIP_MAX_WIDTH = 350
 local TOOLTIP_HORIZONTAL_PADDING = 20
@@ -293,6 +318,9 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
         end
 
         watchedEntry.hasBeenNotifiedForThisAdd = true
+        
+        -- Broadcast the resurrection event to other guild members
+        ns.BroadcastWatchedFriend(watchedEntry)
     end
 end
 

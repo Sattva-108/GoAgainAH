@@ -592,14 +592,22 @@ function AuctionHouse:Initialize()
             -- Small delay to ensure player data is ready
             C_Timer:After(2, function()
                 if UnitIsConnected("player") then
+                    if ns.SuppressTimePlayedMessages then ns.SuppressTimePlayedMessages() end
                     RequestTimePlayed()
+                    C_Timer:After(1, function()
+                        if ns.AllowTimePlayedMessages then ns.AllowTimePlayedMessages() end
+                    end)
                 end
             end)
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             -- Update played time when entering new zones (important for location tracking)
             print("[DEBUG] Zone changed - updating played time")
             if UnitIsConnected("player") then
+                if ns.SuppressTimePlayedMessages then ns.SuppressTimePlayedMessages() end
                 RequestTimePlayed()
+                C_Timer:After(1, function()
+                    if ns.AllowTimePlayedMessages then ns.AllowTimePlayedMessages() end
+                end)
             end
         elseif event == "PLAYER_LOGOUT" then
             if ns.playedTimeUpdateTicker then
@@ -619,7 +627,11 @@ function AuctionHouse:Initialize()
     end
     ns.playedTimeUpdateTicker = C_Timer:NewTicker(300, function()
         if UnitIsConnected("player") then
+            if ns.SuppressTimePlayedMessages then ns.SuppressTimePlayedMessages() end
             RequestTimePlayed()
+            C_Timer:After(1, function()
+                if ns.AllowTimePlayedMessages then ns.AllowTimePlayedMessages() end
+            end)
         end
     end)
 
