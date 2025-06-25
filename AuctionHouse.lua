@@ -2193,17 +2193,33 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 AuctionHouseDBSaved.watchedFriends[lowerName] = payload
             else
                 local existing = AuctionHouseDBSaved.watchedFriends[lowerName]
-                if (payload.lastKnownActualLevel or 0) > (existing.lastKnownActualLevel or 0) then
+                local remoteTs = payload.lastKnownActualLevelTimestamp or 0
+                local localTs  = existing.lastKnownActualLevelTimestamp or 0
+                if remoteTs > localTs then
                     AuctionHouseDBSaved.watchedFriends[lowerName] = payload
                 end
             end
 
             if DEFAULT_CHAT_FRAME then
-                DEFAULT_CHAT_FRAME:AddMessage(ChatPrefix() .. string.format(" %s сообщил о возродившемся геройе %s (ур. %d). Щёлкните клип, чтобы добавить в отслеживание.", sender, payload.characterName, payload.clipLevel or 0))
+                --DEFAULT_CHAT_FRAME:AddMessage(ChatPrefix() .. string.format(" %s сообщил о возродившемся герое %s (ур. %d). Щёлкните клип, чтобы добавить в отслеживание.", sender, payload.characterName, payload.clipLevel or 0))
             end
 
             if ns.RefreshDeathClipsUIForFriendUpdates then
                 ns.RefreshDeathClipsUIForFriendUpdates()
+            end
+
+            -- If sender provided a full clip snapshot, integrate it
+            if payload.clipSnapshot and ns.GetLiveDeathClips then
+                local snap = payload.clipSnapshot
+                if snap.id then
+                    local live = ns.GetLiveDeathClips()
+                    if not live[snap.id] then
+                        live[snap.id] = snap
+                        if ns.AuctionHouseAPI and ns.EV_DEATH_CLIPS_CHANGED then
+                            ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+                        end
+                    end
+                end
             end
         end
 
@@ -2228,7 +2244,9 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     changed = true
                 else
                     local existing = AuctionHouseDBSaved.watchedFriends[name]
-                    if (friendData.lastKnownActualLevel or 0) > (existing.lastKnownActualLevel or 0) then
+                    local remoteTs = friendData.lastKnownActualLevelTimestamp or 0
+                    local localTs  = existing.lastKnownActualLevelTimestamp or 0
+                    if remoteTs > localTs then
                         AuctionHouseDBSaved.watchedFriends[name] = friendData
                         changed = true
                     end

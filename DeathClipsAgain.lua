@@ -1058,6 +1058,21 @@ end
 ns.BroadcastWatchedFriend = function(friendData)
     if not friendData or not friendData.characterName then return end
     if ns.AuctionHouse and ns.AuctionHouse.BroadcastMessage and ns.AuctionHouseAddon then
+        -- Attach latest clip snapshot if available
+        if ns.GetLiveDeathClips then
+            local best = nil
+            for _, clip in pairs(ns.GetLiveDeathClips()) do
+                if clip.characterName == friendData.characterName then
+                    if not best or (clip.ts or 0) > (best.ts or 0) then
+                        best = clip
+                    end
+                end
+            end
+            if best then
+                friendData.clipSnapshot = best
+            end
+        end
+
         local msg = ns.AuctionHouseAddon:Serialize({ ns.T_WATCH_ADD_OR_UPDATE, friendData })
         ns.AuctionHouse:BroadcastMessage(msg)
     end
