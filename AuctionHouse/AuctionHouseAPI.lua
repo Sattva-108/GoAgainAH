@@ -422,11 +422,26 @@ function AuctionHouseAPI:UpdateDB(payload)
         return
     end
 
-
+    -- ------------------------------------------------------------------
+    -- Preserve the original guild association of an auction. If we
+    -- already have this auction and its stored `guild` differs from the
+    -- incoming payload, keep the stored value to avoid cross-guild
+    -- leakage when a player changes guilds but still interacts with the
+    -- same auction (e.g. status updates).
+    -- ------------------------------------------------------------------
+    if payload.auction then
+        local existing = DB.auctions[payload.auction.id]
+        if existing and existing.guild and payload.auction.guild ~= existing.guild then
+            payload.auction.guild = existing.guild
+        end
+    end
 
     DB.auctions[payload.auction.id] = payload.auction
     DB.lastUpdateAt = time()
     DB.revision = DB.revision + 1
+    -- Mirror the per-guild revision to the legacy top-level value so that
+    -- SavedVariables dumps look consistent and do not confuse users/tools
+    AuctionHouseDBSaved.revision = DB.revision
     -- Save revision for current guild
     local currentGuildName = GetGuildInfo("player") or "noguild"
     if AuctionHouseDBSaved.guildRevisions then
@@ -805,6 +820,9 @@ function AuctionHouseAPI:DeleteAuctionInternal(auctionID, isNetworkUpdate)
     DB.auctions[auctionID] = nil
     DB.lastUpdateAt = time()
     DB.revision = DB.revision + 1
+    -- Mirror the per-guild revision to the legacy top-level value so that
+    -- SavedVariables dumps look consistent and do not confuse users/tools
+    AuctionHouseDBSaved.revision = DB.revision
     -- Save revision for current guild
     local currentGuildName = GetGuildInfo("player") or "noguild"
     if AuctionHouseDBSaved.guildRevisions then
