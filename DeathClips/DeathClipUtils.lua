@@ -678,21 +678,21 @@ end
 
 
 
--- TODO FIXME before release 3.3.5
+-- TODO FIXME remove before release 3.3.5
 -- a little hack to not get warning when running testing script:
 -- /run SendAddonMessage("ASMSG_HARDCORE_DEATH", "Grommash:26:0:1:16:Цитадель Ледяной Короны:7:Ворг:12", "WHISPER", UnitName("player"))
 
-hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
-    if which == "DANGEROUS_SCRIPTS_WARNING" then
-        C_Timer:After(0.01, function()
-            local dialog = StaticPopup_Visible(which)
-            if dialog then
-                local frame = _G[dialog]
-                if frame and frame.data then
-                    RunScript(frame.data)
-                    StaticPopup_Hide(which)
-                end
-            end
-        end)
-    end
-end)
+--hooksecurefunc("StaticPopup_Show", function(which, text_arg1, text_arg2, data)
+--    if which == "DANGEROUS_SCRIPTS_WARNING" then
+--        C_Timer:After(0.01, function()
+--            local dialog = StaticPopup_Visible(which)
+--            if dialog then
+--                local frame = _G[dialog]
+--                if frame and frame.data then
+--                    RunScript(frame.data)
+--                    StaticPopup_Hide(which)
+--                end
+--            end
+--        end)
+--    end
+--end)

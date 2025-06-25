@@ -6,6 +6,19 @@ ns.AuctionHouseAddon = Addon
 local LibDeflate = LibStub("LibDeflate")
 local API = ns.AuctionHouseAPI
 
+--[[-----------------------------------------------------------------
+  Helper: decode-and-decompress a LibDeflate blob that may already be
+  encoded for the WoW addon channel. Falls back gracefully when the
+  data is still in raw compressed form so that we remain fully
+  backwards-compatible with older clients.
+-----------------------------------------------------------------]]
+local function SafeDecompress(data)
+    if type(data) ~= "string" then return nil end
+    local decoded = LibDeflate:DecodeForWoWAddonChannel(data)
+    local compressed = decoded or data
+    return LibDeflate:DecompressDeflate(compressed)
+end
+
 ns.MobNameByID = {}
 ns.MobIDByName = {}
 
@@ -854,28 +867,41 @@ function AuctionHouse:SendDm(message, recipient, prio)
     end)
 end
 
+-- Small helper to serialize + compress + encode for regular updates.
+local function SendCompressedGuild(self, tbl)
+    local serialized = Addon:Serialize(tbl)
+    local compressed = LibDeflate:CompressDeflate(serialized, { level = 1 })
+    if compressed then
+        local encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
+        self:BroadcastMessage("DF:" .. encoded)
+    else
+        -- Extremely unlikely, but fallback to plain text
+        self:BroadcastMessage(serialized)
+    end
+end
+
 function AuctionHouse:BroadcastAuctionUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    SendCompressedGuild(self, { dataType, payload })
 end
 
 function AuctionHouse:BroadcastTradeUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    SendCompressedGuild(self, { dataType, payload })
 end
 
 function AuctionHouse:BroadcastRatingUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    SendCompressedGuild(self, { dataType, payload })
 end
 
 function AuctionHouse:BroadcastLFGUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    SendCompressedGuild(self, { dataType, payload })
 end
 
 function AuctionHouse:BroadcastBlacklistUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    SendCompressedGuild(self, { dataType, payload })
 end
 
 function AuctionHouse:BroadcastPendingTransactionUpdate(dataType, payload)
-    self:BroadcastMessage(Addon:Serialize({ dataType, payload }))
+    SendCompressedGuild(self, { dataType, payload })
 end
 
 function AuctionHouse:BroadcastDeathClipAdded(clip)
@@ -1393,7 +1419,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             state = merged
         else
             -- Legacy single-chunk format 
-            decompressed = LibDeflate:DecompressDeflate(payload)
+            decompressed = SafeDecompress(payload)
             
             if not decompressed then
                 return
@@ -1805,10 +1831,11 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         if state.persisted.rev > rev then
             local responsePayload = state:GetSyncedState()
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_DEATH_CLIP_REVIEW_STATE, encoded }), sender, "BULK")
         end
     elseif dataType == ns.T_DEATH_CLIP_REVIEW_STATE then
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local success, state = Addon:Deserialize(decompressed)
         if success then
             local reviewState = ns.GetDeathClipReviewState()
@@ -1854,12 +1881,13 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         }, function()
             local responsePayload, tradeCount, deletedCount = self:BuildTradeDeltaState(payload.revision, payload.trades)
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-            self:SendDm(Addon:Serialize({ ns.T_TRADE_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_TRADE_STATE, encoded }), sender, "BULK")
         end)
 
     elseif dataType == ns.T_TRADE_STATE then
         local decompressStart = GetTimePreciseSec()
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
 
         local deserializeStart = GetTimePreciseSec()
@@ -1923,12 +1951,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         }, function()
             local responsePayload, ratingCount, deletedCount = self:BuildRatingsDeltaState(payload.revision, payload.ratings)
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-
-            self:SendDm(Addon:Serialize({ ns.T_RATING_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_RATING_STATE, encoded }), sender, "BULK")
         end)
 
     elseif dataType == ns.T_RATING_STATE then
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local ok, state = Addon:Deserialize(decompressed)
         if not ok then
             return
@@ -1968,12 +1996,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         }, function()
             local responsePayload, lfgCount, deletedCount = self:BuildLFGDeltaState(payload.revLfg, payload.lfgEntries)
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-
-            self:SendDm(Addon:Serialize({ ns.T_LFG_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_LFG_STATE, encoded }), sender, "BULK")
         end)
 
     elseif dataType == ns.T_LFG_STATE then
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local ok, state = Addon:Deserialize(decompressed)
         if not ok then
             return
@@ -2050,13 +2078,13 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         }, function()
             local responsePayload, blCount, deletedCount = self:BuildBlacklistDeltaState(payload.revBlacklists, payload.blacklistEntries)
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-
-            self:SendDm(Addon:Serialize({ ns.T_BLACKLIST_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_BLACKLIST_STATE, encoded }), sender, "BULK")
         end)
 
     elseif dataType == ns.T_BLACKLIST_STATE then
         local decompressStart = GetTimePreciseSec()
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
 
         local deserializeStart = GetTimePreciseSec()
@@ -2117,13 +2145,13 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         }, function()
             local responsePayload, txnCount, deletedCount = self:BuildPendingTransactionsDeltaState(payload.revPendingTransactions, payload.pendingTransactions)
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(responsePayload))
-
-            self:SendDm(Addon:Serialize({ ns.T_PENDING_TRANSACTION_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_PENDING_TRANSACTION_STATE, encoded }), sender, "BULK")
         end)
 
     elseif dataType == ns.T_PENDING_TRANSACTION_STATE then
         local decompressStart = GetTimePreciseSec()
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local decompressTime = (GetTimePreciseSec() - decompressStart) * 1000
 
         local ok, state = Addon:Deserialize(decompressed)
@@ -2228,11 +2256,12 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
         local watched = AuctionHouseDBSaved and AuctionHouseDBSaved.watchedFriends or {}
         if watched and next(watched) then
             local compressed = LibDeflate:CompressDeflate(Addon:Serialize(watched))
-            self:SendDm(Addon:Serialize({ ns.T_WATCH_STATE, compressed }), sender, "BULK")
+            local encoded    = LibDeflate:EncodeForWoWAddonChannel(compressed)
+            self:SendDm(Addon:Serialize({ ns.T_WATCH_STATE, encoded }), sender, "BULK")
         end
 
     elseif dataType == ns.T_WATCH_STATE then
-        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local decompressed = SafeDecompress(payload)
         local ok, remoteList = Addon:Deserialize(decompressed)
         if ok and type(remoteList) == "table" then
             AuctionHouseDBSaved = AuctionHouseDBSaved or {}
@@ -2922,61 +2951,63 @@ end
 
 -- Global test function for creating 1000 test auctions
 -- TODO REMOVE ME BEFORE RELEASE
-function CreateTestAuctions()
-    local count = 0
-    
-    -- Get real itemIDs from ItemDB
-    local allItems = ns.ItemDB:Find() -- Get all items
-    local realItemIDs = {-1} -- Start with gold
-    
-    -- Collect first 1000 real itemIDs for unique auctions
-    for i, item in ipairs(allItems) do
-        if i <= 1000 and item.id then
-            table.insert(realItemIDs, item.id)
-        end
-    end
-    
-    print("Using " .. #realItemIDs .. " unique itemIDs for test auctions")
-    
-    local auctionTypes = {0, 1} -- sell, buy-order  
-    local deliveryTypes = {0, 1, 2} -- any, mail, trade
-    local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
-    
-    for i = 1, math.min(200, #realItemIDs) do
-        local itemID = realItemIDs[i] -- Use unique itemID for each auction
-        local price = math.random(1, 1000000)
-        local quantity = math.random(1, 50)
-        local allowLoan = math.random() > 0.5
-        local priceType = priceTypes[math.random(#priceTypes)]
-        local deliveryType = deliveryTypes[math.random(#deliveryTypes)]
-        local auctionType = auctionTypes[math.random(#auctionTypes)]
-        local roleplay = math.random() > 0.8
-        local deathRoll = math.random() > 0.9
-        local duel = math.random() > 0.9
-        local raidAmount = priceType == 1 and math.random(1, 100) or 0
-        local points = priceType == 3 and math.random(1, 1000) or 0
-        local note = i % 10 == 0 and ("Test note " .. i) or ""
-        
-        local success, err = ns.AuctionHouseAPI:CreateAuction(
-            itemID, price, quantity, allowLoan, priceType, deliveryType, 
-            auctionType, roleplay, deathRoll, duel, raidAmount, points, note
-        )
-        
-        if success then
-            count = count + 1
-        else
-            print("Failed to create auction " .. i .. ": " .. (err or "unknown error"))
-        end
-        
-        if count % 100 == 0 then
-            print("Created " .. count .. " test auctions...")
-        end
-    end
-    
-    print("Created " .. count .. " test auctions total!")
-end
+--function CreateTestAuctions()
+--    local count = 0
+--
+--    -- Get real itemIDs from ItemDB
+--    local allItems = ns.ItemDB:Find() -- Get all items
+--    local realItemIDs = {-1} -- Start with gold
+--
+--    -- Collect first 1000 real itemIDs for unique auctions
+--    for i, item in ipairs(allItems) do
+--        if i <= 1000 and item.id then
+--            table.insert(realItemIDs, item.id)
+--        end
+--    end
+--
+--    print("Using " .. #realItemIDs .. " unique itemIDs for test auctions")
+--
+--    local auctionTypes = {0, 1} -- sell, buy-order
+--    local deliveryTypes = {0, 1, 2} -- any, mail, trade
+--    local priceTypes = {0, 1, 2, 3} -- money, twitch raid, custom, guild points
+--
+--    for i = 1, math.min(200, #realItemIDs) do
+--        local itemID = realItemIDs[i] -- Use unique itemID for each auction
+--        local price = math.random(1, 1000000)
+--        local quantity = math.random(1, 50)
+--        local allowLoan = math.random() > 0.5
+--        local priceType = priceTypes[math.random(#priceTypes)]
+--        local deliveryType = deliveryTypes[math.random(#deliveryTypes)]
+--        local auctionType = auctionTypes[math.random(#auctionTypes)]
+--        local roleplay = math.random() > 0.8
+--        local deathRoll = math.random() > 0.9
+--        local duel = math.random() > 0.9
+--        local raidAmount = priceType == 1 and math.random(1, 100) or 0
+--        local points = priceType == 3 and math.random(1, 1000) or 0
+--        local note = i % 10 == 0 and ("Test note " .. i) or ""
+--
+--        local success, err = ns.AuctionHouseAPI:CreateAuction(
+--            itemID, price, quantity, allowLoan, priceType, deliveryType,
+--            auctionType, roleplay, deathRoll, duel, raidAmount, points, note
+--        )
+--
+--        if success then
+--            count = count + 1
+--        else
+--            print("Failed to create auction " .. i .. ": " .. (err or "unknown error"))
+--        end
+--
+--        if count % 100 == 0 then
+--            print("Created " .. count .. " test auctions...")
+--        end
+--    end
+--
+--    print("Created " .. count .. " test auctions total!")
+--end
 
 -- =====================  WATCHED FRIEND SYNC  =====================
 ns.T_WATCH_ADD_OR_UPDATE = "WATCH_ADD_OR_UPDATE"
 ns.T_WATCH_STATE_REQUEST = "WATCH_STATE_REQUEST"
 ns.T_WATCH_STATE = "WATCH_STATE"
+
+
