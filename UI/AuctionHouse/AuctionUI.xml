@@ -1305,8 +1305,7 @@
 						</Layers>
 						<Scripts>
 							<OnClick>
-								StaticPopup_Show("OF_CANCEL_AUCTION_PENDING")
-								self:Disable()
+								OFBidCancelAuctionButton_OnClick(self)
 							</OnClick>
 						</Scripts>
 					</Button>
@@ -2319,8 +2318,7 @@
 						</Anchors>
 						<Scripts>
 							<OnClick>
-								StaticPopup_Show("OF_CANCEL_AUCTION_ACTIVE");
-								self:Disable();
+								OFAuctionsCancelAuctionButton_OnClick(self)
 							</OnClick>
 						</Scripts>
 					</Button>

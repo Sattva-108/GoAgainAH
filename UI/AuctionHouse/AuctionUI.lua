@@ -3,6 +3,50 @@ local L = ns.L
 
 OF_AH_ADDON_NAME = addonName
 
+-- Function to cancel auction without confirmation popup
+local function CancelAuctionWithoutConfirm(isPending)
+    local success, error = ns.AuctionHouseAPI:CancelAuction(OFAuctionFrame.auction.id)
+    if success then
+        if isPending then
+            OFAuctionFrameBid_Update()
+        else
+            OFAuctionFrameAuctions_Update()
+        end
+    else
+        UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0);
+    end
+end
+
+-- Check if auction cancel confirmation is disabled
+local function ShouldSkipCancelConfirmation()
+    return ns.PlayerPrefs:Get("skipAuctionCancelConfirmation") == true
+end
+
+-- New button handlers that check the preference
+function OFBidCancelAuctionButton_OnClick(self)
+    if ShouldSkipCancelConfirmation() then
+        CancelAuctionWithoutConfirm(true)
+    else
+        StaticPopup_Show("OF_CANCEL_AUCTION_PENDING")
+        self:Disable()
+    end
+end
+
+function OFAuctionsCancelAuctionButton_OnClick(self)
+    if ShouldSkipCancelConfirmation() then
+        CancelAuctionWithoutConfirm(false)
+    else
+        StaticPopup_Show("OF_CANCEL_AUCTION_ACTIVE")
+        self:Disable()
+    end
+end
+
+-- Handler for the skip cancel confirmation checkbox
+function OFSettingsSkipCancelConfirm_OnClick(self)
+    local isChecked = self:GetChecked()
+    ns.PlayerPrefs:Set("skipAuctionCancelConfirmation", isChecked == 1)
+end
+
 -- keep last item sent to auction & it's price
 
 -- To experiment with different "20x" label strings, use:

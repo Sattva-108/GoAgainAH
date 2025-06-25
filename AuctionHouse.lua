@@ -318,6 +318,8 @@ ns.T_SET_GUILD_POINTS = "SET_GUILD_POINTS"
 
 -- Watched friend / resurrected notification
 ns.T_WATCH_ADD_OR_UPDATE = "WATCH_ADD_OR_UPDATE"
+ns.T_WATCH_STATE_REQUEST = "WATCH_STATE_REQUEST"
+ns.T_WATCH_STATE = "WATCH_STATE"
 
 local G, W = "GUILD", "WHISPER"
 
@@ -381,6 +383,8 @@ local CHANNEL_WHITELIST = {
     [ns.T_PENDING_TRANSACTION_STATE] = { [W] = 1 },
     -- Watched friends sync
     [ns.T_WATCH_ADD_OR_UPDATE] = { [G] = 1 },
+    [ns.T_WATCH_STATE_REQUEST] = { [G] = 1 },
+    [ns.T_WATCH_STATE] = { [W] = 1 },
 }
 
 -- make isMessageAllowed use name-only
@@ -832,7 +836,7 @@ function AuctionHouse:SendDm(message, recipient, prio)
         return -- skip: we know the player is offline, avoid chat spam
     end
 
-    -- If this is part of a bulk sync, extend/mark an active sync session window
+    -- If this is part of a bulk sync, extend/mark an active sync session
     if prio == "BULK" then
         -- Keep the session active for up to 15 minutes after the last BULK whisper
         self._activeSyncSessions[recipient] = now + 900 -- 900s = 15min
@@ -2187,13 +2191,51 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             -- Avoid overwriting if user already tracks with more info
             if not AuctionHouseDBSaved.watchedFriends[lowerName] then
                 AuctionHouseDBSaved.watchedFriends[lowerName] = payload
-                if DEFAULT_CHAT_FRAME then
-                    DEFAULT_CHAT_FRAME:AddMessage(ChatPrefix() .. string.format(" %s сообщил о возродившемся геройе %s (ур. %d). Щёлкните клип, чтобы добавить в отслеживание.", sender, payload.characterName, payload.clipLevel or 0))
+            else
+                local existing = AuctionHouseDBSaved.watchedFriends[lowerName]
+                if (payload.lastKnownActualLevel or 0) > (existing.lastKnownActualLevel or 0) then
+                    AuctionHouseDBSaved.watchedFriends[lowerName] = payload
                 end
+            end
 
-                if ns.RefreshDeathClipsUIForFriendUpdates then
-                    ns.RefreshDeathClipsUIForFriendUpdates()
+            if DEFAULT_CHAT_FRAME then
+                DEFAULT_CHAT_FRAME:AddMessage(ChatPrefix() .. string.format(" %s сообщил о возродившемся геройе %s (ур. %d). Щёлкните клип, чтобы добавить в отслеживание.", sender, payload.characterName, payload.clipLevel or 0))
+            end
+
+            if ns.RefreshDeathClipsUIForFriendUpdates then
+                ns.RefreshDeathClipsUIForFriendUpdates()
+            end
+        end
+
+    elseif dataType == ns.T_WATCH_STATE_REQUEST then
+        -- reply with full watchedFriends list if we have one and requester revision lower (not tracked) – always send
+        local watched = AuctionHouseDBSaved and AuctionHouseDBSaved.watchedFriends or {}
+        if watched and next(watched) then
+            local compressed = LibDeflate:CompressDeflate(Addon:Serialize(watched))
+            self:SendDm(Addon:Serialize({ ns.T_WATCH_STATE, compressed }), sender, "BULK")
+        end
+
+    elseif dataType == ns.T_WATCH_STATE then
+        local decompressed = LibDeflate:DecompressDeflate(payload)
+        local ok, remoteList = Addon:Deserialize(decompressed)
+        if ok and type(remoteList) == "table" then
+            AuctionHouseDBSaved = AuctionHouseDBSaved or {}
+            AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+            local changed = false
+            for name, friendData in pairs(remoteList) do
+                if not AuctionHouseDBSaved.watchedFriends[name] then
+                    AuctionHouseDBSaved.watchedFriends[name] = friendData
+                    changed = true
+                else
+                    local existing = AuctionHouseDBSaved.watchedFriends[name]
+                    if (friendData.lastKnownActualLevel or 0) > (existing.lastKnownActualLevel or 0) then
+                        AuctionHouseDBSaved.watchedFriends[name] = friendData
+                        changed = true
+                    end
                 end
+            end
+            if changed and ns.RefreshDeathClipsUIForFriendUpdates then
+                ns.RefreshDeathClipsUIForFriendUpdates()
             end
         end
 
@@ -2918,3 +2960,5 @@ end
 
 -- =====================  WATCHED FRIEND SYNC  =====================
 ns.T_WATCH_ADD_OR_UPDATE = "WATCH_ADD_OR_UPDATE"
+ns.T_WATCH_STATE_REQUEST = "WATCH_STATE_REQUEST"
+ns.T_WATCH_STATE = "WATCH_STATE"

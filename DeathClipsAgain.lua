@@ -815,6 +815,7 @@ local function PerformFriendListScan()
                         watchedEntry.lastKnownActualLevel = currentActualLevel
                         watchedEntry.lastKnownActualLevelTimestamp = time()
                         friendDataChanged = true
+                        ns.BroadcastWatchedFriend(watchedEntry)
                     end
 
                     -- Update class info at last sighting
@@ -1084,6 +1085,13 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
         initialLoginScanTimer = C_Timer:After(15, function()
             initialLoginScanTimer = nil; PerformFriendListScan()
+        end)
+        -- Delay a bit to allow chat throttle, then request watched state
+        C_Timer:After(5, function()
+            if ns.AuctionHouse and ns.AuctionHouse.BroadcastMessage and ns.AuctionHouseAddon then
+                local msg = ns.AuctionHouseAddon:Serialize({ ns.T_WATCH_STATE_REQUEST, {} })
+                ns.AuctionHouse:BroadcastMessage(msg)
+            end
         end)
     elseif event == "PLAYER_LOGOUT" then
         if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end

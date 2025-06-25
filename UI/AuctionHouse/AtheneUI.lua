@@ -129,6 +129,10 @@ function OFSettings_UpdateUI()
     if duration == nil then duration = 14 end -- default 14 days
     OFSettingsDurationSlider:SetValue(duration)
     _G[OFSettingsDurationSlider:GetName().."Text"]:SetText("Длительность аукциона: " .. duration .. " дней")
+    
+    -- Update skip cancel confirmation checkbox
+    local skipCancelConfirm = ns.PlayerPrefs:Get("skipAuctionCancelConfirmation") == true
+    OFSettingsSkipCancelConfirmCheckButton:SetChecked(skipCancelConfirm and 1 or nil)
 end
 
 function OFSettings_MinimapIcon_OnClick(self)
