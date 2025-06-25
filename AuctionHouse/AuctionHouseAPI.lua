@@ -47,6 +47,7 @@ function AuctionHouseAPI:GetSerializableState()
         auctions = DB.auctions,
         trades = DB.trades,
         ratings = DB.ratings,
+        revision = DB.revision,
         revTrades = DB.revTrades,
         revRatings = DB.revRatings,
         lastUpdateAt = DB.lastUpdateAt,
@@ -66,7 +67,7 @@ end
 function AuctionHouseAPI:Load()
     if AuctionHouseDBSaved then
         for k, v in pairs(AuctionHouseDBSaved) do
-            if k ~= "listeners" and k ~= "revision" then  -- Skip global revision
+            if k ~= "listeners" then
                 DB[k] = v
             end
         end
@@ -128,25 +129,6 @@ function AuctionHouseAPI:Load()
         end
     end
 
-    -- Initialize per-guild revisions
-    if not AuctionHouseDBSaved.guildRevisions then
-        AuctionHouseDBSaved.guildRevisions = {}
-    end
-    
-    -- Switch to current guild's revision
-    local currentGuildName = GetGuildInfo("player") or "noguild"
-    if not AuctionHouseDBSaved.guildRevisions[currentGuildName] then
-        AuctionHouseDBSaved.guildRevisions[currentGuildName] = 0
-    end
-    ns.AuctionHouseDB.revision = AuctionHouseDBSaved.guildRevisions[currentGuildName]
-    print("DEBUG: Loaded revision", ns.AuctionHouseDB.revision, "for guild:", currentGuildName)
-
-    -- Ensure guild tag recorded for future comparison  
-    if type(AuctionHouseDBSaved) ~= "table" then
-        AuctionHouseDBSaved = { _suffix = ns.PROTOTYPE_SUFFIX, _guildName = currentGuildName }
-    else
-        AuctionHouseDBSaved._guildName = currentGuildName
-    end
 end
 
 function AuctionHouseAPI:Initialize(deps)
@@ -183,7 +165,6 @@ function AuctionHouseAPI:ClearPersistence()
     ns.AuctionHouseDB.lastBlacklistUpdateAt = 0
     ns.AuctionHouseDB.lastPendingTransactionUpdateAt = 0
 end
-
 
 
 --[[
@@ -232,29 +213,18 @@ end
 
 function ns.FilterAuctionsThisGuild(pool)
     local list = {}
-    local myGuild = GetGuildInfo("player") or "noguild"
-    
-    print("DEBUG FilterAuctionsThisGuild: myGuild =", myGuild)
-    
+    local myGuild = GetGuildInfo("player") or ""
     for id, a in pairs(pool) do
-        if a.realm == ns.CURRENT_REALM then
-            local auctionGuild = a.guild or "noguild"
-            
-            print("DEBUG: auction", id, "guild =", auctionGuild, "myGuild =", myGuild)
-            
-            -- Сравниваем гильдии (включая случай noguild для персонажей без гильдии)
-            if auctionGuild == myGuild then
+        if a.realm == CURRENT_REALM then
+            -- Если у меня есть гильдия И у аукциона есть guild поле И они совпадают
+            if myGuild ~= "" and a.guild and a.guild == myGuild then
                 list[id] = a
-                print("DEBUG: auction", id, "included")
-            else
-                print("DEBUG: auction", id, "filtered out")
+            -- Или если у меня нет гильдии И у аукциона нет guild поля (старые аукционы)
+            elseif myGuild == "" and not a.guild then
+                list[id] = a
             end
         end
     end
-    
-    local count = 0
-    for _ in pairs(list) do count = count + 1 end
-    print("DEBUG FilterAuctionsThisGuild: returning", count, "auctions")
     return list
 end
 
@@ -427,11 +397,6 @@ function AuctionHouseAPI:UpdateDB(payload)
     DB.auctions[payload.auction.id] = payload.auction
     DB.lastUpdateAt = time()
     DB.revision = DB.revision + 1
-    -- Save revision for current guild
-    local currentGuildName = GetGuildInfo("player") or "noguild"
-    if AuctionHouseDBSaved.guildRevisions then
-        AuctionHouseDBSaved.guildRevisions[currentGuildName] = DB.revision
-    end
 end
 
 function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, priceType, deliveryType, auctionType, roleplay, deathRoll, duel, raidAmount, points, note, overrides)
@@ -468,8 +433,8 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
     local auction = {
         id = id,
         owner = owner,
-        realm = ns.CURRENT_REALM,
-        guild = GetGuildInfo("player") or "noguild",
+        realm = CURRENT_REALM,
+        guild = GetGuildInfo("player") or "",
         itemID = itemID,
         quantity = quantity,
         price = price, -- amount of copper
@@ -805,11 +770,6 @@ function AuctionHouseAPI:DeleteAuctionInternal(auctionID, isNetworkUpdate)
     DB.auctions[auctionID] = nil
     DB.lastUpdateAt = time()
     DB.revision = DB.revision + 1
-    -- Save revision for current guild
-    local currentGuildName = GetGuildInfo("player") or "noguild"
-    if AuctionHouseDBSaved.guildRevisions then
-        AuctionHouseDBSaved.guildRevisions[currentGuildName] = DB.revision
-    end
 
     if not isNetworkUpdate then
         self:FireEvent(ns.T_AUCTION_DELETED, auctionID)
