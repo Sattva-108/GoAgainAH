@@ -1149,7 +1149,7 @@ function AuctionHouse:HandleStateUpdate(sender, dataType, cfg, sendPayloadFn)
         ns.DebugLog("[DEBUG] Immediate " .. dataType .. " state update (primary responder)")
         sendUpdate()
     else
-        local delay = randomBiasedDelay(10, 12)
+        local delay = randomBiasedDelay(6, 8)
         ns.DebugLog("[DEBUG] Scheduling delayed " .. dataType .. " state update in " .. math.floor(delay) .. "s")
         self:After(delay, sendUpdate)
     end
@@ -1345,7 +1345,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                     for id, auction in pairs(partial.auctions or {}) do
                         local myGuild = GetGuildInfo("player") or "noguild"
                         local auctionGuild = auction.guild or "noguild"
-                        --print("DEBUG: Processing auction", id, "auctionGuild =", auctionGuild, "myGuild =", myGuild)
+                        print("DEBUG: Processing auction", id, "auctionGuild =", auctionGuild, "myGuild =", myGuild)
                         -- Фильтр: realm + guild
                         if auction.realm == ns.CURRENT_REALM and auctionGuild == myGuild then
                             local prev = self.db.auctions[id]
@@ -1374,13 +1374,7 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                         end
                     end
                     if allowRevisionBump and partial.revision and partial.revision > (self.db.revision or 0) then
-                        -- Update guild-specific revision
-                        local currentGuildName = GetGuildInfo("player") or "noguild"
-                        if not AuctionHouseDBSaved.guildRevisions then
-                            AuctionHouseDBSaved.guildRevisions = {}
-                        end
-                        AuctionHouseDBSaved.guildRevisions[currentGuildName] = partial.revision
-                        self.db.revision = partial.revision
+                        self.db.revision     = partial.revision
                         self.db.lastUpdateAt = partial.lastUpdateAt
                     end
 
@@ -1486,12 +1480,6 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 self.db.auctions[id] = nil
             end
 
-            -- Update guild-specific revision
-            local currentGuildName = GetGuildInfo("player") or "noguild"
-            if not AuctionHouseDBSaved.guildRevisions then
-                AuctionHouseDBSaved.guildRevisions = {}
-            end
-            AuctionHouseDBSaved.guildRevisions[currentGuildName] = state.revision
             self.db.revision = state.revision
             self.db.lastUpdateAt = state.lastUpdateAt
 
@@ -2565,7 +2553,6 @@ function AuctionHouse:RequestLatestState()
         local storedRev = AuctionHouseDBSaved.guildRevisions[guildName]
         if storedRev and storedRev ~= self.db.revision then
             self.db.revision = storedRev
-            C_Timer:After(10, function() print(self.db.revision.." after 10 sec of RequestLatestState") end)
         end
     end
     
