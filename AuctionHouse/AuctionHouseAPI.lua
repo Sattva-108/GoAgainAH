@@ -439,6 +439,7 @@ function AuctionHouseAPI:CreateAuction(itemID, price, quantity, allowLoan, price
         completeAt = 0,
         note = note or "",
         rev = 0,
+        displayName = overrides.displayName, -- Store the name with suffix
     }
     for k, v in pairs(overrides) do
         auction[k] = v

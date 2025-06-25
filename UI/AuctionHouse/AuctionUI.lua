@@ -72,10 +72,26 @@ local function OFGetAuctionSellItemInfo()
 
     local name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID = unpack(auctionSellItemInfo)
 
-    -- Only fetch itemID from GetItemInfo if it's missing (ignore gold and enchants)
+    -- If itemID is missing, try to extract it from item tooltip or container
     if not itemID and name then
-        local itemLink = select(2, GetItemInfo(name))
-        itemID = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
+        -- Remove color codes from name first
+        local cleanName = name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        
+        -- Try GetItemInfo with the clean name
+        local itemLink = select(2, GetItemInfo(cleanName))
+        if itemLink then
+            itemID = tonumber(string.match(itemLink, "item:(%d+)"))
+            auctionSellItemInfo = pack(name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID)
+        else
+            -- Try removing suffix (everything after " of ", " со ", etc)
+            local baseName = cleanName:gsub(" со .*", ""):gsub(" of .*", ""):gsub(" с .*", ""):gsub(" из .*", "")
+            
+            itemLink = select(2, GetItemInfo(baseName))
+            if itemLink then
+                itemID = tonumber(string.match(itemLink, "item:(%d+)"))
+                auctionSellItemInfo = pack(name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID)
+            end
+        end
     end
 
     return name, texture, count, quality, canUse, price, pricePerUnit, stackCount, totalCount, itemID
@@ -1623,6 +1639,11 @@ end
 
 local function UpdateBrowseEntry(index, i, offset, button, auction, numBatchAuctions, totalEntries)
     local name, _, quality, level, _, _, _, _, _, texture, _  = ns.GetItemInfo(auction.itemID, auction.quantity)
+    
+    -- Use displayName if available (for items with suffixes)
+    if auction.displayName and auction.displayName ~= "" then
+        name = auction.displayName
+    end
     local buyoutPrice = auction.price
     local owner = auction.owner
     local ownerFullName = auction.owner
@@ -2327,6 +2348,11 @@ end
 
 local function UpdateAuctionEntry(index, i, offset, button, auction, numBatchAuctions, totalAuctions)
     local name, _, quality, level, _, _, _, _, _, texture, _  = ns.GetItemInfo(auction.itemID, auction.quantity)
+    
+    -- Use displayName if available (for items with suffixes)
+    if auction.displayName and auction.displayName ~= "" then
+        name = auction.displayName
+    end
     local buyoutPrice = auction.price
     local count = auction.quantity
     -- TODO jan easy way to check if item is usable?
@@ -2815,7 +2841,13 @@ function OFAuctionsCreateAuctionButton_OnClick()
     if #ns.GetMyAuctions() >= auctionCap then
         error = string.format(L["You cannot have more than %d auctions"], auctionCap)
     else
-        _, error = ns.AuctionHouseAPI:CreateAuction(itemID, buyoutPrice, count, allowLoans, priceType, deliveryType, ns.AUCTION_TYPE_SELL, roleplay, deathRoll, duel, raidAmount, points, note)
+        -- Get the display name with suffix for the auction
+        local displayName = nil
+        if auctionSellItemInfo then
+            displayName = select(1, unpack(auctionSellItemInfo))
+        end
+        
+        _, error = ns.AuctionHouseAPI:CreateAuction(itemID, buyoutPrice, count, allowLoans, priceType, deliveryType, ns.AUCTION_TYPE_SELL, roleplay, deathRoll, duel, raidAmount, points, note, {displayName = displayName})
     end
     if error then
         UIErrorsFrame:AddMessage(error, 1.0, 0.1, 0.1, 1.0);
