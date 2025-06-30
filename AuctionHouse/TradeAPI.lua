@@ -419,10 +419,10 @@ function TradeAPI:PrefillGold(relevantAuction, totalPrice, targetName)
     end
 end
 
-function TradeAPI:PrefillItem(itemID, quantity, targetName)
+function TradeAPI:PrefillItem(itemID, quantity, targetName, optItemLink)
     -- I'm the owner: prefill trade with the item
-    -- Use new helper function to find the item
-    local bag, slot, exactMatch = self:FindBestMatchForTrade(itemID, quantity)
+    -- Use new helper function to find the item (now supports link)
+    local bag, slot, exactMatch = self:FindBestMatchForTrade(itemID, quantity, optItemLink)
     if slot and exactMatch then
         -- select item
         PickupContainerItem(bag, slot)
@@ -449,10 +449,15 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName)
     else
         -- error message when item not found or quantity doesn't match exactly
         local itemName = select(2, ns.GetItemInfo(itemID)) or "item"
-        local errorMsg = not slot and
-            L[" Could not find "] .. quantity .. "x " .. itemName .. L[" in your bags for the trade"]
-            or
-            L[" Found the item but stack size doesn't match exactly. Please manually split a stack of "] .. quantity .. " " .. itemName
+        local errorMsg
+        if optItemLink then
+            errorMsg = L[" Could not find exact item with correct suffix in your bags for the trade"]
+        else
+            errorMsg = not slot and
+                L[" Could not find "] .. quantity .. "x " .. itemName .. L[" in your bags for the trade"]
+                or
+                L[" Found the item but stack size doesn't match exactly. Please manually split a stack of "] .. quantity .. " " .. itemName
+        end
         print(ChatPrefixError() .. errorMsg)
     end
 end
@@ -513,7 +518,8 @@ function TradeAPI:TryPrefillTradeWindow(targetName)
             -- NOTE: here, quantity is the amount of copper
             self:PrefillGold(relevantAuction, quantity, targetName)
         else
-            self:PrefillItem(itemID, quantity, targetName)
+            -- Pass auction.link if available for suffix match
+            self:PrefillItem(itemID, quantity, targetName, relevantAuction.link)
         end
     else
         -- NOTE: for ITEM_ID_GOLD totalPrice is expected to be 0
@@ -559,18 +565,29 @@ local function FindItemInBags(itemID, quantity, matchQuantityExact)
     return bestMatch.bag, bestMatch.slot
 end
 
-function TradeAPI:FindBestMatchForTrade(itemID, quantity)
-    -- First try to find an exact quantity match
-    local bag, slot = FindItemInBags(itemID, quantity, true)
-
-    if slot then
-        -- Exact match found
-        return bag, slot, true
+-- Enhanced: can match by full itemLink (with suffix) if provided
+function TradeAPI:FindBestMatchForTrade(itemID, quantity, optItemLink)
+    -- If full itemLink is provided, search for exact link in bags
+    if optItemLink then
+        for bag = 0, NUM_BAG_SLOTS do
+            local slots = GetContainerNumSlots(bag)
+            for slot = 1, slots do
+                local link = GetContainerItemLink(bag, slot)
+                local _, itemCount = GetContainerItemInfo(bag, slot)
+                if link and link == optItemLink and itemCount == quantity then
+                    return bag, slot, true
+                end
+            end
+        end
+        -- If not found, do not fallback to itemID: fail to avoid wrong suffix
+        return nil, nil, false
     end
 
-    -- Look for any stack large enough
+    -- Legacy: fallback to itemID only
+    local bag, slot = FindItemInBags(itemID, quantity, true)
+    if slot then
+        return bag, slot, true
+    end
     bag, slot = FindItemInBags(itemID, quantity, false)
-
-    -- Return bag, slot, and false to indicate inexact match
     return bag, slot, false
 end
