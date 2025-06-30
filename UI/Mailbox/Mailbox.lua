@@ -519,7 +519,7 @@ function MailboxUI:UpdateSlot(slotIndex, auction)
     slot:ShowSlot()
     slot.auctionId = auction.id
 
-    slot.itemWidget:SetItem(auction.itemID, auction.quantity)
+    slot.itemWidget:SetItem(auction.link or auction.itemID, auction.quantity, auction.link)
     slot.priceWidget:UpdateView(auction)
 end
 

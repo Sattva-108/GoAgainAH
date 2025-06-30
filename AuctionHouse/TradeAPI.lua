@@ -431,6 +431,12 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName)
         ClickTradeButton(1)
         -- success message
         local name, itemLink = ns.GetItemInfo(itemID, quantity)
+
+        -- Prefer exact link from bag (includes random suffix / enchants)
+        if not itemLink then
+            itemLink = GetContainerItemLink(bag, slot)
+        end
+
         local itemDescription
         if itemID == ns.ITEM_ID_GOLD then
             itemDescription = name

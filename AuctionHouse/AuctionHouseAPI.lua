@@ -160,9 +160,9 @@ function AuctionHouseAPI:ClearPersistence()
     AuctionHouseDBSaved = nil -- legacy/global data (death clips watchers, etc.)
     AuctionHouseDBChar  = nil -- new per-character data
     AHConfigSaved = nil
-    LiveDeathClips = nil
+    --LiveDeathClips = nil
     PlayerPrefsSaved = nil
-    DeathClipReviewsSaved = nil
+--    DeathClipReviewsSaved = nil
     ns.AuctionHouseDB.revision = 0
     ns.AuctionHouseDB.revTrades = 0
     ns.AuctionHouseDB.revRatings = 0

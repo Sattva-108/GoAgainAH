@@ -42,11 +42,26 @@ local function CreateItemWidget(parent, name, config)
 
         elseif widget.itemID then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+
             if ns.IsSpellItem(widget.itemID) then
                 GameTooltip:SetSpellByID(ns.ItemIDToSpellID(widget.itemID))
+
             else
-                GameTooltip:SetItemByID(widget.itemID)
-                GameTooltip_ShowCompareItem()
+                -- Prefer full link when available (handles random suffix / enchants).
+                if widget.itemLink and GameTooltip.SetHyperlink then
+                    GameTooltip:SetHyperlink(widget.itemLink)
+                else
+                    -- Older clients (3.3.5) may lack SetItemByID; fallback accordingly.
+                    if GameTooltip.SetItemByID then
+                        GameTooltip:SetItemByID(widget.itemID)
+                    else
+                        GameTooltip:SetHyperlink("item:" .. tostring(widget.itemID))
+                    end
+                end
+
+                if GameTooltip_ShowCompareItem then
+                    GameTooltip_ShowCompareItem()
+                end
             end
 
             if IsModifiedClick("DRESSUP") then
@@ -75,19 +90,35 @@ local function CreateItemWidget(parent, name, config)
         end
     end)
 
-    function widget:SetItem(itemID, count)
-        self.itemID = itemID
+    -- @param itemOrLink number|string – itemID or full itemLink
+    -- @param count number – quantity
+    -- @param optLink string|nil – explicit link (when first param is just ID)
+    function widget:SetItem(itemOrLink, count, optLink)
+        -- Detect whether first arg is a link or ID
+        local isLink = type(itemOrLink) == "string" and itemOrLink:find("|Hitem:")
 
-        if not itemID then
+        if isLink then
+            self.itemLink = itemOrLink
+            local id = tonumber(itemOrLink:match("item:(%d+):"))
+            self.itemID = id or 0
+        else
+            self.itemID = itemOrLink
+            self.itemLink = optLink -- may be nil
+        end
+
+        if not self.itemID then
             UpdateItemIcon(self:GetName(), nil, 0, true)
             nameLabel:SetText("")
             return
         end
 
-        ns.GetItemInfoAsync(itemID, function(...)
+        -- Choose ID for lookup – link may be unknown to GetItemInfo.
+        local lookupID = self.itemLink or self.itemID
+
+        ns.GetItemInfoAsync(lookupID, function(...)
             local name, _, quality, _, _, _, _, _, _, texture = ...
             local renderCount = count or 1
-            if itemID == ns.ITEM_ID_GOLD then
+            if self.itemID == ns.ITEM_ID_GOLD then
                 renderCount = 0
             end
 

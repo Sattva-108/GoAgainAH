@@ -764,8 +764,11 @@ local function UpdateReviewCardInner(card, review)
     card.review = review
 
     if review.itemID then
-        -- Get item information based on itemID
-        local itemName, _, quality, _, _, _, _, _, _, texture = ns.GetItemInfo(review.itemID, review.auction.quantity)
+        -- Prefer full ItemLink (with suffix) when available on auction record
+        local lookup = (review.auction and review.auction.link) or review.itemID
+
+        -- Get item information (name with suffix, icon, quality)
+        local itemName, _, quality, _, _, _, _, _, _, texture = ns.GetItemInfo(lookup, review.auction.quantity)
         local renderQuantity = review.auction.quantity
         if ns.IsFakeItem(review.itemID) then
             renderQuantity = 1
@@ -811,7 +814,9 @@ local function UpdateReviewCard(card, review)
     end
 
     -- item info might not be available yet, potentially wait for it to load
-    ns.GetItemInfoAsync(review.itemID, function()
+    local lookup = (review.auction and review.auction.link) or review.itemID
+
+    ns.GetItemInfoAsync(lookup, function()
         UpdateReviewCardInner(card, review)
     end)
 end

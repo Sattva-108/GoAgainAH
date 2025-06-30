@@ -265,7 +265,8 @@ local function OnAuctionAddOrUpdate(payload)
         end
     end
 
-    ns.GetItemInfoAsync(auction.itemID, function(...)
+    local lookup = auction.link or auction.itemID
+    ns.GetItemInfoAsync(lookup, function(...)
         local _, itemLink = ...
 
         -- Limit names to 40 characters

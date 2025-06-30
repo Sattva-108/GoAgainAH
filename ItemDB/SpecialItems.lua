@@ -45,20 +45,36 @@ ns.GetGoldItemInfoInstant = function()
     return ns.ITEM_ID_GOLD, "", "", "", ICN_GOLD, ns.GOLD_ITEM_CLASS_ID, 0
 end
 
-ns.IsFakeItem = function(itemID)
-    return itemID and itemID <= ns.ITEM_ID_GOLD
+-- Helper: extract numeric itemID from either number or itemLink string.
+local function ToNumericID(item)
+    if type(item) == "number" then
+        return item
+    elseif type(item) == "string" then
+        local idStr = item:match("item:(%-?%d+):")
+        if idStr then
+            return tonumber(idStr)
+        end
+    end
+    return nil
 end
 
-local function _IsSupportedFakeItem(itemID)
-    return itemID == ns.ITEM_ID_GOLD or ns.IsSpellItem(itemID)
+ns.IsFakeItem = function(itemID)
+    local numeric = ToNumericID(itemID)
+    return numeric and numeric <= ns.ITEM_ID_GOLD
+end
+
+local function _IsSupportedFakeItem(numericID)
+    return numericID == ns.ITEM_ID_GOLD or ns.IsSpellItem(numericID)
 end
 
 ns.IsSupportedFakeItem = function(itemID)
-    return itemID and ns.IsFakeItem(itemID) and _IsSupportedFakeItem(itemID)
+    local numeric = ToNumericID(itemID)
+    return numeric and ns.IsFakeItem(numeric) and _IsSupportedFakeItem(numeric)
 end
 
 ns.IsUnsupportedFakeItem = function(itemID)
-    return itemID and ns.IsFakeItem(itemID) and not _IsSupportedFakeItem(itemID)
+    local numeric = ToNumericID(itemID)
+    return numeric and ns.IsFakeItem(numeric) and not _IsSupportedFakeItem(numeric)
 end
 
 ns.GetFactionPointsItemInfo = function()
