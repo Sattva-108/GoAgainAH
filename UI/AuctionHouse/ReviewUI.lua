@@ -625,11 +625,13 @@ function CreateReviewCard(parent, index)
     itemIcon:SetScript("OnEnter", function(self)
         if card.review.itemID then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            local name, link = GetItemInfo(card.review.itemID)
+            -- Prefer full itemLink (with suffix) if available
+            local lookup = (card.review.auction and card.review.auction.link) or card.review.itemID
+            local name, link = GetItemInfo(lookup)
             if link then
                 GameTooltip:SetHyperlink(link)
             else
-                GameTooltip:SetHyperlink("item:" .. card.review.itemID)
+                GameTooltip:SetHyperlink("item:" .. tostring(lookup))
             end
             GameTooltip_ShowCompareItem()
 
