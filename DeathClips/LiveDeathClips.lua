@@ -30,11 +30,33 @@ local queue = {}
 
 -- Expose queue access for external modules
 ns.AddClipToQueue = function(clip)
-    if not clip.playedTime and clip.deathCause ~= "ALIVE" and clip.getPlayedTry ~= "failed" then
-        queue[clip.characterName] = queue[clip.characterName] or {}
-        --print("Added " .. clip.characterName .. " to the ladder queue.")
-        table.insert(queue[clip.characterName], clip)
+    -- Only queue clips that still need playedTime and haven't failed lookup
+    if not clip or clip.playedTime or clip.deathCause == "ALIVE" or clip.getPlayedTry == "failed" then
+        return
     end
+
+    -- Ensure per-player queue table exists
+    local name = clip.characterName or "?"
+    queue[name] = queue[name] or {}
+    local playerQueue = queue[name]
+
+    -- Deduplicate by clip.id (most reliable) – skip if already queued
+    if clip.id then
+        for _, existing in ipairs(playerQueue) do
+            if existing.id == clip.id then
+                -- Optional debug: duplicate detected
+                --print(string.format("[QUEUE %s] Duplicate clip ignored for %s (id=%s)", date("%M:%S"), name, clip.id))
+                return
+            end
+        end
+    end
+
+    -- Safe-guard initial state
+    clip.getPlayedTry = clip.getPlayedTry or 0
+
+    table.insert(playerQueue, clip)
+    -- Optional debug: successful enqueue
+--    print(string.format("[QUEUE %s] Added clip for %s (id=%s). Queue size=%d", date("%M:%S"), name, clip.id or "nil", #playerQueue))
 end
 
 local races = {
@@ -208,10 +230,9 @@ ns.AddNewDeathClips = function(newClips)
                 clip.getPlayedTry = 0
                 existingClips[clip.id] = clip
                 
-                -- Add to queue if no playedTime (for died/completed clips)
+                -- Add to queue if needed (deduplicated)
                 if not clip.playedTime and clip.deathCause ~= "ALIVE" then
-                    queue[clip.characterName] = queue[clip.characterName] or {}
-                    table.insert(queue[clip.characterName], clip)
+                    ns.AddClipToQueue(clip)
                 end
             end
         end
@@ -505,11 +526,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
-            -- Add the played clip to the queue (for both death and played clips)
-            queue[name] = queue[name] or {}
-            clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
-            clip.getPlayedTry = 0
-            table.insert(queue[name], clip)
+            ns.AddClipToQueue(clip)
 
             -- 7) Check opt-out preference for current player
             local currentPlayer = UnitName("player")
@@ -571,11 +588,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             end
 
             -- Add the completed clip to the queue (for both death and completed clips)
-            -- Add the played clip to the queue (for both death and played clips)
-            queue[name]      = queue[name] or {}
-            clip.playedTime = clip.playedTime or nil  -- Initialize playedTime if not set
-            clip.getPlayedTry = 0
-            table.insert(queue[name], clip)
+            ns.AddClipToQueue(clip)
 
             -- Check opt-out preference for current player
             local currentPlayer = UnitName("player")
@@ -730,19 +743,11 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     end
                     if type(clip.getPlayedTry) == "number" and clip.getPlayedTry < 3 then
                         -- Original queueing logic (ensure 'queue' is defined)
-                        queue[clip.characterName] = queue[clip.characterName] or {}
-                        -- Prevent adding duplicates if necessary (simple reference check shown)
-                        local found = false
-                        for _, existingClip in ipairs(queue[clip.characterName]) do
-                            if existingClip == clip then found = true break end
-                        end
-                        if not found then
-                            table.insert(queue[clip.characterName], clip)
-                            -- This print has its own 10s delay, leave it as is
-                            C_Timer:After(10, function()
-                                --print(clip.characterName .. " added to the queue (no playedTime)")
-                            end)
-                        end
+                        ns.AddClipToQueue(clip)
+                        -- This print has its own 10s delay, keep disabled to avoid spam
+                        -- C_Timer:After(10, function()
+                        --     print(clip.characterName .. " added to the queue (no playedTime)")
+                        -- end)
                     end
                 end
             end
@@ -812,7 +817,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 -- 🔔 Fire event to notify UI
                                                 ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 
-                                                print("|cFF00FF00" .. ("%s's playedTime updated to: %d"):format(n, tm) .. "|r")
+                                                print("|cFF00FF00" .. string.format("[%s] %s's playedTime updated to: %d", date("%H:%M:%S"), n, tm) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
@@ -822,7 +827,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 -- 🔔 Fire event to notify UI
                                                 ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 
-                                                print("|cFF00FF00" .. ("%s lasted %s"):format(n, SecondsToTime(tm)) .. "|r")
+                                                print("|cFF00FF00" .. string.format("[%s] %s lasted %s", date("%H:%M:%S"), n, SecondsToTime(tm)) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
@@ -862,8 +867,8 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                             if type(clip.getPlayedTry) == "number" then
                                                 clip.getPlayedTry = clip.getPlayedTry + 1
                                                 -- DEBUG: print every time getPlayedTry is incremented
-                                                print(string.format("[DEBUG %s] getPlayedTry increment for %s -> %d (clipID=%s)",
-                                                    date("%M:%S"), name or "?", clip.getPlayedTry, clip.id or "nil"))
+                                                --print(string.format("[DEBUG %s] getPlayedTry increment for %s -> %d (clipID=%s)",
+                                                --    date("%M:%S"), name or "?", clip.getPlayedTry, clip.id or "nil"))
                                                 if clip.getPlayedTry >= 2 then
                                                     print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
                                                 end
