@@ -451,12 +451,18 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName, optItemLink)
         local itemName = select(2, ns.GetItemInfo(itemID)) or "item"
         local errorMsg
         if optItemLink then
-            errorMsg = L[" Could not find exact item with correct suffix in your bags for the trade"]
+            -- Показываем красивое имя предмета с суффиксом, если есть
+            local linkName = itemName
+            if optItemLink then
+                local n = GetItemInfo(optItemLink)
+                if n then linkName = n end
+            end
+            errorMsg = "Не удалось найти в сумке " .. quantity .. "x " .. (optItemLink or linkName or itemName) .. L[" для трейда"]
         else
             errorMsg = not slot and
-                L[" Could not find "] .. quantity .. "x " .. itemName .. L[" in your bags for the trade"]
+                L[" Не смогли найти "] .. quantity .. "x " .. itemName .. L[" в вашей сумке для трейда"]
                 or
-                L[" Found the item but stack size doesn't match exactly. Please manually split a stack of "] .. quantity .. " " .. itemName
+                L[" Нашли предмет в вашей сумке, но правильный стак не найден. Пожалуйста разделите стак предмета самостоятельно "] .. quantity .. " " .. itemName
         end
         print(ChatPrefixError() .. errorMsg)
     end
