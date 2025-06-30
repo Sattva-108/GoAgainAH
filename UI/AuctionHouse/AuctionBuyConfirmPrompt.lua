@@ -301,7 +301,7 @@ local function CreateBuyAuctionPrompt()
         button25:SetDisabled(presetTips)
         if priceType == ns.PRICE_TYPE_TWITCH_RAID then
             self.buyoutLabel:SetWidth(130)
-            self.buyoutLabel:SetText(string.format(L["Twitch Raid %d+"], raidAmount))
+            self.buyoutLabel:SetText(string.format(L["Twitch Raid %d+"], raidAmount or 0))
             self.buyoutMoneyFrame:Hide()
         elseif priceType == ns.PRICE_TYPE_CUSTOM then
             self.buyoutLabel:SetText("")

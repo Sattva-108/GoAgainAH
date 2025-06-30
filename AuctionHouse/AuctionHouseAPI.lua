@@ -157,7 +157,7 @@ function AuctionHouseAPI:Initialize(deps)
 end
 
 function AuctionHouseAPI:ClearPersistence()
-    AuctionHouseDBSaved = nil -- legacy/global data (death clips watchers, etc.)
+    AuctionHouseDBSaved = { watchedFriends = {} } -- legacy/global data (death clips watchers, etc.)
     AuctionHouseDBChar  = nil -- new per-character data
     AHConfigSaved = nil
     --LiveDeathClips = nil

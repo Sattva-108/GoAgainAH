@@ -662,6 +662,9 @@ f:RegisterEvent("PLAYER_LOGOUT")  -- Listen for logout event
 
 -- Function to save logout data
 local function saveLogoutData()
+    -- Ensure saved variables table exists (can be wiped by /atheneclear)
+    AuctionHouseDBSaved = AuctionHouseDBSaved or {}
+
     local now = time()
     -- Simply store the current time as the last logout time
     AuctionHouseDBSaved.lastLogoutTime = now  -- Store the last logout time (current time)
@@ -672,6 +675,9 @@ end
 -- Event handler for all the registered events
 f:SetScript("OnEvent", function(self, event, prefix, msg)
     if event == "PLAYER_ENTERING_WORLD" then
+        -- Ensure saved variables table exists in case it was cleared while addon was already loaded
+        AuctionHouseDBSaved = AuctionHouseDBSaved or {}
+
         local now = time()
         listening = false -- Ensure listening is off until timer fires
 

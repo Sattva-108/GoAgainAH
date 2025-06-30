@@ -68,11 +68,11 @@ GameTooltip:HookScript("OnTooltipSetItem", function(tooltip, ...)
                 elseif a.duel then
                     moneyString = L["Duel (Normal)"]
                 elseif a.priceType == ns.PRICE_TYPE_TWITCH_RAID then
-                    moneyString = string.format(L["Twitch Raid %d+"], a.raidAmount)
+                    moneyString = string.format(L["Twitch Raid %d+"], a.raidAmount or 0)
                 elseif a.priceType == ns.PRICE_TYPE_CUSTOM then
                     moneyString = L["Custom"]
                 elseif a.priceType == ns.PRICE_TYPE_GUILD_POINTS then
-                    moneyString = string.format(L["%d Points"], a.points)
+                    moneyString = string.format(L["%d Points"], a.points or 0)
                 else
                     moneyString = ns.GetMoneyString(a.price)
                 end

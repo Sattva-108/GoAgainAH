@@ -97,7 +97,7 @@ local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, i
     elseif payload.source == "buy_loan" then
         local deliveryInstruction = getDeliveryInstruction(auction.duel, auction.deathRoll, auction.deliveryType)
 
-        if auction.raidAmount > 0 then
+        if (auction.raidAmount or 0) > 0 then
             msg = string.format(L["%s wants to raid you for your %s%s"],
                 buyerName, itemLink, quantityStr)
             msgChat = string.format(L["%s %s|cffffcc00 wants to raid you for your %s%s. %s|r"],
@@ -143,7 +143,7 @@ local function CreateAlertMessage(auction, buyer, buyerName, owner, ownerName, i
     elseif payload.source == "buy" and not auction.wish then
         local deliveryInstruction = getDeliveryInstruction(auction.duel, auction.deathRoll, auction.deliveryType)
 
-        if auction.raidAmount > 0 then
+        if (auction.raidAmount or 0) > 0 then
             msg = string.format(L["%s wants to raid you for your %s%s"],
                 buyerName, itemLink, quantityStr)
             msgChat = string.format(L["%s %s|cffffcc00 wants to raid you for your %s%s. %s|r"],

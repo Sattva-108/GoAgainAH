@@ -1665,14 +1665,14 @@ local function UpdatePrice(buttonName, auction)
         deathRollIcon:Hide()
         priceText:SetJustifyH("CENTER")
         priceText:SetPoint("RIGHT", button, "RIGHT", 0, 3)
-        priceText:SetText(string.format(L["Twitch Raid %d+"], auction.raidAmount))
+        priceText:SetText(string.format(L["Twitch Raid %d+"], auction.raidAmount or 0))
         priceText:Show()
         moneyFrame:Hide()
     elseif auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then
         deathRollIcon:Hide()
         priceText:SetJustifyH("CENTER")
         priceText:SetPoint("RIGHT", button, "RIGHT", 0, 3)
-        priceText:SetText(string.format(L["%d Points"], auction.points))
+        priceText:SetText(string.format(L["%d Points"], auction.points or 0))
         priceText:Show()
         moneyFrame:Hide()
     else
@@ -1755,7 +1755,7 @@ local function UpdateBrowseEntry(index, i, offset, button, auction, numBatchAuct
         if ( GetMoney() < buyoutPrice ) then
             canBuyout = nil
         end
-        if auction.priceType == ns.PRICE_TYPE_GUILD_POINTS and ns.GetGuildPoints(UnitName("player")) < auction.points then
+        if auction.priceType == ns.PRICE_TYPE_GUILD_POINTS and ns.GetGuildPoints(UnitName("player")) < (auction.points or 0) then
             canBuyout = nil
         end
         if ( (ownerName ~= UnitName("player")) ) then
