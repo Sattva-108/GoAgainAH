@@ -1923,6 +1923,13 @@ end
 
 local function UpdatePendingEntry(index, i, offset, button, auction, numBatchAuctions, totalAuctions)
     local name, _, quality, _, _, _, _, _, _, texture, _  = ns.GetItemInfo(auction.itemID, auction.quantity)
+
+    -- Use displayName if available (for items with suffixes)
+    if auction.displayName and auction.displayName ~= "" then
+        name = auction.displayName
+        print(name)
+    end
+
     local buyoutPrice = auction.price
     local count = auction.quantity
     -- TODO jan easy way to check if item is usable?

@@ -858,11 +858,17 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                             -- Original code incremented if it was a number
                                             if type(clip.getPlayedTry) == "number" then
                                                 clip.getPlayedTry = clip.getPlayedTry + 1
+                                                -- DEBUG: print every time getPlayedTry is incremented
+                                                print(string.format("[DEBUG %s] getPlayedTry increment for %s -> %d (clipID=%s)",
+                                                    date("%M:%S"), name or "?", clip.getPlayedTry, clip.id or "nil"))
                                                 if clip.getPlayedTry >= 2 then
                                                     print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
                                                 end
                                                 if clip.getPlayedTry >= 3 then
                                                     clip.getPlayedTry = "failed"
+                                                    -- DEBUG: mark as failed
+                                                    print(string.format("[DEBUG %s] getPlayedTry failed (≥3 attempts) for %s (clipID=%s)",
+                                                        date("%M:%S"), name or "?", clip.id or "nil"))
                                                     print(name .. " getPlayedTry failed after 3 attempts — removing from queue")
                                                     playerMarkedForRemoval = true
                                                 end
