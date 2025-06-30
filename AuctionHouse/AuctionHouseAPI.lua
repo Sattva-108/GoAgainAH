@@ -986,14 +986,9 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
         -- Find matching item
         local matchingItem = nil
         for _, item in ipairs(items) do
-            local isMatch
-            if auction.itemID == ns.ITEM_ID_GOLD then
-                isMatch = (auction.itemID == item.itemID) and (auction.quantity == item.count)
-            else
-                isMatch = auction.itemID == item.itemID
-            end
-
-            if isMatch then
+            -- Prefer full link comparison when both links are present; fall back to itemID otherwise.
+            if (auction.link and item.link and auction.link == item.link)
+                    or (auction.itemID == item.itemID) then
                 matchingItem = item
                 break
             end
@@ -1029,8 +1024,9 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
         -- Find matching item
         local matchingItem = nil
         for _, item in ipairs(items) do
-            -- NOTE: by design, no quantity check: and auction.quantity == item.count 
-            if auction.itemID == item.itemID then
+            -- Prefer full link comparison when both links are present; fall back to itemID otherwise.
+            if (auction.link and item.link and auction.link == item.link)
+                    or (auction.itemID == item.itemID) then
                 matchingItem = item
                 break
             end

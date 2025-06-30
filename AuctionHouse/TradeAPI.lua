@@ -103,17 +103,48 @@ local function UpdateItemInfo(id, unit, items)
         return
     end
 
-    -- GetTradePlayerItemInfo annoyingly doesn't return the itemID, and there's not obvious way to get the itemID from a trade
-    -- in most cases itemID will be available instantly, so race conditions shouldn't be too common
-    GetItemInfoAsyncWithMemoryLeak(name, function (_, itemLink)
-        local itemID = tonumber(itemLink:match("item:(%d+):"))
+    -- Preferred: obtain the full ItemLink directly from the trade slot. This preserves
+    -- random-suffix / enchant information which is lost when we only look at itemID.
+    local itemLinkGetter = (unit == "Target") and GetTradeTargetItemLink or GetTradePlayerItemLink
+    local directLink = itemLinkGetter and itemLinkGetter(id) or nil
+
+    -- Fallback: async lookup by item *name* (legacy path)
+    local function storeItem(link)
+        local itmLink = link or directLink
+        local itmID = nil
+        if itmLink then
+            itmID = tonumber(itmLink:match("item:(%d+):"))
+        end
+
+        -- As a final fallback, try to resolve via GetItemInfo(name) if we still have no ID
+        if not itmID then
+            local resolvedName, resolvedLink = GetItemInfo(name)
+            if resolvedLink then
+                itmLink = resolvedLink
+                itmID = tonumber(resolvedLink:match("item:(%d+):"))
+            end
+        end
+
+        -- If still unknown treat as gold (keeps previous behaviour)
+        itmID = itmID or ns.ITEM_ID_GOLD
 
         items[id] = {
-            itemID = itemID,
-            name = name,
+            itemID   = itmID,
+            link     = itmLink,   -- may be nil for gold or unknown items
+            name     = name,
             numItems = numItems,
         }
-    end)
+    end
+
+    if directLink then
+        -- Have the link immediately – no need for async lookup
+        storeItem(directLink)
+    else
+        -- Async path (rare): wait until client has item in cache
+        GetItemInfoAsyncWithMemoryLeak(name, function (_, asyncLink)
+            storeItem(asyncLink)
+        end)
+    end
 end
 
 local function UpdateMoney()
@@ -133,13 +164,15 @@ local function HandleTradeOK()
     for _, item in pairs(t.playerItems) do
         table.insert(playerItems, {
             itemID = item.itemID,
-            count = item.numItems
+            link   = item.link,
+            count  = item.numItems,
         })
     end
     for _, item in pairs(t.targetItems) do
         table.insert(targetItems, {
             itemID = item.itemID,
-            count = item.numItems
+            link   = item.link,
+            count  = item.numItems,
         })
     end
 

@@ -601,7 +601,7 @@ function MailboxUI:OnTakeInboxItem(index, itemSlot)
           wasReturned, textCreated, canReply = GetInboxHeaderInfo(index)
 
     local itemName, itemID, itemTexture, itemQuantity, quality, canUse = GetInboxItem(index, itemSlot)
-    -- local itemLink = GetInboxItemLink(index, itemSlot)
+    local itemLink = GetInboxItemLink(index, itemSlot)
 
     if wasReturned then
         return -- Not a successful trade
@@ -611,7 +611,7 @@ function MailboxUI:OnTakeInboxItem(index, itemSlot)
     ns.AuctionHouseAPI:TryCompleteItemTransfer(
         sender,  -- seller
         UnitName("player"),  -- buyer/recipient
-        {{itemID = itemID, count = itemQuantity}},
+        {{itemID = itemID, link = itemLink, count = itemQuantity}},
         CODAmount or 0,
 
         -- type info
