@@ -1927,7 +1927,6 @@ local function UpdatePendingEntry(index, i, offset, button, auction, numBatchAuc
     -- Use displayName if available (for items with suffixes)
     if auction.displayName and auction.displayName ~= "" then
         name = auction.displayName
-        print(name)
     end
 
     local buyoutPrice = auction.price
