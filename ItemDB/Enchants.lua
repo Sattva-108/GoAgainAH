@@ -4,16 +4,32 @@ ns.SPELL_ITEM_CLASS_ID = 50
 ns.MIN_ITEM_ID_SPELL = 1000000
 ns.MAX_ITEM_ID_SPELL = 9999999
 
+-- Helper: extract numeric itemID from either number or itemLink string.
+local function ToNumericID(item)
+    if type(item) == "number" then
+        return item
+    elseif type(item) == "string" then
+        local idStr = item:match("item:(%-?%d+):")
+        if idStr then
+            return tonumber(idStr)
+        end
+    end
+    return nil
+end
+
 ns.IsSpellItem = function(itemID)
-    return itemID >= ns.MIN_ITEM_ID_SPELL and itemID <= ns.MAX_ITEM_ID_SPELL
+    local numeric = ToNumericID(itemID)
+    return numeric and numeric >= ns.MIN_ITEM_ID_SPELL and numeric <= ns.MAX_ITEM_ID_SPELL
 end
 
 ns.ItemIDToSpellID = function(itemID)
-    return itemID - ns.MIN_ITEM_ID_SPELL
+    local numeric = ToNumericID(itemID)
+    return numeric and (numeric - ns.MIN_ITEM_ID_SPELL) or nil
 end
 
 ns.GetSpellItemInfo = function(itemID)
     local spellID = ns.ItemIDToSpellID(itemID)
+    if not spellID then return nil end
     local name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(spellID)
     local spellLink = GetSpellLink(spellID)
     return name, spellLink, 1, 0, 0, 0, 0, 1, "", icon, 0, ns.SPELL_ITEM_CLASS_ID, 0, 0, 0, 0, false
@@ -21,8 +37,9 @@ end
 
 ns.GetSpellItemInfoInstant = function(itemID)
     local spellID = ns.ItemIDToSpellID(itemID)
+    if not spellID then return nil end
     local _, _, icon, _, _, _ = GetSpellInfo(spellID)
-    return itemID, "", "", "", icon, ns.SPELL_ITEM_CLASS_ID, 0
+    return ToNumericID(itemID), "", "", "", icon, ns.SPELL_ITEM_CLASS_ID, 0
 end
 
 ns.ENCHANT_SPELL_IDS = {
