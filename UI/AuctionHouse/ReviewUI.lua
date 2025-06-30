@@ -28,7 +28,8 @@ StaticPopupDialogs["OF_LEAVE_REVIEW"] = {
     timeout = 0,
     exclusive = 1,
     hideOnEscape = 1,
-    enterClicksFirstButton = 1,
+    -- todo fixme disabled in 3.3.5 due to eating all keys input, including moving character with WASD
+    --enterClicksFirstButton = 1,
 };
 
 local function FormatTimeAgo(timestamp)

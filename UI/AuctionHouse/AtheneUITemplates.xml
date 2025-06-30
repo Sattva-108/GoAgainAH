@@ -416,6 +416,30 @@
                                         </Scripts>
                                     </CheckButton>
                                     
+                                    <CheckButton name="OFSettingsSkipReviewPopupCheckButton" inherits="UICheckButtonTemplate">
+                                        <Size x="24" y="24"/>
+                                        <Anchors>
+                                            <Anchor point="TOPLEFT" x="30" y="-140"/>
+                                        </Anchors>
+                                        <Scripts>
+                                            <OnLoad>
+                                                OFSettingsSkipReviewPopupCheckButtonText:SetFontObject(GameFontNormal);
+                                                OFSettingsSkipReviewPopupCheckButtonText:SetText("Не показывать окно отзыва");
+                                            </OnLoad>
+                                            <OnEnter>
+                                                GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                                                GameTooltip:SetText("Отключает всплывающее окно с просьбой оставить отзыв", nil, nil, nil, nil, true);
+                                                GameTooltip:Show();
+                                            </OnEnter>
+                                            <OnLeave>
+                                                GameTooltip:Hide();
+                                            </OnLeave>
+                                            <OnClick>
+                                                OFSettingsSkipReviewPopup_OnClick(self)
+                                            </OnClick>
+                                        </Scripts>
+                                    </CheckButton>
+                                    
                                     <FontString name="OFSettingsDurationLabel" inherits="GameFontNormal" text="Длительность аукциона по умолчанию:">
                                         <Anchors>
                                             <Anchor point="TOPLEFT" x="30" y="-150"/>

@@ -133,6 +133,12 @@ function OFSettings_UpdateUI()
     -- Update skip cancel confirmation checkbox
     local skipCancelConfirm = ns.PlayerPrefs:Get("skipAuctionCancelConfirmation") == true
     OFSettingsSkipCancelConfirmCheckButton:SetChecked(skipCancelConfirm and 1 or nil)
+
+    -- Update skip review popup checkbox
+    local skipReviewPopup = ns.PlayerPrefs:Get("skipReviewPopup") == true
+    if OFSettingsSkipReviewPopupCheckButton then
+        OFSettingsSkipReviewPopupCheckButton:SetChecked(skipReviewPopup and 1 or nil)
+    end
 end
 
 function OFSettings_MinimapIcon_OnClick(self)

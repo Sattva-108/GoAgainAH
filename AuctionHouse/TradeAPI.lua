@@ -216,7 +216,10 @@ local function HandleTradeOK()
         )
 
         if success and trade then
-            StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id })
+            -- Show review prompt unless user disabled it via settings
+            if not ns.PlayerPrefs:Get("skipReviewPopup") then
+                StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id })
+            end
 
             -- success, subtract points
             if trade.auction.priceType == ns.PRICE_TYPE_GUILD_POINTS then

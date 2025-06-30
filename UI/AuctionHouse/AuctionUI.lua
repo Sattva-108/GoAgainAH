@@ -47,6 +47,12 @@ function OFSettingsSkipCancelConfirm_OnClick(self)
     ns.PlayerPrefs:Set("skipAuctionCancelConfirmation", isChecked == 1)
 end
 
+-- Handler for the 'skip review popup' checkbox
+function OFSettingsSkipReviewPopup_OnClick(self)
+    local isChecked = self:GetChecked()
+    ns.PlayerPrefs:Set("skipReviewPopup", isChecked == 1)
+end
+
 -- keep last item sent to auction & it's price
 
 -- To experiment with different "20x" label strings, use:
@@ -469,7 +475,7 @@ StaticPopupDialogs["OF_MARK_AUCTION_COMPLETE"] = {
         local auction, trade, error = ns.AuctionHouseAPI:CompleteAuction(OFAuctionFrame.auction.id)
         if error == nil then
             OFAuctionFrameBid_Update()
-            if auction then
+            if auction and not ns.PlayerPrefs:Get("skipReviewPopup") then
                 StaticPopup_Show("OF_LEAVE_REVIEW", nil, nil, { tradeID = trade.id });
             end
         else
