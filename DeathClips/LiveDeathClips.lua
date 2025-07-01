@@ -790,7 +790,12 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                 if left < 0 then
                     nextUpdateDeadline = nil -- Сбросить устаревший таймер
                 else
-                    print(("%s died — next ladder in %s"):format(name, SecondsToTime(left)))
+                    local ts = date("%H:%M:%S")
+                    local grey = "|cFF808080[%s]|r "
+                    local banner1 = string.format(grey .. "|cFFFF5555%s|r |cFFFFFFFFdied!|r", ts, name)
+                    local banner2 = string.format(grey .. "Next ladder in |cFFFFFF00%s|r", ts, SecondsToTime(left))
+                    print(banner1)
+                    print(banner2)
                 end
             end
         end
