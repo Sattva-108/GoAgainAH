@@ -958,17 +958,29 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
         }
     )
 
+    -- DEBUG: print overview of incoming transfer
+    ns.DebugLog(string.format("[DEBUG] TryCompleteItemTransfer sender=%s recipient=%s copper=%s items=%d", tostring(sender), tostring(recipient), tostring(copper), #items))
+    for i, itm in ipairs(items or {}) do
+        ns.DebugLog(string.format("[DEBUG]   item[%d]: id=%s link=%s count=%s", i, tostring(itm.itemID), tostring(itm.link), tostring(itm.count)))
+    end
+
     -- 2. Define helper functions to decide if an auction matches the items
     local function isExactMatch(auction, items, copper)
         -- make sure we have the right person
         if auction.owner ~= sender then
+            ns.DebugLog("[DEBUG][ExactMatch] owner mismatch. expected sender=" .. tostring(sender) .. " got=" .. tostring(auction.owner))
             return false
         end
         -- Never match if recipient is the owner (taking their own returned mail)
         if auction.owner == recipient then
+            ns.DebugLog("[DEBUG][ExactMatch] owner equals recipient – ignoring self-trade.")
             return false
         end
-        if auction.deliveryType ~= ns.DELIVERY_TYPE_ANY and auction.deliveryType ~= deliveryType then
+        -- Treat nil deliveryType (old addon versions) as DELIVERY_TYPE_ANY
+        local aDelivery = auction.deliveryType or ns.DELIVERY_TYPE_ANY
+
+        if aDelivery ~= ns.DELIVERY_TYPE_ANY and aDelivery ~= deliveryType then
+            ns.DebugLog("[DEBUG][ExactMatch] deliveryType mismatch. auction=" .. tostring(aDelivery) .. " transfer=" .. tostring(deliveryType))
             return false
         end
 
@@ -994,6 +1006,7 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
             end
         end
         if not matchingItem then
+            ns.DebugLog("[DEBUG][ExactMatch] no matching item (link or id)")
             return false
         end
 
@@ -1003,7 +1016,12 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
             and auction.status ~= ns.AUCTION_STATUS_SENT_LOAN
             and auction.itemID ~= ns.ITEM_ID_GOLD
         ) then
-            return copper == (auction.price + auction.tip)
+            local expected = (auction.price or 0) + (auction.tip or 0)
+            if copper ~= expected then
+                ns.DebugLog(string.format("[DEBUG][ExactMatch] price mismatch. expected=%d got=%d", expected, copper))
+                return false
+            end
+            return true
         end
         return true
     end
@@ -1011,13 +1029,19 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
     local function isFlexibleMatch(auction, items, copper)
         -- make sure we have the right person
         if auction.owner ~= sender then
+            ns.DebugLog("[DEBUG][FlexMatch] owner mismatch")
             return false
         end
         -- Never match if recipient is the owner (taking their own returned mail)
         if auction.owner == recipient then
+            ns.DebugLog("[DEBUG][FlexMatch] owner==recipient")
             return false
         end
-        if auction.deliveryType ~= ns.DELIVERY_TYPE_ANY and auction.deliveryType ~= deliveryType then
+        -- Treat nil deliveryType (old addon versions) as DELIVERY_TYPE_ANY
+        local aDelivery = auction.deliveryType or ns.DELIVERY_TYPE_ANY
+
+        if aDelivery ~= ns.DELIVERY_TYPE_ANY and aDelivery ~= deliveryType then
+            ns.DebugLog("[DEBUG][FlexMatch] deliveryType mismatch")
             return false
         end
 
@@ -1032,6 +1056,7 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
             end
         end
         if not matchingItem then
+            ns.DebugLog("[DEBUG][FlexMatch] no matching item")
             return false
         end
 
@@ -1050,9 +1075,11 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
     local matchedAuction = nil
     local hasCandidates = false
     for _, auction in ipairs(auctions or {}) do
+        ns.DebugLog(string.format("[DEBUG] Candidate auction id=%s owner=%s buyer=%s status=%s price=%s delivery=%s link=%s", tostring(auction.id), tostring(auction.owner), tostring(auction.buyer), tostring(auction.status), tostring(auction.price), tostring(auction.deliveryType), tostring(auction.link)))
         hasCandidates = true
 
         if isExactMatch(auction, items, copper) then
+            ns.DebugLog("[DEBUG] Exact match found with auction id=" .. tostring(auction.id))
             matchedAuction = auction
             break
         end
@@ -1062,6 +1089,7 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
     if not matchedAuction then
         for _, auction in ipairs(auctions or {}) do
             if isFlexibleMatch(auction, items, copper) then
+                ns.DebugLog("[DEBUG] Flexible match found with auction id=" .. tostring(auction.id))
                 matchedAuction = auction
                 break
             end
@@ -1069,7 +1097,7 @@ function AuctionHouseAPI:TryCompleteItemTransfer(sender, recipient, items, coppe
     end
 
     if not matchedAuction then
-        -- items don't appear to be from the auctionhouse
+        ns.DebugLog("[DEBUG] No matching auction found after evaluating candidates.")
         return false, hasCandidates, L["No matching auction found"], nil
     end
 

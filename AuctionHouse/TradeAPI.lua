@@ -263,20 +263,32 @@ local function HandleTradeOK()
         return false
     end
 
-    -- Try first direction (target as seller)
-    local success, message1 = tryMatch(t.targetName, t.playerName, targetItems, t.playerMoney or 0)
-    local message2
-
-    -- If first attempt failed, try reverse direction
-    if not success then
-        _, message2 = tryMatch(t.playerName, t.targetName, playerItems, t.targetMoney or 0)
+    -- DEBUG helper to print item tables
+    local function dbgItems(prefix, items)
+        for i, itm in ipairs(items or {}) do
+            ns.DebugLog(string.format("[DEBUG] %s item[%d]: id=%s link=%s count=%s", prefix, i, tostring(itm.itemID), tostring(itm.link), tostring(itm.count)))
+        end
     end
 
-    -- Print message if we got one
-    if message1 then
-        print(ChatPrefix() .. message1)
-    elseif message2 then
-        print(ChatPrefix() .. message2)
+    ns.DebugLog("[DEBUG] HandleTradeOK attempting match. Player= " .. tostring(t.playerName) .. ", Target=" .. tostring(t.targetName))
+    dbgItems("playerItems", playerItems)
+    dbgItems("targetItems", targetItems)
+
+    -- First attempt (target is seller)
+    local success1, message1 = tryMatch(t.targetName, t.playerName, targetItems, t.playerMoney or 0)
+    ns.DebugLog("[DEBUG] tryMatch 1 success=" .. tostring(success1) .. " msg=" .. tostring(message1))
+
+    -- Second attempt (player is seller)
+    local success2, message2
+    if not success1 then
+        success2, message2 = tryMatch(t.playerName, t.targetName, playerItems, t.targetMoney or 0)
+        ns.DebugLog("[DEBUG] tryMatch 2 success=" .. tostring(success2) .. " msg=" .. tostring(message2))
+    end
+
+    -- Decide what to print
+    if not success1 and not success2 then
+        local errMsg = message1 or message2 or " Trade didn't match any guild auctions"
+        print(ChatPrefix() .. errMsg)
     end
     Reset("HandleTradeOK")
 end
@@ -433,11 +445,16 @@ function TradeAPI:PrefillItem(itemID, quantity, targetName, optItemLink)
         -- place it into the first trade slot
         ClickTradeButton(1)
         -- success message
+        -- Always prefer the exact ItemLink from the bag because it contains
+        -- any random suffixes / enchants (e.g. "… of the Beast").  The generic
+        -- link returned by GetItemInfo is often missing this info which leads
+        -- to chat messages without a suffix and – more importantly – breaks
+        -- the exact-link matching later when completing the trade.
         local name, itemLink = ns.GetItemInfo(itemID, quantity)
 
-        -- Prefer exact link from bag (includes random suffix / enchants)
-        if not itemLink then
-            itemLink = GetContainerItemLink(bag, slot)
+        local bagLink = GetContainerItemLink(bag, slot)
+        if bagLink then
+            itemLink = bagLink
         end
 
         local itemDescription
