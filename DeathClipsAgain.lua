@@ -261,12 +261,18 @@ local function NotifyPlayerLevelDrop(name, currentLevel, clipLevelWhenAdded, cla
             currentLevel and watchedEntry.clipLevel and currentLevel < watchedEntry.clipLevel then
 
         local currentTime = time()
-        if (currentTime - lastNotificationTime) < NOTIFICATION_COOLDOWN then
-            return
-        end
-        lastNotificationTime = currentTime
 
-        PlaySoundFile(MAP_PING_SOUND_FILE)
+        -- We always want to output the chat message, but we only want the sound
+        -- effect to play at most once per NOTIFICATION_COOLDOWN seconds.
+        local playSound = false
+        if (currentTime - lastNotificationTime) >= NOTIFICATION_COOLDOWN then
+            playSound = true
+            lastNotificationTime = currentTime
+        end
+
+        if playSound then
+            PlaySoundFile(MAP_PING_SOUND_FILE)
+        end
 
         local displayedClassName = "Неизвестный класс"
         local classColorHex = "ffffffff" -- Default to white for color if not found
@@ -1184,4 +1190,116 @@ function MigrateGoAgainActivityData()
     print(string.format("  - Valid timestamps kept: %d", migratedCount))
     print(string.format("  - Invalid timestamps removed: %d", removedCount))
     print("GoAgainAH: Activity tracking will start fresh for affected players.")
+end
+
+-- Guild-based resurrection tracking ----------------------------------------------------
+-- This module re-uses the existing watchedFriends table but updates data based on guild
+-- roster information (ns.GuildRegister). It listens to the custom event
+-- ns.T_GUILD_ROSTER_CHANGED that GuildRegister fires after every roster refresh.
+-- The goal is to automatically track "восставших" гильдийцев the same way friends
+-- are tracked, while avoiding conflicts if a player is later added to the WoW friends
+-- list (the shared watchedFriends entry will simply be reused).
+
+-- Debounce so we don't process the roster too often if it fires in bursts
+local LAST_GUILD_SCAN_TIME = 0
+local GUILD_SCAN_DEBOUNCE = 5 -- seconds
+
+local function PerformGuildRosterScan()
+    if not ns.GuildRegister or not ns.GuildRegister.table then return end
+
+    local now = time()
+    if (now - LAST_GUILD_SCAN_TIME) < GUILD_SCAN_DEBOUNCE then return end
+    LAST_GUILD_SCAN_TIME = now
+
+    -- Build a lookup of unfinished death clips for quick access
+    local rawClips = ns.GetLiveDeathClips and ns.GetLiveDeathClips() or {}
+    local realmClips = ns.FilterClipsThisRealm and ns.FilterClipsThisRealm(rawClips) or rawClips
+    local clipByLowerName = {}
+    for _, clip in ipairs(realmClips) do
+        if clip and not clip.completed and clip.characterName then
+            clipByLowerName[string.lower(clip.characterName)] = clip
+        end
+    end
+
+    if not next(clipByLowerName) then return end -- nothing to look for
+
+    if type(AuctionHouseDBSaved) ~= "table" then _G.AuctionHouseDBSaved = {} end
+    AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
+
+    local dataChanged = false
+
+    for fullName, info in pairs(ns.GuildRegister.table) do
+        local baseName = fullName:match("([^%-]+)") or fullName
+        local lowerName = string.lower(baseName)
+        local matchingClip = clipByLowerName[lowerName]
+        if matchingClip then
+            local currentLevel = info.level or 0
+            local localizedClass = info.class
+            local englishToken = ns.GetEnglishClassToken and ns.GetEnglishClassToken(localizedClass) or nil
+            local isOnline = info.isOnline
+
+            local watchedEntry = AuctionHouseDBSaved.watchedFriends[lowerName]
+            if not watchedEntry then
+                -- First time we spot this resurrected guild member – create entry
+                watchedEntry = {
+                    characterName = baseName,
+                    clipLevel = matchingClip.level or 0,
+                    lastKnownActualLevel = currentLevel,
+                    lastKnownActualLevelTimestamp = now,
+                    hasBeenNotifiedForThisAdd = false,
+                    localizedClassNameAtLastSighting = localizedClass,
+                    currentEnglishClassTokenAtLastSighting = englishToken,
+                    addedToWatchTimestamp = now,
+                    lastActivityTimestamp = isOnline and now or 0,
+                    wasOnlineInLastScan = isOnline,
+                }
+                AuctionHouseDBSaved.watchedFriends[lowerName] = watchedEntry
+                dataChanged = true
+            else
+                -- Update existing entry with fresh guild data
+                local entryChanged = false
+                if currentLevel ~= watchedEntry.lastKnownActualLevel then
+                    watchedEntry.lastKnownActualLevel = currentLevel
+                    watchedEntry.lastKnownActualLevelTimestamp = now
+                    entryChanged = true
+                end
+                if localizedClass and localizedClass ~= watchedEntry.localizedClassNameAtLastSighting then
+                    watchedEntry.localizedClassNameAtLastSighting = localizedClass
+                    watchedEntry.currentEnglishClassTokenAtLastSighting = englishToken
+                    entryChanged = true
+                end
+                if isOnline ~= nil and isOnline ~= watchedEntry.wasOnlineInLastScan then
+                    watchedEntry.wasOnlineInLastScan = isOnline
+                    if isOnline then watchedEntry.lastActivityTimestamp = now end
+                    entryChanged = true
+                elseif isOnline and (not watchedEntry.lastActivityTimestamp or watchedEntry.lastActivityTimestamp == 0) then
+                    -- We just learned they are online but timestamp was missing
+                    watchedEntry.lastActivityTimestamp = now
+                    entryChanged = true
+                end
+                if entryChanged then dataChanged = true end
+            end
+
+            -- If we have never notified about level drop yet, do it now when we first see them < clipLevel
+            if watchedEntry and not watchedEntry.hasBeenNotifiedForThisAdd and currentLevel > 0 and currentLevel < watchedEntry.clipLevel then
+                NotifyPlayerLevelDrop(baseName, currentLevel, watchedEntry.clipLevel, localizedClass, info.zone, "guild_roster_scan")
+                watchedEntry.hasBeenNotifiedForThisAdd = true
+                dataChanged = true
+            end
+
+            -- Always broadcast updated entry if anything changed
+            if dataChanged then
+                ns.BroadcastWatchedFriend(watchedEntry)
+            end
+        end
+    end
+
+    if dataChanged then
+        ns.RefreshDeathClipsUIForFriendUpdates()
+    end
+end
+
+-- Hook into custom event fired by GuildRegister after every roster update
+if ns.AuctionHouseAPI and ns.AuctionHouseAPI.RegisterEvent then
+    ns.AuctionHouseAPI:RegisterEvent(ns.T_GUILD_ROSTER_CHANGED, PerformGuildRosterScan)
 end
