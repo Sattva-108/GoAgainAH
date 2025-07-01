@@ -2216,6 +2216,16 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             AuctionHouseDBSaved = AuctionHouseDBSaved or {}
             AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
 
+            if payload._removed then
+                if AuctionHouseDBSaved.watchedFriends[lowerName] then
+                    AuctionHouseDBSaved.watchedFriends[lowerName] = nil
+                    if ns.RefreshDeathClipsUIForFriendUpdates then
+                        ns.RefreshDeathClipsUIForFriendUpdates()
+                    end
+                end
+                return
+            end
+
             -- Avoid overwriting if user already tracks with more info
             if not AuctionHouseDBSaved.watchedFriends[lowerName] then
                 AuctionHouseDBSaved.watchedFriends[lowerName] = payload
@@ -2226,10 +2236,6 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
                 if remoteTs > localTs then
                     AuctionHouseDBSaved.watchedFriends[lowerName] = payload
                 end
-            end
-
-            if DEFAULT_CHAT_FRAME then
-                --DEFAULT_CHAT_FRAME:AddMessage(ChatPrefix() .. string.format(" %s сообщил о возродившемся герое %s (ур. %d). Щёлкните клип, чтобы добавить в отслеживание.", sender, payload.characterName, payload.clipLevel or 0))
             end
 
             if ns.RefreshDeathClipsUIForFriendUpdates then

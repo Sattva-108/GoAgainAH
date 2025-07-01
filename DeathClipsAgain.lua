@@ -63,6 +63,43 @@ ns.AllowTimePlayedMessages = function()
     suppressTimePlayedMessages = false
 end
 
+-- =============================================================================
+--  Auto-cleanup of watchedFriends entries inactive for more than 10 days
+-- =============================================================================
+
+local STALE_WATCH_THRESHOLD = 10 * 24 * 60 * 60   -- 10 days, in seconds
+local CLEANUP_INTERVAL      = 30 * 60             -- run every 30 minutes
+
+local function RunStaleWatchedFriendCleanup()
+    if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
+    print("cleanup")
+
+    local now = time()
+    local removedCount = 0
+
+    for lowerName, entry in pairs(AuctionHouseDBSaved.watchedFriends) do
+        if entry and entry.characterName then
+            local lastActivity = entry.lastActivityTimestamp or entry.lastKnownActualLevelTimestamp or 0
+            if lastActivity > 0 and (now - lastActivity) > STALE_WATCH_THRESHOLD then
+                -- Remove locally
+                AuctionHouseDBSaved.watchedFriends[lowerName] = nil
+                removedCount = removedCount + 1
+
+                -- Broadcast removal so other clients also drop it
+                ns.BroadcastWatchedFriend({ characterName = entry.characterName, _removed = true, lastKnownActualLevelTimestamp = lastActivity })
+            end
+        end
+    end
+
+    if removedCount > 0 and ns.RefreshDeathClipsUIForFriendUpdates then
+        ns.RefreshDeathClipsUIForFriendUpdates()
+    end
+end
+
+-- Start a repeating ticker for cleanup
+local cleanupTicker = C_Timer:NewTicker(CLEANUP_INTERVAL, RunStaleWatchedFriendCleanup)
+
+
 local TOOLTIP_MIN_WIDTH = 150
 local TOOLTIP_MAX_WIDTH = 350
 local TOOLTIP_HORIZONTAL_PADDING = 20
@@ -1102,6 +1139,8 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         AuctionHouseDBSaved.watchedFriends = AuctionHouseDBSaved.watchedFriends or {}
         CleanupNotifiedFriendsDB()
         lastFriendListScanTime = 0
+        -- Run first stale cleanup 15 сек спустя входа
+        C_Timer:After(15, RunStaleWatchedFriendCleanup)
         if friendListDebounceTimer then friendListDebounceTimer:Cancel(); friendListDebounceTimer = nil end
         if initialLoginScanTimer then initialLoginScanTimer:Cancel(); initialLoginScanTimer = nil end
         initialLoginScanTimer = C_Timer:After(15, function()
@@ -1303,3 +1342,4 @@ end
 if ns.AuctionHouseAPI and ns.AuctionHouseAPI.RegisterEvent then
     ns.AuctionHouseAPI:RegisterEvent(ns.T_GUILD_ROSTER_CHANGED, PerformGuildRosterScan)
 end
+
