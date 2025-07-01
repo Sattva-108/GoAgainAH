@@ -72,7 +72,7 @@ local CLEANUP_INTERVAL      = 30 * 60             -- run every 30 minutes
 
 local function RunStaleWatchedFriendCleanup()
     if type(AuctionHouseDBSaved) ~= "table" or type(AuctionHouseDBSaved.watchedFriends) ~= "table" then return end
-    --print("cleanup")
+    print("cleanup")
 
     local now = time()
     local removedCount = 0
