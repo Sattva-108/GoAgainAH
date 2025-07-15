@@ -765,6 +765,28 @@ function OFAuctionFrame_SetUpSideDressUpFrame(parentFrame, anchorPoint, relative
     dressUpFrame.ResetButton:Click()
 end
 
+-- Helper function for tab scaling
+function OFAuctionFrame_ScaleTabs()
+    local frame = OFAuctionFrame
+    if not frame then return end
+
+    local frameWidth = frame:GetWidth() or 758
+    local tabCount = 8
+    local availableWidth = frameWidth - 80 -- Increased margin for safety
+    local maxTabWidth = availableWidth / tabCount
+
+    if maxTabWidth < 85 then -- Trigger earlier
+        local targetWidth = math.max(50, maxTabWidth - 100) -- Extra 10px reduction
+
+        for i = 1, tabCount do
+            local tab = _G["OFAuctionFrameTab" .. i]
+            if tab then
+                tab:SetWidth(targetWidth)
+            end
+        end
+    end
+end
+
 function OFAuctionFrame_OnShow (self)
     OFAuctionFrameSwitchTab(initialTab)
     initialTab = TAB_BROWSE
@@ -776,11 +798,17 @@ function OFAuctionFrame_OnShow (self)
     --OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
     OFAuctionFrame_UpdateReviewsTabText()
     OFAuctionFrame_UpdateAtheneTab()
+
+    -- Call the separate scaling function
+    OFAuctionFrame_ScaleTabs()
 end
 
 function OFAuctionFrameTab_OnClick(self, button, down)
     local index = self:GetID();
     OFAuctionFrameSwitchTab(index)
+    
+    -- Immediate scaling application
+    OFAuctionFrame_ScaleTabs()
 end
 
 function OFAuctionFrameReviews_OnLoad(self)
