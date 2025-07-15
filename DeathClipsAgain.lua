@@ -1185,3 +1185,40 @@ function MigrateGoAgainActivityData()
     print(string.format("  - Invalid timestamps removed: %d", removedCount))
     print("GoAgainAH: Activity tracking will start fresh for affected players.")
 end
+
+-- ===========================
+-- 🧹 Helper: Full cleanup of watched friends & related death-clips
+-- Usage (paste in chat): /run GoAgainAH_WipeReincarnatedData()
+-- ===========================
+function GoAgainAH_WipeReincarnatedData()
+    local removedFriends, removedClips = 0, 0
+
+    -- 1) Remove watchedFriends entries
+    if type(AuctionHouseDBSaved) == "table" and type(AuctionHouseDBSaved.watchedFriends) == "table" then
+        for lowerName, entry in pairs(AuctionHouseDBSaved.watchedFriends) do
+            removedFriends = removedFriends + 1
+            -- 2) Remove all live death-clips for this character (if any)
+            if ns and ns.GetLiveDeathClips and ns.RemoveDeathClip then
+                for clipId, clip in pairs(ns.GetLiveDeathClips()) do
+                    if clip.characterName and string.lower(clip.characterName) == lowerName then
+                        ns.RemoveDeathClip(clipId)
+                        removedClips = removedClips + 1
+                    end
+                end
+            end
+        end
+        -- wipe the table entirely
+        AuctionHouseDBSaved.watchedFriends = {}
+    end
+
+    -- 3) Refresh UI & notify subsystems
+    if ns and ns.RefreshDeathClipsUIForFriendUpdates then
+        ns.RefreshDeathClipsUIForFriendUpdates()
+    end
+    if ns and ns.AuctionHouseAPI and ns.EV_DEATH_CLIPS_CHANGED then
+        ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+    end
+
+    -- 4) Report to chat
+    print(string.format("GoAgainAH: очищено %d записей watchedFriends и %d death-клипов.", removedFriends, removedClips))
+end
