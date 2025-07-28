@@ -2984,3 +2984,41 @@ function OFRatingFrame_OnLoad(self)
     starRating:SetRating(3.5)
     starRating.frame:Show()
 end
+
+-- Utility to adjust auction frame tab sizes so that the combined width of all 8 tabs matches the frame width
+local function OFAuctionFrame_AdjustTabWidths()
+    local frame = OFAuctionFrame
+    if not frame or not frame.numTabs then
+        return
+    end
+
+    local numTabs = frame.numTabs
+    local frameWidth = frame:GetWidth()
+    -- Tabs overlap each other by 15 pixels (negative X offset defined in XML)
+    -- Effective occupied width along X axis equals sum(tabWidths) - 15*(numTabs-1)
+    -- To make occupied width equal the frame width, we need:
+    --     desiredTabWidth = (frameWidth + 15*(numTabs-1)) / numTabs
+    local desiredTabWidth = (frameWidth + 15 * (numTabs - 1)) / numTabs
+    desiredTabWidth = math.floor(desiredTabWidth + 0.5) -- Round to closest pixel
+
+    for i = 1, numTabs do
+        local tab = _G["OFAuctionFrameTab" .. i]
+        if tab then
+            -- 0 minWidth so that PanelTemplates_TabResize will clamp to texture limits internally
+            PanelTemplates_TabResize(tab, 0, desiredTabWidth)
+        end
+    end
+end
+
+-- Create an invisible helper frame to listen for UI scale changes and adjust tabs accordingly
+local TabWidthWatcher = CreateFrame("Frame")
+TabWidthWatcher:RegisterEvent("UI_SCALE_CHANGED")
+TabWidthWatcher:RegisterEvent("DISPLAY_SIZE_CHANGED")
+TabWidthWatcher:SetScript("OnEvent", function()
+    OFAuctionFrame_AdjustTabWidths()
+end)
+
+-- Call once when auction frame is shown
+hooksecurefunc("OFAuctionFrame_OnShow", function()
+    C_Timer:After(0, OFAuctionFrame_AdjustTabWidths) -- delay a frame so widths are final
+end)
