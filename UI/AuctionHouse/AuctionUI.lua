@@ -2994,11 +2994,17 @@ local function OFAuctionFrame_AdjustTabWidths()
 
     local numTabs = frame.numTabs
     local frameWidth = frame:GetWidth()
-    -- Tabs overlap each other by 15 pixels (negative X offset defined in XML)
-    -- Effective occupied width along X axis equals sum(tabWidths) - 15*(numTabs-1)
-    -- To make occupied width equal the frame width, we need:
-    --     desiredTabWidth = (frameWidth + 15*(numTabs-1)) / numTabs
-    local desiredTabWidth = (frameWidth + 15 * (numTabs - 1)) / numTabs
+    -- Geometry:
+    --  * Первая вкладка стартует с отступом 15 px от левого края фрейма (см. XML-якорь).
+    --  * Каждая следующая вкладка «наезжает» на предыдущую на 15 px (смещение -15).
+    --  * Итоговая занятая ширина = 15  +  Σ(width_i)  –  15*(numTabs-1)
+    --    (начальный отступ + ширины вкладок – перекрытия).
+    --  * Хотим: занятая ширина = frameWidth ⇒
+    --      Σ(width_i) = frameWidth - 15 + 15*(numTabs-1)
+    --                = frameWidth + 15*(numTabs-2)
+    --  * Значит одинаковая ширина вкладки:
+    --      desiredTabWidth = (frameWidth + 15*(numTabs-2)) / numTabs
+    local desiredTabWidth = (frameWidth + 15 * (numTabs - 2)) / numTabs
     desiredTabWidth = math.floor(desiredTabWidth + 0.5) -- Round to closest pixel
 
     for i = 1, numTabs do
