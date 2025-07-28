@@ -53,6 +53,12 @@ function OFSettingsSkipReviewPopup_OnClick(self)
     ns.PlayerPrefs:Set("skipReviewPopup", isChecked == 1)
 end
 
+-- Handler for the 'show death prints in chat' checkbox
+function OFSettingsShowDeathPrints_OnClick(self)
+    local isChecked = self:GetChecked()
+    ns.PlayerPrefs:Set("showDeathPrintsInChat", isChecked == 1)
+end
+
 -- keep last item sent to auction & it's price
 
 -- To experiment with different "20x" label strings, use:

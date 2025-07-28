@@ -139,6 +139,13 @@ function OFSettings_UpdateUI()
     if OFSettingsSkipReviewPopupCheckButton then
         OFSettingsSkipReviewPopupCheckButton:SetChecked(skipReviewPopup and 1 or nil)
     end
+
+    -- Update show death prints checkbox (default = true)
+    if OFSettingsShowDeathPrintsCheckButton then
+        local showDeathPrints = ns.PlayerPrefs:Get("showDeathPrintsInChat")
+        if showDeathPrints == nil then showDeathPrints = true end
+        OFSettingsShowDeathPrintsCheckButton:SetChecked(showDeathPrints and 1 or nil)
+    end
 end
 
 function OFSettings_MinimapIcon_OnClick(self)

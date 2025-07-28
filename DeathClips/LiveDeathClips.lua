@@ -832,6 +832,16 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             end
 
             ------------------------------------------------------------------
+            -- Проверяем настройку пользователя (по умолчанию – показывать)
+            ------------------------------------------------------------------
+            if ns.PlayerPrefs and ns.PlayerPrefs.Get then
+                local showPrints = ns.PlayerPrefs:Get("showDeathPrintsInChat")
+                if showPrints == false then
+                    return -- пользователь отключил сообщения
+                end
+            end
+
+            ------------------------------------------------------------------
             -- Вывод баннеров в чат
             ------------------------------------------------------------------
             if nextUpdateDeadline then
