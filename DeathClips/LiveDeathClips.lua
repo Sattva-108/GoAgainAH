@@ -223,8 +223,10 @@ ns.SpeedClipsOptedOut = ns.SpeedClipsOptedOut or {}
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        -- Skip clips from players that opted-out
-        if not ns.SpeedClipsOptedOut[clip.characterName] then
+        -- Skip ALIVE clips below level 10 – they should not be recorded at all
+        if clip.deathCause == "ALIVE" and (clip.level or 0) < 10 then
+            -- intentionally skipped
+        elseif not ns.SpeedClipsOptedOut[clip.characterName] then
             if clip.id then
                 clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
                 clip.getPlayedTry = 0
