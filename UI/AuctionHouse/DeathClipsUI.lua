@@ -1296,7 +1296,10 @@ function OFAuctionFrameDeathClips_Update()
                         else
                             clip.isOnline = false
                         end
-                        table.insert(tempClips, clip)
+                        -- Apply minimum level filter (10+) before adding to Speed list
+                        if (clip.level or 0) >= 10 then
+                            table.insert(tempClips, clip)
+                        end
                     end
                 end
             end

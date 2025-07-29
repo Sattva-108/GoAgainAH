@@ -92,11 +92,21 @@ local function CreateClipsSorter(sortParams)
             addSorter(desc, function(l, r) return (l.ts or 0) - (r.ts or 0) end)
         elseif k == "where" then
             addSorter(desc, function(l, r)
-                -- SPEED_CLIPS tab: sort by playedTime (same as "clip" column)
+                -- SPEED_CLIPS tab: sort by rank (computed from playedTime and level)
                 if ns.currentActiveTabId == "SPEED_CLIPS" then
                     local a = tonumber(l.playedTime) or 0
                     local b = tonumber(r.playedTime) or 0
-                    return a - b
+                    local levelA = tonumber(l.level) or 0
+                    local levelB = tonumber(r.level) or 0
+                    
+                    -- Get ranks for both clips
+                    local _, _, _, _, _, _, rankA, _ = ns.GetPlayedTimeColor(a, levelA)
+                    local _, _, _, _, _, _, rankB, _ = ns.GetPlayedTimeColor(b, levelB)
+                    
+                    -- Sort by rank (lower rank = better)
+                    rankA = rankA or math.huge
+                    rankB = rankB or math.huge
+                    return rankA - rankB
                 end
                 -- Other tabs: sort by where string
                 return stringCompare(l, r, "where")

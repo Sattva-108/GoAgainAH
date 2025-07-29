@@ -1381,12 +1381,12 @@
 					<CheckButton name="OFDeathClipsSpeedClipsCheckButton" inherits="UICheckButtonTemplate">
 						<Size x="20" y="20"/>
 						<Anchors>
-							<Anchor point="RIGHT" relativeTo="OFAuctionFrameCloseButton" relativePoint="LEFT" x="-160" y="-2"/>
+							<Anchor point="RIGHT" relativeTo="OFAuctionFrameCloseButton" relativePoint="LEFT" x="-160" y="-1"/>
 						</Anchors>
 						<Scripts>
 							<OnLoad>
 								OFDeathClipsSpeedClipsCheckButtonText:SetFontObject(GameFontNormal);
-								OFDeathClipsSpeedClipsCheckButtonText:SetText("Участвовать в Speed Clips");
+								OFDeathClipsSpeedClipsCheckButtonText:SetText("Показывать меня здесь");
 							</OnLoad>
 							<OnClick>
 								OFDeathClips_SpeedClips_OnClick(self)

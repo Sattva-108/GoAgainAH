@@ -581,7 +581,7 @@ function AuctionHouse:Initialize()
 
     -- Initialize UI
     ns.TradeAPI:OnInitialize()
-    ns.MailboxUI:Initialize()
+    -- ns.MailboxUI:Initialize() -- временно отключено из-за ошибок при открытии почты
     ns.AuctionAlertWidget:OnInitialize()
     OFAuctionFrameReviews_Initialize()
     LfgUI_Initialize()
@@ -1789,12 +1789,15 @@ function AuctionHouse:OnCommReceived(prefix, message, distribution, sender)
             ----------------------------------------------------------------
             -- 7) build unique ID
             ----------------------------------------------------------------
-            clip.id = ns.GenerateClipID(clip, clip.completed)
-            LiveDeathClips[clip.id] = clip
-            
-            -- Add to queue if no playedTime and not failed (same logic as AddNewDeathClips)
-            if ns.AddClipToQueue then
-                ns.AddClipToQueue(clip)
+            -- Skip ALIVE clips below level 10 (they should not be part of Speed list)
+            if not (clip.deathCause == "ALIVE" and (clip.level or 0) < 10) then
+                clip.id = ns.GenerateClipID(clip, clip.completed)
+                LiveDeathClips[clip.id] = clip
+                
+                -- Add to queue if no playedTime and not failed (same logic as AddNewDeathClips)
+                if ns.AddClipToQueue then
+                    ns.AddClipToQueue(clip)
+                end
             end
         end
 
@@ -2898,6 +2901,8 @@ function ns.AuctionHouse:OnTimePlayedUpdate(event, totalTimePlayed, levelTimePla
     local playerName = UnitName("player")
     local playerRealm = GetRealmName()
     local playerLevel = UnitLevel("player")
+    -- Ignore speed-clip generation for characters below level 10
+    if playerLevel < 10 then return end
     -- === ИСПРАВЛЕНИЕ ДЛЯ КЛАССА: Используем playerClassToken (английский токен) ===
     local _, playerClassLocalized, playerClassID = UnitClass("player") -- Получаем ID класса
     local playerClassToken = ns.ClassNameByID and ns.ClassNameByID[playerClassID] -- Получаем английский токен по ID

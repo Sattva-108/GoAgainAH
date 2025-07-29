@@ -223,8 +223,10 @@ ns.SpeedClipsOptedOut = ns.SpeedClipsOptedOut or {}
 ns.AddNewDeathClips = function(newClips)
     local existingClips = ns.GetLiveDeathClips()
     for _, clip in ipairs(newClips) do
-        -- Skip clips from players that opted-out
-        if not ns.SpeedClipsOptedOut[clip.characterName] then
+        -- Skip ALIVE clips below level 10 – they should not be recorded at all
+        if clip.deathCause == "ALIVE" and (clip.level or 0) < 10 then
+            -- intentionally skipped
+        elseif not ns.SpeedClipsOptedOut[clip.characterName] then
             if clip.id then
                 clip.playedTime = clip.playedTime or nil  -- Initialize playedTime to nil if not set
                 clip.getPlayedTry = 0
@@ -783,19 +785,89 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         if admin == "Lenkomag" then
             --PlaySoundFile("Sound\\interface\\MapPing.wav")
         end
-        local name = msg:match("^([^:]+)")
+        ------------------------------------------------------------------
+        -- Парсинг сообщения о смерти для составления детального баннера
+        ------------------------------------------------------------------
+        local parts = {}
+        for part in string.gmatch(msg, "([^:]+)") do
+            table.insert(parts, part)
+        end
+
+        local name       = parts[1]
         if name then
+            local raceId     = tonumber(parts[2])
+            local _genderId  = tonumber(parts[3]) -- в настоящее время не используется
+            local classId    = tonumber(parts[4])
+            local level      = tonumber(parts[5])
+            local rawZone    = parts[6] or ""
+            local causeCode  = tonumber(parts[7]) or 0
+            local rawMobName = parts[8] or ""
+            local rawMobLv   = tonumber(parts[9]) or 0
+
+            ------------------------------------------------------------------
+            -- Цвета для имени (по классу) и расы (по фракции)
+            ------------------------------------------------------------------
+            local classTag   = classes[classId]
+            local cColor     = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classTag] or { r = 1, g = 1, b = 1 }
+            local colouredName = string.format("|cFF%02X%02X%02X%s|r", cColor.r * 255, cColor.g * 255, cColor.b * 255, name)
+
+            local faction    = (races[raceId] and races[raceId].faction) or "Neutral"
+            local FACTION_COLOURS = {
+                Horde    = "FFFF4040",   -- Красный
+                Alliance = "FF1890FF",   -- Синий
+                Neutral  = "FFFFD700",   -- Жёлтый
+            }
+            local raceColourHex = FACTION_COLOURS[faction] or "FFFFFFFF"
+            local colouredRace  = string.format("|c%s%s|r", raceColourHex, (races[raceId] and races[raceId].name) or "Неизвестно")
+
+            ------------------------------------------------------------------
+            -- Причина смерти и зона
+            ------------------------------------------------------------------
+            local zoneStr = rawZone:gsub("\n", " ")
+            if zoneStr == "" then zoneStr = "Неизвестно" end
+
+            local causeStr
+            if causeCode == 7 then
+                causeStr = string.format("существом %s %d-го уровня", rawMobName, rawMobLv)
+            else
+                causeStr = (deathCauses[causeCode] or (ns.DeathCauseByID and ns.DeathCauseByID[causeCode]) or "Неизвестно")
+            end
+
+            ------------------------------------------------------------------
+            -- Проверяем настройку пользователя (по умолчанию – показывать)
+            ------------------------------------------------------------------
+            if ns.PlayerPrefs and ns.PlayerPrefs.Get then
+                local showPrints = ns.PlayerPrefs:Get("showDeathPrintsInChat")
+                if showPrints == false then
+                    return -- пользователь отключил сообщения
+                end
+            end
+
+            ------------------------------------------------------------------
+            -- Вывод баннеров в чат
+            ------------------------------------------------------------------
             if nextUpdateDeadline then
                 local left = nextUpdateDeadline - time()
                 if left < 0 then
-                    nextUpdateDeadline = nil -- Сбросить устаревший таймер
+                    nextUpdateDeadline = nil -- таймер устарел
                 else
-                    local ts = date("%H:%M:%S")
+                    local ts   = date("%H:%M:%S")
                     local grey = "|cFF808080[%s]|r "
-                    local banner1 = string.format(grey .. "|cFFFF5555%s|r |cFFFFFFFFdied!|r", ts, name)
-                    local banner2 = string.format(grey .. "Next ladder in |cFFFFFF00%s|r", ts, SecondsToTime(left))
+
+                    -- Основной баннер c описанием смерти
+                    local banner1 = string.format(
+                        grey .. "%s, %s %d-го уровня, был убит %s в зоне \"%s\"",
+                        ts, colouredName, colouredRace, level, causeStr, zoneStr
+                    )
+
+                    -- Баннер о времени до следующего обновления ладдера
+                    local banner2 = string.format(
+                        grey .. "Next ladder in |cFFFFFF00%s|r",
+                        ts, SecondsToTime(left)
+                    )
+
                     print(banner1)
-                    print(banner2)
+                    --print(banner2)
                 end
             end
         end

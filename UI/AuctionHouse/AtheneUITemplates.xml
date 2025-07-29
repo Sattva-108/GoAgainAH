@@ -439,17 +439,34 @@
                                             </OnClick>
                                         </Scripts>
                                     </CheckButton>
-                                    
+
+                                    <!-- Новая галочка: показывать сообщения о смерти в чат -->
+                                    <CheckButton name="OFSettingsShowDeathPrintsCheckButton" inherits="UICheckButtonTemplate">
+                                        <Size x="24" y="24"/>
+                                        <Anchors>
+                                            <Anchor point="TOPLEFT" x="30" y="-170"/>
+                                        </Anchors>
+                                        <Scripts>
+                                            <OnLoad>
+                                                OFSettingsShowDeathPrintsCheckButtonText:SetFontObject(GameFontNormal);
+                                                OFSettingsShowDeathPrintsCheckButtonText:SetText("Показывать сообщения о смерти в чат");
+                                            </OnLoad>
+                                            <OnClick>
+                                                OFSettingsShowDeathPrints_OnClick(self)
+                                            </OnClick>
+                                        </Scripts>
+                                    </CheckButton>
+
                                     <FontString name="OFSettingsDurationLabel" inherits="GameFontNormal" text="Длительность аукциона по умолчанию:">
                                         <Anchors>
-                                            <Anchor point="TOPLEFT" x="30" y="-150"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-200"/>
                                         </Anchors>
                                     </FontString>
-                                    
+
                                     <Slider name="OFSettingsDurationSlider" inherits="OptionsSliderTemplate">
                                         <Size x="200" y="20"/>
                                         <Anchors>
-                                            <Anchor point="TOPLEFT" x="30" y="-180"/>
+                                            <Anchor point="TOPLEFT" x="30" y="-230"/>
                                         </Anchors>
                                         <Scripts>
                                             <OnLoad>

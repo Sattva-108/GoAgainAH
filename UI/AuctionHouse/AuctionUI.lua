@@ -53,6 +53,12 @@ function OFSettingsSkipReviewPopup_OnClick(self)
     ns.PlayerPrefs:Set("skipReviewPopup", isChecked == 1)
 end
 
+-- Handler for the 'show death prints in chat' checkbox
+function OFSettingsShowDeathPrints_OnClick(self)
+    local isChecked = self:GetChecked()
+    ns.PlayerPrefs:Set("showDeathPrintsInChat", isChecked == 1)
+end
+
 -- keep last item sent to auction & it's price
 
 -- To experiment with different "20x" label strings, use:
@@ -765,28 +771,6 @@ function OFAuctionFrame_SetUpSideDressUpFrame(parentFrame, anchorPoint, relative
     dressUpFrame.ResetButton:Click()
 end
 
--- Helper function for tab scaling
-function OFAuctionFrame_ScaleTabs()
-    local frame = OFAuctionFrame
-    if not frame then return end
-
-    local frameWidth = frame:GetWidth() or 758
-    local tabCount = 8
-    local availableWidth = frameWidth - 80 -- Increased margin for safety
-    local maxTabWidth = availableWidth / tabCount
-
-    if maxTabWidth < 85 then -- Trigger earlier
-        local targetWidth = math.max(50, maxTabWidth - 100) -- Extra 10px reduction
-
-        for i = 1, tabCount do
-            local tab = _G["OFAuctionFrameTab" .. i]
-            if tab then
-                tab:SetWidth(targetWidth)
-            end
-        end
-    end
-end
-
 function OFAuctionFrame_OnShow (self)
     OFAuctionFrameSwitchTab(initialTab)
     initialTab = TAB_BROWSE
@@ -798,17 +782,11 @@ function OFAuctionFrame_OnShow (self)
     --OFAuctionFrame_SetUpSideDressUpFrame(self, "TOPLEFT", "TOPRIGHT", -2, -14);
     OFAuctionFrame_UpdateReviewsTabText()
     OFAuctionFrame_UpdateAtheneTab()
-
-    -- Call the separate scaling function
-    OFAuctionFrame_ScaleTabs()
 end
 
 function OFAuctionFrameTab_OnClick(self, button, down)
     local index = self:GetID();
     OFAuctionFrameSwitchTab(index)
-    
-    -- Immediate scaling application
-    OFAuctionFrame_ScaleTabs()
 end
 
 function OFAuctionFrameReviews_OnLoad(self)
@@ -2219,26 +2197,26 @@ function OFDeliveryDropdown_Initialize(self, level)
         info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_ANY)
         UIDropDownMenu_AddButton(info)
 
-        -- "Mail" option
-        info.text = "Mail"
-        info.value = ns.DELIVERY_TYPE_MAIL
+        -- "Trade" option (always available)
+        info.text = "Trade"
+        info.value = ns.DELIVERY_TYPE_TRADE
         info.func = function()
-            parent:SetDeliverySelected(ns.DELIVERY_TYPE_MAIL)
-            UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_MAIL)
+            parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+            UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
         end
-        info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_MAIL)
+        info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
         UIDropDownMenu_AddButton(info)
     end
 
-    -- "Trade" option (always available)
-    info.text = "Trade"
-    info.value = ns.DELIVERY_TYPE_TRADE
-    info.func = function()
-        parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
-        UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
-    end
-    info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
-    UIDropDownMenu_AddButton(info)
+    -- ---- FIXME sirus HC dont have mailbox: duplicate Trade option removed
+    -- info.text = "Trade"
+    -- info.value = ns.DELIVERY_TYPE_TRADE
+    -- info.func = function()
+    --     parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+    --     UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
+    -- end
+    -- info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+    -- UIDropDownMenu_AddButton(info)
 end
 
 -- Price Type Dropdown
@@ -3012,3 +2990,47 @@ function OFRatingFrame_OnLoad(self)
     starRating:SetRating(3.5)
     starRating.frame:Show()
 end
+
+-- Utility to adjust auction frame tab sizes so that the combined width of all 8 tabs matches the frame width
+local function OFAuctionFrame_AdjustTabWidths()
+    local frame = OFAuctionFrame
+    if not frame or not frame.numTabs then
+        return
+    end
+
+    local numTabs = frame.numTabs
+    local frameWidth = frame:GetWidth()
+    -- Geometry:
+    --  * Первая вкладка стартует с отступом 15 px от левого края фрейма (см. XML-якорь).
+    --  * Каждая следующая вкладка «наезжает» на предыдущую на 15 px (смещение -15).
+    --  * Итоговая занятая ширина = 15  +  Σ(width_i)  –  15*(numTabs-1)
+    --    (начальный отступ + ширины вкладок – перекрытия).
+    --  * Хотим: занятая ширина = frameWidth ⇒
+    --      Σ(width_i) = frameWidth - 15 + 15*(numTabs-1)
+    --                = frameWidth + 15*(numTabs-2)
+    --  * Значит одинаковая ширина вкладки:
+    --      desiredTabWidth = (frameWidth + 15*(numTabs-2)) / numTabs
+    local desiredTabWidth = (frameWidth + 15 * (numTabs - 2)) / numTabs
+    desiredTabWidth = math.floor(desiredTabWidth + 0.5) -- Round to closest pixel
+
+    for i = 1, numTabs do
+        local tab = _G["OFAuctionFrameTab" .. i]
+        if tab then
+            -- 0 minWidth so that PanelTemplates_TabResize will clamp to texture limits internally
+            PanelTemplates_TabResize(tab, 0, desiredTabWidth)
+        end
+    end
+end
+
+-- Create an invisible helper frame to listen for UI scale changes and adjust tabs accordingly
+local TabWidthWatcher = CreateFrame("Frame")
+TabWidthWatcher:RegisterEvent("UI_SCALE_CHANGED")
+TabWidthWatcher:RegisterEvent("DISPLAY_SIZE_CHANGED")
+TabWidthWatcher:SetScript("OnEvent", function()
+    OFAuctionFrame_AdjustTabWidths()
+end)
+
+-- Call once when auction frame is shown
+hooksecurefunc("OFAuctionFrame_OnShow", function()
+    C_Timer:After(0, OFAuctionFrame_AdjustTabWidths) -- delay a frame so widths are final
+end)
