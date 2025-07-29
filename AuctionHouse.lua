@@ -581,7 +581,7 @@ function AuctionHouse:Initialize()
 
     -- Initialize UI
     ns.TradeAPI:OnInitialize()
-    ns.MailboxUI:Initialize()
+    -- ns.MailboxUI:Initialize() -- временно отключено из-за ошибок при открытии почты
     ns.AuctionAlertWidget:OnInitialize()
     OFAuctionFrameReviews_Initialize()
     LfgUI_Initialize()
