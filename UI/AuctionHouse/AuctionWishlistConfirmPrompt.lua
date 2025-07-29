@@ -179,9 +179,10 @@ local function CreateWishlistConfirmPrompt()
 
 
     local deliveryTypeDropdown = AceGUI:Create("Dropdown")
+    -- ---- FIXME sirus HC dont have mailbox: Mail option removed
     deliveryTypeDropdown:SetList({
         ["Any"] = L["Any"],
-        ["Mail"] = L["Mail"],
+        -- ["Mail"] = L["Mail"],
         ["Trade"] = L["Trade"]
     })
     deliveryTypeDropdown:SetValue("Any")
@@ -570,9 +571,10 @@ function AuctionWishlistConfirmPrompt:Show(itemID, onSuccess, onError, onCancel)
             price = 0
         end
 
-        if deliveryType == "Mail" then
-            deliveryType = ns.DELIVERY_TYPE_MAIL
-        elseif deliveryType == "Trade" then
+        -- ---- FIXME sirus HC dont have mailbox: Mail delivery disabled
+        -- if deliveryType == "Mail" then
+        --     deliveryType = ns.DELIVERY_TYPE_MAIL
+        if deliveryType == "Trade" then
             deliveryType = ns.DELIVERY_TYPE_TRADE
         else
             deliveryType = ns.DELIVERY_TYPE_ANY

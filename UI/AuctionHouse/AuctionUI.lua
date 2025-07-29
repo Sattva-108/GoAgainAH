@@ -2197,26 +2197,26 @@ function OFDeliveryDropdown_Initialize(self, level)
         info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_ANY)
         UIDropDownMenu_AddButton(info)
 
-        -- "Mail" option
-        info.text = "Mail"
-        info.value = ns.DELIVERY_TYPE_MAIL
+        -- "Trade" option (always available)
+        info.text = "Trade"
+        info.value = ns.DELIVERY_TYPE_TRADE
         info.func = function()
-            parent:SetDeliverySelected(ns.DELIVERY_TYPE_MAIL)
-            UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_MAIL)
+            parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+            UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
         end
-        info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_MAIL)
+        info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
         UIDropDownMenu_AddButton(info)
     end
 
-    -- "Trade" option (always available)
-    info.text = "Trade"
-    info.value = ns.DELIVERY_TYPE_TRADE
-    info.func = function()
-        parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
-        UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
-    end
-    info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
-    UIDropDownMenu_AddButton(info)
+    -- ---- FIXME sirus HC dont have mailbox: duplicate Trade option removed
+    -- info.text = "Trade"
+    -- info.value = ns.DELIVERY_TYPE_TRADE
+    -- info.func = function()
+    --     parent:SetDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+    --     UIDropDownMenu_SetSelectedValue(OFDeliveryDropdown, ns.DELIVERY_TYPE_TRADE)
+    -- end
+    -- info.checked = parent:IsDeliverySelected(ns.DELIVERY_TYPE_TRADE)
+    -- UIDropDownMenu_AddButton(info)
 end
 
 -- Price Type Dropdown
