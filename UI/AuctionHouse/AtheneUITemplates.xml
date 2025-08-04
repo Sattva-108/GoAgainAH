@@ -105,7 +105,7 @@
                 </Frames>
             </Frame>
             <Frame name="$parentWhatsNewFrame">
-                <Size x="160" y="20" />
+                <Size x="150" y="20" />
                 <Anchors>
                     <Anchor x="-5" y="-5" point="TOPLEFT" relativeTo="OFUpdateAvailableFrameUpdateLink" relativePoint="BOTTOMLEFT" />
                 </Anchors>
@@ -116,14 +116,14 @@
                 </Layers>
             </Frame>
             <Frame name="AthenePatchNotesFrame">
-                <Size x="180" y="105" />
+                <Size x="150" y="105" />
                 <Anchors>
                     <Anchor x="0" y="0" point="TOPLEFT" relativeTo="$parentWhatsNewFrame" relativePoint="BOTTOMLEFT"  />
                 </Anchors>
                 <Layers>
                     <Layer level="BACKGROUND">
                         <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP" text="• Added new auction house features|n• Improved performance and stability|n• Fixed various UI bugs" >
-                            <Size x="180" y="120" />
+                            <Size x="150" y="120" />
                             <Anchors>
                                 <Anchor x="0" y="-3" point="TOPLEFT" />
                             </Anchors>
