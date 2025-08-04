@@ -211,7 +211,7 @@
                     </ScrollFrame>
                 </Frames>
             </Frame>-->
-            <Frame name="OFMaralliWhisperFrame">
+            <!--<Frame name="OFMaralliWhisperFrame">
                 <Size x="180" y="30" />
                 <Anchors>
                     <Anchor x="35" y="70" point="BOTTOMLEFT" />
@@ -226,11 +226,11 @@
                         </Anchors>
                         <Layers>
                             <Layer level="ARTWORK">
-                                <!--<Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
+                                <Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
                                     <Anchors>
                                         <Anchor x="0" y="0" point="LEFT"/>
                                     </Anchors>
-                                </Texture>-->
+                                </Texture>
                             </Layer>
                         </Layers>
                         <TextInsets>
@@ -277,11 +277,11 @@
                         </Anchors>
                         <Layers>
                             <Layer level="ARTWORK">
-                                <!--<Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
+                                <Texture parentKey="onlineIcon" file="Interface/Tooltips/UI-Tooltip-Background">
                                     <Anchors>
                                         <Anchor x="0" y="0" point="LEFT"/>
                                     </Anchors>
-                                </Texture>-->
+                                </Texture>
                             </Layer>
                         </Layers>
                         <TextInsets>
@@ -312,7 +312,7 @@
                         OFWhisperFrame_OnShow(self, "Athenegpt")
                     </OnShow>
                 </Scripts>
-            </Frame>
+            </Frame>-->
             <ScrollFrame name="OFAtheneScrollFrame" inherits="UIPanelScrollFrameTemplate">
                 <Size x="575" y="336" />
                 <Anchors>
