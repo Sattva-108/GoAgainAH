@@ -173,7 +173,7 @@
             <CheckButton name="OFLFG_RPTogetherCheck" inherits="UICheckButtonTemplate">
                 <Size x="24" y="24" />
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="0" y="-50" />
+                    <Anchor point="TOPLEFT" relativeTo="OFLFG_CheckButton" relativePoint="BOTTOMLEFT" x="0" y="-40" />
                 </Anchors>
                 <Scripts>
                     <OnLoad>
@@ -499,7 +499,7 @@
 
                 <FontString parentKey="level" name="$parentLevel" text="60" inherits="GameFontHighlightSmall" justifyH="LEFT">
                     <Size>
-                        <AbsDimension x="16" y="32" />
+                        <AbsDimension x="28" y="32" />
                     </Size>
                     <Anchors>
                         <Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT">
