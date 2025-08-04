@@ -911,7 +911,7 @@ function OFAuctionFrameSwitchTab(index)
         OFAuctionFrameSettings:Show()
         OFAuctionFrame.type = "settings"
     elseif ( index == TAB_ATHENE ) then
-        AssignLFGTextures()
+        AssignReviewTextures(true)
         OFAuctionFrameAthene:Show()
         OFAuctionFrame.type = "athene"
     end
