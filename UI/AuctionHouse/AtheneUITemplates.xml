@@ -131,7 +131,7 @@
                     </Layer>
                 </Layers>
             </Frame>
-            <Frame name="OFBugsAndFeedbackFrame">
+            <!--<Frame name="OFBugsAndFeedbackFrame">
                 <Size x="180" y="130" />
                 <Anchors>
                     <Anchor x="25" y="58" point="BOTTOMLEFT" relativePoint="BOTTOMLEFT" />
@@ -210,7 +210,7 @@
                         </ScrollChild>
                     </ScrollFrame>
                 </Frames>
-            </Frame>
+            </Frame>-->
             <Frame name="OFMaralliWhisperFrame">
                 <Size x="180" y="30" />
                 <Anchors>
