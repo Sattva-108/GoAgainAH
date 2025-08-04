@@ -955,12 +955,16 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 if clip.getPlayedTry >= 2 then
                                                     print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
                                                 end
-                                                if clip.getPlayedTry >= 3 then
+                                                -- Account for 30s ladder exclusion window - give more time for recent deaths
+                                                local clipAge = now - (clip.ts or now)
+                                                local maxAttempts = (clipAge < 3000) and 6 or 3  -- 50min threshold: 6 attempts (60min) vs 3 attempts (30min)
+                                                
+                                                if clip.getPlayedTry >= maxAttempts then
                                                     clip.getPlayedTry = "failed"
                                                     -- DEBUG: mark as failed
-                                                    print(string.format("[DEBUG %s] getPlayedTry failed (≥3 attempts) for %s (clipID=%s)",
-                                                        date("%M:%S"), name or "?", clip.id or "nil"))
-                                                    print(name .. " getPlayedTry failed after 3 attempts — removing from queue")
+                                                    print(string.format("[DEBUG %s] getPlayedTry failed (≥%d attempts) for %s (clipID=%s, age=%ds)",
+                                                        date("%M:%S"), maxAttempts, name or "?", clip.id or "nil", clipAge))
+                                                    print(name .. " getPlayedTry failed after " .. maxAttempts .. " attempts — removing from queue")
                                                     playerMarkedForRemoval = true
                                                 end
                                             end
