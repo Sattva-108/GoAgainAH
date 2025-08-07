@@ -870,10 +870,20 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     local grey = "|cFF808080[%s]|r "
 
                     -- Основной баннер c описанием смерти
-                    local banner1 = string.format(
-                        grey .. "%s, %s %d-го уровня, был убит\n%s в зоне '|cFFFFD700%s|r'",
-                        ts, colouredName, colouredRace, level, causeStr, zoneStr
-                    )
+                    local banner1
+                    if causeCode >= 7 and causeCode <= 10 then
+                        -- Убийства: был убит + причина
+                        banner1 = string.format(
+                            grey .. "%s, %s %d-го уровня,\nбыл убит %s в зоне '|cFFFFD700%s|r'",
+                            ts, colouredName, colouredRace, level, causeStr, zoneStr
+                        )
+                    else
+                        -- Несчастные случаи: просто действие
+                        banner1 = string.format(
+                            grey .. "%s, %s %d-го уровня,\n%s в зоне '|cFFFFD700%s|r'",
+                            ts, colouredName, colouredRace, level, causeStr, zoneStr
+                        )
+                    end
 
                     -- Баннер о времени до следующего обновления ладдера
                     local banner2 = string.format(

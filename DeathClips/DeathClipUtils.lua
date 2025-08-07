@@ -303,20 +303,9 @@ function GOAHSendRandomDeathMessage()
     local mobName = ""
     local mobLevel = ""
 
-    -- Determine Death Cause: 90% chance for ID 7 (creature)
-    if math.random(100) <= 90 then
-        deathCauseId = 7
-    else
-        -- 10% chance: Select randomly from other non-creature causes
-        if #otherDeathCauseKeys > 0 then
-            deathCauseId = otherDeathCauseKeys[math.random(#otherDeathCauseKeys)]
-        else
-            -- Fallback if only cause 7 exists (or deathCauses is empty/invalid)
-            -- Let's default to 0 (Fatigue) in this unlikely case.
-            print(addonName .. ": Warning - No non-creature death causes found for random selection. Defaulting to Fatigue (0).")
-            deathCauseId = 0
-        end
-    end
+    -- Determine Death Cause: Random selection from all available causes
+    local allDeathCauseKeys = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    deathCauseId = allDeathCauseKeys[math.random(#allDeathCauseKeys)]
 
     -- Only generate mob details if death cause ended up being 7
     if deathCauseId == 7 then
