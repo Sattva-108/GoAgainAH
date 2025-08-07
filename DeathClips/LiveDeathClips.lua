@@ -813,7 +813,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
             local faction    = (races[raceId] and races[raceId].faction) or "Neutral"
             local FACTION_COLOURS = {
-                Horde    = "FFFF4040",   -- Красный
+                Horde    = "FFFF0000",   -- Красный
                 Alliance = "FF1890FF",   -- Синий
                 Neutral  = "FFFFD700",   -- Жёлтый
             }
@@ -856,7 +856,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
                     -- Основной баннер c описанием смерти
                     local banner1 = string.format(
-                        grey .. "%s, %s %d-го уровня, был убит %s в зоне \"%s\"",
+                        grey .. "%s, %s %d-го уровня, был убит %s в зоне \"|cFFFFD700%s|r\"",
                         ts, colouredName, colouredRace, level, causeStr, zoneStr
                     )
 
