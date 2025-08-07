@@ -843,7 +843,23 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
             local causeStr
             if causeCode == 7 then
-                causeStr = string.format("существом %s %d-го уровня", rawMobName, rawMobLv)
+                -- Color mob name based on level difference
+                local diff = rawMobLv - level
+                local mr, mg, mb = 0, 1, 0  -- default green
+                if diff >= 4 then 
+                    mr, mg, mb = 1, 0, 0    -- red
+                elseif diff >= 2 then 
+                    mr, mg, mb = 1, .5, 0   -- orange
+                elseif diff >= -1 then 
+                    mr, mg, mb = 1, 1, 0    -- yellow
+                elseif diff >= -4 then 
+                    mr, mg, mb = 0, 1, 0    -- green
+                else 
+                    mr, mg, mb = .5, .5, .5 -- gray
+                end
+                
+                causeStr = string.format("существом |cFF%02X%02X%02X%s %d-го уровня|r", 
+                    mr * 255, mg * 255, mb * 255, rawMobName, rawMobLv)
             else
                 causeStr = (deathCausesForPrint[causeCode] or (ns.DeathCauseByID and ns.DeathCauseByID[causeCode]) or "Неизвестно")
             end
