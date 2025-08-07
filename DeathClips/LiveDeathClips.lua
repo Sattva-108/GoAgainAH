@@ -900,7 +900,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 -- 🔔 Fire event to notify UI
                                                 ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 
-                                                print("|cFF00FF00" .. string.format("[%s] %s's playedTime updated to: %d", date("%H:%M:%S"), n, tm) .. "|r")
+                                                --print("|cFF00FF00" .. string.format("[%s] %s's playedTime updated to: %d", date("%H:%M:%S"), n, tm) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
@@ -910,7 +910,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 -- 🔔 Fire event to notify UI
                                                 ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
 
-                                                print("|cFF00FF00" .. string.format("[%s] %s lasted %s", date("%H:%M:%S"), n, SecondsToTime(tm)) .. "|r")
+                                                --print("|cFF00FF00" .. string.format("[%s] %s lasted %s", date("%H:%M:%S"), n, SecondsToTime(tm)) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
@@ -953,7 +953,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 --print(string.format("[DEBUG %s] getPlayedTry increment for %s -> %d (clipID=%s)",
                                                 --    date("%M:%S"), name or "?", clip.getPlayedTry, clip.id or "nil"))
                                                 if clip.getPlayedTry >= 2 then
-                                                    print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
+                                                    --print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
                                                 end
                                                 -- Account for 30s ladder exclusion window - give more time for recent deaths
                                                 local clipAge = now - (clip.ts or now)
@@ -962,9 +962,9 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                                 if clip.getPlayedTry >= maxAttempts then
                                                     clip.getPlayedTry = "failed"
                                                     -- DEBUG: mark as failed
-                                                    print(string.format("[DEBUG %s] getPlayedTry failed (≥%d attempts) for %s (clipID=%s, age=%ds)",
-                                                        date("%M:%S"), maxAttempts, name or "?", clip.id or "nil", clipAge))
-                                                    print(name .. " getPlayedTry failed after " .. maxAttempts .. " attempts — removing from queue")
+                                                    --print(string.format("[DEBUG %s] getPlayedTry failed (≥%d attempts) for %s (clipID=%s, age=%ds)",
+                                                    --    date("%M:%S"), maxAttempts, name or "?", clip.id or "nil", clipAge))
+                                                    --print(name .. " getPlayedTry failed after " .. maxAttempts .. " attempts — removing from queue")
                                                     playerMarkedForRemoval = true
                                                 end
                                             end
