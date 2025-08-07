@@ -421,14 +421,38 @@ function TradeAPI:ShowGoldHint(relevantAuction, totalPrice, targetName)
 
         if playerMoney >= totalPrice then
             -- hint message instead of auto-fill
-            print(ChatPrefix() .. L[" Put "] .. GetCoinTextureString(totalPrice) ..
-                    L[" into trade for auction from "] .. targetName)
+            print(ChatPrefix() .. " Положите " .. GetCoinTextureString(totalPrice) ..
+                    " в трейд для аукциона от " .. targetName)
+        else
+            print(ChatPrefixError() .. " У вас недостаточно золота для завершения этой сделки. " ..
+                "Аукцион стоит " .. GetCoinTextureString(totalPrice))
+        end
+    end
+end
+
+-- COMMENTED OUT: Original auto-fill function (kept for future reference)
+--[[
+function TradeAPI:PrefillGold(relevantAuction, totalPrice, targetName)
+    -- I'm the buyer: prefill the gold amount
+    if totalPrice > 0 and relevantAuction.status ~= ns.AUCTION_STATUS_PENDING_LOAN
+        and relevantAuction.status ~= ns.AUCTION_STATUS_SENT_LOAN then
+        local playerMoney = GetMoney()
+
+        if playerMoney >= totalPrice then
+            -- NOTE: not using SetTrademoney because that one doesn't update the UI properly
+            -- see https://www.reddit.com/r/classicwow/comments/hfp1nm/comment/izsvq5c/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+            MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, totalPrice)
+
+            -- success message
+            print(ChatPrefix() .. L[" Auto-filled trade with "] .. GetCoinTextureString(totalPrice) ..
+                    L[" for auction from "] .. targetName)
         else
             print(ChatPrefixError() .. L[" You don't have enough gold to complete this trade. "] ..
                 L["The auction costs "] .. GetCoinTextureString(totalPrice))
         end
     end
 end
+--]]
 
 function TradeAPI:ShowItemHint(itemID, quantity, targetName, optItemLink)
     -- Show hint instead of auto-placing item
@@ -446,14 +470,14 @@ function TradeAPI:ShowItemHint(itemID, quantity, targetName, optItemLink)
         if itemID == ns.ITEM_ID_GOLD then
             itemDescription = name
         else
-            itemLink = itemLink or "item"
+            itemLink = itemLink or "предмет"
             itemDescription = quantity .. "x " .. itemLink
         end
-        print(ChatPrefix() .. L[" Put "] .. itemDescription .. L[" into trade for auction to "] .. targetName)
-        print(ChatPrefix() .. L[" Found in bag "] .. (bag + 1))
+        print(ChatPrefix() .. " Положите " .. itemDescription .. " в трейд для аукциона к " .. targetName)
+        print(ChatPrefix() .. " Найден в сумке " .. (bag + 1))
     else
         -- error message when item not found or quantity doesn't match exactly
-        local itemName = select(2, ns.GetItemInfo(itemID)) or "item"
+        local itemName = select(2, ns.GetItemInfo(itemID)) or "предмет"
         local errorMsg
         if optItemLink then
             -- Show nice item name with suffix if available
@@ -462,16 +486,73 @@ function TradeAPI:ShowItemHint(itemID, quantity, targetName, optItemLink)
                 local n = GetItemInfo(optItemLink)
                 if n then linkName = n end
             end
-            errorMsg = L[" Could not find "] .. quantity .. "x " .. (optItemLink or linkName or itemName) .. L[" in bags for trade"]
+            errorMsg = " Не удалось найти " .. quantity .. "x " .. (optItemLink or linkName or itemName) .. " в сумках для трейда"
         else
             errorMsg = not slot and
-                L[" Could not find "] .. quantity .. "x " .. itemName .. L[" in your bags for trade"]
+                " Не удалось найти " .. quantity .. "x " .. itemName .. " в ваших сумках для трейда"
                 or
-                L[" Found item in bags but correct stack not found. Please split the stack manually "] .. quantity .. " " .. itemName
+                " Найден предмет в сумках, но правильный стак не найден. Пожалуйста разделите стак вручную " .. quantity .. " " .. itemName
         end
         print(ChatPrefixError() .. errorMsg)
     end
 end
+
+-- COMMENTED OUT: Original auto-fill function (kept for future reference)
+--[[
+function TradeAPI:PrefillItem(itemID, quantity, targetName, optItemLink)
+    -- I'm the owner: prefill trade with the item
+    -- Use new helper function to find the item (now supports link)
+    local bag, slot, exactMatch = self:FindBestMatchForTrade(itemID, quantity, optItemLink)
+    if slot and exactMatch then
+        -- select item
+        PickupContainerItem(bag, slot)
+
+        -- place it into the first trade slot
+        ClickTradeButton(1)
+        -- success message
+        -- Always prefer the exact ItemLink from the bag because it contains
+        -- any random suffixes / enchants (e.g. "… of the Beast").  The generic
+        -- link returned by GetItemInfo is often missing this info which leads
+        -- to chat messages without a suffix and – more importantly – breaks
+        -- the exact-link matching later when completing the trade.
+        local name, itemLink = ns.GetItemInfo(itemID, quantity)
+
+        local bagLink = GetContainerItemLink(bag, slot)
+        if bagLink then
+            itemLink = bagLink
+        end
+
+        local itemDescription
+        if itemID == ns.ITEM_ID_GOLD then
+            itemDescription = name
+        else
+            itemLink = itemLink or "item"
+            itemDescription = quantity .. "x " .. itemLink
+        end
+        print(ChatPrefix() .. L[" Auto-filled trade with "] ..
+                itemDescription .. L[" for auction to "] .. targetName)
+    else
+        -- error message when item not found or quantity doesn't match exactly
+        local itemName = select(2, ns.GetItemInfo(itemID)) or "item"
+        local errorMsg
+        if optItemLink then
+            -- Показываем красивое имя предмета с суффиксом, если есть
+            local linkName = itemName
+            if optItemLink then
+                local n = GetItemInfo(optItemLink)
+                if n then linkName = n end
+            end
+            errorMsg = "Не удалось найти в сумке " .. quantity .. "x " .. (optItemLink or linkName or itemName) .. L[" для трейда"]
+        else
+            errorMsg = not slot and
+                L[" Не смогли найти "] .. quantity .. "x " .. itemName .. L[" в вашей сумке для трейда"]
+                or
+                L[" Нашли предмет в вашей сумке, но правильный стак не найден. Пожалуйста разделите стак предмета самостоятельно "] .. quantity .. " " .. itemName
+        end
+        print(ChatPrefixError() .. errorMsg)
+    end
+end
+--]]
 
 function TradeAPI:TryPrefillTradeWindow(targetName)
     if not targetName or targetName == "" then
