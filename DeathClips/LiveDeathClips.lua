@@ -856,7 +856,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
 
                     -- Основной баннер c описанием смерти
                     local banner1 = string.format(
-                        grey .. "%s, %s %d-го уровня, был убит %s в зоне \"|cFFFFD700%s|r\"",
+                        grey .. "%s, %s %d-го уровня, был убит\n%s в зоне '|cFFFFD700%s|r'",
                         ts, colouredName, colouredRace, level, causeStr, zoneStr
                     )
 
