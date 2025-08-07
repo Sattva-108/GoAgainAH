@@ -118,6 +118,21 @@ local deathCauses = {
     [10] = "Погиб от собственных действий",
 }
 
+-- Death cause for chat prints only
+local deathCausesForPrint = {
+    [0] = "не выдержал усталости",
+    [1] = "не задержал дыхание",
+    [2] = "разбился",
+    [3] = "сгорел в лаве",
+    [4] = "растворился в слизи", 
+    [5] = "сгорел в огне",
+    [6] = "упал в бездну",
+    [7] = "существом", -- специальная обработка ниже
+    [8] = "в PVP схватке",
+    [9] = "от действий союзника",
+    [10] = "от собственных действий",
+}
+
 --- Generates a unique clip ID.
 --- @param clip table  The clip object (must have characterName, level, faction, where, deathCause)
 --- @param isCompleted boolean  True if this is a completed clip
@@ -830,7 +845,7 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             if causeCode == 7 then
                 causeStr = string.format("существом %s %d-го уровня", rawMobName, rawMobLv)
             else
-                causeStr = (deathCauses[causeCode] or (ns.DeathCauseByID and ns.DeathCauseByID[causeCode]) or "Неизвестно")
+                causeStr = (deathCausesForPrint[causeCode] or (ns.DeathCauseByID and ns.DeathCauseByID[causeCode]) or "Неизвестно")
             end
 
             ------------------------------------------------------------------
