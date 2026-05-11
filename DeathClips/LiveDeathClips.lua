@@ -914,7 +914,56 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
         for block in msg:gmatch("([^|]+)") do
             local id, data = block:match("^(%d+):(.*)")
             if id and data then
-                ladderBuffer[id] = (ladderBuffer[id] or "") .. data
+                -- Check if this starts a new transmission (data begins with status:name pattern)
+                local isNewTransmission = data:match("^%d+:[^:]+:")
+
+                -- If we already have a buffer for this ID and new transmission starts,
+                -- parse the existing buffer first before replacing it
+                if isNewTransmission and ladderBuffer[id] then
+                    local full = ladderBuffer[id]
+                    ladderBuffer[id] = nil
+                    if full then
+                        for entry in full:gmatch("([^;]+)") do
+                            local _, n, _, _, _, _, tm_str = entry:match("^(%d+):([^:]+):(%d+):(%d+):(%d+):(%d+):(%d+)$")
+                            local tm = tonumber(tm_str)
+                            if n and tm and queue and queue[n] then
+                                if type(queue[n]) == "table" then
+                                    local playerRemoved = false
+                                    for _, clip in ipairs(queue[n]) do
+                                        if playerRemoved then break end
+                                        if type(clip) == "table" then
+                                            if clip.completed and clip.playedTime == nil then
+                                                clip.playedTime = tm
+                                                ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
+                                                queue[n] = nil
+                                                clip.getPlayedTry = nil
+                                                playerRemoved = true
+                                            elseif not clip.completed and clip.playedTime == nil then
+                                                clip.playedTime = tm
+                                                ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
+                                                queue[n] = nil
+                                                clip.getPlayedTry = nil
+                                                playerRemoved = true
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                -- Now handle the new data
+                if isNewTransmission then
+                    ladderBuffer[id] = data
+                else
+                    if ladderBuffer[id] then
+                        ladderBuffer[id] = ladderBuffer[id] .. ";" .. data
+                    else
+                        ladderBuffer[id] = data
+                    end
+                end
+
                 if data:match(";$") then
                     -- Continue
                 else
@@ -932,27 +981,16 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                         if type(clip) == "table" then
                                             if clip.completed and clip.playedTime == nil then
                                                 clip.playedTime = tm
-
-                                                -- 🔔 Fire event to notify UI
                                                 ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
-
-                                                --print("|cFF00FF00" .. string.format("[%s] %s's playedTime updated to: %d", date("%H:%M:%S"), n, tm) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
-                                            elseif not clip.completed and clip.playedTime == nil then -- Added nil check based on debug analysis
+                                            elseif not clip.completed and clip.playedTime == nil then
                                                 clip.playedTime = tm
-
-                                                -- 🔔 Fire event to notify UI
                                                 ns.AuctionHouseAPI:FireEvent(ns.EV_PLAYED_TIME_UPDATED, clip.id)
-
-                                                --print("|cFF00FF00" .. string.format("[%s] %s lasted %s", date("%H:%M:%S"), n, SecondsToTime(tm)) .. "|r")
                                                 queue[n] = nil
                                                 clip.getPlayedTry = nil
                                                 playerRemoved = true
-                                                -- else -- Use original state (commented or not)
-                                                --    print("Clip not updated due clip completed or playedTime missing")
-                                                -- end
                                             end
                                         end
                                     end
@@ -978,62 +1016,37 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                                 for i = #clips, 1, -1 do
                                     local clip = clips[i]
                                     if type(clip) == "table" then
-                                        -- Check type is number OR nil (to allow init) AND playedTime is nil
                                         if not clip.playedTime and (type(clip.getPlayedTry) == "number" or clip.getPlayedTry == nil) then
-                                            if clip.getPlayedTry == nil then clip.getPlayedTry = 0 end -- Init
-
-                                            -- Original code incremented if it was a number
+                                            if clip.getPlayedTry == nil then clip.getPlayedTry = 0 end
                                             if type(clip.getPlayedTry) == "number" then
                                                 clip.getPlayedTry = clip.getPlayedTry + 1
-                                                -- DEBUG: print every time getPlayedTry is incremented
-                                                --print(string.format("[DEBUG %s] getPlayedTry increment for %s -> %d (clipID=%s)",
-                                                --    date("%M:%S"), name or "?", clip.getPlayedTry, clip.id or "nil"))
-                                                if clip.getPlayedTry >= 2 then
-                                                    --print(name .. " getPlayedTry attempt " .. clip.getPlayedTry)
-                                                end
-                                                -- Account for 30s ladder exclusion window - give more time for recent deaths
                                                 local clipAge = now - (clip.ts or now)
-                                                local maxAttempts = (clipAge < 3000) and 6 or 3  -- 50min threshold: 6 attempts (60min) vs 3 attempts (30min)
-                                                
+                                                local maxAttempts = (clipAge < 3000) and 6 or 3
                                                 if clip.getPlayedTry >= maxAttempts then
                                                     clip.getPlayedTry = "failed"
-                                                    -- DEBUG: mark as failed
-                                                    --print(string.format("[DEBUG %s] getPlayedTry failed (≥%d attempts) for %s (clipID=%s, age=%ds)",
-                                                    --    date("%M:%S"), maxAttempts, name or "?", clip.id or "nil", clipAge))
-                                                    --print(name .. " getPlayedTry failed after " .. maxAttempts .. " attempts — removing from queue")
                                                     playerMarkedForRemoval = true
                                                 end
                                             end
                                         elseif clip.getPlayedTry == "failed" then
-                                            -- If already failed, still mark player for removal based on original logic
                                             playerMarkedForRemoval = true
                                         end
                                     else
-                                        table.remove(clips, i) -- remove bad data
+                                        table.remove(clips, i)
                                     end
                                 end
-                                -- Original removal logic
                                 if playerMarkedForRemoval then
                                     queue[name] = nil
                                 elseif #clips == 0 then
                                     queue[name] = nil
                                 end
                             else
-                                queue[name] = nil -- Remove bad player entry
+                                queue[name] = nil
                             end
-                        end -- End queue loop
-                    end -- End if queue
-                    -- This reset happens *only* when the deadline check passes
+                        end
+                    end
                     nextUpdateDeadline = now + 600
-                    --print("Next Update Timer, updated to : " .. SecondsToTime(nextUpdateDeadline - time()))
-                end -- End deadline check
-            end -- End do block
-
-            -- MINIMAL CHANGE: Remove the conflicting unconditional reset below.
-            -- This ensures the deadline check in the do...end block uses the
-            -- value set by the *last successful check*, allowing the 10-minute
-            -- interval to function correctly *relative to the check itself*.
-            -- nextUpdateDeadline = time() + 600  -- REMOVED
+                end
+            end
 
         end -- End elseif ASMSG_HARDCORE_LADDER_LIST
     end
