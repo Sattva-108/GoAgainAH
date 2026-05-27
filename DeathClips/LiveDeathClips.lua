@@ -877,6 +877,27 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
             ------------------------------------------------------------------
             -- Вывод баннеров в чат
             ------------------------------------------------------------------
+            -- Извлекаем чистое имя без цветов для ссылки и оборачиваем в стандартный player link
+            local rawName = colouredName:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            local clickableName = string.format("|Hplayer:%s|h%s|h", rawName, colouredName)
+
+            -- Основной баннер c описанием смерти (Создаем и печатаем всегда)
+            local banner1
+            if causeCode >= 7 and causeCode <= 10 then
+                -- Убийства: был убит + причина
+                banner1 = string.format(
+                        "%s, %s %d-го уровня,\nбыл убит %s в зоне '|cFFFFD700%s|r'",
+                        clickableName, colouredRace, level, causeStr, zoneStr)
+            else
+                -- Несчастные случаи: просто действие
+                banner1 = string.format(
+                        "%s, %s %d-го уровня,\n%s в зоне '|cFFFFD700%s|r'",
+                        clickableName, colouredRace, level, causeStr, zoneStr)
+            end
+
+            print(banner1)
+
+            -- Таймер до следующего обновления ладдера (Только если есть deadline)
             if nextUpdateDeadline then
                 local left = nextUpdateDeadline - time()
                 if left < 0 then
@@ -885,24 +906,12 @@ f:SetScript("OnEvent", function(self, event, prefix, msg)
                     local ts   = date("%H:%M:%S")
                     local grey = "|cFF808080[%s]|r "
 
-                    -- Основной баннер c описанием смерти
-                    local banner1
-                    if causeCode >= 7 and causeCode <= 10 then
-                        -- Убийства: был убит + причина
-                        banner1 = string.format("%s, %s %d-го уровня,\nбыл убит %s \nв зоне '|cFFFFD700%s|r'", colouredName, colouredRace, level, causeStr, zoneStr
-                        )
-                    else
-                        -- Несчастные случаи: просто действие
-                        banner1 = string.format("%s, %s %d-го уровня,\n%s \nв зоне '|cFFFFD700%s|r'", colouredName, colouredRace, level, causeStr, zoneStr
-                        )
-                    end
-
                     -- Баннер о времени до следующего обновления ладдера
                     local banner2 = string.format(
-                        grey .. "Next ladder in |cFFFFFF00%s|r", ts, SecondsToTime(left)
+                            grey .. "Next ladder in |cFFFFFF00%s|r",
+                            ts, SecondsToTime(left)
                     )
 
-                    print(banner1)
                     --print(banner2)
                 end
             end
