@@ -2502,7 +2502,7 @@ function OFAuctionFrameAuctions_Update()
     OFSortButton_UpdateArrow(OFAuctionsBidSort, "owner", "bid")
 
     for i=1, OF_NUM_AUCTIONS_TO_DISPLAY do
-        index = offset + i + (OF_NUM_AUCTION_ITEMS_PER_PAGE * OFAuctionFrameAuctions.page)
+        index = offset + i + (OF_NUM_AUCTION_ITEMS_PER_PAGE * (OFAuctionFrameAuctions.page or 0))
         auction = auctions[index - 2]
         button = _G["OFAuctionsButton"..i];
         if (auction == nil) then
@@ -2843,7 +2843,7 @@ end
 -- SortButton functions
 function OFSortButton_UpdateArrow(button, type, sort)
     local primaryColumn, reversed = GetAuctionSortColumn(type);
-    button.Arrow:SetShown(sort == primaryColumn);
+    if sort == primaryColumn then button.Arrow:Show() else button.Arrow:Hide() end
     if (sort == primaryColumn) then
         if (reversed) then
             button.Arrow:SetTexCoord(0, 0.5625, 1, 0);

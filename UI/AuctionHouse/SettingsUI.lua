@@ -340,11 +340,11 @@ function OFAuctionFrameSettings_OnSwitchTab()
 end
 
 local function UpdateBottomButtons()
-    OFSettingsBottomButton2:SetEnabled(true)
+    OFSettingsBottomButton2:Enable()
 
     -- Enable/disable remove/whisper button based on selection
     local selectedItem = GetSelectedItem("list")
-    OFSettingsBottomButton1:SetEnabled(selectedItem ~= nil)
+    if selectedItem ~= nil then OFSettingsBottomButton1:Enable() else OFSettingsBottomButton1:Disable() end
 
     -- Set button text based on selected tab
     local self = OFAuctionFrameSettings
