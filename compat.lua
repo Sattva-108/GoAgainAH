@@ -79,16 +79,61 @@ if not GameTooltip_SetTitle then
 end
 
 ---------------------------------------------------------------------------
+-- CreateColor (retail helper, not in 3.3.5)
+---------------------------------------------------------------------------
+if not CreateColor then
+    function CreateColor(r, g, b, a)
+        local color = CreateFrame("Frame")
+        color.r = r or 1
+        color.g = g or 1
+        color.b = b or 1
+        color.a = a or 1
+        color.colorStr = ("ff%02x%02x%02x"):format(
+            math.floor(color.r * 255),
+            math.floor(color.g * 255),
+            math.floor(color.b * 255)
+        )
+        return color
+    end
+end
+
+---------------------------------------------------------------------------
+-- CreateFromMixins / Mixin (retail helpers, not in 3.3.5)
+---------------------------------------------------------------------------
+if not CreateFromMixins then
+    function CreateFromMixins(...)
+        local result = {}
+        for i = 1, select("#", ...) do
+            local mixin = select(i, ...)
+            if mixin then
+                for k, v in pairs(mixin) do
+                    result[k] = v
+                end
+            end
+        end
+        return result
+    end
+end
+
+if not Mixin then
+    function Mixin(object, ...)
+        for i = 1, select("#", ...) do
+            local mixin = select(i, ...)
+            if mixin then
+                for k, v in pairs(mixin) do
+                    object[k] = v
+                end
+            end
+        end
+        return object
+    end
+end
+
+---------------------------------------------------------------------------
 -- PKBT_RedButtonTemplate fallback (Sirus client asset)
 ---------------------------------------------------------------------------
 if not _G["PKBT_RedButtonTemplate"] then
-    local f = CreateFrame("Frame", "PKBT_RedButtonTemplate", nil, "BackdropTemplate")
-    -- If BackdropTemplate doesn't exist either, build the backdrop manually
-    if not f.SetBackdrop then
-        -- Minimal fallback: the template simply won't render a backdrop
-        -- but won't error out.
-    end
-    -- Clear the temp frame; the template registration is what matters
+    _G["PKBT_RedButtonTemplate"] = CreateFrame("Button", "PKBT_RedButtonTemplate")
 end
 
 ---------------------------------------------------------------------------
