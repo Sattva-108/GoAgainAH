@@ -130,6 +130,61 @@ if not Mixin then
 end
 
 ---------------------------------------------------------------------------
+-- MoneyFrame polyfills (not in some 3.3.5 clients)
+---------------------------------------------------------------------------
+if not MoneyFrame_SetMaxDisplayWidth then
+    function MoneyFrame_SetMaxDisplayWidth() end
+end
+
+---------------------------------------------------------------------------
+-- C_AuctionHouse stub (retail namespace, not in 3.3.5)
+---------------------------------------------------------------------------
+if not C_AuctionHouse then
+    C_AuctionHouse = {}
+    function C_AuctionHouse.GetAuctionItemSubClasses()
+        return {}
+    end
+end
+
+---------------------------------------------------------------------------
+-- SetNormalAtlas / SetHighlightAtlas / SetPushedAtlas polyfills
+-- Retail texture atlas API, not in 3.3.5
+---------------------------------------------------------------------------
+do
+    local mt = getmetatable(CreateFrame("Frame")) or {}
+    local oldIndex = mt.__index
+
+    local function AtlasFallback(self, atlas, ...)
+        -- no-op on 3.3.5; atlas textures simply don't exist
+    end
+
+    -- Patch the Button metatable
+    local btn = CreateFrame("Button")
+    local btnMT = getmetatable(btn) or {}
+    if not btnMT.__index then btnMT.__index = {} end
+    if not btnMT.__index.SetNormalAtlas then
+        btnMT.__index.SetNormalAtlas = AtlasFallback
+    end
+    if not btnMT.__index.SetHighlightAtlas then
+        btnMT.__index.SetHighlightAtlas = AtlasFallback
+    end
+    if not btnMT.__index.SetPushedAtlas then
+        btnMT.__index.SetPushedAtlas = AtlasFallback
+    end
+    if not btnMT.__index.SetDisabledAtlas then
+        btnMT.__index.SetDisabledAtlas = AtlasFallback
+    end
+
+    -- Patch the Texture metatable
+    local tex = CreateFrame("Frame"):CreateTexture()
+    local texMT = getmetatable(tex) or {}
+    if not texMT.__index then texMT.__index = {} end
+    if not texMT.__index.SetAtlas then
+        texMT.__index.SetAtlas = AtlasFallback
+    end
+end
+
+---------------------------------------------------------------------------
 -- PKBT_RedButtonTemplate fallback (Sirus client asset)
 ---------------------------------------------------------------------------
 if not _G["PKBT_RedButtonTemplate"] then
