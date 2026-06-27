@@ -8,6 +8,7 @@
 ## SavedVariables: AuctionHouseDBSaved, AHConfigSaved, LiveDeathClips, PlayerPrefsSaved, DeathClipReviewsSaved, GoAgainAH_MinimapDB
 ## SavedVariablesPerCharacter: CharacterPrefsSaved, AuctionHouseDBChar
 
+compat.lua
 dependencies.xml
 # Debug\testLocale.lua
 Locale\Locale.xml
