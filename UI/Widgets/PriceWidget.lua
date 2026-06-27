@@ -139,7 +139,7 @@ local function CreateTextAndPriceWidget(parent, rightPad)
         elseif config.renderDuelIcon then
             self.deathRollIcon:SetTexture("Interface\\Addons\\" .. addonName .. "\\Media\\icons\\Icn_Duel")
         end
-        self.deathRollIcon:SetShown(showIcon)
+        if showIcon then self.deathRollIcon:Show() else self.deathRollIcon:Hide() end
 
         self.label:SetText(text)
         self.label:SetTextColor(color.r, color.g, color.b)

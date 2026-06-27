@@ -677,7 +677,7 @@ function OFAuctionFrameLFG_OnLoad()
 
         local minViewers = _G["OFLFG_MinViewers"]
         local minViewersLabel = _G["OFLFG_MinViewersText"]
-        minViewers:SetEnabled(not self:GetChecked())
+        if not self:GetChecked() then minViewers:SetAlpha(1) else minViewers:SetAlpha(0.5) end
         LFG_UpdateViewerColor(minViewersLabel, not self:GetChecked())
 
         OFAuctionFrameLFG.applyDirty = true
@@ -688,7 +688,7 @@ function OFAuctionFrameLFG_OnLoad()
 
         local maxViewers = _G["OFLFG_MaxViewers"]
         local maxViewersLabel = _G["OFLFG_MaxViewersText"]
-        maxViewers:SetEnabled(not self:GetChecked())
+        if not self:GetChecked() then maxViewers:SetAlpha(1) else maxViewers:SetAlpha(0.5) end
         LFG_UpdateViewerColor(maxViewersLabel, not self:GetChecked())
 
         OFAuctionFrameLFG.applyDirty = true
@@ -752,8 +752,8 @@ function OFAuctionFrameLFG_OnShow()
     OFAuctionFrameLFG.applyDirty = false
 
     -- Set initial state
-    minViewers:SetEnabled(not noMinCheck:GetChecked())
-    maxViewers:SetEnabled(not noMaxCheck:GetChecked())
+    if not noMinCheck:GetChecked() then minViewers:SetAlpha(1) else minViewers:SetAlpha(0.5) end
+    if not noMaxCheck:GetChecked() then maxViewers:SetAlpha(1) else maxViewers:SetAlpha(0.5) end
     LFG_UpdateViewerColor(minViewersLabel, not noMinCheck:GetChecked())
     LFG_UpdateViewerColor(maxViewersLabel, not noMaxCheck:GetChecked())
 
@@ -786,7 +786,7 @@ end
 
 function OFLFG_Row_SetEnabled(button, enabled, reason, isOnline)
     -- Grey out the background
-    button.disabledBg:SetShown(not enabled)
+    if not enabled then button.disabledBg:Show() else button.disabledBg:Hide() end
 
     -- Grey out all text elements
     local greyColor = enabled and 1 or 0.5
@@ -801,7 +801,7 @@ function OFLFG_Row_SetEnabled(button, enabled, reason, isOnline)
     button.raidContainer.editBox:SetTextColor(lightGrey, lightGrey, lightGrey)
 
     -- Disable the editboxes and whisper button
-    button.whisperButton:SetEnabled(isOnline)
+    if isOnline then button.whisperButton:Enable() else button.whisperButton:Disable() end
 
     -- Store the reason for being disabled (useful for tooltips)
     button.disabledReason = not enabled and reason or nil

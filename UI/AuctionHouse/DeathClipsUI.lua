@@ -350,10 +350,10 @@ function OFAuctionFrameDeathClips_OnLoad()
     local nav = CreateFrame("Button", "OFDeathClipsNavFrame", OFAuctionFrameDeathClips)
     nav:SetSize(250, 70); nav:SetScale(0.8); nav:SetAlpha(0.9)
     nav:SetPoint("RIGHT", OFAuctionFrameDeathClips, "BOTTOMRIGHT", 98, 25)
-    nav:SetNormalAtlas("Glue-Shadow-Button-Normal", true)
-    nav:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7)
-    nav:SetHighlightAtlas("Glue-Shadow-Button-Highlight", true)
-    nav:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
+    nav:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+    if nav:GetNormalTexture() then nav:GetNormalTexture():SetVertexColor(1, 1, 1, 0.7) end
+    nav:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    if nav:GetHighlightTexture() then nav:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05) end
 
     local label = nav:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nav.pageLabel = label
@@ -364,26 +364,26 @@ function OFAuctionFrameDeathClips_OnLoad()
 
     local prev = CreateFrame("Button", "OFDeathClipsPrevPageButton", nav)
     prev:SetSize(80, 50); prev:SetPoint("LEFT", nav, "LEFT", 10, 5)
-    prev:SetNormalAtlas("Glue-Left-Array-Shadow-Button-Normal")
-    prev:SetPushedAtlas("Glue-Left-Array-Shadow-Button-Pushed")
-    prev:SetHighlightAtlas("Glue-Left-Array-Shadow-Button-Highlight")
-    prev:SetDisabledAtlas("Glue-Left-Array-Shadow-Button-Disable")
+    prev:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+    prev:SetPushedTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+    prev:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    prev:SetDisabledTexture("Interface\\Buttons\\UI-Panel-Button-Disabled")
     prev:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
     local next = CreateFrame("Button", "OFDeathClipsNextPageButton", nav)
     next:SetSize(80, 50); next:SetPoint("RIGHT", nav, "RIGHT", -10, 5)
-    next:SetNormalAtlas("Glue-Right-Array-Shadow-Button-Normal")
-    next:SetPushedAtlas("Glue-Right-Array-Shadow-Button-Pushed")
-    next:SetHighlightAtlas("Glue-Right-Array-Shadow-Button-Highlight")
-    next:SetDisabledAtlas("Glue-Right-Array-Shadow-Button-Disable")
+    next:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+    next:SetPushedTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+    next:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    next:SetDisabledTexture("Interface\\Buttons\\UI-Panel-Button-Disabled")
     next:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
-    prev:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
-    next:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7)
-    prev:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6)
-    next:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6)
-    prev:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
-    next:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1)
+    if prev:GetHighlightTexture() then prev:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7) end
+    if next:GetHighlightTexture() then next:GetHighlightTexture():SetVertexColor(0.3, 0.3, 0.3, 0.7) end
+    if prev:GetNormalTexture() then prev:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6) end
+    if next:GetNormalTexture() then next:GetNormalTexture():SetVertexColor(1, 1, 1, 0.6) end
+    if prev:GetDisabledTexture() then prev:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1) end
+    if next:GetDisabledTexture() then next:GetDisabledTexture():SetVertexColor(0.2, 0.2, 0.2, 1) end
 
     local function SetButtonTextureLayout(btn, w, h)
         local t = {btn:GetNormalTexture(), btn:GetHighlightTexture(), btn:GetPushedTexture(), btn:GetDisabledTexture()}
@@ -1368,11 +1368,11 @@ function OFAuctionFrameDeathClips_Update()
     if totalClips > NUM_CLIPS_TO_DISPLAY then
         if prevButton then
             prevButton:Show()
-            prevButton:SetEnabled(offset > 0)
+            if offset > 0 then prevButton:Enable() else prevButton:Disable() end
         end
         if nextButton then
             nextButton:Show()
-            nextButton:SetEnabled(offset + NUM_CLIPS_TO_DISPLAY < totalClips)
+            if offset + NUM_CLIPS_TO_DISPLAY < totalClips then nextButton:Enable() else nextButton:Disable() end
         end
 
         if searchCountText then

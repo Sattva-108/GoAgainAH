@@ -323,7 +323,7 @@ do
 			OnAcquire = function(self)
 				frame:Show()
 				frame:SetScript("OnClick", nil)
-				frame:SetEnabled(true)
+				frame:Enable()
 			end
 		}
 		-- mix in the standard widget API
