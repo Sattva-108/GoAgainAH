@@ -481,7 +481,54 @@ ns.AuctionHouseAPI:RegisterEvent(ns.EV_PLAYED_TIME_UPDATED, function()
 end)
 
 
+------------------------------------------------------------------------
+-- AddDeathClipFromData: универсальная функция добавления клипа смерти
+-- Принимает таблицу с полями: characterName, race, class, faction,
+-- level, where, causeCode, deathCause, mobLevel, completed (опционально)
+------------------------------------------------------------------------
+function ns.AddDeathClipFromData(clipData)
+    local clip = {
+        ts            = GetServerTime(),
+        characterName = clipData.characterName,
+        race          = clipData.race or "Неизвестно",
+        faction       = clipData.faction or "Unknown",
+        class         = clipData.class or "Неизвестно",
+        level         = clipData.level or 0,
+        where         = clipData.where or "Неизвестно",
+        causeCode     = clipData.causeCode or 0,
+        deathCause    = clipData.deathCause or "Неизвестно",
+        mobLevel      = clipData.mobLevel or 0,
+        playedTime    = nil,
+        getPlayedTry  = 0,
+        realm         = ns.CURRENT_REALM,
+        completed     = clipData.completed or false,
+    }
 
+    clip.id = ns.GenerateClipID(clip, clip.completed)
+
+    if not clip.id or ns.GetLiveDeathClips()[clip.id] then
+        return false
+    end
+
+    ns.AddClipToQueue(clip)
+
+    local currentPlayer = UnitName("player")
+    if clip.characterName == currentPlayer then
+        local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
+        if participateInSpeedClips == false then
+            return false
+        end
+    end
+
+    ns.AddNewDeathClips({ clip })
+    ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+
+    if not clip.completed then
+        ns.AuctionHouse:BroadcastDeathClipAdded(clip)
+    end
+
+    return true
+end
 
 
 
@@ -491,8 +538,7 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" then
         if prefix == "ASMSG_HARDCORE_DEATH" then
-            -- 1) Parse incoming message parts
-            local parts      = {}
+            local parts = {}
             for part in message:gmatch("([^:]+)") do
                 table.insert(parts, part)
             end
@@ -506,122 +552,43 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
             local rawMobName = parts[8] or ""
             local rawMobLv   = tonumber(parts[9]) or 0
 
-            -- 2) Normalize zone
             local zoneStr = rawZone:gsub("\n", " ")
             if zoneStr == "" then zoneStr = "Неизвестно" end
 
-            -- 3) Decide the plain cause text
             local causeText = (causeCode == 7 and rawMobName ~= "")
                     and rawMobName
                     or (ns.DeathCauseByID[causeCode] or "Неизвестно")
 
-            -- 4) Build the unique clip ID
-            local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-
-            -- 5) Assemble the clip with only the raw fields
-            local clip = {
-                ts            = GetServerTime(),
+            ns.AddDeathClipFromData({
                 characterName = name,
                 race          = (races[raceId] and races[raceId].name) or "Неизвестно",
-                faction       = factionStr,
+                faction       = (races[raceId] and races[raceId].faction) or "Unknown",
                 class         = classes[classId] or "Неизвестно",
                 level         = level,
                 where         = zoneStr,
-                causeCode     = causeCode,     -- numeric cause ID
-                deathCause    = causeText,     -- raw text
-                mobLevel      = rawMobLv,      -- raw number
-                playedTime    = nil,           -- will be filled later
-                getPlayedTry  = 0,
-                realm         = ns.CURRENT_REALM,
-            }
-
-            clip.id = ns.GenerateClipID(clip, false)
-
-            -- 6) Deduplicate
-            if not clip.id or ns.GetLiveDeathClips()[clip.id] then
-                return
-            end
-
-            -- Add the completed clip to the queue (for both death and completed clips)
-            ns.AddClipToQueue(clip)
-
-            -- 7) Check opt-out preference for current player
-            local currentPlayer = UnitName("player")
-            if name == currentPlayer then
-                local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
-                if participateInSpeedClips == false then
-                    -- Player opted out, don't add their clip
-                    return
-                end
-            end
-            
-            -- 8) Merge, notify UI and broadcast
-            ns.AddNewDeathClips({ clip })
-            ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
-            ns.AuctionHouse:BroadcastDeathClipAdded(clip)
-
+                causeCode     = causeCode,
+                deathCause    = causeText,
+                mobLevel      = rawMobLv,
+            })
 
     elseif prefix == "ASMSG_HARDCORE_COMPLETE" then
-            -- parse the incoming message
             local parts     = { strsplit(":", message) }
             local name      = parts[1]
             local raceId    = tonumber(parts[2])
-            local genderId  = tonumber(parts[3])
             local classId   = tonumber(parts[4])
 
-            -- default/fallback values
-            local level        = 80                                  -- no level in COMPLETE msg
-            local zoneStr      = "Неизвестно"
-            local causeCode    = 0                                   -- non-creature
-            local deathCause   = ns.DeathCauseByID[causeCode] or "Неизвестно"
-            local mobLevel     = 0
-
-            -- build the unique clip ID
-            local factionStr = (races[raceId] and races[raceId].faction) or "Unknown"
-            zoneStr = zoneStr:gsub("\n", " ")
-
-            -- assemble the clip with the new unified fields
-            local clip = {
-                ts            = GetServerTime(),
+            ns.AddDeathClipFromData({
                 characterName = name,
                 race          = (races[raceId] and races[raceId].name) or "Неизвестно",
-                faction       = factionStr,
+                faction       = (races[raceId] and races[raceId].faction) or "Unknown",
                 class         = classes[classId] or "Неизвестно",
-                level         = level,
-                where         = zoneStr,
-                causeCode     = causeCode,     -- NEW: numeric cause for UI logic
-                deathCause    = deathCause,    -- NEW: plain text for UI logic
-                mobLevel      = mobLevel,      -- NEW: plain number for UI logic
+                level         = 80,
+                where         = "Неизвестно",
+                causeCode     = 0,
+                deathCause    = ns.DeathCauseByID[0] or "Неизвестно",
+                mobLevel      = 0,
                 completed     = true,
-                playedTime    = nil,           -- will be populated later
-                realm         = ns.CURRENT_REALM,       -- human-readable realm
-            }
-
-            clip.id = ns.GenerateClipID(clip, true)
-
-            -- dedupe guard
-            if not clip.id or ns.GetLiveDeathClips()[clip.id] then
-                return
-            end
-
-            -- Add the completed clip to the queue (for both death and completed clips)
-            ns.AddClipToQueue(clip)
-
-            -- Check opt-out preference for current player
-            local currentPlayer = UnitName("player")
-            if name == currentPlayer then
-                local participateInSpeedClips = ns.PlayerPrefs:Get("participateInSpeedClips")
-                if participateInSpeedClips == false then
-                    -- Player opted out, don't add their clip
-                    return
-                end
-            end
-            
-            -- If no duplicate, add the clip
-            --            print("Adding new clip for: " .. name .. " with ID: " .. clip.id)
-
-            ns.AddNewDeathClips({ clip })
-            ns.AuctionHouseAPI:FireEvent(ns.EV_DEATH_CLIPS_CHANGED)
+            })
         end
 
     end

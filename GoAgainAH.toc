@@ -76,6 +76,7 @@ DeathClips\DeathClipReviews.lua
 DeathClips\DeathClipUtils.lua
 DeathClips\PlayedTimeSimulator.lua
 DeathClips\LiveDeathClips.lua
+DeathClips\ChatDeathParser.lua
 DeathClipsAgain.lua
 LFG\LFGUtils.lua
 UI\AuctionHouse\DeathClipReviewsPrompt.lua
