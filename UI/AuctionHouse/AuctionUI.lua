@@ -688,7 +688,9 @@ function OFAuctionFrame_OnLoad (self)
     PanelTemplates_SetTab(self, 1);
 
     -- Set focus rules
-    OFBrowseFilterScrollFrame.ScrollBar.scrollStep = OF_BROWSE_FILTER_HEIGHT;
+    if OFBrowseFilterScrollFrame and OFBrowseFilterScrollFrame.ScrollBar then
+        OFBrowseFilterScrollFrame.ScrollBar.scrollStep = OF_BROWSE_FILTER_HEIGHT;
+    end
 
     -- Init search dot count
     OFAuctionFrameBrowse.dotCount = 0;

@@ -45,7 +45,7 @@ end
 
 ns.CreateDungeonScrollList = function(parent)
     -- Create the dungeonInset frame
-    local dungeonInset = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
+    local dungeonInset = CreateFrame("Frame", nil, parent)
     dungeonInset:SetPoint("TOPLEFT", parent, "BOTTOMRIGHT", 0, 0)
     dungeonInset:SetSize(350, 415)
 

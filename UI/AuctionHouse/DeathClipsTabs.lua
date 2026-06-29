@@ -201,10 +201,10 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
     frame._hasSubtabs = true
 
     -- Create buttons using EncounterTierTabTemplate
-    local liveBtn = CreateFrame("Button", "OFDeathClipsTabLive", frame, "EncounterTierTabTemplate")
-    local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", liveBtn, "EncounterTierTabTemplate")
-    local newTab1Btn = CreateFrame("Button", "OFDeathClipsTabNew1", compBtn, "EncounterTierTabTemplate")
-    local newTab2Btn = CreateFrame("Button", "OFDeathClipsTabNew2", newTab1Btn, "EncounterTierTabTemplate")
+    local liveBtn = CreateFrame("Button", "OFDeathClipsTabLive", frame)
+    local compBtn = CreateFrame("Button", "OFDeathClipsTabCompleted", liveBtn)
+    local newTab1Btn = CreateFrame("Button", "OFDeathClipsTabNew1", compBtn)
+    local newTab2Btn = CreateFrame("Button", "OFDeathClipsTabNew2", newTab1Btn)
 
     local liveConfig = ns.DeathClipsTabSettings["LIVE_CLIPS"]
     local compConfig = ns.DeathClipsTabSettings["COMPLETED_CLIPS"]
@@ -213,48 +213,45 @@ hooksecurefunc("OFAuctionFrameDeathClips_OnShow", function()
 
     -- Size & Positioning & Text
     liveBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 90, -12)
+    liveBtn:SetSize(100, 40)
     liveBtn:SetText(liveConfig.tabName)
-    liveBtn:SetSize(100, 40) -- Ensure size
 
-    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    compBtn:SetPoint("LEFT", liveBtn, "RIGHT", 32, 0)
+    compBtn:SetSize(100, 40)
     compBtn:SetText(compConfig.tabName)
-    compBtn:SetSize(100, 40) -- Ensure size
 
-    newTab1Btn:SetPoint("LEFT", compBtn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    newTab1Btn:SetPoint("LEFT", compBtn, "RIGHT", 32, 0)
+    newTab1Btn:SetSize(100, 40)
     newTab1Btn:SetText(newTab1Config.tabName)
-    newTab1Btn:SetSize(100, 40) -- Ensure size
 
-    newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0) -- Adjusted gap to 32
+    newTab2Btn:SetPoint("LEFT", newTab1Btn, "RIGHT", 32, 0)
+    newTab2Btn:SetSize(100, 40)
     newTab2Btn:SetText(newTab2Config.tabName)
-    newTab2Btn:SetSize(100, 40) -- Ensure size
 
-    -- Glow properties
-    liveBtn.selectedGlow:SetAlpha(0.60); compBtn.selectedGlow:SetAlpha(0.60); newTab1Btn.selectedGlow:SetAlpha(0.60); newTab2Btn.selectedGlow:SetAlpha(0.60)
-    liveBtn.selectedGlow:SetVertexColor(0.78, 0.35, 0.33); compBtn.selectedGlow:SetVertexColor(0.5, 0.7, 0.5)
-    newTab1Btn.selectedGlow:SetVertexColor(0.5, 0.5, 0.7); newTab2Btn.selectedGlow:SetVertexColor(1.0, 0.84, 0.0)
-    liveBtn.selectedGlow:SetHeight(10); compBtn.selectedGlow:SetHeight(10); newTab1Btn.selectedGlow:SetHeight(10); newTab2Btn.selectedGlow:SetHeight(10)
+    for _, btn in ipairs({liveBtn, compBtn, newTab1Btn, newTab2Btn}) do
+        btn:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+        btn:SetHighlightTexture("Interface\\Buttons\\UI-Panel-Button-Highlight")
+        btn:SetPushedTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+    end
 
     -- Style toggle
     local function updateTabStyles()
-        liveBtn.selectedGlow:Hide(); compBtn.selectedGlow:Hide(); newTab1Btn.selectedGlow:Hide(); newTab2Btn.selectedGlow:Hide()
+        for _, btn in ipairs({liveBtn, compBtn, newTab1Btn, newTab2Btn}) do
+            btn:GetFontString():SetTextColor(0.8, 0.8, 0.8)
+        end
 
-        liveBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
-        compBtn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
-        newTab1Btn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
-        newTab2Btn:GetFontString():SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
-
+        local activeBtn
         if frame.currentSubTab == liveConfig.tabId then
-            liveBtn.selectedGlow:Show()
-            liveBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
+            activeBtn = liveBtn
         elseif frame.currentSubTab == compConfig.tabId then
-            compBtn.selectedGlow:Show()
-            compBtn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        elseif frame.currentSubTab == newTab1Config.tabId then -- newTab1Config now refers to REINCARNATED_CLIPS
-            newTab1Btn.selectedGlow:Show()
-            newTab1Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-        elseif frame.currentSubTab == newTab2Config.tabId then -- This is SPEED_CLIPS
-            newTab2Btn.selectedGlow:Show()
-            newTab2Btn:GetFontString():SetTextColor(NORMAL_FONT_COLOR:GetRGB())
+            activeBtn = compBtn
+        elseif frame.currentSubTab == newTab1Config.tabId then
+            activeBtn = newTab1Btn
+        elseif frame.currentSubTab == newTab2Config.tabId then
+            activeBtn = newTab2Btn
+        end
+        if activeBtn then
+            activeBtn:GetFontString():SetTextColor(1.0, 0.82, 0.0)
         end
     end
 
