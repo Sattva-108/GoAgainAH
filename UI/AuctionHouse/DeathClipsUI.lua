@@ -1016,16 +1016,22 @@ UpdateClipEntry = function(state, i, offset, elements, clip, ratingsFromParent, 
                 elseif causeId == 7 and clip.deathCause and clip.deathCause ~= "" then -- Monster kill
                     local mobLvl = clip.mobLevel or 0
                     local playerLvl = clip.oldLevel or 1 -- Use oldLevel for color calculation against mob
-                    local diff = mobLvl - playerLvl
-                    mr, mg, mb = 0, 1, 0
-                    if diff >= 4 then mr, mg, mb = 1, 0, 0
-                    elseif diff >= 2 then mr, mg, mb = 1, .5, 0
-                    elseif diff >= -1 then mr, mg, mb = 1, 1, 0
-                    elseif diff >= -4 then mr, mg, mb = 0, 1, 0
-                    else mr, mg, mb = .5, .5, .5 end
+                    if mobLvl > 0 then
+                        local diff = mobLvl - playerLvl
+                        mr, mg, mb = 0, 1, 0
+                        if diff >= 4 then mr, mg, mb = 1, 0, 0
+                        elseif diff >= 2 then mr, mg, mb = 1, .5, 0
+                        elseif diff >= -1 then mr, mg, mb = 1, 1, 0
+                        elseif diff >= -4 then mr, mg, mb = 0, 1, 0
+                        else mr, mg, mb = .5, .5, .5 end
+                        newMobLevelText = tostring(mobLvl)
+                        mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
+                    else
+                        mr, mg, mb = 1, 1, 1
+                        newMobLevelText = ""
+                        mobLevelFS:SetTextColor(1, 1, 1, 1)
+                    end
                     newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
-                    newMobLevelText = tostring(mobLvl)
-                    mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
                 else -- Other known death causes (environmental, etc.)
                     newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
                     newMobLevelText = ""
@@ -1047,16 +1053,22 @@ UpdateClipEntry = function(state, i, offset, elements, clip, ratingsFromParent, 
                 if causeId == 7 and clip.deathCause and clip.deathCause ~= "" then
                     local mobLvl = clip.mobLevel or 0
                     local playerLvl = displayLevel or 1 -- Use current display level
-                    local diff = mobLvl - playerLvl
-                    mr, mg, mb = 0, 1, 0
-                    if diff >= 4 then mr, mg, mb = 1, 0, 0
-                    elseif diff >= 2 then mr, mg, mb = 1, .5, 0
-                    elseif diff >= -1 then mr, mg, mb = 1, 1, 0
-                    elseif diff >= -4 then mr, mg, mb = 0, 1, 0
-                    else mr, mg, mb = .5, .5, .5 end
+                    if mobLvl > 0 then
+                        local diff = mobLvl - playerLvl
+                        mr, mg, mb = 0, 1, 0
+                        if diff >= 4 then mr, mg, mb = 1, 0, 0
+                        elseif diff >= 2 then mr, mg, mb = 1, .5, 0
+                        elseif diff >= -1 then mr, mg, mb = 1, 1, 0
+                        elseif diff >= -4 then mr, mg, mb = 0, 1, 0
+                        else mr, mg, mb = .5, .5, .5 end
+                        newMobLevelText = tostring(mobLvl)
+                        mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
+                    else
+                        mr, mg, mb = 1, 1, 1
+                        newMobLevelText = ""
+                        mobLevelFS:SetTextColor(1, 1, 1, 1)
+                    end
                     newClipDisplayText = string.format("|cFF%02X%02X%02X%s|r", mr * 255, mg * 255, mb * 255, clip.deathCause)
-                    newMobLevelText = tostring(mobLvl)
-                    mobLevelFS:SetTextColor(mr, mg, mb, 200 / 255)
                 else
                     newClipDisplayText = "|cFFFFFFFF" .. (ns.DeathCauseByID[causeId] or "Неизвестно") .. "|r"
                     newMobLevelText = ""
