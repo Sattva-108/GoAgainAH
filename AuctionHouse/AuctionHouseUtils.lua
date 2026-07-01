@@ -7,6 +7,15 @@ local Scanner = _G[_SCANNER] or CreateFrame("GameTooltip", _SCANNER, UIParent, "
 local GetContainerNumSlots = C_Container and _G.C_Container.GetContainerNumSlots or _G.GetContainerNumSlots
 local GetContainerItemLink = C_Container and _G.C_Container.GetContainerItemLink or _G.GetContainerItemLink
 local GetContainerItemInfo = C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo
+local GetContainerItemID = C_Container and C_Container.GetContainerItemID or function(bag, slot)
+    local link = GetContainerItemLink(bag, slot)
+    if link then
+        local _, _, itemLink = link:find("item:(%d+)")
+        return itemLink and tonumber(itemLink)
+    end
+    return nil
+end
+local PickupContainerItem = C_Container and C_Container.PickupContainerItem or _G.PickupContainerItem
 
 local function IsItemTradeable(bag, slot)
     Scanner:ClearLines()
@@ -263,7 +272,7 @@ end
 local function FindFirstEmptySlot()
     for bag = 0, 4 do
         for slot = 1, GetContainerNumSlots(bag) do
-            if not C_Container.GetContainerItemID(bag, slot) then
+            if not GetContainerItemID(bag, slot) then
                 return bag, slot
             end
         end
@@ -312,7 +321,7 @@ function PrefillAuctionMail(totalCopper, quantity, itemID, recipient, note)
         end
 
         -- Now proceed with adding items to mail
-        C_Container.PickupContainerItem(exactMatch.bag, exactMatch.slot)
+        PickupContainerItem(exactMatch.bag, exactMatch.slot)
     end
     ClickSendMailItemButton()
 

@@ -197,7 +197,12 @@ local function CreateReviewPrompt()
     reviewGroup:AddChild(targetLabel)
 
     local labelFontString = targetLabel.label
-    labelFontString:SetScale(1.5)
+    if labelFontString.SetScale then
+        labelFontString:SetScale(1.5)
+    else
+        local font, size, flags = labelFontString:GetFont()
+        if font and size then labelFontString:SetFont(font, size * 1.5, flags) end
+    end
     labelFontString:ClearAllPoints()
     labelFontString:SetPoint("LEFT", targetLabel.frame, "LEFT", 3, 0)
 
@@ -400,7 +405,12 @@ local function CreateReviewPrompt()
         self.frame:Show()
         C_Timer:After(0.001, function()
             if self.labelFontString then
-                self.labelFontString:SetScale(1.5)
+                if self.labelFontString.SetScale then
+                    self.labelFontString:SetScale(1.5)
+                else
+                    local font, size, flags = self.labelFontString:GetFont()
+                    if font and size then self.labelFontString:SetFont(font, size * 1.5, flags) end
+                end
                 self.labelFontString:ClearAllPoints()
                 self.labelFontString:SetPoint("LEFT", self.targetLabel.frame, "LEFT", 3, 0)
             end

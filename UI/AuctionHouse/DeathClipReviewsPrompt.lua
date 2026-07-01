@@ -200,7 +200,12 @@ local function CreateDeathClipReviewsPrompt()
     reviewGroup:AddChild(targetLabel)
 
     local labelFontString = targetLabel.label
-    labelFontString:SetScale(headerScale)
+    if labelFontString.SetScale then
+        labelFontString:SetScale(headerScale)
+    else
+        local font, size, flags = labelFontString:GetFont()
+        if font and size then labelFontString:SetFont(font, size * headerScale, flags) end
+    end
     labelFontString:ClearAllPoints()
     labelFontString:SetPoint("LEFT", targetLabel.frame, "LEFT", headerLeftOffset, 0)
 
@@ -411,7 +416,12 @@ local function CreateDeathClipReviewsPrompt()
         self.frame:Show()
         C_Timer:After(0.001, function()
             if self.labelFontString then
-                self.labelFontString:SetScale(headerScale)
+                if self.labelFontString.SetScale then
+                    self.labelFontString:SetScale(headerScale)
+                else
+                    local font, size, flags = self.labelFontString:GetFont()
+                    if font and size then self.labelFontString:SetFont(font, size * headerScale, flags) end
+                end
                 self.labelFontString:ClearAllPoints()
                 self.labelFontString:SetPoint("LEFT", self.targetLabel.frame, "LEFT", headerLeftOffset, 0)
             end

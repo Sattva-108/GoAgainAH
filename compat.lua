@@ -364,9 +364,8 @@ if not GetServerTime then
         return time()
     end
 end
-if not _G["PKBT_RedButtonTemplate"] then
-    _G["PKBT_RedButtonTemplate"] = CreateFrame("Button", "PKBT_RedButtonTemplate")
-end
+-- PKBT_RedButtonTemplate: not available on 3.3.5
+-- CustomFrame.lua uses pcall to fall back to plain Button
 
 ---------------------------------------------------------------------------
 -- PKBT_Font_16 fallback

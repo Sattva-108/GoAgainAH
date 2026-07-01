@@ -1147,7 +1147,9 @@ function OFAuctionFrameBrowse_OnShow()
 
     for itemId, hasInfo in pairs(itemIds) do
         if not hasInfo then
-            C_Item.RequestLoadItemDataByID(itemId)
+            if C_Item and C_Item.RequestLoadItemDataByID then
+                C_Item.RequestLoadItemDataByID(itemId)
+            end
         end
     end
 end

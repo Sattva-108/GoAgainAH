@@ -308,15 +308,29 @@ local function Constructor()
 	return AceGUI:RegisterAsContainer(widget)
 end
 
-do
-	local AceGUI = LibStub("AceGUI-3.0")
-	local function Constructor()
-		local num   = AceGUI:GetNextWidgetNum("PKBTRedButton")
-		local frame = CreateFrame("Button",
-				"AceGUI30PKBTRedButton"..num,
-				UIParent,
-				"PKBT_RedButtonTemplate"
-		)
+	do
+		local AceGUI = LibStub("AceGUI-3.0")
+		local function Constructor()
+			local num   = AceGUI:GetNextWidgetNum("PKBTRedButton")
+			local frame
+			local ok, result = pcall(CreateFrame, "Button",
+					"AceGUI30PKBTRedButton"..num,
+					UIParent,
+					"PKBT_RedButtonTemplate")
+			if ok and result then
+				frame = result
+			else
+				frame = CreateFrame("Button",
+						"AceGUI30PKBTRedButton"..num,
+						UIParent)
+				frame:SetSize(120, 26)
+				frame:SetNormalFontObject(GameFontNormal)
+				frame:SetText("")
+				local bg = frame:CreateTexture(nil, "BACKGROUND")
+				bg:SetAllPoints()
+				bg:SetTexture(0.8, 0.2, 0.2, 1)
+				frame:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+			end
 		local widget = {
 			frame    = frame,
 			type     = "PKBTRedButton",

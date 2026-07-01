@@ -976,7 +976,7 @@ UpdateClipEntry = function(state, i, offset, elements, clip, ratingsFromParent, 
                 if whereFS:GetFontObject() ~= GameFontHighlight then
                     whereFS:SetFontObject("GameFontHighlight")
                 end
-                local zone = clip.mapId and C_Map.GetMapInfo(clip.mapId).name or clip.where or L["Unknown"]
+                local zone = (clip.mapId and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(clip.mapId) and C_Map.GetMapInfo(clip.mapId).name) or clip.where or L["Unknown"]
                 if zone == "Полуостров Адского Пламени" then
                     zone = "Полуостров\nАдского Пламени"
                 end
